@@ -26,10 +26,31 @@ if ! command -v codex >/dev/null 2>&1; then
   exit 1
 fi
 
-if grep -Eq '^- State: idle[[:space:]]*$' docs/goals/current.md; then
-  echo "Error: current goal is idle. Define a concrete goal before starting Codex." >&2
-  exit 1
-fi
+GOAL_STATE=$(sed -n 's/^- State:[[:space:]]*//p' docs/goals/current.md | head -n 1)
+case "${GOAL_STATE}" in
+  ready|in_progress)
+    ;;
+  idle)
+    echo "Error: current goal is idle. Define a concrete goal before starting Codex." >&2
+    exit 1
+    ;;
+  completed)
+    echo "Error: current goal is completed. Archive it and define the next goal before starting Codex." >&2
+    exit 1
+    ;;
+  blocked)
+    echo "Error: current goal is blocked. Resolve or replace the documented blocker before restarting Codex." >&2
+    exit 1
+    ;;
+  "")
+    echo "Error: current goal has no State value." >&2
+    exit 1
+    ;;
+  *)
+    echo "Error: unsupported goal state '${GOAL_STATE}'. Expected one of: idle, ready, in_progress, completed, blocked." >&2
+    exit 1
+    ;;
+esac
 
 if [[ -n "$(git status --porcelain)" ]]; then
   echo "Error: working tree is not clean. Commit, push, or preserve existing work before starting a new goal." >&2
