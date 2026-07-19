@@ -11,3 +11,5 @@ A modular Go application platform built on go-zero, designed for reusable server
 - `scripts/` — project automation scripts
 
 The project starts as a modular monolith and keeps module boundaries clear so high-load capabilities can be extracted into independent services later.
+
+Runnable server bootstrap instructions live in [server/README.md](server/README.md).

@@ -1,0 +1,25 @@
+syntax = "v1"
+
+info (
+	title:   "Awesome Zero Platform App API"
+	desc:    "Bootstrap health endpoints for the first runnable go-zero server."
+	author:  "Codex"
+	version: "v1"
+)
+
+type LiveReply {
+	Status string `json:"status"`
+}
+
+type ReadyReply {
+	Status string `json:"status"`
+}
+
+service main-api {
+	@handler live
+	get /health/live returns (LiveReply)
+
+	@handler ready
+	get /health/ready returns (ReadyReply)
+}
+

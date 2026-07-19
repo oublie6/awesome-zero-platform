@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: ready
-- Started:
-- Completed:
+- State: complete
+- Started: 2026-07-19
+- Completed: 2026-07-19
 - Blockers:
 
 ## Goal
@@ -80,6 +80,13 @@ The primary agent owns architecture, integration, and final verification. It may
 ### Completed
 
 - Requirement and execution documents prepared.
+- Initialized the `server` Go module and pinned go-zero dependencies in `go.mod` and `go.sum`.
+- Added the runnable go-zero REST bootstrap under `server/apps/app-api` with generated contract/types/routes and handwritten startup/config validation.
+- Implemented `GET /health/live` and `GET /health/ready`.
+- Added repository-root `make generate`, `make fmt`, `make test`, and `make run`.
+- Added focused tests for config validation and health handlers.
+- Updated server bootstrap documentation and the root README pointer.
+- Completed generation, formatting, tests, startup, health checks, invalid-config failure verification, graceful shutdown verification, and final diff review.
 
 ### In progress
 
@@ -87,12 +94,29 @@ The primary agent owns architecture, integration, and final verification. It may
 
 ### Remaining
 
-- All implementation deliverables.
+- None.
 
 ### Verification status
 
-- Not started.
+- Complete.
 
 ## Completion Report
 
-Not started.
+Completed on 2026-07-19.
+
+Implemented deliverables:
+- Created `server/go.mod` and `server/go.sum` with pinned `github.com/zeromicro/go-zero v1.10.2`.
+- Added `server/apps/app-api/app.api`, generated go-zero server files, safe local config at `server/apps/app-api/etc/main-api.yaml`, and handwritten bootstrap/config validation.
+- Added repository-root Makefile targets for generation, formatting, tests, and local startup.
+- Updated `server/README.md` and the root README with runnable server instructions.
+
+Acceptance evidence:
+- `make generate` succeeded and was repeatable. Existing scaffold files were explicitly ignored by goctl on rerun, and rerunning generation produced no unintended content changes.
+- `make fmt` succeeded.
+- `make test` succeeded, covering health handler responses and invalid startup configuration.
+- `make run` started the committed development server on `0.0.0.0:8888`.
+- `curl http://127.0.0.1:8888/health/live` returned HTTP 200 with `{"status":"ok"}`.
+- `curl http://127.0.0.1:8888/health/ready` returned HTTP 200 with `{"status":"ready"}`.
+- Sending `SIGINT` to the running process triggered go-zero shutdown logging and clean process termination without panic.
+- Running `go run ./apps/app-api -f <invalid-config>` exited non-zero with a clear validation error for an invalid port.
+- Final Git inspection showed only goal-scoped server bootstrap files plus the necessary README and current goal updates.
