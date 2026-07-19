@@ -62,6 +62,17 @@ Before finishing:
 6. Summarize changed files, verification results, commit and push results, unresolved blockers, and intentionally deferred work.
 7. Stop when the goal is completed and pushed, or when a genuine blocker is documented.
 
+## Resource constraints
+
+- The primary development machine has approximately 1–2 GB of available memory.
+- Run memory-intensive work sequentially by default, including code generation, builds, unit tests, integration tests, local dependency startup, runtime verification, and teardown.
+- Do not run multiple memory-intensive subagents or verification commands concurrently.
+- Prefer a single primary implementation agent. Use additional subagents only for lightweight independent review or analysis, and run them sequentially when memory pressure is possible.
+- Use low-concurrency Go commands such as `go test -p 1 -parallel 1` unless a goal explicitly demonstrates that higher concurrency is safe on the active machine.
+- Do not overlap Docker Compose startup or dependency verification with Go compilation, test execution, goctl generation, or multiple agent tasks.
+- Stop unused local dependency containers after verification.
+- If swap usage rises materially, the machine becomes unresponsive, or an out-of-memory condition is suspected, stop parallel work, preserve the current verified checkpoint, reduce concurrency, and resume sequentially.
+
 ## Change rules
 
 - Keep generated go-zero files distinguishable from handwritten code.
