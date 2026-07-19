@@ -1,0 +1,33 @@
+# Go
+/bin/
+*.test
+*.out
+coverage/
+
+# Node.js
+node_modules/
+dist/
+.vite/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Runtime and temporary artifacts
+.tmp/
+tmp/
+build/
+deploy-runtime/
+
+# Logs
+*.log
+logs/
