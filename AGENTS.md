@@ -25,8 +25,10 @@ Before planning or editing code:
 1. Read this file completely.
 2. Read `docs/goals/current.md` completely.
 3. Read only the architecture, requirement, and decision documents explicitly referenced by the current goal, plus source files needed for implementation.
-4. Inspect the current repository state and relevant Git diff.
-5. Treat the current goal and referenced documents as authoritative.
+4. Confirm the working tree is clean before starting. Preserve any pre-existing local work and stop if the repository is not clean.
+5. Synchronize the current branch with its configured upstream using `git pull --ff-only`. If synchronization cannot complete cleanly, stop and document the blocker.
+6. Inspect the synchronized repository state and relevant Git diff.
+7. Treat the current goal and referenced documents as authoritative.
 
 Execution rules:
 
@@ -41,8 +43,11 @@ Before finishing:
 
 1. Run every acceptance check required by the current goal.
 2. Update the permitted status and completion-report sections.
-3. Summarize changed files, verification results, unresolved blockers, and intentionally deferred work.
-4. Stop when the goal is complete or a genuine blocker is documented.
+3. Inspect the final Git diff and ensure only goal-related changes are included.
+4. Commit all completed goal changes with a concise, descriptive commit message.
+5. Push the current branch to its configured upstream with `git push`. Do not use force push. If the push fails, document the exact blocker and keep the verified commit locally.
+6. Summarize changed files, verification results, commit and push results, unresolved blockers, and intentionally deferred work.
+7. Stop when the goal is complete and pushed, or when a genuine blocker is documented.
 
 ## Change rules
 
