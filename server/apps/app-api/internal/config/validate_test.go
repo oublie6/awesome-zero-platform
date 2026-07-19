@@ -9,6 +9,7 @@ func TestValidate(t *testing.T) {
 	valid.Name = "main-api"
 	valid.Host = "127.0.0.1"
 	valid.Port = 8888
+	valid.Prepare()
 
 	tests := []struct {
 		name    string
@@ -39,6 +40,24 @@ func TestValidate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "invalid body limit",
+			mutate: func(cfg *Config) {
+				cfg.HTTP.MaxBodyBytes = -1
+			},
+			wantErr: true,
+		},
+		{
+			name: "wildcard cors with credentials",
+			mutate: func(cfg *Config) {
+				cfg.HTTP.CORS.Enabled = true
+				cfg.HTTP.CORS.AllowedOrigins = []string{"*"}
+				cfg.HTTP.CORS.AllowedMethods = []string{"GET"}
+				cfg.HTTP.CORS.AllowedHeaders = []string{"Content-Type"}
+				cfg.HTTP.CORS.AllowCredentials = true
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -50,6 +69,7 @@ func TestValidate(t *testing.T) {
 			if tt.mutate != nil {
 				tt.mutate(&cfg)
 			}
+			cfg.Prepare()
 
 			err := cfg.Validate()
 			if tt.wantErr && err == nil {

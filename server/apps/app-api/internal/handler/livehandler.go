@@ -8,7 +8,7 @@ import (
 
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/logic"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/svc"
-	"github.com/zeromicro/go-zero/rest/httpx"
+	platformresponse "github.com/oublie6/awesome-zero-platform/server/foundation/response"
 )
 
 func liveHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
@@ -16,9 +16,9 @@ func liveHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		l := logic.NewLiveLogic(r.Context(), svcCtx)
 		resp, err := l.Live()
 		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
+			platformresponse.WriteError(r.Context(), w, err)
 		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
+			platformresponse.WriteJSON(r.Context(), w, http.StatusOK, resp)
 		}
 	}
 }

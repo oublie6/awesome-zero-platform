@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: ready
-- Started:
-- Completed:
+- State: completed
+- Started: 2026-07-19
+- Completed: 2026-07-19
 - Blockers:
 
 ## Goal
@@ -99,6 +99,12 @@ The primary agent owns package boundaries, go-zero integration, integration test
 - Goal 0001 archived.
 - HTTP foundation requirements prepared.
 - Goal 0002 execution contract prepared.
+- Added reusable foundation packages for application errors, request IDs, response envelopes, and focused HTTP middleware.
+- Integrated request ID propagation, response envelopes, panic recovery, access logging, security headers, request body limits, and configurable CORS into `app-api` using go-zero-supported extension points.
+- Preserved the minimal health endpoint payloads while applying globally safe middleware and request ID headers.
+- Added focused tests for error mapping, request IDs, envelopes, panic recovery, access logging, CORS, security headers, body limits, and configuration validation.
+- Updated `server/README.md` and the committed development configuration for the HTTP foundation.
+- Completed generation, formatting, unit tests, real startup, live health and request-ID checks, invalid-config startup failure verification, and final diff inspection.
 
 ### In progress
 
@@ -106,12 +112,28 @@ The primary agent owns package boundaries, go-zero integration, integration test
 
 ### Remaining
 
-- All implementation deliverables.
+- None.
 
 ### Verification status
 
-- Not started.
+- Complete.
 
 ## Completion Report
 
-Not started.
+Completed on 2026-07-19.
+
+Implemented deliverables:
+- Added `server/foundation/apperrors`, `server/foundation/requestid`, `server/foundation/response`, and `server/foundation/httpmiddleware`.
+- Extended `app-api` configuration with HTTP foundation settings and startup validation.
+- Wired the foundation into `server/apps/app-api/internal/bootstrap` with an explicit middleware order and preserved raw health responses as the documented envelope exception.
+- Updated `server/README.md` with HTTP conventions, request ID policy, body-size limits, CORS behavior, security headers, access logging, and health endpoint policy.
+
+Acceptance evidence:
+- `make generate` succeeded and was repeatable without unintended diffs.
+- `make fmt` succeeded.
+- `make test` succeeded, including focused HTTP-foundation tests for success envelopes, application errors, unknown errors, panic recovery, server survival after panic, request-size rejection, CORS allow and deny cases, security headers, access logging fields, health endpoint middleware behavior, and startup validation.
+- `make run` started the committed development server successfully.
+- A real request to `GET /health/live` returned HTTP 200 with `{"status":"ok"}`, `X-Request-Id: runtime-health-id`, and the configured security headers.
+- Runtime startup with invalid configuration (`HTTP.MaxBodyBytes: -1`) failed with a clear non-zero validation error.
+- Panic recovery, error mapping, request ID replacement, and structured access logging were verified through focused integration tests and captured log output.
+- Final Git inspection showed only Goal 0002 implementation, tests, configuration, and necessary documentation updates.

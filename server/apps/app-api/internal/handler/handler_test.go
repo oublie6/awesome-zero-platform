@@ -8,6 +8,7 @@ import (
 
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/config"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/svc"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/requestid"
 )
 
 func TestLiveHandler(t *testing.T) {
@@ -15,6 +16,7 @@ func TestLiveHandler(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/health/live", nil)
+	request = request.WithContext(requestid.IntoContext(request.Context(), "health-id"))
 
 	liveHandler(testServiceContext()).ServeHTTP(recorder, request)
 
@@ -26,6 +28,7 @@ func TestReadyHandler(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/health/ready", nil)
+	request = request.WithContext(requestid.IntoContext(request.Context(), "health-id"))
 
 	readyHandler(testServiceContext()).ServeHTTP(recorder, request)
 
