@@ -12,16 +12,17 @@ Database schema definitions remain under `server/database`. One-off database upg
 
 ## Local development dependencies
 
-`local/docker-compose.yml` pins the PostgreSQL and Redis images used for Goal 0003 local development:
+`local/docker-compose.yml` pins the MySQL and Redis images used for Goal 0004 local development:
 
-- PostgreSQL `18.4-bookworm`
+- MySQL `8.4.10`
 - Redis `8.8.0-alpine3.23`
 
 The committed credentials are development-only and exist only to support deterministic local startup:
 
-- PostgreSQL database: `awesome_zero_platform`
-- PostgreSQL user: `app_local`
-- PostgreSQL password: `local-dev-only-postgres-password`
+- MySQL database: `awesome_zero_platform`
+- MySQL user: `app_local`
+- MySQL password: `local-dev-only-mysql-password`
+- MySQL root password: `local-dev-only-mysql-root-password`
 - Redis password: `local-dev-only-redis-password`
 
 The compose file uses `tmpfs` mounts so committed runtime data and container volumes are not preserved.

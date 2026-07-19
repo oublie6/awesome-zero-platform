@@ -10,19 +10,21 @@ HTTP:
     ContentTypeOptions: nosniff
     FrameOptions: DENY
     ReferrerPolicy: no-referrer
-Postgres:
-  Host: 127.0.0.1
-  Port: 5432
+MySQL:
+  Addr: 127.0.0.1:3306
   Database: awesome_zero_platform
   User: app_local
-  Password: local-dev-only-postgres-password
-  SSLMode: disable
-  MaxConns: 4
-  MinConns: 0
-  ConnectTimeout: 3s
+  Password: local-dev-only-mysql-password
+  Charset: utf8mb4
+  ParseTime: true
+  Location: UTC
+  TimeZone: +00:00
+  Timeout: 3s
+  MaxOpenConns: 4
+  MaxIdleConns: 2
+  ConnMaxLifetime: 5m
   StartupTimeout: 3s
   ReadinessTimeout: 2s
-  HealthCheckPeriod: 30s
 Redis:
   Addr: 127.0.0.1:6379
   Password: local-dev-only-redis-password

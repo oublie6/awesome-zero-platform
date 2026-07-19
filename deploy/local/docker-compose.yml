@@ -1,16 +1,25 @@
 services:
-  postgres:
-    image: postgres:18.4-bookworm
+  mysql:
+    image: mysql:8.4.10
     environment:
-      POSTGRES_DB: awesome_zero_platform
-      POSTGRES_USER: app_local
-      POSTGRES_PASSWORD: local-dev-only-postgres-password
+      MYSQL_DATABASE: awesome_zero_platform
+      MYSQL_USER: app_local
+      MYSQL_PASSWORD: local-dev-only-mysql-password
+      MYSQL_ROOT_PASSWORD: local-dev-only-mysql-root-password
     ports:
-      - "5432:5432"
+      - "3306:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+      - --innodb-buffer-pool-size=64M
+      - --max-connections=32
+      - --performance-schema=OFF
+      - --skip-log-bin
     tmpfs:
-      - /var/lib/postgresql
+      - /var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app_local -d awesome_zero_platform"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uapp_local -plocal-dev-only-mysql-password --silent"]
       interval: 5s
       timeout: 5s
       retries: 20

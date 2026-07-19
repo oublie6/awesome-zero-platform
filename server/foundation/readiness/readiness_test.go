@@ -11,7 +11,7 @@ func TestChecker(t *testing.T) {
 	t.Parallel()
 
 	checker := New(10*time.Millisecond,
-		stubProbe{name: "postgres"},
+		stubProbe{name: "mysql"},
 		stubProbe{name: "redis", err: errors.New("down")},
 	)
 

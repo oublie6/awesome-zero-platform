@@ -1,6 +1,6 @@
 # Server
 
-The repository's first runnable server is a go-zero REST process under `apps/app-api`. The current foundation includes standard response envelopes, application errors, request IDs, panic recovery, structured access logging, configurable CORS, baseline security headers, request body limits, reusable PostgreSQL and Redis lifecycle packages, dependency-aware readiness, and current schema/seed definitions for local development.
+The repository's first runnable server is a go-zero REST process under `apps/app-api`. The current foundation includes standard response envelopes, application errors, request IDs, panic recovery, structured access logging, configurable CORS, baseline security headers, request body limits, reusable MySQL and Redis lifecycle packages, dependency-aware readiness, and current schema/seed definitions for local development.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ go install github.com/zeromicro/go-zero/tools/goctl@v1.10.1
 - `apps/app-api/internal/bootstrap` — handwritten configuration loading, startup, and HTTP foundation integration
 - `foundation/apperrors` — reusable application error model
 - `foundation/cache` — focused Redis configuration, startup checks, and lifecycle ownership
-- `foundation/database` — focused PostgreSQL configuration, startup checks, lifecycle ownership, and transaction execution
+- `foundation/database` — focused MySQL configuration, startup checks, lifecycle ownership, and transaction execution
 - `foundation/requestid` — request ID validation, generation, and context propagation
 - `foundation/readiness` — bounded dependency readiness aggregation
 - `foundation/response` — response envelopes and go-zero response integration
@@ -74,10 +74,10 @@ make seed-apply
 make integration-test
 ```
 
-- `make deps-up` starts pinned local PostgreSQL and Redis containers and waits for both health checks to pass.
+- `make deps-up` starts pinned local MySQL and Redis containers and waits for both health checks to pass.
 - `make deps-down` stops the local dependency containers without keeping extra runtime artifacts.
 - `make deps-reset` deliberately recreates the local dependency containers and drops their transient data.
-- `make schema-apply` applies `server/database/schema/current.sql` to the local PostgreSQL instance.
+- `make schema-apply` applies `server/database/schema/current.sql` to the local MySQL instance.
 - `make seed-apply` applies the optional development seed at `server/database/seed/development.sql`.
 - `make integration-test` runs real dependency tests serially with `APP_API_INTEGRATION=1` and the `integration` build tag.
 
@@ -100,13 +100,15 @@ HTTP:
     ContentTypeOptions: nosniff
     FrameOptions: DENY
     ReferrerPolicy: no-referrer
-Postgres:
-  Host: 127.0.0.1
-  Port: 5432
+MySQL:
+  Addr: 127.0.0.1:3306
   Database: awesome_zero_platform
   User: app_local
-  Password: local-dev-only-postgres-password
-  SSLMode: disable
+  Password: local-dev-only-mysql-password
+  Charset: utf8mb4
+  ParseTime: true
+  Location: UTC
+  TimeZone: +00:00
 Redis:
   Addr: 127.0.0.1:6379
   Password: local-dev-only-redis-password
@@ -116,17 +118,17 @@ Startup:
   ConnectivityTimeout: 3s
 ```
 
-Startup fails with a non-zero exit if the config file is missing, if required HTTP or dependency settings are invalid, or if PostgreSQL or Redis cannot be reached within the configured bounded startup timeout.
+Startup fails with a non-zero exit if the config file is missing, if required HTTP or dependency settings are invalid, or if MySQL or Redis cannot be reached within the configured bounded startup timeout.
 
-The committed PostgreSQL and Redis credentials are development-only values for the pinned local containers. Do not reuse them outside local development, and do not commit real credentials or runtime data.
+The committed MySQL and Redis credentials are development-only values for the pinned local containers. Do not reuse them outside local development, and do not commit real credentials or runtime data.
 
 go-zero REST handles graceful shutdown by default. Sending `SIGINT` or `SIGTERM` stops the process cleanly.
 
 Resource ownership is explicit:
 
-- `app-api` opens PostgreSQL first, then Redis.
-- If Redis initialization fails after PostgreSQL starts, PostgreSQL is closed before startup returns the error.
-- Normal shutdown stops the HTTP server and then closes Redis followed by PostgreSQL. Close operations are safe to call more than once.
+- `app-api` opens MySQL first, then Redis.
+- If Redis initialization fails after MySQL starts, MySQL is closed before startup returns the error.
+- Normal shutdown stops the HTTP server and then closes Redis followed by MySQL. Close operations are safe to call more than once.
 
 ## HTTP conventions
 
@@ -217,7 +219,7 @@ Expected response:
 {"status":"ready"}
 ```
 
-Readiness performs bounded PostgreSQL and Redis health checks and returns HTTP `200` with `{"status":"ready"}` only when both dependencies are available. If either dependency is unavailable, readiness returns HTTP `503` with `{"status":"unready"}`.
+Readiness performs bounded MySQL and Redis health checks and returns HTTP `200` with `{"status":"ready"}` only when both dependencies are available. If either dependency is unavailable, readiness returns HTTP `503` with `{"status":"unready"}`.
 
 Readiness responses intentionally remain minimal and do not expose DSNs, passwords, internal addresses, raw driver errors, or stack traces.
 

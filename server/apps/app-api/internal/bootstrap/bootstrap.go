@@ -19,14 +19,14 @@ import (
 )
 
 var (
-	openPostgres = database.Open
-	openRedis    = cache.Open
+	openMySQL = database.Open
+	openRedis = cache.Open
 )
 
 type App struct {
 	Config   config.Config
 	server   *rest.Server
-	postgres database.Handle
+	mysql    database.Handle
 	redis    cache.Handle
 	stopOnce sync.Once
 }
@@ -78,30 +78,30 @@ func New(configFile string) (*App, error) {
 		return nil, fmt.Errorf("create rest server: %w", err)
 	}
 
-	postgres, err := openPostgres(ctx, cfg.Postgres)
+	mysqlResource, err := openMySQL(ctx, cfg.MySQL)
 	if err != nil {
 		return nil, err
 	}
 
 	redisClient, err := openRedis(ctx, cfg.Redis)
 	if err != nil {
-		_ = postgres.Close()
+		_ = mysqlResource.Close()
 		return nil, err
 	}
 
 	checker := readiness.New(cfg.Readiness.Timeout,
-		namedProbe{name: "postgres", handle: postgres},
+		namedProbe{name: "mysql", handle: mysqlResource},
 		namedProbe{name: "redis", handle: redisClient},
 	)
 
-	svcCtx := svc.NewServiceContext(cfg, postgres, redisClient, checker)
+	svcCtx := svc.NewServiceContext(cfg, mysqlResource, redisClient, checker)
 	handler.RegisterHandlers(server, svcCtx)
 
 	return &App{
-		Config:   cfg,
-		server:   server,
-		postgres: postgres,
-		redis:    redisClient,
+		Config: cfg,
+		server: server,
+		mysql:  mysqlResource,
+		redis:  redisClient,
 	}, nil
 }
 
@@ -120,8 +120,8 @@ func (a *App) Stop() {
 		if a.redis != nil {
 			_ = a.redis.Close()
 		}
-		if a.postgres != nil {
-			_ = a.postgres.Close()
+		if a.mysql != nil {
+			_ = a.mysql.Close()
 		}
 	})
 }

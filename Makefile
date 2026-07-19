@@ -29,10 +29,10 @@ deps-reset:
 	$(LOCAL_COMPOSE) up -d --wait
 
 schema-apply:
-	$(LOCAL_COMPOSE) exec -T postgres psql -U app_local -d awesome_zero_platform < server/database/schema/current.sql
+	$(LOCAL_COMPOSE) exec -T mysql sh -c 'exec mysql -uapp_local -p"$$MYSQL_PASSWORD" awesome_zero_platform' < server/database/schema/current.sql
 
 seed-apply:
-	$(LOCAL_COMPOSE) exec -T postgres psql -U app_local -d awesome_zero_platform < server/database/seed/development.sql
+	$(LOCAL_COMPOSE) exec -T mysql sh -c 'exec mysql -uapp_local -p"$$MYSQL_PASSWORD" awesome_zero_platform' < server/database/seed/development.sql
 
 integration-test:
 	cd $(SERVER_DIR) && APP_API_INTEGRATION=1 go test -count=1 -p 1 -parallel 1 -tags=integration ./...

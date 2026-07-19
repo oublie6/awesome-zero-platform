@@ -4,6 +4,7 @@ package bootstrap
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,8 +12,6 @@ import (
 	"strconv"
 	"testing"
 	"time"
-
-	"github.com/jackc/pgx/v5"
 )
 
 func TestIntegrationDependenciesAndHealth(t *testing.T) {
@@ -48,15 +47,15 @@ func TestIntegrationDependenciesAndHealth(t *testing.T) {
 	defer cancel()
 
 	var schemaVersion string
-	if err := app.postgres.Pool().QueryRow(ctx, "SELECT meta_value FROM foundation_schema_meta WHERE meta_key = $1", "schema_version").Scan(&schemaVersion); err != nil {
+	if err := app.mysql.DB().QueryRowContext(ctx, "SELECT meta_value FROM foundation_schema_meta WHERE meta_key = ?", "schema_version").Scan(&schemaVersion); err != nil {
 		t.Fatalf("query schema version: %v", err)
 	}
-	if schemaVersion != "0003" {
-		t.Fatalf("schema version = %q, want 0003", schemaVersion)
+	if schemaVersion != "0004" {
+		t.Fatalf("schema version = %q, want 0004", schemaVersion)
 	}
 
 	var seedState string
-	if err := app.postgres.Pool().QueryRow(ctx, "SELECT meta_value FROM foundation_schema_meta WHERE meta_key = $1", "seed_state").Scan(&seedState); err != nil {
+	if err := app.mysql.DB().QueryRowContext(ctx, "SELECT meta_value FROM foundation_schema_meta WHERE meta_key = ?", "seed_state").Scan(&seedState); err != nil {
 		t.Fatalf("query seed state: %v", err)
 	}
 	if seedState != "development" {
@@ -64,24 +63,24 @@ func TestIntegrationDependenciesAndHealth(t *testing.T) {
 	}
 
 	txKey := fmt.Sprintf("integration_tx_%d", time.Now().UnixNano())
-	if err := app.postgres.WithinTransaction(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		_, err := tx.Exec(txCtx, `
+	if err := app.mysql.WithinTransaction(ctx, func(txCtx context.Context, tx *sql.Tx) error {
+		_, err := tx.ExecContext(txCtx, `
 			INSERT INTO foundation_schema_meta (meta_key, meta_value)
-			VALUES ($1, $2)
-			ON CONFLICT (meta_key) DO UPDATE
-			SET meta_value = EXCLUDED.meta_value,
-			    updated_at = NOW()
+			VALUES (?, ?)
+			ON DUPLICATE KEY UPDATE
+			    meta_value = VALUES(meta_value),
+			    updated_at = CURRENT_TIMESTAMP(6)
 		`, txKey, "ok")
 		return err
 	}); err != nil {
 		t.Fatalf("WithinTransaction() error = %v", err)
 	}
 	defer func() {
-		_, _ = app.postgres.Pool().Exec(context.Background(), "DELETE FROM foundation_schema_meta WHERE meta_key = $1", txKey)
+		_, _ = app.mysql.DB().ExecContext(context.Background(), "DELETE FROM foundation_schema_meta WHERE meta_key = ?", txKey)
 	}()
 
 	var txValue string
-	if err := app.postgres.Pool().QueryRow(ctx, "SELECT meta_value FROM foundation_schema_meta WHERE meta_key = $1", txKey).Scan(&txValue); err != nil {
+	if err := app.mysql.DB().QueryRowContext(ctx, "SELECT meta_value FROM foundation_schema_meta WHERE meta_key = ?", txKey).Scan(&txValue); err != nil {
 		t.Fatalf("query integration transaction row: %v", err)
 	}
 	if txValue != "ok" {

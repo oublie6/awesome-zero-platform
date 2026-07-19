@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: ready
-- Started:
-- Completed:
+- State: completed
+- Started: 2026-07-19
+- Completed: 2026-07-19
 - Blockers:
 
 Supported states: `idle`, `ready`, `in_progress`, `completed`, `blocked`. New executable goals start as `ready`.
@@ -122,6 +122,10 @@ The primary agent owns the replacement design, database lifecycle, transaction s
 - Goal 0003 accepted and archived.
 - Infrastructure requirements updated to make MySQL the single default relational database.
 - Goal 0004 execution contract prepared.
+- PostgreSQL runtime support was replaced with a MySQL `database/sql` foundation using `github.com/go-sql-driver/mysql` `v1.10.0`.
+- `app-api` configuration, bootstrap lifecycle, service context, readiness wiring, tests, schema, seed, local dependency definition, and active documentation were converted from PostgreSQL to MySQL.
+- Active PostgreSQL driver dependencies, code paths, SQL syntax, configuration blocks, compose service definitions, and non-archived documentation references were removed.
+- Sequential low-memory verification completed against pinned MySQL and Redis containers.
 
 ### In progress
 
@@ -129,12 +133,29 @@ The primary agent owns the replacement design, database lifecycle, transaction s
 
 ### Remaining
 
-- All implementation deliverables.
+- None.
 
 ### Verification status
 
-- Not started.
+- `make generate` succeeded and remained repeatable without unintended diffs.
+- `make fmt` succeeded.
+- `make test` succeeded serially with `go test -p 1 -parallel 1 ./...`.
+- `make deps-reset` started pinned MySQL `8.4.10` and Redis `8.8.0-alpine3.23` sequentially and both reached healthy state on the low-memory development machine.
+- `make schema-apply` succeeded against a clean local MySQL database.
+- `make seed-apply` succeeded and applied only deterministic non-business seed content.
+- `make integration-test` succeeded serially against the isolated MySQL and Redis environment after schema and seed initialization.
+- `make run` started `app-api` successfully against healthy MySQL and Redis.
+- `GET /health/live` returned HTTP 200 with `{"status":"ok"}` and `GET /health/ready` returned HTTP 200 with `{"status":"ready"}` against healthy dependencies.
+- After stopping MySQL, liveness remained HTTP 200 and readiness returned HTTP 503 with `{"status":"unready"}`.
+- After restoring MySQL and stopping Redis, liveness remained HTTP 200 and readiness returned HTTP 503 with `{"status":"unready"}`.
+- Safe disclosure was verified: client readiness responses stayed minimal, startup failure with Redis unavailable returned `failed to initialize app-api: redis startup connectivity check failed`, and runtime readiness logs were reduced to dependency names without raw MySQL or Redis driver details.
+- Graceful shutdown was verified with `SIGINT`, and local dependency cleanup succeeded with `make deps-down`.
+- Active repository files outside `docs/goals/archive/` were searched for PostgreSQL runtime remnants; none remained after replacement.
 
 ## Completion Report
 
-Not started.
+Completed on Sunday, July 19, 2026.
+
+Goal 0004 replaced PostgreSQL with MySQL as the platform's single active relational database while preserving Redis, go-zero lifecycle behavior, request/response conventions, process-only liveness, dependency-aware readiness, partial-startup cleanup, idempotent close behavior, deterministic schema/seed workflows, and the narrow transaction boundary.
+
+The final implementation uses MySQL through `database/sql`, validated MySQL configuration, a pinned low-memory local MySQL container, deterministic MySQL schema and seed files, serial unit and integration tests, sanitized readiness and startup failure behavior, and active documentation that now states MySQL is the default relational database.

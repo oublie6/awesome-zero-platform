@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -14,8 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/apperrors"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
@@ -46,7 +45,7 @@ func TestNewRejectsContradictoryCORS(t *testing.T) {
 func TestAppHealthHeaders(t *testing.T) {
 	restore := stubDependencies(
 		t,
-		&fakePostgres{pingErr: nil},
+		&fakeMySQL{pingErr: nil},
 		&fakeRedis{pingErr: nil},
 	)
 	defer restore()
@@ -84,9 +83,9 @@ func TestAppHealthHeaders(t *testing.T) {
 }
 
 func TestFoundationHTTPBehavior(t *testing.T) {
-	postgres := &fakePostgres{}
+	mysql := &fakeMySQL{}
 	redis := &fakeRedis{}
-	restore := stubDependencies(t, postgres, redis)
+	restore := stubDependencies(t, mysql, redis)
 	defer restore()
 
 	var logBuffer bytes.Buffer
@@ -175,11 +174,11 @@ func TestFoundationHTTPBehavior(t *testing.T) {
 		t.Fatalf("denied origin unexpectedly allowed: %q", got)
 	}
 
-	postgres.pingErr = errors.New("postgres unavailable")
-	notReadyPG := doRequest(t, http.MethodGet, baseURL+"/health/ready", "", nil)
-	assertHealthStatus(t, notReadyPG, http.StatusServiceUnavailable, "unready")
+	mysql.pingErr = errors.New("mysql unavailable")
+	notReadyMySQL := doRequest(t, http.MethodGet, baseURL+"/health/ready", "", nil)
+	assertHealthStatus(t, notReadyMySQL, http.StatusServiceUnavailable, "unready")
 
-	postgres.pingErr = nil
+	mysql.pingErr = nil
 	redis.pingErr = errors.New("redis unavailable")
 	notReadyRedis := doRequest(t, http.MethodGet, baseURL+"/health/ready", "", nil)
 	assertHealthStatus(t, notReadyRedis, http.StatusServiceUnavailable, "unready")
@@ -194,18 +193,18 @@ func TestFoundationHTTPBehavior(t *testing.T) {
 	}
 }
 
-func TestPartialStartupFailureClosesPostgres(t *testing.T) {
-	postgres := &fakePostgres{}
-	originalPostgresOpener := openPostgres
+func TestPartialStartupFailureClosesMySQL(t *testing.T) {
+	mysql := &fakeMySQL{}
+	originalMySQLOpener := openMySQL
 	originalRedisOpener := openRedis
-	openPostgres = func(context.Context, database.Config) (database.Handle, error) {
-		return postgres, nil
+	openMySQL = func(context.Context, database.Config) (database.Handle, error) {
+		return mysql, nil
 	}
 	openRedis = func(context.Context, cache.Config) (cache.Handle, error) {
 		return nil, errors.New("redis open failed")
 	}
 	defer func() {
-		openPostgres = originalPostgresOpener
+		openMySQL = originalMySQLOpener
 		openRedis = originalRedisOpener
 	}()
 
@@ -214,15 +213,15 @@ func TestPartialStartupFailureClosesPostgres(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected startup error, got nil")
 	}
-	if !postgres.closed {
-		t.Fatal("expected postgres to be closed after redis startup failure")
+	if !mysql.closed {
+		t.Fatal("expected mysql to be closed after redis startup failure")
 	}
 }
 
 func TestAppStopIsIdempotent(t *testing.T) {
-	postgres := &fakePostgres{}
+	mysql := &fakeMySQL{}
 	redis := &fakeRedis{}
-	restore := stubDependencies(t, postgres, redis)
+	restore := stubDependencies(t, mysql, redis)
 	defer restore()
 
 	configPath := writeConfig(t, runtimeConfig(reservePort(t), false, false))
@@ -234,8 +233,8 @@ func TestAppStopIsIdempotent(t *testing.T) {
 	app.Stop()
 	app.Stop()
 
-	if postgres.closeCalls != 1 {
-		t.Fatalf("postgres close calls = %d, want 1", postgres.closeCalls)
+	if mysql.closeCalls != 1 {
+		t.Fatalf("mysql close calls = %d, want 1", mysql.closeCalls)
 	}
 	if redis.closeCalls != 1 {
 		t.Fatalf("redis close calls = %d, want 1", redis.closeCalls)
@@ -427,20 +426,20 @@ func registerTestRoutes(app *App) {
 	})
 }
 
-func stubDependencies(t *testing.T, postgres database.Handle, redis cache.Handle) func() {
+func stubDependencies(t *testing.T, mysql database.Handle, redis cache.Handle) func() {
 	t.Helper()
 
-	originalPostgresOpener := openPostgres
+	originalMySQLOpener := openMySQL
 	originalRedisOpener := openRedis
-	openPostgres = func(context.Context, database.Config) (database.Handle, error) {
-		return postgres, nil
+	openMySQL = func(context.Context, database.Config) (database.Handle, error) {
+		return mysql, nil
 	}
 	openRedis = func(context.Context, cache.Config) (cache.Handle, error) {
 		return redis, nil
 	}
 
 	return func() {
-		openPostgres = originalPostgresOpener
+		openMySQL = originalMySQLOpener
 		openRedis = originalRedisOpener
 	}
 }
@@ -470,23 +469,23 @@ func baseConfig() string {
 }
 
 func dependencyConfig() string {
-	return "Postgres:\n  Host: 127.0.0.1\n  Port: 5432\n  Database: awesome_zero_platform\n  User: app_local\n  Password: local-dev-only-postgres-password\n  SSLMode: disable\n  MaxConns: 4\n  MinConns: 0\n  ConnectTimeout: 3s\n  StartupTimeout: 3s\n  ReadinessTimeout: 2s\n  HealthCheckPeriod: 30s\nRedis:\n  Addr: 127.0.0.1:6379\n  Password: local-dev-only-redis-password\n  DB: 0\n  PoolSize: 10\n  DialTimeout: 3s\n  ReadTimeout: 3s\n  WriteTimeout: 3s\n  StartupTimeout: 3s\n  ReadinessTimeout: 2s\nReadiness:\n  Timeout: 2s\nStartup:\n  ConnectivityTimeout: 3s\n"
+	return "MySQL:\n  Addr: 127.0.0.1:3306\n  Database: awesome_zero_platform\n  User: app_local\n  Password: local-dev-only-mysql-password\n  Charset: utf8mb4\n  ParseTime: true\n  Location: UTC\n  TimeZone: +00:00\n  Timeout: 3s\n  MaxOpenConns: 4\n  MaxIdleConns: 2\n  ConnMaxLifetime: 5m\n  StartupTimeout: 3s\n  ReadinessTimeout: 2s\nRedis:\n  Addr: 127.0.0.1:6379\n  Password: local-dev-only-redis-password\n  DB: 0\n  PoolSize: 10\n  DialTimeout: 3s\n  ReadTimeout: 3s\n  WriteTimeout: 3s\n  StartupTimeout: 3s\n  ReadinessTimeout: 2s\nReadiness:\n  Timeout: 2s\nStartup:\n  ConnectivityTimeout: 3s\n"
 }
 
-type fakePostgres struct {
+type fakeMySQL struct {
 	pingErr    error
 	closed     bool
 	closeCalls int
 }
 
-func (f *fakePostgres) Pool() *pgxpool.Pool        { return nil }
-func (f *fakePostgres) Ping(context.Context) error { return f.pingErr }
-func (f *fakePostgres) Close() error {
+func (f *fakeMySQL) DB() *sql.DB                { return nil }
+func (f *fakeMySQL) Ping(context.Context) error { return f.pingErr }
+func (f *fakeMySQL) Close() error {
 	f.closed = true
 	f.closeCalls++
 	return nil
 }
-func (f *fakePostgres) WithinTransaction(context.Context, func(context.Context, pgx.Tx) error) error {
+func (f *fakeMySQL) WithinTransaction(context.Context, func(context.Context, *sql.Tx) error) error {
 	return nil
 }
 

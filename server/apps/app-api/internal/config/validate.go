@@ -49,11 +49,11 @@ func (c *Config) Prepare() {
 		c.Startup.ConnectivityTimeout = 3 * time.Second
 	}
 
-	c.Postgres.Prepare()
+	c.MySQL.Prepare()
 	c.Redis.Prepare()
-	c.Postgres.StartupTimeout = c.Startup.ConnectivityTimeout
+	c.MySQL.StartupTimeout = c.Startup.ConnectivityTimeout
 	c.Redis.StartupTimeout = c.Startup.ConnectivityTimeout
-	c.Postgres.ReadinessTimeout = c.Readiness.Timeout
+	c.MySQL.ReadinessTimeout = c.Readiness.Timeout
 	c.Redis.ReadinessTimeout = c.Readiness.Timeout
 }
 
@@ -111,7 +111,7 @@ func (c Config) Validate() error {
 		return fmt.Errorf("startup.connectivityTimeout must be greater than 0")
 	}
 
-	if err := c.Postgres.Validate(); err != nil {
+	if err := c.MySQL.Validate(); err != nil {
 		return err
 	}
 

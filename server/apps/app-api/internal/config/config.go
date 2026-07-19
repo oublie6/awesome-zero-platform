@@ -14,7 +14,7 @@ import (
 type Config struct {
 	rest.RestConf
 	HTTP      HTTPConfig
-	Postgres  database.Config `json:",optional"`
+	MySQL     database.Config `json:",optional"`
 	Redis     cache.Config    `json:",optional"`
 	Readiness ReadinessConfig `json:",optional"`
 	Startup   StartupConfig   `json:",optional"`

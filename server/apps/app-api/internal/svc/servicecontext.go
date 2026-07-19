@@ -12,15 +12,15 @@ import (
 
 type ServiceContext struct {
 	Config    config.Config
-	Postgres  database.Handle
+	MySQL     database.Handle
 	Redis     cache.Handle
 	Readiness *readiness.Checker
 }
 
-func NewServiceContext(c config.Config, postgres database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {
+func NewServiceContext(c config.Config, mysql database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {
 	return &ServiceContext{
 		Config:    c,
-		Postgres:  postgres,
+		MySQL:     mysql,
 		Redis:     redis,
 		Readiness: checker,
 	}
