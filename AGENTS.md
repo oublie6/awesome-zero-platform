@@ -20,6 +20,16 @@ Awesome Zero Platform is a modular application platform built on go-zero. It pro
 
 ## Goal workflow
 
+Supported goal states are:
+
+- `idle` — no executable goal is active.
+- `ready` — the goal is defined and may be started.
+- `in_progress` — implementation has started and may be resumed.
+- `completed` — all acceptance criteria passed and the goal is ready to archive.
+- `blocked` — execution stopped because a genuine blocker is documented.
+
+Only `ready` and `in_progress` goals may be executed by `scripts/run-current-goal.sh`.
+
 Before planning or editing code:
 
 1. Read this file completely.
@@ -37,6 +47,9 @@ Execution rules:
 - The primary agent owns architecture, integration, and final verification.
 - Subagents may be used for independent analysis, implementation, testing, or review, but multiple agents must not modify the same files concurrently.
 - Codex may update only the status, working-state, and completion-report sections of `docs/goals/current.md` unless the goal explicitly permits other documentation changes.
+- Set the goal state to `in_progress` when implementation begins.
+- Set the goal state to `completed` only after every acceptance criterion passes.
+- Set the goal state to `blocked` only when a genuine blocker is recorded with evidence.
 - When resuming after a long pause, context compaction, or substantial scope discussion, reread this file and the current goal before continuing.
 
 Before finishing:
@@ -47,7 +60,7 @@ Before finishing:
 4. Commit all completed goal changes with a concise, descriptive commit message.
 5. Push the current branch to its configured upstream with `git push`. Do not use force push. If the push fails, document the exact blocker and keep the verified commit locally.
 6. Summarize changed files, verification results, commit and push results, unresolved blockers, and intentionally deferred work.
-7. Stop when the goal is complete and pushed, or when a genuine blocker is documented.
+7. Stop when the goal is completed and pushed, or when a genuine blocker is documented.
 
 ## Change rules
 
