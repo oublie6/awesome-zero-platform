@@ -8,9 +8,10 @@ Awesome Zero Platform is a modular application platform built on go-zero. It pro
 
 - Start as a modular monolith; extract services only when real scaling or ownership needs appear.
 - `server/apps` contains runnable processes.
-- `server/modules` contains capability and business modules.
+- `server/platform` contains reusable platform capabilities shared by different products.
+- `server/business` contains product-specific business modules and should be created only when real business implementation begins.
 - `server/foundation` contains reusable technical infrastructure without business semantics.
-- Modules must not access another module's database tables or repository implementation directly.
+- Platform and business modules must not access another module's database tables or repository implementation directly.
 - Cross-module calls must use explicit public interfaces or events.
 - Keep transport, application logic, and persistence concerns separated.
 - Do not create generic dumping grounds such as `common`, `utils`, or `helpers`.
