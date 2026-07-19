@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 )
 
 func (c *Config) Prepare() {
@@ -40,6 +41,20 @@ func (c *Config) Prepare() {
 			c.HTTP.CORS.ExposedHeaders = []string{c.HTTP.RequestID.HeaderName}
 		}
 	}
+
+	if c.Readiness.Timeout == 0 {
+		c.Readiness.Timeout = 2 * time.Second
+	}
+	if c.Startup.ConnectivityTimeout == 0 {
+		c.Startup.ConnectivityTimeout = 3 * time.Second
+	}
+
+	c.Postgres.Prepare()
+	c.Redis.Prepare()
+	c.Postgres.StartupTimeout = c.Startup.ConnectivityTimeout
+	c.Redis.StartupTimeout = c.Startup.ConnectivityTimeout
+	c.Postgres.ReadinessTimeout = c.Readiness.Timeout
+	c.Redis.ReadinessTimeout = c.Readiness.Timeout
 }
 
 func (c Config) Validate() error {
@@ -86,6 +101,22 @@ func (c Config) Validate() error {
 		if c.HTTP.CORS.AllowCredentials && slices.Contains(c.HTTP.CORS.AllowedOrigins, "*") {
 			return fmt.Errorf("http.cors.allowedOrigins must not contain * when credentials are enabled")
 		}
+	}
+
+	if c.Readiness.Timeout <= 0 {
+		return fmt.Errorf("readiness.timeout must be greater than 0")
+	}
+
+	if c.Startup.ConnectivityTimeout <= 0 {
+		return fmt.Errorf("startup.connectivityTimeout must be greater than 0")
+	}
+
+	if err := c.Postgres.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.Redis.Validate(); err != nil {
+		return err
 	}
 
 	return nil

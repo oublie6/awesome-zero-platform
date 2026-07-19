@@ -3,11 +3,21 @@
 
 package config
 
-import "github.com/zeromicro/go-zero/rest"
+import (
+	"time"
+
+	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
+	"github.com/zeromicro/go-zero/rest"
+)
 
 type Config struct {
 	rest.RestConf
-	HTTP HTTPConfig
+	HTTP      HTTPConfig
+	Postgres  database.Config `json:",optional"`
+	Redis     cache.Config    `json:",optional"`
+	Readiness ReadinessConfig `json:",optional"`
+	Startup   StartupConfig   `json:",optional"`
 }
 
 type HTTPConfig struct {
@@ -35,4 +45,12 @@ type CORSConfig struct {
 	AllowedHeaders   []string `json:",optional"`
 	ExposedHeaders   []string `json:",optional"`
 	AllowCredentials bool
+}
+
+type ReadinessConfig struct {
+	Timeout time.Duration `json:",default=2s"`
+}
+
+type StartupConfig struct {
+	ConnectivityTimeout time.Duration `json:",default=3s"`
 }

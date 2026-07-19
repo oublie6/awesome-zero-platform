@@ -8,6 +8,7 @@ import (
 
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/config"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/svc"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/readiness"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/requestid"
 )
 
@@ -60,5 +61,5 @@ func testServiceContext() *svc.ServiceContext {
 	cfg.Host = "127.0.0.1"
 	cfg.Port = 8888
 
-	return svc.NewServiceContext(cfg)
+	return svc.NewServiceContext(cfg, nil, nil, readiness.New(0))
 }

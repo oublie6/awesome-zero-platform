@@ -1,24 +1,39 @@
 package bootstrap
 
 import (
+	"context"
 	"fmt"
+	"sync"
 
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/config"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/handler"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/svc"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/httpmiddleware"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/readiness"
 	platformresponse "github.com/oublie6/awesome-zero-platform/server/foundation/response"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/rest"
 	restrouter "github.com/zeromicro/go-zero/rest/router"
 )
 
+var (
+	openPostgres = database.Open
+	openRedis    = cache.Open
+)
+
 type App struct {
-	Config config.Config
-	server *rest.Server
+	Config   config.Config
+	server   *rest.Server
+	postgres database.Handle
+	redis    cache.Handle
+	stopOnce sync.Once
 }
 
 func New(configFile string) (*App, error) {
+	ctx := context.Background()
+
 	var cfg config.Config
 	if err := conf.Load(configFile, &cfg); err != nil {
 		return nil, fmt.Errorf("load config %q: %w", configFile, err)
@@ -63,12 +78,30 @@ func New(configFile string) (*App, error) {
 		return nil, fmt.Errorf("create rest server: %w", err)
 	}
 
-	ctx := svc.NewServiceContext(cfg)
-	handler.RegisterHandlers(server, ctx)
+	postgres, err := openPostgres(ctx, cfg.Postgres)
+	if err != nil {
+		return nil, err
+	}
+
+	redisClient, err := openRedis(ctx, cfg.Redis)
+	if err != nil {
+		_ = postgres.Close()
+		return nil, err
+	}
+
+	checker := readiness.New(cfg.Readiness.Timeout,
+		namedProbe{name: "postgres", handle: postgres},
+		namedProbe{name: "redis", handle: redisClient},
+	)
+
+	svcCtx := svc.NewServiceContext(cfg, postgres, redisClient, checker)
+	handler.RegisterHandlers(server, svcCtx)
 
 	return &App{
-		Config: cfg,
-		server: server,
+		Config:   cfg,
+		server:   server,
+		postgres: postgres,
+		redis:    redisClient,
 	}, nil
 }
 
@@ -82,5 +115,25 @@ func (a *App) Stop() {
 		return
 	}
 
-	a.server.Stop()
+	a.stopOnce.Do(func() {
+		a.server.Stop()
+		if a.redis != nil {
+			_ = a.redis.Close()
+		}
+		if a.postgres != nil {
+			_ = a.postgres.Close()
+		}
+	})
+}
+
+type namedProbe struct {
+	name   string
+	handle interface {
+		Ping(context.Context) error
+	}
+}
+
+func (n namedProbe) Name() string { return n.name }
+func (n namedProbe) Ping(ctx context.Context) error {
+	return n.handle.Ping(ctx)
 }

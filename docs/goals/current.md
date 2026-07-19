@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: ready
-- Started:
-- Completed:
+- State: completed
+- Started: 2026-07-19
+- Completed: 2026-07-19
 - Blockers:
 
 Supported states: `idle`, `ready`, `in_progress`, `completed`, `blocked`. New executable goals start as `ready`.
@@ -109,6 +109,11 @@ The primary agent owns infrastructure boundaries, lifecycle integration, schema 
 - Goal 0002 archived.
 - Infrastructure foundation requirements prepared.
 - Goal 0003 execution contract prepared.
+- PostgreSQL foundation package added with validated config, startup connectivity checks, idempotent close, and narrow transaction runner.
+- Redis foundation package added with validated config, startup connectivity checks, idempotent close, and sanitized startup behavior.
+- `app-api` now owns PostgreSQL and Redis lifecycle, partial-startup cleanup, and bounded dependency readiness.
+- Current schema, optional development seed, pinned local dependency compose definition, and repeatable root-level commands added.
+- Unit tests, integration tests, and real runtime verification completed.
 
 ### In progress
 
@@ -116,12 +121,28 @@ The primary agent owns infrastructure boundaries, lifecycle integration, schema 
 
 ### Remaining
 
-- All implementation deliverables.
+- None.
 
 ### Verification status
 
-- Not started.
+- `make generate` succeeded and remained repeatable without unintended diffs.
+- `make fmt` succeeded.
+- `make test` succeeded serially on 2026-07-19.
+- `make deps-reset` succeeded after correcting the PostgreSQL 18 tmpfs mount to `/var/lib/postgresql`; both pinned services reached healthy state.
+- `make schema-apply` and `make seed-apply` succeeded on a clean local PostgreSQL instance.
+- `make integration-test` succeeded serially on 2026-07-19 after applying schema and seed.
+- `make run` started `app-api` successfully against healthy local PostgreSQL and Redis.
+- `GET /health/live` returned HTTP 200 with `{"status":"ok"}` and `GET /health/ready` returned HTTP 200 with `{"status":"ready"}` against healthy dependencies.
+- After stopping PostgreSQL, liveness remained HTTP 200 and readiness returned HTTP 503 with `{"status":"unready"}`.
+- After restoring PostgreSQL and stopping Redis, liveness remained HTTP 200 and readiness returned HTTP 503 with `{"status":"unready"}`.
+- Dependency failure HTTP responses remained minimal, and final runtime log verification showed sanitized readiness logs without raw addresses or driver errors.
+- A real startup failure with Redis unavailable exited non-zero with the safe message `failed to initialize app-api: redis startup connectivity check failed`.
+- Graceful shutdown was verified with `SIGINT`, and local dependency cleanup succeeded with `make deps-down`.
 
 ## Completion Report
 
-Not started.
+Completed on 2026-07-19.
+
+Implemented focused PostgreSQL and Redis infrastructure under `server/foundation`, integrated both resources into `app-api` startup and service context, converted readiness to bounded dependency checks, and added current schema/seed content plus pinned local development dependencies and root-level engineering commands.
+
+Verification covered repeatable generation, formatting, serial unit and integration tests, healthy startup, live and ready probes, PostgreSQL outage readiness degradation, Redis outage readiness degradation, sanitized startup and readiness failure output, graceful shutdown, local dependency cleanup, and final scope inspection.

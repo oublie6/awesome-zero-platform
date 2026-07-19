@@ -10,3 +10,30 @@ HTTP:
     ContentTypeOptions: nosniff
     FrameOptions: DENY
     ReferrerPolicy: no-referrer
+Postgres:
+  Host: 127.0.0.1
+  Port: 5432
+  Database: awesome_zero_platform
+  User: app_local
+  Password: local-dev-only-postgres-password
+  SSLMode: disable
+  MaxConns: 4
+  MinConns: 0
+  ConnectTimeout: 3s
+  StartupTimeout: 3s
+  ReadinessTimeout: 2s
+  HealthCheckPeriod: 30s
+Redis:
+  Addr: 127.0.0.1:6379
+  Password: local-dev-only-redis-password
+  DB: 0
+  PoolSize: 10
+  DialTimeout: 3s
+  ReadTimeout: 3s
+  WriteTimeout: 3s
+  StartupTimeout: 3s
+  ReadinessTimeout: 2s
+Readiness:
+  Timeout: 2s
+Startup:
+  ConnectivityTimeout: 3s

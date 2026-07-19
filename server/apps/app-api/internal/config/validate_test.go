@@ -1,6 +1,9 @@
 package config
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestValidate(t *testing.T) {
 	t.Parallel()
@@ -9,6 +12,12 @@ func TestValidate(t *testing.T) {
 	valid.Name = "main-api"
 	valid.Host = "127.0.0.1"
 	valid.Port = 8888
+	valid.Postgres.Host = "127.0.0.1"
+	valid.Postgres.Port = 5432
+	valid.Postgres.Database = "awesome_zero_platform"
+	valid.Postgres.User = "app_local"
+	valid.Postgres.Password = "dev-only-password"
+	valid.Redis.Addr = "127.0.0.1:6379"
 	valid.Prepare()
 
 	tests := []struct {
@@ -55,6 +64,13 @@ func TestValidate(t *testing.T) {
 				cfg.HTTP.CORS.AllowedMethods = []string{"GET"}
 				cfg.HTTP.CORS.AllowedHeaders = []string{"Content-Type"}
 				cfg.HTTP.CORS.AllowCredentials = true
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid readiness timeout",
+			mutate: func(cfg *Config) {
+				cfg.Readiness.Timeout = -1 * time.Second
 			},
 			wantErr: true,
 		},

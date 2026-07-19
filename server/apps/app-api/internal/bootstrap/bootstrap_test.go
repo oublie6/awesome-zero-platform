@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,14 +14,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/apperrors"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
+	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 func TestNewRejectsInvalidConfig(t *testing.T) {
-	configPath := writeConfig(t, "Name: main-api\nHost: 127.0.0.1\nPort: 0\nHTTP:\n  MaxBodyBytes: 1024\n  RequestID:\n    HeaderName: X-Request-Id\n    MaxLength: 64\n  SecurityHeaders:\n    ContentTypeOptions: nosniff\n    FrameOptions: DENY\n    ReferrerPolicy: no-referrer\n")
+	configPath := writeConfig(t, invalidPortConfig("0"))
 
 	_, err := New(configPath)
 	if err == nil {
@@ -29,7 +35,7 @@ func TestNewRejectsInvalidConfig(t *testing.T) {
 }
 
 func TestNewRejectsContradictoryCORS(t *testing.T) {
-	configPath := writeConfig(t, "Name: main-api\nHost: 127.0.0.1\nPort: 8888\nHTTP:\n  MaxBodyBytes: 1024\n  RequestID:\n    HeaderName: X-Request-Id\n    MaxLength: 64\n  SecurityHeaders:\n    ContentTypeOptions: nosniff\n    FrameOptions: DENY\n    ReferrerPolicy: no-referrer\n  CORS:\n    Enabled: true\n    AllowedOrigins:\n      - \"*\"\n    AllowedMethods:\n      - GET\n    AllowedHeaders:\n      - Content-Type\n    AllowCredentials: true\n")
+	configPath := writeConfig(t, contradictoryCORSConfig())
 
 	_, err := New(configPath)
 	if err == nil {
@@ -38,8 +44,15 @@ func TestNewRejectsContradictoryCORS(t *testing.T) {
 }
 
 func TestAppHealthHeaders(t *testing.T) {
+	restore := stubDependencies(
+		t,
+		&fakePostgres{pingErr: nil},
+		&fakeRedis{pingErr: nil},
+	)
+	defer restore()
+
 	port := reservePort(t)
-	configPath := writeConfig(t, "Name: main-api\nHost: 127.0.0.1\nPort: "+strconv.Itoa(port)+"\nHTTP:\n  MaxBodyBytes: 1024\n  RequestID:\n    HeaderName: X-Request-Id\n    MaxLength: 64\n  SecurityHeaders:\n    ContentTypeOptions: nosniff\n    FrameOptions: DENY\n    ReferrerPolicy: no-referrer\n")
+	configPath := writeConfig(t, runtimeConfig(port, false, false))
 
 	app, err := New(configPath)
 	if err != nil {
@@ -71,6 +84,11 @@ func TestAppHealthHeaders(t *testing.T) {
 }
 
 func TestFoundationHTTPBehavior(t *testing.T) {
+	postgres := &fakePostgres{}
+	redis := &fakeRedis{}
+	restore := stubDependencies(t, postgres, redis)
+	defer restore()
+
 	var logBuffer bytes.Buffer
 	previousWriter := logx.Reset()
 	logx.SetWriter(logx.NewWriter(&logBuffer))
@@ -82,7 +100,7 @@ func TestFoundationHTTPBehavior(t *testing.T) {
 	}()
 
 	port := reservePort(t)
-	configPath := writeConfig(t, "Name: main-api\nHost: 127.0.0.1\nPort: "+strconv.Itoa(port)+"\nHTTP:\n  MaxBodyBytes: 8\n  RequestID:\n    HeaderName: X-Request-Id\n    MaxLength: 16\n  SecurityHeaders:\n    ContentTypeOptions: nosniff\n    FrameOptions: DENY\n    ReferrerPolicy: no-referrer\n  CORS:\n    Enabled: true\n    AllowedOrigins:\n      - https://allowed.example\n    AllowedMethods:\n      - GET\n      - POST\n      - OPTIONS\n    AllowedHeaders:\n      - Content-Type\n      - X-Request-Id\n    ExposedHeaders:\n      - X-Request-Id\n    AllowCredentials: false\n")
+	configPath := writeConfig(t, runtimeConfig(port, true, false))
 
 	app, err := New(configPath)
 	if err != nil {
@@ -157,12 +175,70 @@ func TestFoundationHTTPBehavior(t *testing.T) {
 		t.Fatalf("denied origin unexpectedly allowed: %q", got)
 	}
 
+	postgres.pingErr = errors.New("postgres unavailable")
+	notReadyPG := doRequest(t, http.MethodGet, baseURL+"/health/ready", "", nil)
+	assertHealthStatus(t, notReadyPG, http.StatusServiceUnavailable, "unready")
+
+	postgres.pingErr = nil
+	redis.pingErr = errors.New("redis unavailable")
+	notReadyRedis := doRequest(t, http.MethodGet, baseURL+"/health/ready", "", nil)
+	assertHealthStatus(t, notReadyRedis, http.StatusServiceUnavailable, "unready")
+
+	redis.pingErr = nil
 	assertAccessLog(t, logBuffer.String(), "/_test/success", http.StatusOK, "caller-id")
 
 	select {
 	case <-done:
 		t.Fatal("server exited unexpectedly")
 	case <-time.After(100 * time.Millisecond):
+	}
+}
+
+func TestPartialStartupFailureClosesPostgres(t *testing.T) {
+	postgres := &fakePostgres{}
+	originalPostgresOpener := openPostgres
+	originalRedisOpener := openRedis
+	openPostgres = func(context.Context, database.Config) (database.Handle, error) {
+		return postgres, nil
+	}
+	openRedis = func(context.Context, cache.Config) (cache.Handle, error) {
+		return nil, errors.New("redis open failed")
+	}
+	defer func() {
+		openPostgres = originalPostgresOpener
+		openRedis = originalRedisOpener
+	}()
+
+	configPath := writeConfig(t, runtimeConfig(reservePort(t), false, false))
+	_, err := New(configPath)
+	if err == nil {
+		t.Fatal("expected startup error, got nil")
+	}
+	if !postgres.closed {
+		t.Fatal("expected postgres to be closed after redis startup failure")
+	}
+}
+
+func TestAppStopIsIdempotent(t *testing.T) {
+	postgres := &fakePostgres{}
+	redis := &fakeRedis{}
+	restore := stubDependencies(t, postgres, redis)
+	defer restore()
+
+	configPath := writeConfig(t, runtimeConfig(reservePort(t), false, false))
+	app, err := New(configPath)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	app.Stop()
+	app.Stop()
+
+	if postgres.closeCalls != 1 {
+		t.Fatalf("postgres close calls = %d, want 1", postgres.closeCalls)
+	}
+	if redis.closeCalls != 1 {
+		t.Fatalf("redis close calls = %d, want 1", redis.closeCalls)
 	}
 }
 
@@ -240,6 +316,27 @@ func assertEnvelope(t *testing.T, resp httpResponse, wantStatus int, wantCode, w
 	}
 	if got := resp.header.Get("X-Request-Id"); got != wantRequestID {
 		t.Fatalf("response header request id = %q, want %q", got, wantRequestID)
+	}
+}
+
+func assertHealthStatus(t *testing.T, resp httpResponse, wantStatus int, wantValue string) {
+	t.Helper()
+
+	if resp.status != wantStatus {
+		t.Fatalf("status = %d, want %d, body=%s", resp.status, wantStatus, string(resp.body))
+	}
+
+	var payload struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(resp.body, &payload); err != nil {
+		t.Fatalf("decode health response: %v", err)
+	}
+	if payload.Status != wantValue {
+		t.Fatalf("status payload = %q, want %q", payload.Status, wantValue)
+	}
+	if strings.Contains(string(resp.body), "127.0.0.1") || strings.Contains(string(resp.body), "password") {
+		t.Fatalf("health response leaked internal detail: %s", string(resp.body))
 	}
 }
 
@@ -328,4 +425,81 @@ func registerTestRoutes(app *App) {
 			},
 		},
 	})
+}
+
+func stubDependencies(t *testing.T, postgres database.Handle, redis cache.Handle) func() {
+	t.Helper()
+
+	originalPostgresOpener := openPostgres
+	originalRedisOpener := openRedis
+	openPostgres = func(context.Context, database.Config) (database.Handle, error) {
+		return postgres, nil
+	}
+	openRedis = func(context.Context, cache.Config) (cache.Handle, error) {
+		return redis, nil
+	}
+
+	return func() {
+		openPostgres = originalPostgresOpener
+		openRedis = originalRedisOpener
+	}
+}
+
+func invalidPortConfig(port string) string {
+	return baseConfig() + "Port: " + port + "\n"
+}
+
+func contradictoryCORSConfig() string {
+	return baseConfig() + "Port: 8888\nHTTP:\n  MaxBodyBytes: 1024\n  RequestID:\n    HeaderName: X-Request-Id\n    MaxLength: 64\n  SecurityHeaders:\n    ContentTypeOptions: nosniff\n    FrameOptions: DENY\n    ReferrerPolicy: no-referrer\n  CORS:\n    Enabled: true\n    AllowedOrigins:\n      - \"*\"\n    AllowedMethods:\n      - GET\n    AllowedHeaders:\n      - Content-Type\n    AllowCredentials: true\n" + dependencyConfig()
+}
+
+func runtimeConfig(port int, corsEnabled bool, minimal bool) string {
+	httpBlock := "HTTP:\n  MaxBodyBytes: 8\n  RequestID:\n    HeaderName: X-Request-Id\n    MaxLength: 16\n  SecurityHeaders:\n    ContentTypeOptions: nosniff\n    FrameOptions: DENY\n    ReferrerPolicy: no-referrer\n"
+	if minimal {
+		httpBlock = "HTTP:\n  MaxBodyBytes: 1024\n  RequestID:\n    HeaderName: X-Request-Id\n    MaxLength: 64\n  SecurityHeaders:\n    ContentTypeOptions: nosniff\n    FrameOptions: DENY\n    ReferrerPolicy: no-referrer\n"
+	}
+	if corsEnabled {
+		httpBlock += "  CORS:\n    Enabled: true\n    AllowedOrigins:\n      - https://allowed.example\n    AllowedMethods:\n      - GET\n      - POST\n      - OPTIONS\n    AllowedHeaders:\n      - Content-Type\n      - X-Request-Id\n    ExposedHeaders:\n      - X-Request-Id\n    AllowCredentials: false\n"
+	}
+
+	return baseConfig() + "Port: " + strconv.Itoa(port) + "\n" + httpBlock + dependencyConfig()
+}
+
+func baseConfig() string {
+	return "Name: main-api\nHost: 127.0.0.1\n"
+}
+
+func dependencyConfig() string {
+	return "Postgres:\n  Host: 127.0.0.1\n  Port: 5432\n  Database: awesome_zero_platform\n  User: app_local\n  Password: local-dev-only-postgres-password\n  SSLMode: disable\n  MaxConns: 4\n  MinConns: 0\n  ConnectTimeout: 3s\n  StartupTimeout: 3s\n  ReadinessTimeout: 2s\n  HealthCheckPeriod: 30s\nRedis:\n  Addr: 127.0.0.1:6379\n  Password: local-dev-only-redis-password\n  DB: 0\n  PoolSize: 10\n  DialTimeout: 3s\n  ReadTimeout: 3s\n  WriteTimeout: 3s\n  StartupTimeout: 3s\n  ReadinessTimeout: 2s\nReadiness:\n  Timeout: 2s\nStartup:\n  ConnectivityTimeout: 3s\n"
+}
+
+type fakePostgres struct {
+	pingErr    error
+	closed     bool
+	closeCalls int
+}
+
+func (f *fakePostgres) Pool() *pgxpool.Pool        { return nil }
+func (f *fakePostgres) Ping(context.Context) error { return f.pingErr }
+func (f *fakePostgres) Close() error {
+	f.closed = true
+	f.closeCalls++
+	return nil
+}
+func (f *fakePostgres) WithinTransaction(context.Context, func(context.Context, pgx.Tx) error) error {
+	return nil
+}
+
+type fakeRedis struct {
+	pingErr    error
+	closed     bool
+	closeCalls int
+}
+
+func (f *fakeRedis) Client() *redis.Client      { return nil }
+func (f *fakeRedis) Ping(context.Context) error { return f.pingErr }
+func (f *fakeRedis) Close() error {
+	f.closed = true
+	f.closeCalls++
+	return nil
 }
