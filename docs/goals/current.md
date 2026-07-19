@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: complete
+- State: completed
 - Started: 2026-07-19
 - Completed: 2026-07-19
 - Blockers:
