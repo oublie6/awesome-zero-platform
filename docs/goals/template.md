@@ -7,6 +7,8 @@
 - Completed:
 - Blockers:
 
+Supported states: `idle`, `ready`, `in_progress`, `completed`, `blocked`. New executable goals start as `ready`.
+
 ## Goal
 
 Describe the single outcome this execution must achieve.
