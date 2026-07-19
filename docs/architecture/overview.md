@@ -4,7 +4,7 @@
 
 ```text
 awesome-zero-platform/
-├── server/   reusable server foundation and capability modules
+├── server/   reusable server foundation, platform capabilities, and business modules
 ├── clients/  user-facing applications for different platforms
 ├── deploy/   environment and deployment definitions
 ├── docs/     architecture and development decisions
@@ -18,16 +18,19 @@ The server begins as a modular monolith:
 ```text
 server/
 ├── apps/        runnable processes
-├── modules/     business and platform capabilities
+├── platform/    reusable platform capabilities
+├── business/    product-specific business modules, created on demand
 ├── foundation/  reusable technical infrastructure
 └── database/    current schema and seed definitions
 ```
 
-Initial capability modules are expected to include identity, user, authorization, file, notification, audit, and system configuration. They should be added only when implementation begins.
+Initial platform capabilities are expected to include identity, user, authorization, file, notification, audit, and system configuration. They should be added only when implementation begins.
+
+Business modules belong in `server/business` and must remain separate from reusable platform capabilities. The `business` directory should not be created until the first real product module is implemented.
 
 ## Evolution strategy
 
-A module can remain in-process while exposing a stable interface. When independent scaling, ownership, deployment, or reliability requirements appear, the same interface can be backed by RPC or messaging.
+A platform or business module can remain in-process while exposing a stable interface. When independent scaling, ownership, deployment, or reliability requirements appear, the same interface can be backed by RPC or messaging.
 
 Code is organized for possible extraction, but the project does not create microservices before a real need exists.
 
