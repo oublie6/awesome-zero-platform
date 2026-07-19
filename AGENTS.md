@@ -18,6 +18,32 @@ Awesome Zero Platform is a modular application platform built on go-zero. It pro
 - The repository stores the current complete database schema, not incremental migration history during the early development phase.
 - Temporary database upgrade SQL must not be committed.
 
+## Goal workflow
+
+Before planning or editing code:
+
+1. Read this file completely.
+2. Read `docs/goals/current.md` completely.
+3. Read only the architecture, requirement, and decision documents explicitly referenced by the current goal, plus source files needed for implementation.
+4. Inspect the current repository state and relevant Git diff.
+5. Treat the current goal and referenced documents as authoritative.
+
+Execution rules:
+
+- Do not load archived goals unless the current goal explicitly requires historical investigation.
+- Do not expand, reinterpret, or silently replace the goal, deliverables, constraints, or acceptance criteria.
+- The primary agent owns architecture, integration, and final verification.
+- Subagents may be used for independent analysis, implementation, testing, or review, but multiple agents must not modify the same files concurrently.
+- Codex may update only the status, working-state, and completion-report sections of `docs/goals/current.md` unless the goal explicitly permits other documentation changes.
+- When resuming after a long pause, context compaction, or substantial scope discussion, reread this file and the current goal before continuing.
+
+Before finishing:
+
+1. Run every acceptance check required by the current goal.
+2. Update the permitted status and completion-report sections.
+3. Summarize changed files, verification results, unresolved blockers, and intentionally deferred work.
+4. Stop when the goal is complete or a genuine blocker is documented.
+
 ## Change rules
 
 - Keep generated go-zero files distinguishable from handwritten code.
