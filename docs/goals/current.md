@@ -1,38 +1,85 @@
-# Current Goal
+# Goal 0001: Bootstrap the runnable go-zero server
 
 ## Status
 
-- State: idle
+- State: ready
 - Started:
 - Completed:
 - Blockers:
 
 ## Goal
 
-No implementation goal is currently active. Replace this file from `docs/goals/template.md` after the next requirement and architecture discussion is complete.
+Transform the documentation-only repository into the first runnable Awesome Zero Platform server by creating a minimal go-zero REST API process with configuration, health endpoints, graceful shutdown, repeatable engineering commands, tests, and developer documentation.
 
 ## References
 
 - `AGENTS.md`
+- `docs/architecture/overview.md`
+- `docs/requirements/server-bootstrap.md`
+- `server/README.md`
 
 ## Deliverables
 
-- None.
+1. Initialize the Go module under `server` with a suitable module path for this repository.
+2. Create the first runnable go-zero REST process under `server/apps/app-api`.
+3. Define the HTTP contract in `server/apps/app-api/app.api` and generate the appropriate go-zero server code.
+4. Implement `GET /health/live` and `GET /health/ready` according to `docs/requirements/server-bootstrap.md`.
+5. Add a safe development YAML configuration under `server/apps/app-api/etc` with configurable host and port.
+6. Ensure the process shuts down gracefully on `SIGINT` and `SIGTERM`, using go-zero's supported server lifecycle rather than a speculative custom framework.
+7. Add repository-root Makefile targets for `generate`, `run`, `test`, and `fmt`.
+8. Add focused tests for the health endpoints and relevant startup/configuration behavior.
+9. Update `server/README.md` with prerequisites, generation, startup, testing, formatting, and endpoint usage instructions.
+10. Update the root README only when needed to point users to the runnable server instructions.
 
 ## Constraints
 
-- Do not begin speculative implementation while this goal is idle.
-- Do not create platform, business, client, or deployment scaffolding without a concrete goal.
+- Follow `AGENTS.md` and all referenced documents.
+- Keep this as one modular-monolith HTTP process; do not create RPC services or microservices.
+- Do not create empty `platform`, `business`, `database`, client, or deployment scaffolding merely to match a diagram.
+- Do not add PostgreSQL, MySQL, Redis, Kafka, object storage, authentication, authorization, users, Casbin, sessions, JWT, metrics, tracing, CI, Docker, or Kubernetes.
+- Do not introduce custom error, response, logging, configuration, middleware, repository, CRUD, or dependency-injection frameworks in this goal.
+- Use go-zero REST and API DSL conventions. Keep generated files distinguishable from handwritten files.
+- Prefer changing the `.api` contract and regenerating over hand-editing generated files.
+- Select current compatible stable dependency versions and record them in `go.mod` and `go.sum`; do not leave floating or unexplained dependencies.
+- Do not modify archived goals.
+- Do not expand or reinterpret this goal without explicit user instruction.
+- Codex may update only the Status, Working State, and Completion Report sections of this file.
 
 ## Acceptance Criteria
 
-- A future goal must define concrete deliverables, constraints, references, and executable acceptance checks before coding begins.
+1. From the repository root, `make generate` completes successfully and is repeatable without producing unintended diffs.
+2. From the repository root, `make fmt` completes successfully.
+3. From the repository root, `make test` completes successfully; equivalently, `cd server && go test ./...` passes.
+4. `make run` starts the API using the committed development configuration.
+5. `GET /health/live` returns HTTP `200` and JSON containing `"status": "ok"`.
+6. `GET /health/ready` returns HTTP `200` and JSON containing `"status": "ready"`.
+7. Sending `SIGINT` or `SIGTERM` stops the process cleanly without an avoidable panic or forced kill.
+8. Invalid required startup configuration produces a clear startup failure and non-zero process exit where the chosen go-zero configuration model supports validation.
+9. No secrets, credentials, generated binaries, editor files, or runtime artifacts are committed.
+10. `server/README.md` accurately documents all implemented commands, prerequisites, generated-code boundaries, and health endpoint examples.
+11. The final Git diff contains only work required by this goal and necessary documentation updates.
+
+## Agent Strategy
+
+The primary agent owns architecture, integration, and final verification. It may use subagents for independent repository analysis, go-zero convention checks, test review, or documentation review. Do not allow multiple agents to modify the same files concurrently. The primary agent must inspect and integrate every subagent result before final verification.
+
+## Execution Process
+
+1. Read all references completely and inspect the current repository and Git state.
+2. Confirm the intended target structure and identify which files will be generated by goctl.
+3. Produce a concise implementation plan before editing.
+4. Implement in small checkpoints, keeping generated and handwritten code boundaries clear.
+5. Run generation, formatting, unit tests, and a real local startup/health check.
+6. Verify graceful shutdown using a signal when the execution environment permits it.
+7. Inspect the final Git diff for unintended scope expansion or generated artifacts.
+8. Update the permitted sections below with concrete results and blockers.
+9. Stop only when every acceptance criterion passes or a genuine environmental blocker is documented with evidence.
 
 ## Working State
 
 ### Completed
 
-- Goal workflow initialized.
+- Requirement and execution documents prepared.
 
 ### In progress
 
@@ -40,12 +87,12 @@ No implementation goal is currently active. Replace this file from `docs/goals/t
 
 ### Remaining
 
-- Define the first implementation goal.
+- All implementation deliverables.
 
 ### Verification status
 
-- Not applicable.
+- Not started.
 
 ## Completion Report
 
-Goal workflow files are present. No implementation work has been requested by this placeholder.
+Not started.
