@@ -75,9 +75,6 @@ func (c *Config) Prepare() {
 	if c.Charset == "" {
 		c.Charset = "utf8mb4"
 	}
-	if !c.ParseTime {
-		c.ParseTime = true
-	}
 	if c.Location == "" {
 		c.Location = "UTC"
 	}

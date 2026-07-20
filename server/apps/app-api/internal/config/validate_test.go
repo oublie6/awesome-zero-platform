@@ -16,6 +16,7 @@ func TestValidate(t *testing.T) {
 	valid.MySQL.Database = "awesome_zero_platform"
 	valid.MySQL.User = "app_local"
 	valid.MySQL.Password = "dev-only-password"
+	valid.MySQL.ParseTime = true
 	valid.Redis.Addr = "127.0.0.1:6379"
 	valid.Prepare()
 
@@ -70,6 +71,13 @@ func TestValidate(t *testing.T) {
 			name: "invalid readiness timeout",
 			mutate: func(cfg *Config) {
 				cfg.Readiness.Timeout = -1 * time.Second
+			},
+			wantErr: true,
+		},
+		{
+			name: "mysql parse time explicitly false",
+			mutate: func(cfg *Config) {
+				cfg.MySQL.ParseTime = false
 			},
 			wantErr: true,
 		},
