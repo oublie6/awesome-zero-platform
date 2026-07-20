@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: ready
-- Started:
-- Completed:
+- State: completed
+- Started: 2026-07-20
+- Completed: 2026-07-20
 - Blockers:
 
 Supported states: `idle`, `ready`, `in_progress`, `completed`, `blocked`. New executable goals start as `ready`.
@@ -115,6 +115,11 @@ The primary agent owns identity boundaries, schema design, identifier choice, pa
 - Goal 0004 archived and current Goal reset.
 - Identity account foundation requirements defined.
 - Goal 0005 execution contract prepared.
+- A focused identity platform module was added under `server/platform/identity` with explicit account, identity, status, password-credential, hashing, persistence, and service code.
+- MySQL schema ownership was extended with deterministic `identity_accounts` and `identity_password_credentials` tables, stable UUIDv7 account IDs, explicit unique constraints, and foreign-key enforcement.
+- `app-api` service context now exposes the internal identity capability without adding any public identity HTTP endpoints.
+- Active server documentation now describes identity ownership, deterministic normalization rules, account states, Argon2id password policy, schema ownership, identifier choice, and deferred capabilities.
+- Sequential unit and integration verification completed against clean local MySQL and Redis dependencies.
 
 ### In progress
 
@@ -122,12 +127,26 @@ The primary agent owns identity boundaries, schema design, identifier choice, pa
 
 ### Remaining
 
-- All implementation deliverables.
+- None.
 
 ### Verification status
 
-- Not started.
+- `make generate` succeeded and remained repeatable without unintended diffs.
+- `make fmt` succeeded.
+- `make test` succeeded serially with `go test -p 1 -parallel 1 ./...`.
+- `make deps-reset` recreated pinned local MySQL and Redis containers sequentially and both reached healthy state.
+- `make schema-apply` succeeded against a clean local MySQL database with the Goal 0005 schema.
+- `make seed-apply` succeeded and preserved the no-account development seed policy.
+- `make integration-test` succeeded serially with `APP_API_INTEGRATION=1` against isolated clean MySQL and Redis dependencies.
+- Unit and integration tests verified valid account creation, required identity input, invalid identity rejection, duplicate username/email/phone conflicts, lookup by ID/username/email/phone with not-found results, profile updates, enable/disable transitions, password verification, password change, rollback on credential write failure, foreign-key enforcement, concurrent duplicate-identity creation, and safe conflict errors.
+- The committed Argon2id implementation was verified to reject empty, too-short, and oversized passwords before hashing and to avoid plaintext leakage in stored hashes.
+- Active `app-api` HTTP contract files were searched and no public registration, login, account-management, token, session, or authorization endpoint was added.
+- `make deps-down` succeeded and removed the temporary local dependency containers after verification.
 
 ## Completion Report
 
-Not started.
+Completed on Monday, July 20, 2026.
+
+Goal 0005 established the platform's first reusable identity capability under `server/platform/identity` without creating `server/business`, generic repositories, CRUD infrastructure, or public authentication HTTP APIs.
+
+The final implementation uses application-generated UUIDv7 account IDs, deterministic normalization for username/email/phone, explicit MySQL tables and unique constraints, foreign-key-protected password credentials, Argon2id password hashing with documented production and bounded test parameters, safe identity error translation, transaction-backed account creation, transactional password change, and focused unit plus real-MySQL integration coverage.

@@ -8,6 +8,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/readiness"
+	"github.com/oublie6/awesome-zero-platform/server/platform/identity"
 )
 
 type ServiceContext struct {
@@ -15,13 +16,20 @@ type ServiceContext struct {
 	MySQL     database.Handle
 	Redis     cache.Handle
 	Readiness *readiness.Checker
+	Identity  *identity.Service
 }
 
 func NewServiceContext(c config.Config, mysql database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {
+	var identityService *identity.Service
+	if mysql != nil && mysql.DB() != nil {
+		identityService = identity.NewService(mysql)
+	}
+
 	return &ServiceContext{
 		Config:    c,
 		MySQL:     mysql,
 		Redis:     redis,
 		Readiness: checker,
+		Identity:  identityService,
 	}
 }

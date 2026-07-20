@@ -81,6 +81,30 @@ make integration-test
 - `make seed-apply` applies the optional development seed at `server/database/seed/development.sql`.
 - `make integration-test` runs real dependency tests serially with `APP_API_INTEGRATION=1` and the `integration` build tag.
 
+## Identity foundation
+
+- Identity is currently an internal platform capability only and lives under `server/platform/identity`.
+- The module owns `identity_accounts` and `identity_password_credentials`; other modules must not query those tables directly.
+- Account IDs use application-generated UUIDv7 values instead of MySQL auto-increment sequencing.
+- Supported account states are `active` and `disabled`.
+- No public registration, login, token, session, password-change, or account-management HTTP endpoint is exposed in this phase.
+
+Identity normalization is deterministic and intentionally conservative:
+
+- `username` is trimmed, must be 3-32 ASCII characters using letters, digits, `.`, `_`, or `-`, and is matched case-insensitively by a stored lowercase key.
+- `email` is trimmed, limited to ASCII, validated as a plain address, and matched case-insensitively by a stored lowercase key.
+- `phone` is trimmed and must already be in explicit E.164 form such as `+14155550123`; no locale-specific rewriting is applied.
+- At least one of `username`, `email`, or `phone` is required when creating or updating an account profile.
+
+Password credentials are stored separately from account profile data:
+
+- Plaintext passwords are never stored, logged, seeded, or returned.
+- Hashing uses Argon2id with explicit defaults: memory `65536` KiB, iterations `3`, parallelism `2`, salt length `16`, key length `32`.
+- The committed test suite uses bounded test parameters without replacing the production defaults.
+- Password inputs are validated before hashing and must be between `8` and `128` bytes.
+
+The current schema remains rebuildable from `server/database/schema/current.sql`. No development seed account, default administrator, role, permission, or password is committed in this phase.
+
 ## Startup
 
 `make run` starts the API on the host and port configured in `apps/app-api/etc/main-api.yaml`.
