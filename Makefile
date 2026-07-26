@@ -4,7 +4,7 @@ APP_API_DIR := $(SERVER_DIR)/apps/app-api
 APP_API_SPEC := $(APP_API_DIR)/app.api
 LOCAL_COMPOSE := docker compose -f deploy/local/docker-compose.yml
 
-.PHONY: generate run test fmt deps-up deps-down deps-reset schema-apply seed-apply integration-test
+.PHONY: generate run build test fmt fmt-check deps-up deps-down deps-reset schema-apply seed-apply integration-test
 
 generate:
 	cd $(SERVER_DIR) && $(GOCTL) api go --api apps/app-api/app.api --dir apps/app-api --style gozero
@@ -12,11 +12,18 @@ generate:
 run:
 	cd $(SERVER_DIR) && go run ./apps/app-api -f apps/app-api/etc/main-api.yaml
 
+build:
+	cd $(SERVER_DIR) && CGO_ENABLED=0 go build -p 1 -o ../build/app-api ./apps/app-api
+
 test:
 	cd $(SERVER_DIR) && go test -p 1 -parallel 1 ./...
 
 fmt:
 	cd $(SERVER_DIR) && find . -name '*.go' -type f -print0 | xargs -0 gofmt -w
+
+fmt-check:
+	@test -z "$$(cd $(SERVER_DIR) && find . -name '*.go' -type f -print0 | xargs -0 gofmt -l)" || \
+		(echo "Go files require formatting; run make fmt" && exit 1)
 
 deps-up:
 	$(LOCAL_COMPOSE) up -d --wait
