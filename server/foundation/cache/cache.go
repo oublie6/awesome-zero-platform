@@ -17,6 +17,13 @@ type Handle interface {
 	Close() error
 }
 
+type ModelConfig struct {
+	Enabled     bool
+	KeyPrefix   string        `json:",default=awesome-zero-platform:model"`
+	TTL         time.Duration `json:",default=10m"`
+	NotFoundTTL time.Duration `json:",default=1m"`
+}
+
 type Config struct {
 	Addr             string        `json:",optional"`
 	Username         string        `json:",optional"`
@@ -28,6 +35,7 @@ type Config struct {
 	WriteTimeout     time.Duration `json:",default=3s"`
 	StartupTimeout   time.Duration `json:",default=3s"`
 	ReadinessTimeout time.Duration `json:",default=2s"`
+	Model            ModelConfig   `json:",optional"`
 }
 
 type Resource struct {
@@ -81,6 +89,15 @@ func (c *Config) Prepare() {
 	if c.ReadinessTimeout == 0 {
 		c.ReadinessTimeout = 2 * time.Second
 	}
+	if c.Model.KeyPrefix == "" {
+		c.Model.KeyPrefix = "awesome-zero-platform:model"
+	}
+	if c.Model.TTL == 0 {
+		c.Model.TTL = 10 * time.Minute
+	}
+	if c.Model.NotFoundTTL == 0 {
+		c.Model.NotFoundTTL = time.Minute
+	}
 }
 
 func (c Config) Validate() error {
@@ -107,6 +124,17 @@ func (c Config) Validate() error {
 	}
 	if c.ReadinessTimeout <= 0 {
 		return fmt.Errorf("redis.readinessTimeout must be greater than 0")
+	}
+	if c.Model.Enabled {
+		if strings.Trim(strings.TrimSpace(c.Model.KeyPrefix), ":") == "" {
+			return fmt.Errorf("redis.model.keyPrefix must not be empty when model caching is enabled")
+		}
+		if c.Model.TTL <= 0 {
+			return fmt.Errorf("redis.model.ttl must be greater than 0 when model caching is enabled")
+		}
+		if c.Model.NotFoundTTL <= 0 {
+			return fmt.Errorf("redis.model.notFoundTTL must be greater than 0 when model caching is enabled")
+		}
 	}
 
 	return nil
