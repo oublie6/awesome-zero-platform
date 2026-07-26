@@ -155,7 +155,9 @@ func (f *fakeAdminIdentity) DisableAccount(_ context.Context, accountID string) 
 	return f.accountResult(accountID)
 }
 func (f *fakeAdminIdentity) ResetPassword(context.Context, string, string) error { return nil }
-func (f *fakeAdminIdentity) PasswordParams() identity.PasswordParams             { return identity.PasswordParams{} }
+func (f *fakeAdminIdentity) PasswordParams() identity.PasswordParams {
+	return identity.PasswordParams{}
+}
 func (f *fakeAdminIdentity) account(accountID string) identity.Account {
 	account, _ := f.accountResult(accountID)
 	return account
@@ -185,8 +187,10 @@ type fakeAdminAuthorization struct {
 func newFakeAdminAuthorization() *fakeAdminAuthorization {
 	return &fakeAdminAuthorization{roles: make(map[string][]string)}
 }
-func (f *fakeAdminAuthorization) EngineInfo(context.Context) authz.EngineInfo { return authz.EngineInfo{ID: "fake"} }
-func (f *fakeAdminAuthorization) ModelText(context.Context) string            { return "" }
+func (f *fakeAdminAuthorization) EngineInfo(context.Context) authz.EngineInfo {
+	return authz.EngineInfo{ID: "fake"}
+}
+func (f *fakeAdminAuthorization) ModelText(context.Context) string { return "" }
 func (f *fakeAdminAuthorization) ListRawRules(context.Context) ([]authz.RawRule, error) {
 	return nil, nil
 }
@@ -246,10 +250,14 @@ func (*lockingAdminRepository) ListRoles(context.Context) ([]Role, error) { retu
 func (*lockingAdminRepository) GetRole(context.Context, string) (Role, error) {
 	return Role{}, nil
 }
-func (*lockingAdminRepository) CreateRole(_ context.Context, role Role) (Role, error) { return role, nil }
-func (*lockingAdminRepository) UpdateRole(_ context.Context, role Role) (Role, error) { return role, nil }
-func (*lockingAdminRepository) DeleteRole(context.Context, string) error               { return nil }
-func (*lockingAdminRepository) ListResources(context.Context) ([]Resource, error)      { return nil, nil }
+func (*lockingAdminRepository) CreateRole(_ context.Context, role Role) (Role, error) {
+	return role, nil
+}
+func (*lockingAdminRepository) UpdateRole(_ context.Context, role Role) (Role, error) {
+	return role, nil
+}
+func (*lockingAdminRepository) DeleteRole(context.Context, string) error          { return nil }
+func (*lockingAdminRepository) ListResources(context.Context) ([]Resource, error) { return nil, nil }
 func (*lockingAdminRepository) GetResource(context.Context, string) (Resource, error) {
 	return Resource{}, nil
 }
@@ -259,7 +267,7 @@ func (*lockingAdminRepository) CreateResource(_ context.Context, resource Resour
 func (*lockingAdminRepository) UpdateResource(_ context.Context, resource Resource) (Resource, error) {
 	return resource, nil
 }
-func (*lockingAdminRepository) DeleteResource(context.Context, string) error { return nil }
+func (*lockingAdminRepository) DeleteResource(context.Context, string) error  { return nil }
 func (*lockingAdminRepository) AppendAudit(context.Context, AuditEvent) error { return nil }
 func (*lockingAdminRepository) ListAudit(context.Context, AuditQuery) (AuditPage, error) {
 	return AuditPage{}, nil
