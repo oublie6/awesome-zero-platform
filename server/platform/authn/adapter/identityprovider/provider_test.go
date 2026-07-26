@@ -71,22 +71,22 @@ type fakeAccountService struct {
 	verifyCalls   int
 }
 
-func (f *fakeAccountService) FindAccountByUsername(context.Context, string) (identity.Account, error) {
+func (f *fakeAccountService) FindAccountByUsernameFresh(context.Context, string) (identity.Account, error) {
 	f.usernameCalls++
 	return f.account, f.findErr
 }
 
-func (f *fakeAccountService) FindAccountByEmail(context.Context, string) (identity.Account, error) {
+func (f *fakeAccountService) FindAccountByEmailFresh(context.Context, string) (identity.Account, error) {
 	f.emailCalls++
 	return f.account, f.findErr
 }
 
-func (f *fakeAccountService) FindAccountByPhone(context.Context, string) (identity.Account, error) {
+func (f *fakeAccountService) FindAccountByPhoneFresh(context.Context, string) (identity.Account, error) {
 	f.phoneCalls++
 	return f.account, f.findErr
 }
 
-func (f *fakeAccountService) GetAccountByID(context.Context, string) (identity.Account, error) {
+func (f *fakeAccountService) GetAccountByIDFresh(context.Context, string) (identity.Account, error) {
 	return f.account, f.findErr
 }
 
