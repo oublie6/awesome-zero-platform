@@ -74,10 +74,11 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "/app/app-api", "-h"]
+      test: ["CMD", "/app/app-api", "-healthcheck", "-healthcheck-url", "http://127.0.0.1:8888/health/live"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 10s
 
 volumes:
   mysql-data:
