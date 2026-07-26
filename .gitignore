@@ -23,6 +23,7 @@ Thumbs.db
 *.key
 
 # Runtime and temporary artifacts
+.runtime/
 .tmp/
 tmp/
 build/
