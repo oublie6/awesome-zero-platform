@@ -2,7 +2,10 @@ package casbinmysql
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -97,7 +100,9 @@ func (a *mysqlAdapter) LoadPolicy(m model.Model) error {
 		for len(values) > 0 && values[len(values)-1] == "" {
 			values = values[:len(values)-1]
 		}
-		persist.LoadPolicyLine(ptype+", "+strings.Join(values, ", "), m)
+		if err := persist.LoadPolicyLine(ptype+", "+strings.Join(values, ", "), m); err != nil {
+			return fmt.Errorf("load casbin policy: %w", err)
+		}
 	}
 	return rows.Err()
 }
@@ -163,10 +168,23 @@ type execer interface {
 
 func insertRule(exec execer, ptype string, rule []string) error {
 	values := padded(rule)
-	_, err := exec.Exec(`INSERT IGNORE INTO authorization_casbin_rules
-		(ptype, v0, v1, v2, v3, v4, v5) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		ptype, values[0], values[1], values[2], values[3], values[4], values[5])
+	ruleHash, err := fingerprint(ptype, values)
+	if err != nil {
+		return err
+	}
+	_, err = exec.Exec(`INSERT IGNORE INTO authorization_casbin_rules
+		(rule_hash, ptype, v0, v1, v2, v3, v4, v5) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		ruleHash, ptype, values[0], values[1], values[2], values[3], values[4], values[5])
 	return err
+}
+
+func fingerprint(ptype string, values [6]string) (string, error) {
+	payload, err := json.Marshal([7]string{ptype, values[0], values[1], values[2], values[3], values[4], values[5]})
+	if err != nil {
+		return "", fmt.Errorf("encode casbin rule fingerprint: %w", err)
+	}
+	sum := sha256.Sum256(payload)
+	return hex.EncodeToString(sum[:]), nil
 }
 
 func padded(rule []string) [6]string {
