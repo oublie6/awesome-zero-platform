@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "agent/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+          cache-dependency-path: server/go.sum
+      - name: Install goctl
+        run: go install github.com/zeromicro/go-zero/tools/goctl@v1.10.1
+      - name: Resolve modules
+        working-directory: server
+        run: |
+          go mod tidy
+          git diff -- go.sum
+      - name: Verify generated code
+        run: |
+          make generate
+          git diff --exit-code -- server/apps/app-api
+      - name: Verify formatting
+        run: make fmt-check
+      - name: Unit tests
+        run: make test
+      - name: Build
+        run: make build
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+          cache-dependency-path: server/go.sum
+      - name: Resolve modules
+        working-directory: server
+        run: go mod tidy
+      - name: Start dependencies
+        run: make deps-reset
+      - name: Apply schema and seed
+        run: |
+          make schema-apply
+          make seed-apply
+      - name: Integration tests
+        run: make integration-test
+      - name: Stop dependencies
+        if: always()
+        run: make deps-down
