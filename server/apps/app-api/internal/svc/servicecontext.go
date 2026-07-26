@@ -30,13 +30,14 @@ type ServiceContext struct {
 	Metrics      *observability.Metrics
 }
 
-func NewServiceContext(config config.Config, mysql database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {
-	identityService, err := identity.NewService(mysql.DB(), identity.NewArgon2idHasher())
-	if err != nil {
-		panic(err)
+func NewServiceContext(c config.Config, mysql database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {
+	var identityService *identity.Service
+	if mysql != nil && mysql.DB() != nil {
+		identityService = identity.NewService(mysql)
 	}
+
 	return &ServiceContext{
-		Config:    config,
+		Config:    c,
 		MySQL:     mysql,
 		Redis:     redis,
 		Readiness: checker,
