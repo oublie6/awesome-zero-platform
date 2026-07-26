@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.4.10
+    image: mysql:5.7.44
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: awesome_zero_platform
@@ -11,17 +11,22 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --default-time-zone=+00:00
+      - --innodb-buffer-pool-size=64M
+      - --innodb-log-buffer-size=8M
+      - --max-connections=64
+      - --performance-schema=OFF
+      - --skip-log-bin
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
       timeout: 5s
-      retries: 20
-      start_period: 20s
+      retries: 30
+      start_period: 30s
 
   schema:
-    image: mysql:8.4.10
+    image: mysql:5.7.44
     restart: "no"
     depends_on:
       mysql:
@@ -60,6 +65,7 @@ services:
       redis:
         condition: service_healthy
     environment:
+      APP_INSTANCE_ID: compose-app-api
       APP_MYSQL_ADDR: mysql:3306
       APP_MYSQL_USER: app
       APP_MYSQL_PASSWORD: ${APP_MYSQL_PASSWORD:?set APP_MYSQL_PASSWORD}
