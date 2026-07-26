@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-26
-- Completed:
-- Blockers:
+- Completed: 2026-07-26
+- Blockers: None.
 
 ## Goal
 
@@ -135,24 +135,42 @@ Add focused repeated and two-engine integration tests where useful. Preserve exa
 
 ### Completed
 
-- Requirements consolidated from the user discussion.
-- Goal 0008 archived without being falsely marked completed; its verification requirements are carried forward.
+- Implemented the reusable go-zero Redis model-cache baseline with deterministic namespaced keys, positive/not-found TTL behavior, singleflight reads, and explicit disabled-cache behavior.
+- Added cached account, role, and authorization-resource detail reads while retaining fresh, transaction, `FOR UPDATE`, list/search, credential, session, audit, and Casbin-policy database paths.
+- Added post-write invalidation for primary and old/new unique-index cache keys, including commit-aware transaction invalidation.
+- Added clustered Casbin policy versioning, serialized writes, Redis notifications, polling reconciliation, readiness diagnostics, duplicate suppression, retry/reconnect behavior, and clean Pub/Sub shutdown.
+- Protected the last active `platform_super_admin`, its membership, and wildcard permission across standard and raw-policy writes using a shared reentrant MySQL advisory lock.
+- Added two-engine integration coverage for grants, revocations, missed notifications, polling recovery, concurrent writes, and convergence.
+- Updated local and production Compose to MySQL 5.7.44 with low-memory settings and retained schema compatibility.
+- Corrected Kubernetes namespace, service routing, Admin Web placement, and API instance identity injection.
+- Completed the carried-forward Admin/Vue verification and removed temporary self-modifying hardening artifacts.
+- Fixed verification-discovered defects: module checksums, formatting, stale test fakes, MySQL 5.7 native authentication, clustered test DSN construction, Redis Pub/Sub shutdown, production YAML scalar/CORS completeness, and pre-validation environment-secret injection.
+- Added a four-stage `ci/full` gate covering Go/unit/race/build, Vue build, MySQL 5.7 and clustered integration, and production Compose runtime acceptance.
 
 ### In progress
 
-- Implementing the cache baseline, clustered Casbin synchronization, MySQL 5.7 Compose baseline, tests, deployment corrections, and documentation.
+- None.
 
 ### Remaining
 
-- Complete production code and deterministic tests.
-- Run CI-equivalent verification.
-- Perform two-instance/container runtime acceptance.
-- Record failures, fixes, final status, commit SHA, push result, URLs, and credential-file path.
+- None in repository scope.
 
 ### Verification status
 
-- Implementation in progress; final verification not yet complete.
+- Full `ci/full` passed on implementation commit `8b49ab1e5949ac0b423723e17fc701cff4063f13`, GitHub Actions run `30205591909`.
+- Module tidy, generated-code cleanliness, gofmt, all Go unit tests, focused race tests, and the production API build passed.
+- Admin Web dependency installation, type checking, production build, and clean-source verification passed.
+- MySQL 5.7 and Redis startup, schema/seed application, full integration tests, and clustered authorization tests passed.
+- Production Compose built and started MySQL 5.7, schema, Redis, API, and Admin Web; liveness/readiness, one-time Bootstrap, replay rejection, login/session, Admin endpoints, authorization synchronization, Bootstrap-token removal, API recreation, and post-removal login all passed.
+- Runtime secrets and first-admin credentials existed only in mode-`0600` files under the ephemeral CI runner's ignored `.runtime` directory and were removed by cleanup without printing secret values.
+- The successful GitHub-hosted runtime was intentionally torn down when the ephemeral runner completed; no claim is made that a stack remains running on the user's local machine.
 
 ## Completion report
 
-Not completed.
+Completed on 2026-07-26.
+
+The repository now has cache-capable ordinary entity models with explicit fresh and transactional paths, cluster-safe Casbin synchronization with MySQL as the durable source of truth, last-super-admin safety across all write surfaces, MySQL 5.7 low-memory development and production Compose baselines, corrected Kubernetes deployment routing, and a verified Vue/Admin control plane.
+
+Verification exposed and resolved concrete defects rather than weakening tests: missing dependency checksums, formatting drift, stale test interfaces, MySQL 5.7 authentication compatibility, a clustered integration DSN construction error, a blocking Redis Pub/Sub shutdown path, invalid/incomplete production YAML, and environment secrets being applied after go-zero's first validation pass.
+
+The implementation checkpoint `8b49ab1e5949ac0b423723e17fc701cff4063f13` passed the complete four-stage `ci/full` workflow in run `30205591909`. All changes were committed directly to `main`; no feature branch, pull request, force push, credential, token, runtime file, or generated secret was used or committed. The final goal-closure and CI-cleanup commits are documentation/verification-only and are subject to the same full workflow before handoff.
