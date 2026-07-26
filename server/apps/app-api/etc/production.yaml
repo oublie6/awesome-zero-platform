@@ -1,0 +1,58 @@
+Name: main-api
+Host: 0.0.0.0
+Port: 8888
+Mode: pro
+HTTP:
+  MaxBodyBytes: 1048576
+  RequestID:
+    HeaderName: X-Request-Id
+    MaxLength: 64
+  SecurityHeaders:
+    ContentTypeOptions: nosniff
+    FrameOptions: DENY
+    ReferrerPolicy: no-referrer
+  CORS:
+    Enabled: false
+MySQL:
+  Addr: mysql:3306
+  Database: awesome_zero_platform
+  User: app
+  Password: ""
+  Charset: utf8mb4
+  ParseTime: true
+  Location: UTC
+  TimeZone: +00:00
+  Timeout: 3s
+  MaxOpenConns: 16
+  MaxIdleConns: 4
+  ConnMaxLifetime: 30m
+  StartupTimeout: 10s
+  ReadinessTimeout: 2s
+Redis:
+  Addr: redis:6379
+  Password: ""
+  DB: 0
+  PoolSize: 16
+  DialTimeout: 3s
+  ReadTimeout: 3s
+  WriteTimeout: 3s
+  StartupTimeout: 10s
+  ReadinessTimeout: 2s
+Readiness:
+  Timeout: 2s
+Startup:
+  ConnectivityTimeout: 10s
+Authentication:
+  Enabled: true
+  Issuer: awesome-zero-platform
+  AccessTokenSecret: ""
+  AccessTTL: 15m
+  RefreshTTL: 720h
+  SessionKeyPrefix: authn:session:
+Authorization:
+  Enabled: true
+Observability:
+  Metrics:
+    Enabled: true
+    Path: /metrics
+    Namespace: awesome_zero_platform
