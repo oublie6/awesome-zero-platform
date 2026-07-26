@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 )
 
@@ -33,8 +34,14 @@ type Service struct {
 }
 
 func NewService(mysql database.Handle) *Service {
-	store := NewMySQLStore(mysql.DB())
+	return newServiceWithStore(mysql, NewMySQLStore(mysql.DB()))
+}
 
+func NewServiceWithCache(mysql database.Handle, modelCache *foundationcache.ModelCache) *Service {
+	return newServiceWithStore(mysql, NewCachedMySQLStore(mysql.DB(), modelCache))
+}
+
+func newServiceWithStore(mysql database.Handle, store *MySQLStore) *Service {
 	return newService(serviceDependencies{
 		transactions: mysql,
 		accounts:     store,
@@ -133,6 +140,11 @@ func (s *Service) CreateAccount(ctx context.Context, input CreateAccountInput) (
 	}); err != nil {
 		return Account{}, err
 	}
+	if invalidator, ok := s.accounts.(accountCacheInvalidator); ok {
+		if err := invalidator.InvalidateAccountCache(ctx, record); err != nil {
+			return Account{}, err
+		}
+	}
 
 	return accountFromRecord(record), nil
 }
@@ -146,12 +158,34 @@ func (s *Service) GetAccountByID(ctx context.Context, accountID string) (Account
 	return s.accounts.GetAccountByID(ctx, normalizedID)
 }
 
+func (s *Service) GetAccountByIDFresh(ctx context.Context, accountID string) (Account, error) {
+	normalizedID, err := normalizeAccountID(accountID)
+	if err != nil {
+		return Account{}, err
+	}
+	if fresh, ok := s.accounts.(accountFreshReader); ok {
+		return fresh.GetAccountByIDFresh(ctx, normalizedID)
+	}
+	return s.accounts.GetAccountByID(ctx, normalizedID)
+}
+
 func (s *Service) FindAccountByUsername(ctx context.Context, username string) (Account, error) {
 	_, usernameKey, err := normalizeUsername(username)
 	if err != nil {
 		return Account{}, err
 	}
 
+	return s.accounts.GetAccountByUsername(ctx, usernameKey)
+}
+
+func (s *Service) FindAccountByUsernameFresh(ctx context.Context, username string) (Account, error) {
+	_, usernameKey, err := normalizeUsername(username)
+	if err != nil {
+		return Account{}, err
+	}
+	if fresh, ok := s.accounts.(accountFreshReader); ok {
+		return fresh.GetAccountByUsernameFresh(ctx, usernameKey)
+	}
 	return s.accounts.GetAccountByUsername(ctx, usernameKey)
 }
 
@@ -164,6 +198,17 @@ func (s *Service) FindAccountByEmail(ctx context.Context, email string) (Account
 	return s.accounts.GetAccountByEmail(ctx, emailKey)
 }
 
+func (s *Service) FindAccountByEmailFresh(ctx context.Context, email string) (Account, error) {
+	_, emailKey, err := normalizeEmail(email)
+	if err != nil {
+		return Account{}, err
+	}
+	if fresh, ok := s.accounts.(accountFreshReader); ok {
+		return fresh.GetAccountByEmailFresh(ctx, emailKey)
+	}
+	return s.accounts.GetAccountByEmail(ctx, emailKey)
+}
+
 func (s *Service) FindAccountByPhone(ctx context.Context, phone string) (Account, error) {
 	_, phoneKey, err := normalizePhone(phone)
 	if err != nil {
@@ -173,13 +218,24 @@ func (s *Service) FindAccountByPhone(ctx context.Context, phone string) (Account
 	return s.accounts.GetAccountByPhone(ctx, phoneKey)
 }
 
+func (s *Service) FindAccountByPhoneFresh(ctx context.Context, phone string) (Account, error) {
+	_, phoneKey, err := normalizePhone(phone)
+	if err != nil {
+		return Account{}, err
+	}
+	if fresh, ok := s.accounts.(accountFreshReader); ok {
+		return fresh.GetAccountByPhoneFresh(ctx, phoneKey)
+	}
+	return s.accounts.GetAccountByPhone(ctx, phoneKey)
+}
+
 func (s *Service) UpdateProfile(ctx context.Context, accountID string, input UpdateProfileInput) (Account, error) {
 	normalizedID, err := normalizeAccountID(accountID)
 	if err != nil {
 		return Account{}, err
 	}
 
-	account, err := s.GetAccountByID(ctx, normalizedID)
+	account, err := s.GetAccountByIDFresh(ctx, normalizedID)
 	if err != nil {
 		return Account{}, err
 	}
@@ -209,7 +265,7 @@ func (s *Service) UpdateProfile(ctx context.Context, accountID string, input Upd
 		return Account{}, err
 	}
 
-	return s.accounts.GetAccountByID(ctx, normalizedID)
+	return s.GetAccountByIDFresh(ctx, normalizedID)
 }
 
 func (s *Service) EnableAccount(ctx context.Context, accountID string) (Account, error) {
@@ -229,7 +285,7 @@ func (s *Service) VerifyPassword(ctx context.Context, accountID string, password
 		return err
 	}
 
-	account, err := s.accounts.GetAccountByID(ctx, normalizedID)
+	account, err := s.GetAccountByIDFresh(ctx, normalizedID)
 	if err != nil {
 		return err
 	}
@@ -335,7 +391,7 @@ func (s *Service) updateAccountStatus(ctx context.Context, accountID string, nex
 		return Account{}, err
 	}
 
-	account, err := s.GetAccountByID(ctx, normalizedID)
+	account, err := s.GetAccountByIDFresh(ctx, normalizedID)
 	if err != nil {
 		return Account{}, err
 	}
@@ -347,7 +403,7 @@ func (s *Service) updateAccountStatus(ctx context.Context, accountID string, nex
 		return Account{}, err
 	}
 
-	return s.accounts.GetAccountByID(ctx, normalizedID)
+	return s.GetAccountByIDFresh(ctx, normalizedID)
 }
 
 func accountFromRecord(record accountRecord) Account {
