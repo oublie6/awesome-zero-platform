@@ -13,11 +13,14 @@ import (
 
 type Config struct {
 	rest.RestConf
-	HTTP      HTTPConfig
-	MySQL     database.Config `json:",optional"`
-	Redis     cache.Config    `json:",optional"`
-	Readiness ReadinessConfig `json:",optional"`
-	Startup   StartupConfig   `json:",optional"`
+	HTTP           HTTPConfig
+	MySQL          database.Config      `json:",optional"`
+	Redis          cache.Config         `json:",optional"`
+	Readiness      ReadinessConfig       `json:",optional"`
+	Startup        StartupConfig         `json:",optional"`
+	Authentication AuthenticationConfig  `json:",optional"`
+	Authorization  AuthorizationConfig   `json:",optional"`
+	Observability  ObservabilityConfig   `json:",optional"`
 }
 
 type HTTPConfig struct {
@@ -53,4 +56,27 @@ type ReadinessConfig struct {
 
 type StartupConfig struct {
 	ConnectivityTimeout time.Duration `json:",default=3s"`
+}
+
+type AuthenticationConfig struct {
+	Enabled           bool
+	Issuer            string        `json:",optional"`
+	AccessTokenSecret string        `json:",optional"`
+	AccessTTL         time.Duration `json:",default=15m"`
+	RefreshTTL        time.Duration `json:",default=720h"`
+	SessionKeyPrefix  string        `json:",default=authn:session:"`
+}
+
+type AuthorizationConfig struct {
+	Enabled bool
+}
+
+type ObservabilityConfig struct {
+	Metrics MetricsConfig `json:",optional"`
+}
+
+type MetricsConfig struct {
+	Enabled   bool
+	Path      string `json:",default=/metrics"`
+	Namespace string `json:",default=awesome_zero_platform"`
 }
