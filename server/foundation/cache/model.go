@@ -16,19 +16,20 @@ import (
 // adapters. It deliberately exposes only key construction, cached reads and
 // invalidation so Redis details do not escape into application services.
 type ModelCache struct {
-	backend zerocache.Cache
-	prefix  string
+	backend     zerocache.Cache
+	prefix      string
+	errNotFound error
 }
 
 // NewModelCache creates a go-zero Redis cache for one persistence namespace.
-// A nil result means model caching is disabled and callers should use the
-// transparent Take/Del methods, which fall back to the supplied database loader.
+// When caching is disabled the returned object transparently invokes database
+// loaders and treats invalidation as a no-op.
 func NewModelCache(cfg Config, namespace string, errNotFound error) (*ModelCache, error) {
-	if !cfg.Model.Enabled {
-		return &ModelCache{}, nil
-	}
 	if errNotFound == nil {
 		return nil, fmt.Errorf("model cache not-found error is required")
+	}
+	if !cfg.Model.Enabled {
+		return &ModelCache{errNotFound: errNotFound}, nil
 	}
 	namespace = strings.Trim(strings.TrimSpace(namespace), ":")
 	if namespace == "" {
@@ -60,19 +61,26 @@ func NewModelCache(cfg Config, namespace string, errNotFound error) (*ModelCache
 	if prefix == "" {
 		prefix = "awesome-zero-platform:model"
 	}
-	return &ModelCache{backend: backend, prefix: prefix + ":" + namespace}, nil
+	return &ModelCache{
+		backend:     backend,
+		prefix:      prefix + ":" + namespace,
+		errNotFound: errNotFound,
+	}, nil
 }
 
 // NewModelCacheWithBackend supports deterministic persistence-adapter tests.
-func NewModelCacheWithBackend(backend zerocache.Cache, prefix string) (*ModelCache, error) {
+func NewModelCacheWithBackend(backend zerocache.Cache, prefix string, errNotFound error) (*ModelCache, error) {
 	if backend == nil {
 		return nil, fmt.Errorf("model cache backend is required")
+	}
+	if errNotFound == nil {
+		return nil, fmt.Errorf("model cache not-found error is required")
 	}
 	prefix = strings.Trim(strings.TrimSpace(prefix), ":")
 	if prefix == "" {
 		return nil, fmt.Errorf("model cache prefix is required")
 	}
-	return &ModelCache{backend: backend, prefix: prefix}, nil
+	return &ModelCache{backend: backend, prefix: prefix, errNotFound: errNotFound}, nil
 }
 
 // Key returns a deterministic, namespaced cache key.
@@ -107,16 +115,16 @@ func (c *ModelCache) DelCtx(ctx context.Context, keys ...string) error {
 	return c.backend.DelCtx(ctx, uniqueNonEmpty(keys)...)
 }
 
-// IsNotFound reports whether the cache backend recognized its configured
-// not-found sentinel.
+// IsNotFound reports whether err matches the cache's configured not-found
+// sentinel, including when caching is disabled.
 func (c *ModelCache) IsNotFound(err error) bool {
-	if err == nil {
+	if err == nil || c == nil {
 		return false
 	}
-	if c == nil || c.backend == nil {
-		return errors.Is(err, err)
+	if c.backend != nil && c.backend.IsNotFound(err) {
+		return true
 	}
-	return c.backend.IsNotFound(err)
+	return c.errNotFound != nil && errors.Is(err, c.errNotFound)
 }
 
 func uniqueNonEmpty(values []string) []string {
