@@ -42,7 +42,7 @@ Independently verify the completed Admin backend and Vue 3 control plane, add de
 ## Constraints
 
 - Follow `AGENTS.md` completely.
-- Start from a clean synchronized `agent/admin-platform` branch and inspect the current PR diff before editing.
+- Start from a clean synchronized `main` branch and inspect the current repository state and relevant goal-related diff before editing.
 - Work sequentially and use low-concurrency Go commands because the development machine has limited memory.
 - Do not broaden the work into business capabilities, a future user client, visual redesign, dependency upgrades, or architectural replacement.
 - Tests must assert externally meaningful behavior rather than implementation details wherever practical.
@@ -162,18 +162,19 @@ curl --fail --silent http://127.0.0.1:8080/ >/dev/null
 - Admin web is served from the container on port `8080`, API is served on port `8888`, and both health endpoints pass.
 - No runtime secret, credential, local environment file, Compose volume, build artifact, temporary self-modifying workflow, or unrelated change is committed.
 - `docs/goals/current.md` contains truthful completion evidence, including failures encountered and fixes made.
-- All goal-related changes are committed and pushed to the configured upstream without force pushing.
+- All goal-related changes are committed and pushed directly to `origin/main` without force pushing.
 - The healthy production Compose stack remains running at completion for user inspection.
 
 ## Agent Strategy
 
-The primary Codex agent owns review, test design, failure diagnosis, narrow fixes, runtime verification, final diff inspection, commit, and push. Use subagents only for independent read-only review or isolated test analysis. Do not allow multiple agents to modify the same files concurrently, and do not run memory-intensive verification tasks in parallel.
+The primary Codex agent owns review, test design, failure diagnosis, narrow fixes, runtime verification, final diff inspection, commit, and push directly on `main`. Use subagents only for independent read-only review or isolated test analysis. Do not allow multiple agents to modify the same files concurrently, and do not run memory-intensive verification tasks in parallel.
 
 ## Working State
 
 ### Completed
 
 - ChatGPT defined the independent verification and container runtime acceptance goal.
+- ChatGPT merged the Admin implementation into `main` and updated the repository workflow to use `main` directly.
 
 ### In progress
 
@@ -189,7 +190,7 @@ The primary Codex agent owns review, test design, failure diagnosis, narrow fixe
 - Execute container-backed end-to-end smoke verification.
 - Remove the bootstrap token from the running API after first-admin creation.
 - Leave the healthy stack running.
-- Update completion evidence, commit, and push.
+- Update completion evidence, commit, and push directly to `main`.
 
 ### Verification status
 
