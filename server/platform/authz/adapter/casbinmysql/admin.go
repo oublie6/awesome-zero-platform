@@ -31,7 +31,7 @@ func (e *Engine) EngineInfo(context.Context) authz.EngineInfo {
 func (e *Engine) ModelText(context.Context) string { return modelText }
 
 func (e *Engine) ListRawRules(context.Context) ([]authz.RawRule, error) {
-	return e.snapshotRules(), nil
+	return e.snapshotRules()
 }
 
 func (e *Engine) ValidateRawRules(_ context.Context, rules []authz.RawRule) error {
@@ -121,7 +121,10 @@ func (e *Engine) ReplacePermissionsForRole(ctx context.Context, role string, per
 	if role == "" {
 		return fmt.Errorf("role must not be empty")
 	}
-	rules := e.snapshotRules()
+	rules, err := e.snapshotRules()
+	if err != nil {
+		return err
+	}
 	filtered := rules[:0]
 	for _, rule := range rules {
 		if rule.PType == "p" && len(rule.Values) >= 1 && rule.Values[0] == role {
@@ -140,7 +143,10 @@ func (e *Engine) ReplaceRolesForUser(ctx context.Context, accountID string, role
 	if accountID == "" {
 		return fmt.Errorf("account id must not be empty")
 	}
-	rules := e.snapshotRules()
+	rules, err := e.snapshotRules()
+	if err != nil {
+		return err
+	}
 	filtered := rules[:0]
 	for _, rule := range rules {
 		if rule.PType == "g" && len(rule.Values) >= 1 && rule.Values[0] == accountID {
@@ -190,7 +196,11 @@ func (e *Engine) Explain(ctx context.Context, subject, resource, action string) 
 		Allowed:  allowed,
 		Roles:    roles,
 	}
-	for _, row := range e.enforcer.GetPolicy() {
+	policies, err := e.enforcer.GetPolicy()
+	if err != nil {
+		return authz.Explanation{}, err
+	}
+	for _, row := range policies {
 		if len(row) < 3 {
 			continue
 		}
@@ -207,9 +217,15 @@ func (e *Engine) Explain(ctx context.Context, subject, resource, action string) 
 	return explanation, nil
 }
 
-func (e *Engine) snapshotRules() []authz.RawRule {
-	policies := e.enforcer.GetPolicy()
-	groups := e.enforcer.GetGroupingPolicy()
+func (e *Engine) snapshotRules() ([]authz.RawRule, error) {
+	policies, err := e.enforcer.GetPolicy()
+	if err != nil {
+		return nil, err
+	}
+	groups, err := e.enforcer.GetGroupingPolicy()
+	if err != nil {
+		return nil, err
+	}
 	rules := make([]authz.RawRule, 0, len(policies)+len(groups))
 	for _, policy := range policies {
 		rules = append(rules, authz.RawRule{PType: "p", Values: append([]string(nil), policy...)})
@@ -223,11 +239,14 @@ func (e *Engine) snapshotRules() []authz.RawRule {
 		}
 		return rules[i].PType < rules[j].PType
 	})
-	return rules
+	return rules, nil
 }
 
 func (e *Engine) replaceRawRulesLocked(rules []authz.RawRule) error {
-	previous := e.snapshotRules()
+	previous, err := e.snapshotRules()
+	if err != nil {
+		return err
+	}
 	if err := e.applyRawRules(rules); err != nil {
 		_ = e.applyRawRules(previous)
 		return err
