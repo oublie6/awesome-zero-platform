@@ -70,6 +70,16 @@ type AuthenticationConfig struct {
 
 type AuthorizationConfig struct {
 	Enabled bool
+	Cluster AuthorizationClusterConfig `json:",optional"`
+}
+
+type AuthorizationClusterConfig struct {
+	Enabled        bool
+	InstanceID     string        `json:",optional"`
+	Channel        string        `json:",default=awesome-zero-platform:authz:policy-changed"`
+	PollInterval   time.Duration `json:",default=20s"`
+	PublishTimeout time.Duration `json:",default=2s"`
+	ReloadTimeout  time.Duration `json:",default=5s"`
 }
 
 type AdminConfig struct {
