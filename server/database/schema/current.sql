@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS foundation_schema_meta (
     meta_value VARCHAR(255) NOT NULL,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (meta_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS identity_accounts (
     account_id CHAR(36) NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS identity_accounts (
     CONSTRAINT chk_identity_accounts_identity_present CHECK (
         username_key IS NOT NULL OR email_key IS NOT NULL OR phone_key IS NOT NULL
     )
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS identity_password_credentials (
     account_id CHAR(36) NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS identity_password_credentials (
         FOREIGN KEY (account_id) REFERENCES identity_accounts (account_id)
         ON UPDATE RESTRICT
         ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS authorization_casbin_rules (
     rule_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -56,7 +56,14 @@ CREATE TABLE IF NOT EXISTS authorization_casbin_rules (
     UNIQUE KEY uq_authorization_casbin_rule_hash (rule_hash),
     KEY idx_authorization_casbin_subject (ptype, v0),
     KEY idx_authorization_casbin_object_action (ptype, v1, v2)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS authorization_policy_state (
+    policy_key VARCHAR(64) NOT NULL,
+    version BIGINT UNSIGNED NOT NULL DEFAULT 1,
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (policy_key)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS authorization_roles (
     role_code VARCHAR(96) NOT NULL,
@@ -66,7 +73,7 @@ CREATE TABLE IF NOT EXISTS authorization_roles (
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (role_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS authorization_resources (
     resource_code VARCHAR(120) NOT NULL,
@@ -80,7 +87,7 @@ CREATE TABLE IF NOT EXISTS authorization_resources (
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (resource_code),
     KEY idx_authorization_resources_module (module_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS platform_audit_events (
     event_id CHAR(36) NOT NULL,
@@ -102,7 +109,7 @@ CREATE TABLE IF NOT EXISTS platform_audit_events (
         FOREIGN KEY (actor_account_id) REFERENCES identity_accounts (account_id)
         ON UPDATE RESTRICT
         ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO authorization_roles (role_code, display_name, description, is_system)
 VALUES
@@ -119,12 +126,12 @@ INSERT INTO authorization_resources (
     resource_code, display_name, description, resource_pattern, actions_json, module_name, is_system
 )
 VALUES
-    ('admin.dashboard', '管理首页', '平台运行概览和当前管理员信息。', '/admin/system/*', JSON_ARRAY('GET'), 'dashboard', TRUE),
-    ('admin.account', '账号管理', '账号资料、状态、密码、角色和会话。', '/admin/accounts/*', JSON_ARRAY('GET', 'POST', 'PATCH', 'DELETE'), 'identity', TRUE),
-    ('admin.role', '角色管理', '角色元数据、成员和标准权限。', '/admin/roles/*', JSON_ARRAY('GET', 'POST', 'PUT', 'PATCH', 'DELETE'), 'authorization', TRUE),
-    ('admin.authorization', '权限配置', '资源目录和标准化权限配置。', '/admin/authorization/resources/*', JSON_ARRAY('GET', 'POST', 'PUT', 'PATCH', 'DELETE'), 'authorization', TRUE),
-    ('admin.authorization.engine', '权限引擎', '权限插件模型、原始策略和执行解释。', '/admin/authorization/engine/*', JSON_ARRAY('GET', 'POST', 'PUT'), 'authorization', TRUE),
-    ('admin.audit', '审计日志', '平台管理操作的安全审计事件。', '/admin/audit/*', JSON_ARRAY('GET'), 'security', TRUE)
+    ('admin.dashboard', '管理首页', '平台运行概览和当前管理员信息。', '/admin/system*', JSON_ARRAY('GET'), 'dashboard', TRUE),
+    ('admin.account', '账号管理', '账号资料、状态、密码、角色和会话。', '/admin/accounts*', JSON_ARRAY('GET', 'POST', 'PATCH', 'DELETE'), 'identity', TRUE),
+    ('admin.role', '角色管理', '角色元数据、成员和标准权限。', '/admin/roles*', JSON_ARRAY('GET', 'POST', 'PUT', 'PATCH', 'DELETE'), 'authorization', TRUE),
+    ('admin.authorization', '权限配置', '资源目录和标准化权限配置。', '/admin/authorization/resources*', JSON_ARRAY('GET', 'POST', 'PUT', 'PATCH', 'DELETE'), 'authorization', TRUE),
+    ('admin.authorization.engine', '权限引擎', '权限插件模型、原始策略和执行解释。', '/admin/authorization/engine*', JSON_ARRAY('GET', 'POST', 'PUT'), 'authorization', TRUE),
+    ('admin.audit', '审计日志', '平台管理操作的安全审计事件。', '/admin/audit*', JSON_ARRAY('GET'), 'security', TRUE)
 ON DUPLICATE KEY UPDATE
     display_name = VALUES(display_name),
     description = VALUES(description),
@@ -140,8 +147,11 @@ INSERT IGNORE INTO authorization_casbin_rules (
     'p', 'platform_super_admin', '/*', '.*', '', '', ''
 );
 
+INSERT IGNORE INTO authorization_policy_state (policy_key, version)
+VALUES ('global', 1);
+
 INSERT INTO foundation_schema_meta (meta_key, meta_value)
-VALUES ('schema_version', '0007')
+VALUES ('schema_version', '0008')
 ON DUPLICATE KEY UPDATE
     meta_value = VALUES(meta_value),
     updated_at = CURRENT_TIMESTAMP(6);
