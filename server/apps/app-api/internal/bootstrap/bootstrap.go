@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/adminhttp"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/config"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/handler"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/securityhttp"
@@ -16,6 +17,8 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/observability"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/readiness"
 	platformresponse "github.com/oublie6/awesome-zero-platform/server/foundation/response"
+	"github.com/oublie6/awesome-zero-platform/server/platform/admin"
+	"github.com/oublie6/awesome-zero-platform/server/platform/admin/mysqlstore"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn/adapter/identityprovider"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn/adapter/jwthmac"
@@ -65,15 +68,9 @@ func New(configFile string) (*App, error) {
 		metricsMiddleware = metrics.Middleware
 	}
 
-	// Request ID is established before logging, recovery, metrics, and response shaping.
-	// Platform authentication and authorization remain route middleware so transport
-	// concerns do not leak into the reusable authn and authz application services.
 	router := httpmiddleware.WrapRouter(
 		restrouter.NewRouter(),
-		httpmiddleware.RequestID(httpmiddleware.RequestIDConfig{
-			HeaderName: cfg.HTTP.RequestID.HeaderName,
-			MaxLength:  cfg.HTTP.RequestID.MaxLength,
-		}),
+		httpmiddleware.RequestID(httpmiddleware.RequestIDConfig{HeaderName: cfg.HTTP.RequestID.HeaderName, MaxLength: cfg.HTTP.RequestID.MaxLength}),
 		httpmiddleware.AccessLog(),
 		httpmiddleware.Recovery(),
 		metricsMiddleware,
@@ -116,6 +113,7 @@ func New(configFile string) (*App, error) {
 	svcCtx := svc.NewServiceContext(cfg, mysqlResource, redisClient, checker)
 	svcCtx.Metrics = metrics
 
+	var sessionAdmin authn.SessionAdministrator
 	if cfg.Authentication.Enabled {
 		codec, err := jwthmac.New(cfg.Authentication.AccessTokenSecret, cfg.Authentication.Issuer)
 		if err != nil {
@@ -141,8 +139,11 @@ func New(configFile string) (*App, error) {
 			return nil, fmt.Errorf("initialize authentication service: %w", err)
 		}
 		svcCtx.Authn = authentication
+		svcCtx.SessionAdmin = sessionStore
+		sessionAdmin = sessionStore
 	}
 
+	var authorizationAdmin authz.Administrator
 	if cfg.Authorization.Enabled {
 		engine, err := casbinmysql.New(mysqlResource.DB())
 		if err != nil {
@@ -158,16 +159,37 @@ func New(configFile string) (*App, error) {
 		}
 		svcCtx.Authz = authorization
 		svcCtx.Authorizer = authorization
+		svcCtx.AuthzAdmin = engine
+		authorizationAdmin = engine
+	}
+
+	if cfg.Admin.Enabled {
+		store, err := mysqlstore.New(mysqlResource.DB())
+		if err != nil {
+			_ = redisClient.Close()
+			_ = mysqlResource.Close()
+			return nil, fmt.Errorf("initialize admin store: %w", err)
+		}
+		adminService, err := admin.NewService(
+			svcCtx.Identity,
+			authorizationAdmin,
+			sessionAdmin,
+			store,
+			admin.Config{BootstrapToken: cfg.Admin.BootstrapToken},
+		)
+		if err != nil {
+			_ = redisClient.Close()
+			_ = mysqlResource.Close()
+			return nil, fmt.Errorf("initialize admin service: %w", err)
+		}
+		svcCtx.Admin = adminService
 	}
 
 	handler.RegisterHandlers(server, svcCtx)
 	securityhttp.Register(server, svcCtx)
+	adminhttp.Register(server, svcCtx)
 	if metrics != nil {
-		server.AddRoutes([]rest.Route{{
-			Method:  http.MethodGet,
-			Path:    cfg.Observability.Metrics.Path,
-			Handler: metrics.Handler().ServeHTTP,
-		}})
+		server.AddRoutes([]rest.Route{{Method: http.MethodGet, Path: cfg.Observability.Metrics.Path, Handler: metrics.Handler().ServeHTTP}})
 	}
 
 	return &App{Config: cfg, server: server, mysql: mysqlResource, redis: redisClient}, nil
@@ -195,9 +217,7 @@ func (a *App) Stop() {
 
 type namedProbe struct {
 	name   string
-	handle interface {
-		Ping(context.Context) error
-	}
+	handle interface{ Ping(context.Context) error }
 }
 
 func (n namedProbe) Name() string { return n.name }
