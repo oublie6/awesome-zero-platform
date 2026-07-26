@@ -142,9 +142,31 @@ jobs:
         if: always()
         run: make deps-down
 
+  runtime:
+    if: github.event_name == 'push'
+    needs: [unit, admin_web, integration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Production Compose runtime acceptance
+        id: runtime-acceptance
+        run: |
+          set +e
+          bash scripts/ci-runtime-acceptance.sh > runtime-acceptance.log 2>&1
+          status=$?
+          tail -n 200 runtime-acceptance.log
+          exit $status
+      - name: Upload runtime acceptance failure log
+        if: failure() && steps.runtime-acceptance.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-acceptance-failure-log
+          path: runtime-acceptance.log
+
   report:
     if: always() && github.event_name == 'push'
-    needs: [unit, admin_web, integration]
+    needs: [unit, admin_web, integration, runtime]
     runs-on: ubuntu-latest
     steps:
       - name: Publish full verification status
@@ -154,7 +176,8 @@ jobs:
             const results = {
               unit: '${{ needs.unit.result }}',
               adminWeb: '${{ needs.admin_web.result }}',
-              integration: '${{ needs.integration.result }}'
+              integration: '${{ needs.integration.result }}',
+              runtime: '${{ needs.runtime.result }}'
             };
             const success = Object.values(results).every(result => result === 'success');
             await github.rest.repos.createCommitStatus({
@@ -164,7 +187,7 @@ jobs:
               state: success ? 'success' : 'failure',
               context: 'ci/full',
               description: success
-                ? 'Go, Vue, MySQL 5.7 and clustered authorization checks passed'
+                ? 'Go, Vue, MySQL 5.7, clustered authorization and Compose runtime passed'
                 : `Verification failed: ${JSON.stringify(results)}`.slice(0, 140),
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             });
