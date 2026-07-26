@@ -191,15 +191,20 @@ func New(configFile string) (*App, error) {
 		}
 		checker.AddProbe(authorizationEngine)
 
-		authorization, err := authz.NewService(authorizationEngine, authorizationEngine)
+		authorizationCoordinator, err := casbinmysql.NewCoordinator(authorizationEngine)
+		if err != nil {
+			closeResources()
+			return nil, fmt.Errorf("initialize authorization policy coordinator: %w", err)
+		}
+		authorization, err := authz.NewService(authorizationCoordinator, authorizationCoordinator)
 		if err != nil {
 			closeResources()
 			return nil, fmt.Errorf("initialize authorization service: %w", err)
 		}
 		svcCtx.Authz = authorization
 		svcCtx.Authorizer = authorization
-		svcCtx.AuthzAdmin = authorizationEngine
-		authorizationAdmin = authorizationEngine
+		svcCtx.AuthzAdmin = authorizationCoordinator
+		authorizationAdmin = authorizationCoordinator
 	}
 
 	if cfg.Admin.Enabled {
