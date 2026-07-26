@@ -145,7 +145,7 @@ jobs:
           script: |
             const results = {
               unit: '${{ needs.unit.result }}',
-              adminWeb: '${{ needs.admin-web.result }}',
+              adminWeb: '${{ needs["admin-web"].result }}',
               integration: '${{ needs.integration.result }}'
             };
             const success = Object.values(results).every(result => result === 'success');
