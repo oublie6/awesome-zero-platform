@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -44,9 +45,9 @@ type Session struct {
 }
 
 type TokenPair struct {
-	AccessToken     string
-	RefreshToken    string
-	AccessExpiresAt time.Time
+	AccessToken      string
+	RefreshToken     string
+	AccessExpiresAt  time.Time
 	RefreshExpiresAt time.Time
 }
 
@@ -132,7 +133,13 @@ func NewService(identity IdentityProvider, codec AccessTokenCodec, sessions Sess
 func (s *Service) Login(ctx context.Context, identifier, password string) (Authentication, TokenPair, error) {
 	principal, err := s.identity.Authenticate(ctx, strings.TrimSpace(identifier), password)
 	if err != nil {
-		return Authentication{}, TokenPair{}, ErrInvalidCredentials
+		if errors.Is(err, ErrInvalidCredentials) || errors.Is(err, ErrAccountUnavailable) {
+			return Authentication{}, TokenPair{}, ErrInvalidCredentials
+		}
+		return Authentication{}, TokenPair{}, fmt.Errorf("authenticate identity: %w", err)
+	}
+	if err := validatePrincipal(principal); err != nil {
+		return Authentication{}, TokenPair{}, err
 	}
 
 	sessionID, err := newSessionID()
@@ -169,16 +176,18 @@ func (s *Service) Login(ctx context.Context, identifier, password string) (Authe
 		return Authentication{}, TokenPair{}, fmt.Errorf("issue access token: %w", err)
 	}
 
-	return Authentication{
+	authentication := Authentication{
 		Principal: principal,
 		SessionID: sessionID,
 		ExpiresAt: accessExpiresAt,
-	}, TokenPair{
+	}
+	tokens := TokenPair{
 		AccessToken:      accessToken,
 		RefreshToken:     refreshToken,
 		AccessExpiresAt:  accessExpiresAt,
 		RefreshExpiresAt: session.ExpiresAt,
-	}, nil
+	}
+	return authentication, tokens, nil
 }
 
 func (s *Service) Refresh(ctx context.Context, refreshToken string) (Authentication, TokenPair, error) {
@@ -189,7 +198,10 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Authenticat
 
 	session, err := s.sessions.Get(ctx, sessionID)
 	if err != nil {
-		return Authentication{}, TokenPair{}, ErrInvalidRefresh
+		if errors.Is(err, ErrSessionNotFound) {
+			return Authentication{}, TokenPair{}, ErrInvalidRefresh
+		}
+		return Authentication{}, TokenPair{}, fmt.Errorf("load session: %w", err)
 	}
 	if subtleStringMismatch(session.RefreshDigest, currentDigest) {
 		return Authentication{}, TokenPair{}, ErrInvalidRefresh
@@ -197,8 +209,14 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Authenticat
 
 	principal, err := s.identity.ResolveActive(ctx, session.AccountID)
 	if err != nil {
-		_ = s.sessions.Revoke(ctx, sessionID)
-		return Authentication{}, TokenPair{}, ErrAccountUnavailable
+		if errors.Is(err, ErrAccountUnavailable) {
+			_ = s.sessions.Revoke(ctx, sessionID)
+			return Authentication{}, TokenPair{}, ErrAccountUnavailable
+		}
+		return Authentication{}, TokenPair{}, fmt.Errorf("resolve active account: %w", err)
+	}
+	if err := validatePrincipal(principal); err != nil {
+		return Authentication{}, TokenPair{}, err
 	}
 
 	now := s.now().UTC()
@@ -219,19 +237,24 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Authenticat
 
 	nextSession, err := s.sessions.Rotate(ctx, sessionID, currentDigest, nextDigest, now.Add(s.config.RefreshTTL))
 	if err != nil {
-		return Authentication{}, TokenPair{}, ErrInvalidRefresh
+		if errors.Is(err, ErrInvalidRefresh) || errors.Is(err, ErrSessionNotFound) || errors.Is(err, ErrSessionConflict) {
+			return Authentication{}, TokenPair{}, ErrInvalidRefresh
+		}
+		return Authentication{}, TokenPair{}, fmt.Errorf("rotate session: %w", err)
 	}
 
-	return Authentication{
+	authentication := Authentication{
 		Principal: principal,
 		SessionID: sessionID,
 		ExpiresAt: accessExpiresAt,
-	}, TokenPair{
+	}
+	tokens := TokenPair{
 		AccessToken:      accessToken,
 		RefreshToken:     nextRefreshToken,
 		AccessExpiresAt:  accessExpiresAt,
 		RefreshExpiresAt: nextSession.ExpiresAt,
-	}, nil
+	}
+	return authentication, tokens, nil
 }
 
 func (s *Service) AuthenticateAccess(ctx context.Context, rawToken string) (Authentication, error) {
@@ -239,19 +262,32 @@ func (s *Service) AuthenticateAccess(ctx context.Context, rawToken string) (Auth
 	if err != nil {
 		return Authentication{}, ErrInvalidToken
 	}
+	now := s.now().UTC()
+	if strings.TrimSpace(claims.Subject) == "" || strings.TrimSpace(claims.SessionID) == "" || !claims.ExpiresAt.After(now) {
+		return Authentication{}, ErrInvalidToken
+	}
 
 	session, err := s.sessions.Get(ctx, claims.SessionID)
 	if err != nil {
-		return Authentication{}, ErrInvalidToken
+		if errors.Is(err, ErrSessionNotFound) {
+			return Authentication{}, ErrInvalidToken
+		}
+		return Authentication{}, fmt.Errorf("load session: %w", err)
 	}
-	if session.AccountID != claims.Subject || !session.ExpiresAt.After(s.now().UTC()) {
+	if session.AccountID != claims.Subject || !session.ExpiresAt.After(now) {
 		return Authentication{}, ErrInvalidToken
 	}
 
 	principal, err := s.identity.ResolveActive(ctx, claims.Subject)
 	if err != nil {
-		_ = s.sessions.Revoke(ctx, claims.SessionID)
-		return Authentication{}, ErrAccountUnavailable
+		if errors.Is(err, ErrAccountUnavailable) {
+			_ = s.sessions.Revoke(ctx, claims.SessionID)
+			return Authentication{}, ErrAccountUnavailable
+		}
+		return Authentication{}, fmt.Errorf("resolve active account: %w", err)
+	}
+	if err := validatePrincipal(principal); err != nil {
+		return Authentication{}, err
 	}
 
 	return Authentication{
@@ -268,6 +304,13 @@ func (s *Service) Logout(ctx context.Context, rawToken string) error {
 	}
 	if err := s.sessions.Revoke(ctx, authentication.SessionID); err != nil && !errors.Is(err, ErrSessionNotFound) {
 		return fmt.Errorf("revoke session: %w", err)
+	}
+	return nil
+}
+
+func validatePrincipal(principal Principal) error {
+	if strings.TrimSpace(principal.AccountID) == "" {
+		return fmt.Errorf("identity provider returned an empty account id")
 	}
 	return nil
 }
@@ -311,7 +354,5 @@ func digest(value string) string {
 }
 
 func subtleStringMismatch(left, right string) bool {
-	leftSum := sha256.Sum256([]byte(left))
-	rightSum := sha256.Sum256([]byte(right))
-	return leftSum != rightSum
+	return subtle.ConstantTimeCompare([]byte(left), []byte(right)) != 1
 }
