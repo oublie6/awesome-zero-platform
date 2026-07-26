@@ -3,16 +3,218 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { DataAnalysis, User, Key, Setting, Document, Lock, Fold, Expand, SwitchButton } from '@element-plus/icons-vue'
-const auth = useAuthStore(); const route = useRoute(); const router = useRouter(); const collapsed = ref(false)
+
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+const collapsed = ref(false)
 const title = computed(() => String(route.meta.title || 'Admin'))
+
 onMounted(() => auth.loadMe().catch(() => router.replace('/login')))
-async function signOut(){ await auth.logout(); router.replace('/login') }
+
+async function signOut() {
+  await auth.logout()
+  router.replace('/login')
+}
 </script>
-<template><div class="shell"><aside :class="['sidebar',{collapsed}]"><div class="brand"><div class="brand-mark">AZ</div><div v-show="!collapsed"><strong>Awesome Zero</strong><small>PLATFORM ADMIN</small></div></div><el-menu router :default-active="route.path" :collapse="collapsed" background-color="transparent" text-color="#aebdca" active-text-color="#fff">
-<el-menu-item index="/dashboard"><el-icon><DataAnalysis/></el-icon><template #title>运行概览</template></el-menu-item>
-<el-sub-menu index="identity"><template #title><el-icon><User/></el-icon><span>身份管理</span></template><el-menu-item index="/accounts">账号管理</el-menu-item><el-menu-item index="/roles">角色管理</el-menu-item></el-sub-menu>
-<el-sub-menu index="authorization"><template #title><el-icon><Key/></el-icon><span>权限管理</span></template><el-menu-item index="/authorization/standard">标准配置</el-menu-item><el-menu-item index="/authorization/engine">权限引擎 <span class="expert-dot">DEV</span></el-menu-item></el-sub-menu>
-<el-menu-item index="/audit"><el-icon><Document/></el-icon><template #title>操作审计</template></el-menu-item>
-<el-menu-item index="/system"><el-icon><Setting/></el-icon><template #title>系统状态</template></el-menu-item></el-menu></aside>
-<main><header class="topbar"><el-button text circle @click="collapsed=!collapsed"><el-icon><component :is="collapsed?Expand:Fold"/></el-icon></el-button><div class="crumb"><span>ADMIN</span><b>/</b>{{ title }}</div><div class="top-actions"><el-tag v-if="auth.roles.includes('platform_super_admin')" type="danger" effect="plain">SUPER ADMIN</el-tag><el-dropdown><span class="user-trigger"><el-icon><Lock/></el-icon>{{ auth.displayName }}</span><template #dropdown><el-dropdown-menu><el-dropdown-item @click="router.push('/profile')">个人中心</el-dropdown-item><el-dropdown-item divided @click="signOut"><el-icon><SwitchButton/></el-icon>退出登录</el-dropdown-item></el-dropdown-menu></template></el-dropdown></div></header><section class="content"><router-view/></section></main></div></template>
-<style scoped>.shell{min-height:100vh;display:grid;grid-template-columns:auto 1fr}.sidebar{width:248px;background:linear-gradient(180deg,#101923,#0b1118);border-right:1px solid #24303d;transition:.2s;overflow:hidden}.sidebar.collapsed{width:64px}.brand{height:64px;display:flex;align-items:center;gap:11px;padding:0 14px;border-bottom:1px solid #24303d}.brand-mark{display:grid;place-items:center;min-width:36px;height:36px;border:1px solid #38bdf8;border-radius:8px;color:#7dd3fc;font:bold 14px var(--az-mono);box-shadow:0 0 22px #0ea5e933}.brand strong{display:block;color:#eef6ff}.brand small{display:block;color:#64748b;font:10px var(--az-mono);letter-spacing:1.2px;margin-top:2px}.el-menu{border:0}.topbar{height:64px;display:flex;align-items:center;padding:0 22px;border-bottom:1px solid var(--az-border);background:color-mix(in srgb,var(--az-panel) 92%,transparent);position:sticky;top:0;z-index:10}.crumb{font:12px var(--az-mono);color:var(--az-muted);margin-left:10px}.crumb span{color:#38bdf8}.crumb b{padding:0 9px}.top-actions{margin-left:auto;display:flex;align-items:center;gap:16px}.user-trigger{display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--az-text)}main{min-width:0}.content{padding:24px;max-width:1680px;margin:auto}.expert-dot{margin-left:8px;color:#fb7185;font:9px var(--az-mono)}</style>
+
+<template>
+  <div class="shell">
+    <aside :class="['sidebar', { collapsed }]">
+      <div class="brand">
+        <div class="brand-mark">AZ</div>
+        <div v-show="!collapsed" class="brand-copy">
+          <strong>Awesome Zero</strong>
+          <small>PLATFORM ADMIN</small>
+        </div>
+      </div>
+      <el-menu router :default-active="route.path" :collapse="collapsed" background-color="transparent" text-color="#aebdca" active-text-color="#fff">
+        <el-menu-item index="/dashboard"><el-icon><DataAnalysis /></el-icon><template #title>运行概览</template></el-menu-item>
+        <el-sub-menu index="identity">
+          <template #title><el-icon><User /></el-icon><span>身份管理</span></template>
+          <el-menu-item index="/accounts">账号管理</el-menu-item>
+          <el-menu-item index="/roles">角色管理</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="authorization">
+          <template #title><el-icon><Key /></el-icon><span>权限管理</span></template>
+          <el-menu-item index="/authorization/standard">标准配置</el-menu-item>
+          <el-menu-item index="/authorization/engine">权限引擎 <span class="expert-dot">DEV</span></el-menu-item>
+        </el-sub-menu>
+        <el-menu-item index="/audit"><el-icon><Document /></el-icon><template #title>操作审计</template></el-menu-item>
+        <el-menu-item index="/system"><el-icon><Setting /></el-icon><template #title>系统状态</template></el-menu-item>
+      </el-menu>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <el-button text circle aria-label="切换侧边栏" @click="collapsed = !collapsed">
+          <el-icon><component :is="collapsed ? Expand : Fold" /></el-icon>
+        </el-button>
+        <div class="crumb"><span>ADMIN</span><b>/</b>{{ title }}</div>
+        <div class="top-actions">
+          <el-tag v-if="auth.roles.includes('platform_super_admin')" type="danger" effect="plain">SUPER ADMIN</el-tag>
+          <el-dropdown>
+            <span class="user-trigger"><el-icon><Lock /></el-icon><span class="user-name">{{ auth.displayName }}</span></span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="router.push('/profile')">个人中心</el-dropdown-item>
+                <el-dropdown-item divided @click="signOut"><el-icon><SwitchButton /></el-icon>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </header>
+      <section class="content"><router-view /></section>
+    </main>
+  </div>
+</template>
+
+<style scoped>
+.shell {
+  min-height: 100vh;
+  min-width: 760px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.sidebar {
+  width: 248px;
+  overflow: hidden;
+  border-right: 1px solid #24303d;
+  background: linear-gradient(180deg, #101923, #0b1118);
+  transition: width 0.2s;
+}
+
+.sidebar.collapsed {
+  width: 64px;
+}
+
+.brand {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 14px;
+  border-bottom: 1px solid #24303d;
+}
+
+.brand-mark {
+  min-width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  box-shadow: 0 0 22px #0ea5e933;
+  color: #7dd3fc;
+  font: bold 14px var(--az-mono);
+}
+
+.brand-copy {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.brand strong {
+  display: block;
+  color: #eef6ff;
+}
+
+.brand small {
+  display: block;
+  margin-top: 2px;
+  color: #64748b;
+  font: 10px var(--az-mono);
+  letter-spacing: 1.2px;
+}
+
+.el-menu {
+  border: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 64px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--az-border);
+  background: color-mix(in srgb, var(--az-panel) 92%, transparent);
+}
+
+.crumb {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--az-muted);
+  font: 12px var(--az-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumb span {
+  color: #38bdf8;
+}
+
+.crumb b {
+  padding: 0 9px;
+}
+
+.top-actions {
+  margin-left: auto;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.user-trigger {
+  max-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  color: var(--az-text);
+  white-space: nowrap;
+}
+
+.user-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+main {
+  min-width: 0;
+}
+
+.content {
+  max-width: 1680px;
+  min-width: 0;
+  margin: auto;
+  padding: 24px;
+}
+
+.expert-dot {
+  margin-left: 8px;
+  color: #fb7185;
+  font: 9px var(--az-mono);
+}
+
+@media (max-width: 980px) {
+  .sidebar:not(.collapsed) {
+    width: 210px;
+  }
+
+  .content {
+    padding: 18px;
+  }
+
+  .top-actions {
+    gap: 10px;
+  }
+}
+</style>
