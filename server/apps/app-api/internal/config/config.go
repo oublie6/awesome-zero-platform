@@ -16,11 +16,11 @@ type Config struct {
 	HTTP           HTTPConfig
 	MySQL          database.Config      `json:",optional"`
 	Redis          cache.Config         `json:",optional"`
-	Readiness      ReadinessConfig       `json:",optional"`
-	Startup        StartupConfig         `json:",optional"`
-	Authentication AuthenticationConfig  `json:",optional"`
-	Authorization  AuthorizationConfig   `json:",optional"`
-	Observability  ObservabilityConfig   `json:",optional"`
+	Readiness      ReadinessConfig      `json:",optional"`
+	Startup        StartupConfig        `json:",optional"`
+	Authentication AuthenticationConfig `json:",optional"`
+	Authorization  AuthorizationConfig  `json:",optional"`
+	Observability  ObservabilityConfig  `json:",optional"`
 }
 
 type HTTPConfig struct {
