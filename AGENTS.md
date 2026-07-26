@@ -18,6 +18,15 @@ Awesome Zero Platform is a modular application platform built on go-zero. It pro
 - The repository stores the current complete database schema, not incremental migration history during the early development phase.
 - Temporary database upgrade SQL must not be committed.
 
+## Main branch workflow
+
+- All project changes by ChatGPT, Codex, automation, and other repository agents must be made directly on `main` unless the user explicitly overrides this rule for a specific task.
+- Do not create, switch to, or push feature branches, `agent/*` branches, verification branches, or routine pull requests.
+- Before planning or editing, confirm the checked-out branch is `main`, the working tree is clean, and `main` is synchronized with `origin/main` using `git pull --ff-only`.
+- If local work prevents a clean switch or synchronization, preserve it and stop with a documented blocker rather than creating another branch.
+- Commit goal-related checkpoints directly to `main` and push with `git push origin main`. Never force push.
+- ChatGPT–Codex handoffs use sequential commits on `main`; agents must not modify the same files concurrently.
+
 ## Goal workflow
 
 Supported goal states are:
@@ -35,8 +44,8 @@ Before planning or editing code:
 1. Read this file completely.
 2. Read `docs/goals/current.md` completely.
 3. Read only the architecture, requirement, and decision documents explicitly referenced by the current goal, plus source files needed for implementation.
-4. Confirm the working tree is clean before starting. Preserve any pre-existing local work and stop if the repository is not clean.
-5. Synchronize the current branch with its configured upstream using `git pull --ff-only`. If synchronization cannot complete cleanly, stop and document the blocker.
+4. Confirm the working tree is clean and the checked-out branch is `main`. Preserve any pre-existing local work and stop if the repository is not clean.
+5. Synchronize `main` with `origin/main` using `git pull --ff-only`. If synchronization cannot complete cleanly, stop and document the blocker.
 6. Inspect the synchronized repository state and relevant Git diff.
 7. Treat the current goal and referenced documents as authoritative.
 
@@ -57,8 +66,8 @@ Before finishing:
 1. Run every acceptance check required by the current goal.
 2. Update the permitted status and completion-report sections.
 3. Inspect the final Git diff and ensure only goal-related changes are included.
-4. Commit all completed goal changes with a concise, descriptive commit message.
-5. Push the current branch to its configured upstream with `git push`. Do not use force push. If the push fails, document the exact blocker and keep the verified commit locally.
+4. Commit all completed goal changes directly on `main` with a concise, descriptive commit message.
+5. Push with `git push origin main`. Do not use force push. If the push fails, document the exact blocker and keep the verified commit locally.
 6. Summarize changed files, verification results, commit and push results, unresolved blockers, and intentionally deferred work.
 7. Stop when the goal is completed and pushed, or when a genuine blocker is documented.
 
@@ -66,19 +75,19 @@ Before finishing:
 
 Use the following as the default ownership model unless the active goal explicitly assigns different responsibilities.
 
-1. **ChatGPT is the primary design and implementation agent for substantial work.** ChatGPT clarifies requirements, defines the goal and acceptance criteria, designs architecture and contracts, changes production code, writes the first complete set of tests and documentation, runs focused verification, reviews the integrated diff, and commits and pushes the implementation checkpoint.
+1. **ChatGPT is the primary design and implementation agent for substantial work.** ChatGPT clarifies requirements, defines the goal and acceptance criteria, designs architecture and contracts, changes production code, writes the first complete set of tests and documentation, runs focused verification, reviews the integrated diff, and commits and pushes the implementation checkpoint directly to `main`.
 2. **GitHub Actions performs automatic baseline verification after commits.** CI should cover compilation, deterministic unit and package tests, repository regression, dependency boundaries, frontend builds, and appropriate baseline race checks.
-3. **Codex performs independent follow-up verification.** Starting from a clean synchronized repository, Codex reruns every verification command required by the active goal and may add stronger execution variants such as shuffle, repeated race runs, stress counts, or low-resource builds when appropriate.
+3. **Codex performs independent follow-up verification.** Starting from a clean synchronized `main`, Codex reruns every verification command required by the active goal and may add stronger execution variants such as shuffle, repeated race runs, stress counts, or low-resource builds when appropriate.
 4. **Codex fixes failures that verification actually exposes.** Codex must identify the root cause, make the narrowest correct fix, add or correct deterministic regression coverage, rerun the narrow failing command, and then rerun the complete verification set until it passes or a genuine blocker is documented.
 5. **Verification is not an excuse for speculative refactoring.** When all checks pass, Codex should record the results without manufacturing code changes. It must not redesign architecture, broaden scope, weaken tests, hide failures, or duplicate implementation work already completed by ChatGPT.
 6. **ChatGPT reviews substantive Codex changes.** If Codex changes production behavior, public contracts, configuration, architecture, or significant test semantics, ChatGPT reviews the resulting diff before the next feature goal. Verification-only documentation changes or deterministic test synchronization fixes need only lightweight review.
 7. **Small failure-driven tasks may go directly to Codex.** Known compiler errors, vet findings, race reports with useful stacks, deterministic test failures, build-script failures, formatting issues, and other tightly bounded defects may use Codex as the primary fixer without a separate ChatGPT implementation phase.
-8. **Use committed handoff checkpoints.** Do not let ChatGPT and Codex modify the same files concurrently. The implementing agent commits and pushes before the verifying agent begins; the verifying agent also commits and pushes any fixes before handing control back.
+8. **Use committed handoff checkpoints on `main`.** Do not let ChatGPT and Codex modify the same files concurrently. The implementing agent commits and pushes to `main` before the verifying agent begins; the verifying agent also commits and pushes any fixes to `main` before handing control back.
 9. **Preserve evidence.** Completion reports must distinguish tests that actually ran from integrations that were unavailable, and must record failures encountered, fixes made, final verification results, commit SHA, and push result.
 
 The intended default flow is:
 
-`ChatGPT goal/design/implementation/tests -> GitHub Actions baseline CI -> Codex independent verification and failure fixes -> ChatGPT review only when Codex made substantive changes`
+`ChatGPT goal/design/implementation/tests on main -> GitHub Actions baseline CI -> Codex independent verification and failure fixes on main -> ChatGPT review only when Codex made substantive changes`
 
 ## Resource constraints
 
