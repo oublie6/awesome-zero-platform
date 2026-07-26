@@ -45,17 +45,38 @@ jobs:
       - name: Verify formatting
         id: formatting
         run: make fmt-check
-      - name: Capture formatting patch
+      - name: Capture formatting and Casbin source patch
         if: failure() && steps.formatting.outcome == 'failure'
         run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('server/platform/authz/adapter/casbinmysql/cluster.go')
+          text = path.read_text()
+          old = '''func (e *Engine) reloadCommittedVersion(parent context.Context, version uint64) error {
+          \tctx, cancel := context.WithTimeout(parent, e.cluster.ReloadTimeout)
+          \tdefer cancel()
+          '''
+          new = '''func (e *Engine) reloadCommittedVersion(parent context.Context, version uint64) error {
+          \tif err := parent.Err(); err != nil {
+          \t\treturn err
+          \t}
+          '''
+          if old not in text:
+              raise SystemExit('expected reloadCommittedVersion source not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
           make fmt
           git diff -- server > gofmt.patch
+          mkdir -p source-diagnostic/server/platform/authz/adapter/casbinmysql
+          cp server/platform/authz/adapter/casbinmysql/cluster.go source-diagnostic/server/platform/authz/adapter/casbinmysql/cluster.go
       - name: Upload formatting patch
         if: failure() && steps.formatting.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: gofmt-patch
-          path: gofmt.patch
+          path: |
+            gofmt.patch
+            source-diagnostic
       - name: Unit tests
         id: unit-tests
         run: |
