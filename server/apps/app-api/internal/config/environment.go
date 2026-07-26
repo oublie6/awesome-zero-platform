@@ -18,6 +18,7 @@ func (c *Config) ApplyEnvironment() error {
 	applyString("APP_REDIS_PASSWORD", &c.Redis.Password)
 	applyString("APP_AUTH_ACCESS_TOKEN_SECRET", &c.Authentication.AccessTokenSecret)
 	applyString("APP_ADMIN_BOOTSTRAP_TOKEN", &c.Admin.BootstrapToken)
+	applyString("APP_INSTANCE_ID", &c.Authorization.Cluster.InstanceID)
 
 	if raw := strings.TrimSpace(os.Getenv("APP_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
