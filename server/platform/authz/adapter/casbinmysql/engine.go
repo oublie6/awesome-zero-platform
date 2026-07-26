@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
@@ -32,6 +34,8 @@ m = g(r.sub, p.sub) && keyMatch2(r.obj, p.obj) && regexMatch(r.act, p.act)
 
 type Engine struct {
 	enforcer *casbin.SyncedEnforcer
+	adminMu  sync.Mutex
+	loadedAt time.Time
 }
 
 func New(db *sql.DB) (*Engine, error) {
@@ -47,7 +51,7 @@ func New(db *sql.DB) (*Engine, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create casbin enforcer: %w", err)
 	}
-	return &Engine{enforcer: enforcer}, nil
+	return &Engine{enforcer: enforcer, loadedAt: time.Now().UTC()}, nil
 }
 
 func (e *Engine) Enforce(_ context.Context, subject, resource, action string) (bool, error) {
