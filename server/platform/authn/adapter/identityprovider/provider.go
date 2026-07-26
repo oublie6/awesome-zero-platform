@@ -11,10 +11,10 @@ import (
 )
 
 type accountService interface {
-	FindAccountByUsername(context.Context, string) (identity.Account, error)
-	FindAccountByEmail(context.Context, string) (identity.Account, error)
-	FindAccountByPhone(context.Context, string) (identity.Account, error)
-	GetAccountByID(context.Context, string) (identity.Account, error)
+	FindAccountByUsernameFresh(context.Context, string) (identity.Account, error)
+	FindAccountByEmailFresh(context.Context, string) (identity.Account, error)
+	FindAccountByPhoneFresh(context.Context, string) (identity.Account, error)
+	GetAccountByIDFresh(context.Context, string) (identity.Account, error)
 	VerifyPassword(context.Context, string, string) error
 }
 
@@ -38,11 +38,11 @@ func (p *Provider) Authenticate(ctx context.Context, identifier, password string
 	)
 	switch {
 	case strings.HasPrefix(identifier, "+"):
-		account, err = p.identity.FindAccountByPhone(ctx, identifier)
+		account, err = p.identity.FindAccountByPhoneFresh(ctx, identifier)
 	case strings.Contains(identifier, "@"):
-		account, err = p.identity.FindAccountByEmail(ctx, identifier)
+		account, err = p.identity.FindAccountByEmailFresh(ctx, identifier)
 	default:
-		account, err = p.identity.FindAccountByUsername(ctx, identifier)
+		account, err = p.identity.FindAccountByUsernameFresh(ctx, identifier)
 	}
 	if err != nil {
 		if isInvalidCredentialError(err) {
@@ -67,7 +67,7 @@ func (p *Provider) ResolveActive(ctx context.Context, accountID string) (authn.P
 	if p == nil || p.identity == nil {
 		return authn.Principal{}, authn.ErrAccountUnavailable
 	}
-	account, err := p.identity.GetAccountByID(ctx, accountID)
+	account, err := p.identity.GetAccountByIDFresh(ctx, accountID)
 	if err != nil {
 		if errors.Is(err, identity.ErrAccountNotFound) || errors.Is(err, identity.ErrInvalidAccountState) {
 			return authn.Principal{}, authn.ErrAccountUnavailable
