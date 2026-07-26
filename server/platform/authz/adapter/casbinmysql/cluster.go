@@ -368,26 +368,35 @@ func (e *Engine) watchPolicyChanges(ctx context.Context) {
 		e.setWatcherConnected(true)
 		e.reconcilePolicyVersion(ctx, 0)
 
-		for ctx.Err() == nil {
-			message, err := pubsub.ReceiveMessage(ctx)
-			if err != nil {
+		messages := pubsub.Channel()
+		reconnect := false
+		for !reconnect {
+			select {
+			case <-ctx.Done():
 				_ = pubsub.Close()
 				e.setWatcherConnected(false)
-				if !errors.Is(err, context.Canceled) {
-					logx.WithContext(ctx).Errorf("receive authorization policy change: %v", err)
+				return
+			case message, ok := <-messages:
+				if !ok {
+					_ = pubsub.Close()
+					e.setWatcherConnected(false)
+					reconnect = true
+					continue
 				}
-				break
+				var change policyChangeMessage
+				if err := json.Unmarshal([]byte(message.Payload), &change); err != nil {
+					logx.WithContext(ctx).Errorf("ignore invalid authorization policy notification: %v", err)
+					continue
+				}
+				local, _, _, _, _ := e.syncSnapshot()
+				if change.Version <= local || change.Source == e.cluster.InstanceID {
+					continue
+				}
+				e.reconcilePolicyVersion(ctx, change.Version)
 			}
-			var change policyChangeMessage
-			if err := json.Unmarshal([]byte(message.Payload), &change); err != nil {
-				logx.WithContext(ctx).Errorf("ignore invalid authorization policy notification: %v", err)
-				continue
-			}
-			local, _, _, _, _ := e.syncSnapshot()
-			if change.Version <= local || change.Source == e.cluster.InstanceID {
-				continue
-			}
-			e.reconcilePolicyVersion(ctx, change.Version)
+		}
+		if !sleepContext(ctx, time.Second) {
+			return
 		}
 	}
 }
