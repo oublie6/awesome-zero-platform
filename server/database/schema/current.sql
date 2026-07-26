@@ -41,8 +41,24 @@ CREATE TABLE IF NOT EXISTS identity_password_credentials (
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS authorization_casbin_rules (
+    rule_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    ptype VARCHAR(16) NOT NULL,
+    v0 VARCHAR(191) NOT NULL DEFAULT '',
+    v1 VARCHAR(191) NOT NULL DEFAULT '',
+    v2 VARCHAR(191) NOT NULL DEFAULT '',
+    v3 VARCHAR(191) NOT NULL DEFAULT '',
+    v4 VARCHAR(191) NOT NULL DEFAULT '',
+    v5 VARCHAR(191) NOT NULL DEFAULT '',
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (rule_id),
+    UNIQUE KEY uq_authorization_casbin_rule (ptype, v0, v1, v2, v3, v4, v5),
+    KEY idx_authorization_casbin_subject (ptype, v0),
+    KEY idx_authorization_casbin_object_action (ptype, v1, v2)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO foundation_schema_meta (meta_key, meta_value)
-VALUES ('schema_version', '0005')
+VALUES ('schema_version', '0006')
 ON DUPLICATE KEY UPDATE
     meta_value = VALUES(meta_value),
     updated_at = CURRENT_TIMESTAMP(6);
