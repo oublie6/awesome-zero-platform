@@ -88,7 +88,7 @@ func (f *recordingIdentityCache) GetCtx(context.Context, string, any) error {
 	return f.notFound
 }
 func (f *recordingIdentityCache) IsNotFound(err error) bool { return errors.Is(err, f.notFound) }
-func (f *recordingIdentityCache) Set(string, any) error      { return nil }
+func (f *recordingIdentityCache) Set(string, any) error     { return nil }
 func (f *recordingIdentityCache) SetCtx(context.Context, string, any) error {
 	return nil
 }
