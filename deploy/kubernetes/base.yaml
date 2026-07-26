@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: awesome-zero-platform
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-api
+  namespace: awesome-zero-platform
+  labels:
+    app.kubernetes.io/name: app-api
+    app.kubernetes.io/part-of: awesome-zero-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: app-api
+        app.kubernetes.io/part-of: awesome-zero-platform
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8888"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app-api
+          image: ghcr.io/oublie6/awesome-zero-platform/app-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8888
+          env:
+            - name: APP_MYSQL_ADDR
+              value: mysql:3306
+            - name: APP_MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: awesome-zero-platform-secrets
+                  key: mysql-user
+            - name: APP_MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: awesome-zero-platform-secrets
+                  key: mysql-password
+            - name: APP_REDIS_ADDR
+              value: redis:6379
+            - name: APP_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: awesome-zero-platform-secrets
+                  key: redis-password
+            - name: APP_AUTH_ACCESS_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: awesome-zero-platform-secrets
+                  key: access-token-secret
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-api
+  namespace: awesome-zero-platform
+spec:
+  selector:
+    app.kubernetes.io/name: app-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: app-api
+  namespace: awesome-zero-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-api
