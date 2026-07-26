@@ -14,6 +14,8 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
+	"github.com/redis/go-redis/v9"
 )
 
 const modelText = `[request_definition]
@@ -34,8 +36,25 @@ m = g(r.sub, p.sub) && keyMatch2(r.obj, p.obj) && regexMatch(r.act, p.act)
 
 type Engine struct {
 	enforcer *casbin.SyncedEnforcer
-	adminMu  sync.Mutex
-	loadedAt time.Time
+	db       *sql.DB
+	adapter  *mysqlAdapter
+
+	adminMu sync.Mutex
+
+	stateMu          sync.RWMutex
+	loadedAt         time.Time
+	localVersion     uint64
+	databaseVersion  uint64
+	lastSyncAt       time.Time
+	lastSyncErr      error
+	watcherConnected bool
+
+	clusterEnabled bool
+	cluster        ClusterConfig
+	redis          *redis.Client
+	lifecycleMu    sync.Mutex
+	cancel         context.CancelFunc
+	wg             sync.WaitGroup
 }
 
 func New(db *sql.DB) (*Engine, error) {
@@ -51,35 +70,83 @@ func New(db *sql.DB) (*Engine, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create casbin enforcer: %w", err)
 	}
-	return &Engine{enforcer: enforcer, loadedAt: time.Now().UTC()}, nil
+	return &Engine{
+		enforcer: enforcer,
+		db:       db,
+		adapter:  adapter,
+		loadedAt: time.Now().UTC(),
+	}, nil
 }
 
 func (e *Engine) Enforce(_ context.Context, subject, resource, action string) (bool, error) {
 	return e.enforcer.Enforce(subject, resource, action)
 }
 
-func (e *Engine) AddRoleForUser(_ context.Context, accountID, role string) (bool, error) {
-	return e.enforcer.AddRoleForUser(accountID, role)
+func (e *Engine) AddRoleForUser(ctx context.Context, accountID, role string) (bool, error) {
+	accountID = strings.TrimSpace(accountID)
+	role = strings.TrimSpace(role)
+	return e.mutateRules(ctx, func(rules []authz.RawRule) ([]authz.RawRule, error) {
+		return addRule(rules, authz.RawRule{PType: "g", Values: []string{accountID, role}}), nil
+	})
 }
 
-func (e *Engine) DeleteRoleForUser(_ context.Context, accountID, role string) (bool, error) {
-	return e.enforcer.DeleteRoleForUser(accountID, role)
+func (e *Engine) DeleteRoleForUser(ctx context.Context, accountID, role string) (bool, error) {
+	accountID = strings.TrimSpace(accountID)
+	role = strings.TrimSpace(role)
+	return e.mutateRules(ctx, func(rules []authz.RawRule) ([]authz.RawRule, error) {
+		return removeExactRule(rules, authz.RawRule{PType: "g", Values: []string{accountID, role}}), nil
+	})
 }
 
-func (e *Engine) AddPermissionForRole(_ context.Context, role, resource, action string) (bool, error) {
-	return e.enforcer.AddPermissionForUser(role, resource, action)
+func (e *Engine) AddPermissionForRole(ctx context.Context, role, resource, action string) (bool, error) {
+	role = strings.TrimSpace(role)
+	resource = strings.TrimSpace(resource)
+	action = strings.TrimSpace(action)
+	return e.mutateRules(ctx, func(rules []authz.RawRule) ([]authz.RawRule, error) {
+		return addRule(rules, authz.RawRule{PType: "p", Values: []string{role, resource, action}}), nil
+	})
 }
 
-func (e *Engine) DeletePermissionForRole(_ context.Context, role, resource, action string) (bool, error) {
-	return e.enforcer.DeletePermissionForUser(role, resource, action)
+func (e *Engine) DeletePermissionForRole(ctx context.Context, role, resource, action string) (bool, error) {
+	role = strings.TrimSpace(role)
+	resource = strings.TrimSpace(resource)
+	action = strings.TrimSpace(action)
+	return e.mutateRules(ctx, func(rules []authz.RawRule) ([]authz.RawRule, error) {
+		return removeExactRule(rules, authz.RawRule{PType: "p", Values: []string{role, resource, action}}), nil
+	})
 }
 
-func (e *Engine) DeleteUser(_ context.Context, accountID string) (bool, error) {
-	return e.enforcer.DeleteUser(accountID)
+func (e *Engine) DeleteUser(ctx context.Context, accountID string) (bool, error) {
+	accountID = strings.TrimSpace(accountID)
+	return e.mutateRules(ctx, func(rules []authz.RawRule) ([]authz.RawRule, error) {
+		filtered := rules[:0]
+		for _, rule := range rules {
+			values := trimmedValues(rule.Values)
+			if len(values) > 0 && values[0] == accountID && (rule.PType == "p" || rule.PType == "g") {
+				continue
+			}
+			filtered = append(filtered, rule)
+		}
+		return filtered, nil
+	})
 }
 
-func (e *Engine) DeleteRole(_ context.Context, role string) (bool, error) {
-	return e.enforcer.DeleteRole(role)
+func (e *Engine) DeleteRole(ctx context.Context, role string) (bool, error) {
+	role = strings.TrimSpace(role)
+	return e.mutateRules(ctx, func(rules []authz.RawRule) ([]authz.RawRule, error) {
+		filtered := rules[:0]
+		for _, rule := range rules {
+			values := trimmedValues(rule.Values)
+			if rule.PType == "p" && len(values) > 0 && values[0] == role {
+				continue
+			}
+			if rule.PType == "g" && len(values) > 1 && (values[0] == role || values[1] == role) {
+				continue
+			}
+			filtered = append(filtered, rule)
+		}
+		return filtered, nil
+	})
 }
 
 type mysqlAdapter struct {
@@ -195,4 +262,80 @@ func padded(rule []string) [6]string {
 	var values [6]string
 	copy(values[:], rule)
 	return values
+}
+
+func addRule(rules []authz.RawRule, candidate authz.RawRule) []authz.RawRule {
+	candidate = normalizeRawRules([]authz.RawRule{candidate})[0]
+	for _, rule := range normalizeRawRules(rules) {
+		if rule.PType == candidate.PType && strings.Join(rule.Values, "\x00") == strings.Join(candidate.Values, "\x00") {
+			return rules
+		}
+	}
+	return append(rules, candidate)
+}
+
+func removeExactRule(rules []authz.RawRule, candidate authz.RawRule) []authz.RawRule {
+	candidate = normalizeRawRules([]authz.RawRule{candidate})[0]
+	filtered := rules[:0]
+	for _, rule := range rules {
+		normalized := normalizeRawRules([]authz.RawRule{rule})[0]
+		if normalized.PType == candidate.PType && strings.Join(normalized.Values, "\x00") == strings.Join(candidate.Values, "\x00") {
+			continue
+		}
+		filtered = append(filtered, rule)
+	}
+	return filtered
+}
+
+func (e *Engine) setLoadedAt(value time.Time) {
+	e.stateMu.Lock()
+	e.loadedAt = value.UTC()
+	e.stateMu.Unlock()
+}
+
+func (e *Engine) setVersions(local, database uint64) {
+	e.stateMu.Lock()
+	e.localVersion = local
+	e.databaseVersion = database
+	e.stateMu.Unlock()
+}
+
+func (e *Engine) setDatabaseVersion(version uint64) {
+	e.stateMu.Lock()
+	e.databaseVersion = version
+	e.stateMu.Unlock()
+}
+
+func (e *Engine) setSyncError(err error) {
+	if err == nil {
+		return
+	}
+	e.stateMu.Lock()
+	e.lastSyncErr = err
+	e.stateMu.Unlock()
+}
+
+func (e *Engine) setSyncSuccess(at time.Time) {
+	e.stateMu.Lock()
+	e.lastSyncErr = nil
+	e.lastSyncAt = at.UTC()
+	e.stateMu.Unlock()
+}
+
+func (e *Engine) setWatcherConnected(connected bool) {
+	e.stateMu.Lock()
+	e.watcherConnected = connected
+	e.stateMu.Unlock()
+}
+
+func (e *Engine) syncSnapshot() (local, database uint64, syncErr error, lastSync time.Time, watcherConnected bool) {
+	e.stateMu.RLock()
+	defer e.stateMu.RUnlock()
+	return e.localVersion, e.databaseVersion, e.lastSyncErr, e.lastSyncAt, e.watcherConnected
+}
+
+func (e *Engine) stateSnapshot() (loadedAt time.Time, local, database uint64, syncErr error, lastSync time.Time, watcherConnected bool) {
+	e.stateMu.RLock()
+	defer e.stateMu.RUnlock()
+	return e.loadedAt, e.localVersion, e.databaseVersion, e.lastSyncErr, e.lastSyncAt, e.watcherConnected
 }
