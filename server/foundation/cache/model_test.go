@@ -86,7 +86,7 @@ func (f *fakeModelCache) GetCtx(context.Context, string, any) error {
 	return f.notFound
 }
 func (f *fakeModelCache) IsNotFound(err error) bool { return errors.Is(err, f.notFound) }
-func (f *fakeModelCache) Set(string, any) error      { return nil }
+func (f *fakeModelCache) Set(string, any) error     { return nil }
 func (f *fakeModelCache) SetCtx(context.Context, string, any) error {
 	return nil
 }
