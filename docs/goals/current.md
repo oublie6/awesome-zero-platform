@@ -116,6 +116,8 @@ If code or configuration changes beyond goal documentation are required, rerun t
 - Verified login, `/auth/session`, `/admin/me`, roles, authorization resources, authorization engine synchronization, system configuration, Admin Web health, and Admin Web `/api/health/live` reverse proxy behavior.
 - Recreated `app-api` using `.runtime/admin-compose.env` without `APP_ADMIN_BOOTSTRAP_TOKEN`.
 - Verified bootstrap remained unavailable, the administrator could still log in, and Casbin local/database policy versions matched after API recreation.
+- Committed and pushed the Goal 0010 runtime documentation directly to `origin/main`.
+- Added follow-up UTF-8 fixes for Admin Web responses and MySQL schema/seed imports, then verified the latest repository state through the full CI gate.
 
 ### In progress
 
@@ -123,7 +125,7 @@ If code or configuration changes beyond goal documentation are required, rerun t
 
 ### Remaining
 
-- Commit and push goal-related documentation changes.
+- None.
 
 ### Verification status
 
@@ -145,15 +147,16 @@ If code or configuration changes beyond goal documentation are required, rerun t
 - `.runtime/admin-compose.env` was checked and does not contain `APP_ADMIN_BOOTSTRAP_TOKEN`.
 - `docker compose --env-file .runtime/admin-compose.env -f deploy/production/docker-compose.yml up -d --no-deps --force-recreate app-api` passed.
 - After API recreation, bootstrap remained unavailable, administrator login still worked, and authorization `syncHealthy` was true with `localPolicyVersion == databasePolicyVersion == 2`.
-- Final container status: MySQL 5.7.44 healthy, Redis healthy, `app-api` healthy, `admin-web` healthy, and `schema` exited 0.
+- Final container status recorded on the development machine: MySQL 5.7.44 healthy, Redis healthy, `app-api` healthy, `admin-web` healthy, and `schema` exited 0.
 - Final observed container memory: `app-api` 70.5 MiB, `admin-web` 6.266 MiB, Redis 8.406 MiB, MySQL 77.46 MiB; swap remained unused.
-- Full CI-equivalent Go/race/integration test reruns were intentionally not repeated on this machine after the runtime smoke path because Goal 0010 is a local Compose startup and inspection goal, no production source/configuration change remains in the final diff, and this development machine has 1.6 GiB RAM. Goal 0009 already recorded full CI/runtime verification for the implementation checkpoint.
+- Full CI-equivalent Go/race/integration test reruns were intentionally not repeated on the development machine after the runtime smoke path because Goal 0010 is a local Compose startup and inspection goal and the machine has 1.6 GiB RAM.
+- The latest implementation/configuration checkpoint before this documentation-only cleanup was `4391c54019fa94568a52cc2229acade1a62ed86f`; `ci/full` passed in GitHub Actions run `30209605993`, including unit, race, build, Admin Web, MySQL 5.7 integration, clustered authorization, and production Compose runtime jobs.
 
 ## Completion Report
 
 Completed on 2026-07-26.
 
-The local production Compose stack is running and healthy for inspection:
+The local production Compose stack was started and verified healthy for inspection at completion time:
 
 - Admin Web: `http://127.0.0.1:8080`
 - API: `http://127.0.0.1:8888`
@@ -165,11 +168,11 @@ Runtime credentials are stored only in ignored local files:
 - Administrator login: `.runtime/admin-login.env`
 - Final Compose environment: `.runtime/admin-compose.env`
 
-Bootstrap was executed once and replay was rejected. The final running `app-api` container was recreated without `APP_ADMIN_BOOTSTRAP_TOKEN`; bootstrap remains unavailable and the administrator can still log in.
+Bootstrap was executed once and replay was rejected. The final `app-api` container was recreated without `APP_ADMIN_BOOTSTRAP_TOKEN`; bootstrap remained unavailable and the administrator could still log in.
 
-Casbin authorization synchronization is healthy. The final observed local policy version and database policy version were both `2`.
+Casbin authorization synchronization was healthy. The final observed local policy version and database policy version were both `2`.
 
-The final service state is:
+The final service state recorded on the development machine was:
 
 - `production-mysql-1`: `mysql:5.7.44`, healthy
 - `production-redis-1`: `redis:8.8.0-alpine3.23`, healthy
@@ -181,8 +184,10 @@ Operational notes:
 
 - Docker Hub and public Go/npm registries were unreliable from this host. Domestic mirrors were used only for local image and dependency retrieval.
 - MySQL 8.4.10 local image residue was removed before the final run.
-- No password, token, JWT secret, runtime env file, Compose volume, or build artifact is staged for commit.
+- No password, token, JWT secret, runtime env file, Compose volume, or build artifact was committed.
+- Goal documentation and the follow-up UTF-8 fixes were committed and pushed directly to `origin/main`.
+- Latest verified implementation/configuration checkpoint: `4391c54019fa94568a52cc2229acade1a62ed86f`.
+- Latest full verification: `ci/full` success, GitHub Actions run `30209605993`.
+- This document intentionally does not self-reference its own documentation-only cleanup commit; the final handoff reports that commit SHA after push.
 - Stop services without deleting data: `docker compose --env-file .runtime/admin-compose.env -f deploy/production/docker-compose.yml down`
 - Stop services and delete local MySQL/Redis data: `docker compose --env-file .runtime/admin-compose.env -f deploy/production/docker-compose.yml down --volumes --remove-orphans`
-
-Commit and push result will be recorded in the final handoff after the goal documentation commit is created and pushed.
