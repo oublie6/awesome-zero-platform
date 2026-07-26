@@ -38,6 +38,10 @@ spec:
             - name: http
               containerPort: 8888
           env:
+            - name: APP_INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: APP_MYSQL_ADDR
               value: mysql:3306
             - name: APP_MYSQL_USER
@@ -109,7 +113,7 @@ spec:
     app.kubernetes.io/name: app-api
   ports:
     - name: http
-      port: 80
+      port: 8888
       targetPort: http
 ---
 apiVersion: policy/v1
