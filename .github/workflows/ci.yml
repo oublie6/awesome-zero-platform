@@ -66,7 +66,7 @@ jobs:
           APP_ADMIN_BOOTSTRAP_TOKEN: ci-admin-bootstrap-token-0123456789abcdef
         run: docker compose -f deploy/production/docker-compose.yml config >/dev/null
 
-  admin-web:
+  admin_web:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -136,7 +136,7 @@ jobs:
 
   report:
     if: always() && github.event_name == 'push'
-    needs: [unit, admin-web, integration]
+    needs: [unit, admin_web, integration]
     runs-on: ubuntu-latest
     steps:
       - name: Publish full verification status
@@ -145,7 +145,7 @@ jobs:
           script: |
             const results = {
               unit: '${{ needs.unit.result }}',
-              adminWeb: '${{ needs["admin-web"].result }}',
+              adminWeb: '${{ needs.admin_web.result }}',
               integration: '${{ needs.integration.result }}'
             };
             const success = Object.values(results).every(result => result === 'success');
