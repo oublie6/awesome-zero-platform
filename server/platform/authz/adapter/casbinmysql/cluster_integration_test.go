@@ -133,15 +133,17 @@ func openClusterIntegrationDependencies(t *testing.T) (*sql.DB, *redis.Client) {
 	mysqlUser := envOrDefault("APP_MYSQL_USER", "app_local")
 	mysqlPassword := envOrDefault("APP_MYSQL_PASSWORD", "local-dev-only-mysql-password")
 	mysqlDatabase := envOrDefault("APP_MYSQL_DATABASE", "awesome_zero_platform")
-	dsn := mysql.Config{
-		User:      mysqlUser,
-		Passwd:    mysqlPassword,
-		Net:       "tcp",
-		Addr:      mysqlAddr,
-		DBName:    mysqlDatabase,
-		ParseTime: true,
-		Loc:       time.UTC,
-	}.FormatDSN()
+	mysqlConfig := mysql.Config{
+		User:                 mysqlUser,
+		Passwd:               mysqlPassword,
+		Net:                  "tcp",
+		Addr:                 mysqlAddr,
+		DBName:               mysqlDatabase,
+		ParseTime:            true,
+		Loc:                  time.UTC,
+		AllowNativePasswords: true,
+	}
+	dsn := mysqlConfig.FormatDSN()
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		t.Fatalf("sql.Open() error = %v", err)
