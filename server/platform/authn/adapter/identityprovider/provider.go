@@ -10,11 +10,19 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/platform/identity"
 )
 
-type Provider struct {
-	identity *identity.Service
+type accountService interface {
+	FindAccountByUsername(context.Context, string) (identity.Account, error)
+	FindAccountByEmail(context.Context, string) (identity.Account, error)
+	FindAccountByPhone(context.Context, string) (identity.Account, error)
+	GetAccountByID(context.Context, string) (identity.Account, error)
+	VerifyPassword(context.Context, string, string) error
 }
 
-func New(service *identity.Service) *Provider {
+type Provider struct {
+	identity accountService
+}
+
+func New(service accountService) *Provider {
 	return &Provider{identity: service}
 }
 
