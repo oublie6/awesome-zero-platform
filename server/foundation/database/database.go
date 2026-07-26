@@ -24,7 +24,7 @@ type Config struct {
 	Addr             string        `json:",default=127.0.0.1:3306"`
 	Database         string        `json:",optional"`
 	User             string        `json:",optional"`
-	Password         string        `json:",optional"`
+	Password         string        `json:",optional,env=APP_MYSQL_PASSWORD"`
 	Charset          string        `json:",default=utf8mb4"`
 	ParseTime        bool          `json:",default=true"`
 	Location         string        `json:",default=UTC"`
