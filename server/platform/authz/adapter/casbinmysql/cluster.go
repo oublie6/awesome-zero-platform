@@ -297,8 +297,9 @@ func replaceRawRulesTx(ctx context.Context, tx *sql.Tx, rules []authz.RawRule) e
 }
 
 func (e *Engine) reloadCommittedVersion(parent context.Context, version uint64) error {
-	ctx, cancel := context.WithTimeout(parent, e.cluster.ReloadTimeout)
-	defer cancel()
+	if err := parent.Err(); err != nil {
+		return err
+	}
 	if err := e.enforcer.LoadPolicy(); err != nil {
 		err = fmt.Errorf("reload committed authorization policy version %d: %w", version, err)
 		e.setSyncError(err)
