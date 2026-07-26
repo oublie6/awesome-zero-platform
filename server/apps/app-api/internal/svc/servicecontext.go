@@ -15,15 +15,15 @@ import (
 )
 
 type ServiceContext struct {
-	Config        config.Config
-	MySQL         database.Handle
-	Redis         cache.Handle
-	Readiness     *readiness.Checker
-	Identity      *identity.Service
-	Authn         *authn.Service
-	Authz         *authz.Service
-	Authorizer    authz.Authorizer
-	Metrics       *observability.Metrics
+	Config     config.Config
+	MySQL      database.Handle
+	Redis      cache.Handle
+	Readiness  *readiness.Checker
+	Identity   *identity.Service
+	Authn      *authn.Service
+	Authz      *authz.Service
+	Authorizer authz.Authorizer
+	Metrics    *observability.Metrics
 }
 
 func NewServiceContext(c config.Config, mysql database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {
