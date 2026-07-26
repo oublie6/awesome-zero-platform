@@ -62,7 +62,7 @@ type StartupConfig struct {
 type AuthenticationConfig struct {
 	Enabled           bool
 	Issuer            string        `json:",optional"`
-	AccessTokenSecret string        `json:",optional"`
+	AccessTokenSecret string        `json:",optional,env=APP_AUTH_ACCESS_TOKEN_SECRET"`
 	AccessTTL         time.Duration `json:",default=15m"`
 	RefreshTTL        time.Duration `json:",default=720h"`
 	SessionKeyPrefix  string        `json:",default=authn:session:"`
@@ -75,7 +75,7 @@ type AuthorizationConfig struct {
 
 type AuthorizationClusterConfig struct {
 	Enabled        bool
-	InstanceID     string        `json:",optional"`
+	InstanceID     string        `json:",optional,env=APP_INSTANCE_ID"`
 	Channel        string        `json:",default=awesome-zero-platform:authz:policy-changed"`
 	PollInterval   time.Duration `json:",default=20s"`
 	PublishTimeout time.Duration `json:",default=2s"`
@@ -84,7 +84,7 @@ type AuthorizationClusterConfig struct {
 
 type AdminConfig struct {
 	Enabled        bool
-	BootstrapToken string `json:",optional"`
+	BootstrapToken string `json:",optional,env=APP_ADMIN_BOOTSTRAP_TOKEN"`
 }
 
 type ObservabilityConfig struct {
