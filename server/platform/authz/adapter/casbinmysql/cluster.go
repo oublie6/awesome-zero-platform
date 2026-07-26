@@ -171,6 +171,9 @@ func (e *Engine) mutateRules(ctx context.Context, transform func([]authz.RawRule
 		if err := e.validatePolicySafety(current, next); err != nil {
 			return false, err
 		}
+		if err := validateActiveSuperAdminSafety(ctx, e.db, next); err != nil {
+			return false, err
+		}
 		if reflect.DeepEqual(normalizeRawRules(current), next) {
 			return false, nil
 		}
@@ -204,6 +207,9 @@ func (e *Engine) mutateRules(ctx context.Context, transform func([]authz.RawRule
 		return false, err
 	}
 	if err := e.validatePolicySafety(current, next); err != nil {
+		return false, err
+	}
+	if err := validateActiveSuperAdminSafety(ctx, tx, next); err != nil {
 		return false, err
 	}
 	if reflect.DeepEqual(normalizeRawRules(current), next) {
