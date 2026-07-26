@@ -45,6 +45,12 @@ compose_final() {
 }
 
 cleanup() {
+  local status=$?
+  if [[ "$status" -ne 0 ]]; then
+    echo "runtime acceptance failed; preserving final container diagnostics" >&2
+    compose_bootstrap ps >&2 || true
+    compose_bootstrap logs --no-color --tail=300 mysql schema redis app-api admin-web >&2 || true
+  fi
   compose_final down --volumes --remove-orphans >/dev/null 2>&1 || true
   rm -f "$BOOTSTRAP_ENV" "$FINAL_ENV"
 }
