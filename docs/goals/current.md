@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-26
-- Completed:
-- Blockers:
+- Completed: 2026-07-26
+- Blockers: None.
 
 ## Goal
 
@@ -74,18 +74,49 @@ GitHub Actions must subsequently report `ci/full: success` for the final commit.
 - Archived completed Goal 0010.
 - Inspected the global stylesheet, PageHeader, Admin layout, account table, role workspace, resource table, authorization engine toolbar, and audit toolbar.
 - Identified fixed global minimum width, non-wrapping toolbars, and ungrouped table action buttons as the main layout risks.
+- Replaced the global 1100px body minimum with flexible page sizing while keeping a smaller Admin-shell safety width for the desktop control plane.
+- Added reusable wrapping layouts for toolbars, generic button groups, and table actions.
+- Prevented Element Plus button labels from shrinking or breaking across lines.
+- Added explicit gap handling so grouped buttons no longer inherit conflicting sibling margins.
+- Made PageHeader copy/actions wrap independently and added responsive stacking at constrained widths.
+- Wrapped account and resource table actions in reusable action containers and replaced rigid operation widths with responsive minimum widths.
+- Made the role workspace, role header actions, permission checkbox matrix, and narrow-window role list responsive.
+- Hardened the Admin top bar against title, role badge, and user-name collisions through ellipsis and fixed action sizing.
+- Preserved all existing labels, routes, click handlers, API calls, permissions, and UTF-8 Nginx configuration.
 
 ### In progress
 
-- Implementing shared button and responsive layout rules.
+- None.
 
 ### Remaining
 
-- Update affected Vue templates and styles.
-- Run frontend build verification.
-- Confirm final `ci/full` success.
-- Record final commit and completion evidence.
+- None.
+
+### Verification status
+
+- Implementation checkpoint: `47ab576f568c305b15fcded5f34147be209972fb`.
+- GitHub Actions run `30211902545` reported `ci/full: success`.
+- Admin Web dependency installation, Vue type checking, and production build passed.
+- Clean client source verification passed.
+- Repository module, generated-code, formatting, Go unit, race, and build checks passed.
+- MySQL 5.7/Redis integration and clustered authorization tests passed.
+- Production Compose runtime acceptance passed.
+- No backend API, authorization rule, database schema, or runtime secret changed.
+- Direct browser screenshot comparison was not available in this execution environment; completion is based on source inspection, responsive layout contracts, Vue production build, and the repository runtime gate.
 
 ## Completion Report
 
-Not completed.
+Completed on 2026-07-26.
+
+The Admin Web now uses shared layout primitives instead of relying on implicit Element Plus button margins and rigid one-line containers. Button labels are kept intact, adjacent controls use explicit gaps, dense table actions can wrap onto additional rows, and page/role headers can reflow without text collisions.
+
+Changed areas:
+
+- `clients/admin-web/src/styles.css`
+- `clients/admin-web/src/components/PageHeader.vue`
+- `clients/admin-web/src/layouts/AdminLayout.vue`
+- `clients/admin-web/src/views/accounts/AccountsView.vue`
+- `clients/admin-web/src/views/roles/RolesView.vue`
+- `clients/admin-web/src/views/authorization/StandardView.vue`
+
+The implementation was committed directly to `main`. The full repository gate passed on implementation commit `47ab576f568c305b15fcded5f34147be209972fb` in GitHub Actions run `30211902545`.
