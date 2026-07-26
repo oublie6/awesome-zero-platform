@@ -1,46 +1,36 @@
-# Goal 0011: Admin Layout and Button Text Stabilization
+# Goal 0012: Account Row Action Buttons
 
 ## Status
 
-- State: completed
+- State: in_progress
 - Started: 2026-07-26
-- Completed: 2026-07-26
-- Blockers: None.
+- Completed:
+- Blockers:
 
 ## Goal
 
-Fix overlapping and cramped button labels in the Vue 3 Admin Web, establish reusable button-group and toolbar layout rules, and improve the affected account, role, resource, and page-header layouts without changing Admin behavior or API contracts.
+Make every account-row action in the Vue 3 Admin Web visually distinct by replacing text-link actions with four independent compact buttons arranged in a clear two-column layout.
 
 ## References
 
 - `AGENTS.md`
-- `clients/admin-web/src/styles.css`
-- `clients/admin-web/src/components/PageHeader.vue`
-- `clients/admin-web/src/layouts/AdminLayout.vue`
 - `clients/admin-web/src/views/accounts/AccountsView.vue`
-- `clients/admin-web/src/views/roles/RolesView.vue`
-- `clients/admin-web/src/views/authorization/StandardView.vue`
-- `clients/admin-web/src/views/authorization/EngineView.vue`
-- `clients/admin-web/src/views/AuditView.vue`
+- `clients/admin-web/src/styles.css`
 
 ## Deliverables
 
-1. Prevent Element Plus button labels from shrinking, wrapping into themselves, or visually overlapping adjacent labels.
-2. Add reusable flex layouts for toolbars, page actions, table actions, and compact button groups.
-3. Make dense table action areas wrap cleanly while preserving readable row heights and click targets.
-4. Make PageHeader action slots and role-header actions responsive instead of forcing content into one line.
-5. Remove the unnecessary global 1100px minimum page width while retaining a usable desktop Admin layout and safe horizontal table scrolling.
-6. Keep all existing button text, actions, permissions, routes, and API calls unchanged.
-7. Build the Vue application successfully and pass the repository `ci/full` gate.
+1. Replace the account table row's link-style action texts with four real compact buttons.
+2. Present `详情`, `编辑`, `启用/禁用`, and `重置密码` as independent controls with visible boundaries.
+3. Use a stable two-column action layout so labels neither touch nor resemble one combined button.
+4. Preserve all existing click handlers, confirmation behavior, permissions, labels, and API calls.
+5. Pass Vue type checking, production build, and the repository `ci/full` gate.
 
 ## Constraints
 
 - Work directly on `main`; do not create branches or pull requests.
-- Do not redesign the visual identity or introduce a new UI framework.
-- Do not change backend APIs, authorization behavior, or database schema.
-- Prefer shared CSS and small template wrappers over page-specific width hacks.
-- Preserve UTF-8 response configuration.
-- Do not claim visual browser verification unless it was actually performed.
+- Limit production changes to the account-row action presentation.
+- Do not change backend APIs or account-management behavior.
+- Do not use link-style buttons for this row action group.
 
 ## Required Verification
 
@@ -53,70 +43,34 @@ cd ../..
 git diff --check
 ```
 
-GitHub Actions must subsequently report `ci/full: success` for the final commit.
+GitHub Actions must report `ci/full: success` for the final commit.
 
 ## Acceptance Criteria
 
-- Button labels remain on one line inside each button.
-- Adjacent buttons have explicit gaps and do not rely on Element Plus sibling margins inside flex groups.
-- Account and resource table actions wrap cleanly without overlapping.
-- Role header actions remain readable when horizontal space is constrained.
-- Toolbars can wrap filters and actions onto additional rows.
-- Page-header actions do not collide with titles or descriptions.
-- Existing Admin functionality and labels remain unchanged.
-- Admin Web type checking and production build pass.
-- Final `ci/full` passes.
+- Every account row shows four visibly independent buttons.
+- Buttons are arranged as a 2×2 grid with consistent spacing.
+- Button labels do not touch, overlap, or appear as one continuous string.
+- Enable/disable and reset-password actions remain visually differentiated.
+- Existing actions still call the original handlers.
+- Admin Web build and final `ci/full` pass.
 
 ## Working State
 
 ### Completed
 
-- Archived completed Goal 0010.
-- Inspected the global stylesheet, PageHeader, Admin layout, account table, role workspace, resource table, authorization engine toolbar, and audit toolbar.
-- Identified fixed global minimum width, non-wrapping toolbars, and ungrouped table action buttons as the main layout risks.
-- Replaced the global 1100px body minimum with flexible page sizing while keeping a smaller Admin-shell safety width for the desktop control plane.
-- Added reusable wrapping layouts for toolbars, generic button groups, and table actions.
-- Prevented Element Plus button labels from shrinking or breaking across lines.
-- Added explicit gap handling so grouped buttons no longer inherit conflicting sibling margins.
-- Made PageHeader copy/actions wrap independently and added responsive stacking at constrained widths.
-- Wrapped account and resource table actions in reusable action containers and replaced rigid operation widths with responsive minimum widths.
-- Made the role workspace, role header actions, permission checkbox matrix, and narrow-window role list responsive.
-- Hardened the Admin top bar against title, role badge, and user-name collisions through ellipsis and fixed action sizing.
-- Preserved all existing labels, routes, click handlers, API calls, permissions, and UTF-8 Nginx configuration.
+- Archived Goal 0011.
+- Confirmed the account action column currently uses four `link` buttons, which visually resemble adjacent text rather than distinct controls.
 
 ### In progress
 
-- None.
+- Replacing the link actions with compact bordered buttons.
 
 ### Remaining
 
-- None.
-
-### Verification status
-
-- Implementation checkpoint: `47ab576f568c305b15fcded5f34147be209972fb`.
-- GitHub Actions run `30211902545` reported `ci/full: success`.
-- Admin Web dependency installation, Vue type checking, and production build passed.
-- Clean client source verification passed.
-- Repository module, generated-code, formatting, Go unit, race, and build checks passed.
-- MySQL 5.7/Redis integration and clustered authorization tests passed.
-- Production Compose runtime acceptance passed.
-- No backend API, authorization rule, database schema, or runtime secret changed.
-- Direct browser screenshot comparison was not available in this execution environment; completion is based on source inspection, responsive layout contracts, Vue production build, and the repository runtime gate.
+- Update the account action template and scoped layout.
+- Run the full verification gate.
+- Record completion evidence.
 
 ## Completion Report
 
-Completed on 2026-07-26.
-
-The Admin Web now uses shared layout primitives instead of relying on implicit Element Plus button margins and rigid one-line containers. Button labels are kept intact, adjacent controls use explicit gaps, dense table actions can wrap onto additional rows, and page/role headers can reflow without text collisions.
-
-Changed areas:
-
-- `clients/admin-web/src/styles.css`
-- `clients/admin-web/src/components/PageHeader.vue`
-- `clients/admin-web/src/layouts/AdminLayout.vue`
-- `clients/admin-web/src/views/accounts/AccountsView.vue`
-- `clients/admin-web/src/views/roles/RolesView.vue`
-- `clients/admin-web/src/views/authorization/StandardView.vue`
-
-The implementation was committed directly to `main`. The full repository gate passed on implementation commit `47ab576f568c305b15fcded5f34147be209972fb` in GitHub Actions run `30211902545`.
+Not completed.
