@@ -161,15 +161,16 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 	}
 
 	driverConfig := mysql.Config{
-		User:      cfg.User,
-		Passwd:    cfg.Password,
-		Net:       "tcp",
-		Addr:      cfg.Addr,
-		DBName:    cfg.Database,
-		Collation: "utf8mb4_unicode_ci",
-		ParseTime: cfg.ParseTime,
-		Loc:       loc,
-		Timeout:   cfg.Timeout,
+		User:                 cfg.User,
+		Passwd:               cfg.Password,
+		Net:                  "tcp",
+		Addr:                 cfg.Addr,
+		DBName:               cfg.Database,
+		Collation:            "utf8mb4_unicode_ci",
+		ParseTime:            cfg.ParseTime,
+		Loc:                  loc,
+		Timeout:              cfg.Timeout,
+		AllowNativePasswords: true,
 		Params: map[string]string{
 			"charset":   cfg.Charset,
 			"time_zone": quoteTimeZone(cfg.TimeZone),
