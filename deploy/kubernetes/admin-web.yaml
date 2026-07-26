@@ -2,18 +2,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: awesome-zero-admin-web
+  namespace: awesome-zero-platform
+  labels:
+    app.kubernetes.io/name: admin-web
+    app.kubernetes.io/part-of: awesome-zero-platform
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: awesome-zero-admin-web
+      app.kubernetes.io/name: admin-web
   template:
     metadata:
       labels:
-        app: awesome-zero-admin-web
+        app.kubernetes.io/name: admin-web
+        app.kubernetes.io/part-of: awesome-zero-platform
     spec:
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: admin-web
           image: awesome-zero-platform/admin-web:latest
@@ -60,9 +67,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: awesome-zero-admin-web
+  namespace: awesome-zero-platform
 spec:
   selector:
-    app: awesome-zero-admin-web
+    app.kubernetes.io/name: admin-web
   ports:
     - name: http
       port: 80
