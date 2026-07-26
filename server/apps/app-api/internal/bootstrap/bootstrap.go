@@ -3,16 +3,25 @@ package bootstrap
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/config"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/handler"
+	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/securityhttp"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/svc"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/httpmiddleware"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/observability"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/readiness"
 	platformresponse "github.com/oublie6/awesome-zero-platform/server/foundation/response"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authn/adapter/identityprovider"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authn/adapter/jwthmac"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authn/adapter/redissession"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authz/adapter/casbinmysql"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/rest"
 	restrouter "github.com/zeromicro/go-zero/rest/router"
@@ -40,15 +49,25 @@ func New(configFile string) (*App, error) {
 	}
 
 	cfg.Prepare()
+	if err := cfg.ApplyEnvironment(); err != nil {
+		return nil, fmt.Errorf("apply environment configuration: %w", err)
+	}
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("validate config %q: %w", configFile, err)
 	}
 
 	platformresponse.InstallHTTPHandlers()
 
-	// Request ID must be established before logging, recovery, and response shaping.
-	// Recovery wraps the inner chain so panic responses still include security,
-	// CORS, body-limit handling, and the effective request ID.
+	var metrics *observability.Metrics
+	metricsMiddleware := func(next http.Handler) http.Handler { return next }
+	if cfg.Observability.Metrics.Enabled {
+		metrics = observability.NewMetrics(cfg.Observability.Metrics.Namespace)
+		metricsMiddleware = metrics.Middleware
+	}
+
+	// Request ID is established before logging, recovery, metrics, and response shaping.
+	// Platform authentication and authorization remain route middleware so transport
+	// concerns do not leak into the reusable authn and authz application services.
 	router := httpmiddleware.WrapRouter(
 		restrouter.NewRouter(),
 		httpmiddleware.RequestID(httpmiddleware.RequestIDConfig{
@@ -57,6 +76,7 @@ func New(configFile string) (*App, error) {
 		}),
 		httpmiddleware.AccessLog(),
 		httpmiddleware.Recovery(),
+		metricsMiddleware,
 		httpmiddleware.SecurityHeaders(httpmiddleware.SecurityHeadersConfig{
 			ContentTypeOptions: cfg.HTTP.SecurityHeaders.ContentTypeOptions,
 			FrameOptions:       cfg.HTTP.SecurityHeaders.FrameOptions,
@@ -82,7 +102,6 @@ func New(configFile string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	redisClient, err := openRedis(ctx, cfg.Redis)
 	if err != nil {
 		_ = mysqlResource.Close()
@@ -95,14 +114,63 @@ func New(configFile string) (*App, error) {
 	)
 
 	svcCtx := svc.NewServiceContext(cfg, mysqlResource, redisClient, checker)
-	handler.RegisterHandlers(server, svcCtx)
+	svcCtx.Metrics = metrics
 
-	return &App{
-		Config: cfg,
-		server: server,
-		mysql:  mysqlResource,
-		redis:  redisClient,
-	}, nil
+	if cfg.Authentication.Enabled {
+		codec, err := jwthmac.New(cfg.Authentication.AccessTokenSecret, cfg.Authentication.Issuer)
+		if err != nil {
+			_ = redisClient.Close()
+			_ = mysqlResource.Close()
+			return nil, fmt.Errorf("initialize access token codec: %w", err)
+		}
+		sessionStore, err := redissession.New(redisClient.Client(), cfg.Authentication.SessionKeyPrefix)
+		if err != nil {
+			_ = redisClient.Close()
+			_ = mysqlResource.Close()
+			return nil, fmt.Errorf("initialize session store: %w", err)
+		}
+		authentication, err := authn.NewService(
+			identityprovider.New(svcCtx.Identity),
+			codec,
+			sessionStore,
+			authn.Config{AccessTTL: cfg.Authentication.AccessTTL, RefreshTTL: cfg.Authentication.RefreshTTL},
+		)
+		if err != nil {
+			_ = redisClient.Close()
+			_ = mysqlResource.Close()
+			return nil, fmt.Errorf("initialize authentication service: %w", err)
+		}
+		svcCtx.Authn = authentication
+	}
+
+	if cfg.Authorization.Enabled {
+		engine, err := casbinmysql.New(mysqlResource.DB())
+		if err != nil {
+			_ = redisClient.Close()
+			_ = mysqlResource.Close()
+			return nil, fmt.Errorf("initialize casbin authorization: %w", err)
+		}
+		authorization, err := authz.NewService(engine, engine)
+		if err != nil {
+			_ = redisClient.Close()
+			_ = mysqlResource.Close()
+			return nil, fmt.Errorf("initialize authorization service: %w", err)
+		}
+		svcCtx.Authz = authorization
+		svcCtx.Authorizer = authorization
+	}
+
+	handler.RegisterHandlers(server, svcCtx)
+	securityhttp.Register(server, svcCtx)
+	if metrics != nil {
+		server.AddRoutes([]rest.Route{{
+			Method:  http.MethodGet,
+			Path:    cfg.Observability.Metrics.Path,
+			Handler: metrics.Handler().ServeHTTP,
+		}})
+	}
+
+	return &App{Config: cfg, server: server, mysql: mysqlResource, redis: redisClient}, nil
 }
 
 func (a *App) Start() {
@@ -114,7 +182,6 @@ func (a *App) Stop() {
 	if a == nil || a.server == nil {
 		return
 	}
-
 	a.stopOnce.Do(func() {
 		a.server.Stop()
 		if a.redis != nil {
