@@ -50,8 +50,8 @@ func TestIntegrationDependenciesAndHealth(t *testing.T) {
 	if err := app.mysql.DB().QueryRowContext(ctx, "SELECT meta_value FROM foundation_schema_meta WHERE meta_key = ?", "schema_version").Scan(&schemaVersion); err != nil {
 		t.Fatalf("query schema version: %v", err)
 	}
-	if schemaVersion != "0005" {
-		t.Fatalf("schema version = %q, want 0005", schemaVersion)
+	if schemaVersion != "0006" {
+		t.Fatalf("schema version = %q, want 0006", schemaVersion)
 	}
 
 	var seedState string
