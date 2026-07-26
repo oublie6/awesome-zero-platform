@@ -137,11 +137,13 @@ func (e *Engine) Ping(ctx context.Context) error {
 	}
 	e.setDatabaseVersion(version)
 	local, _, syncErr, _, _ := e.syncSnapshot()
-	if syncErr != nil {
-		return syncErr
-	}
 	if version > local {
 		return fmt.Errorf("authorization policy is stale: local=%d database=%d", local, version)
+	}
+	if syncErr != nil {
+		// A successful authoritative version check proves that any previous
+		// transient subscription error did not leave this Enforcer stale.
+		e.setSyncSuccess(time.Now().UTC())
 	}
 	return nil
 }
@@ -164,6 +166,9 @@ func (e *Engine) mutateRules(ctx context.Context, transform func([]authz.RawRule
 		}
 		next = normalizeRawRules(next)
 		if err := e.ValidateRawRules(ctx, next); err != nil {
+			return false, err
+		}
+		if err := e.validatePolicySafety(current, next); err != nil {
 			return false, err
 		}
 		if reflect.DeepEqual(normalizeRawRules(current), next) {
@@ -196,6 +201,9 @@ func (e *Engine) mutateRules(ctx context.Context, transform func([]authz.RawRule
 	}
 	next = normalizeRawRules(next)
 	if err := e.ValidateRawRules(ctx, next); err != nil {
+		return false, err
+	}
+	if err := e.validatePolicySafety(current, next); err != nil {
 		return false, err
 	}
 	if reflect.DeepEqual(normalizeRawRules(current), next) {
@@ -306,12 +314,15 @@ func (e *Engine) reconcilePolicyVersion(parent context.Context, hintedVersion ui
 		e.setSyncError(err)
 		return
 	}
+	// The notification is only a wake-up hint. MySQL is the source of truth;
+	// never advance local state to a version observed only in Pub/Sub payloads.
 	if hintedVersion > version {
-		version = hintedVersion
+		logx.WithContext(ctx).Infof("authorization policy notification is ahead of database: hinted=%d database=%d", hintedVersion, version)
 	}
 	e.setDatabaseVersion(version)
 	local, _, _, _, _ := e.syncSnapshot()
 	if version <= local {
+		e.setSyncSuccess(time.Now().UTC())
 		return
 	}
 
@@ -319,6 +330,7 @@ func (e *Engine) reconcilePolicyVersion(parent context.Context, hintedVersion ui
 	defer e.adminMu.Unlock()
 	local, _, _, _, _ = e.syncSnapshot()
 	if version <= local {
+		e.setSyncSuccess(time.Now().UTC())
 		return
 	}
 	if err := e.enforcer.LoadPolicy(); err != nil {
@@ -338,7 +350,9 @@ func (e *Engine) watchPolicyChanges(ctx context.Context) {
 		if _, err := pubsub.Receive(ctx); err != nil {
 			_ = pubsub.Close()
 			e.setWatcherConnected(false)
-			e.setSyncError(fmt.Errorf("subscribe authorization policy changes: %w", err))
+			if !errors.Is(err, context.Canceled) {
+				logx.WithContext(ctx).Errorf("subscribe authorization policy changes: %v", err)
+			}
 			if !sleepContext(ctx, time.Second) {
 				return
 			}
@@ -353,7 +367,7 @@ func (e *Engine) watchPolicyChanges(ctx context.Context) {
 				_ = pubsub.Close()
 				e.setWatcherConnected(false)
 				if !errors.Is(err, context.Canceled) {
-					e.setSyncError(fmt.Errorf("receive authorization policy change: %w", err))
+					logx.WithContext(ctx).Errorf("receive authorization policy change: %v", err)
 				}
 				break
 			}
