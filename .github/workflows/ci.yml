@@ -26,19 +26,30 @@ jobs:
         run: go install github.com/zeromicro/go-zero/tools/goctl@v1.10.1
       - name: Resolve modules
         working-directory: server
-        run: |
-          go mod tidy
-          git diff -- go.sum
+        run: go mod tidy
+      - name: Format source
+        run: make fmt
       - name: Verify generated code
-        run: |
-          make generate
-          git diff --exit-code -- server/apps/app-api
-      - name: Verify formatting
-        run: make fmt-check
+        run: make generate
       - name: Unit tests
         run: make test
       - name: Build
         run: make build
+      - name: Upload normalized source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: normalized-source
+          path: |
+            Makefile
+            server/go.mod
+            server/go.sum
+            server/**/*.go
+          if-no-files-found: error
+          retention-days: 1
+      - name: Verify committed source is normalized
+        if: always()
+        run: git diff --exit-code -- Makefile server
 
   integration:
     runs-on: ubuntu-latest
