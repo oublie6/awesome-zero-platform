@@ -1,0 +1,84 @@
+services:
+  mysql:
+    image: mysql:8.4.10
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: awesome_zero_platform
+      MYSQL_USER: app
+      MYSQL_PASSWORD: ${APP_MYSQL_PASSWORD:?set APP_MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${APP_MYSQL_ROOT_PASSWORD:?set APP_MYSQL_ROOT_PASSWORD}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  schema:
+    image: mysql:8.4.10
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_MYSQL_PASSWORD: ${APP_MYSQL_PASSWORD:?set APP_MYSQL_PASSWORD}
+    volumes:
+      - ../../server/database/schema/current.sql:/schema/current.sql:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - exec mysql -hmysql -uapp -p"$$APP_MYSQL_PASSWORD" awesome_zero_platform < /schema/current.sql
+
+  redis:
+    image: redis:8.8.0-alpine3.23
+    restart: unless-stopped
+    environment:
+      APP_REDIS_PASSWORD: ${APP_REDIS_PASSWORD:?set APP_REDIS_PASSWORD}
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$APP_REDIS_PASSWORD\" --appendonly yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$APP_REDIS_PASSWORD\" PING | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  app-api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/app-api.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      schema:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      APP_MYSQL_ADDR: mysql:3306
+      APP_MYSQL_USER: app
+      APP_MYSQL_PASSWORD: ${APP_MYSQL_PASSWORD:?set APP_MYSQL_PASSWORD}
+      APP_REDIS_ADDR: redis:6379
+      APP_REDIS_PASSWORD: ${APP_REDIS_PASSWORD:?set APP_REDIS_PASSWORD}
+      APP_AUTH_ACCESS_TOKEN_SECRET: ${APP_AUTH_ACCESS_TOKEN_SECRET:?set APP_AUTH_ACCESS_TOKEN_SECRET}
+    ports:
+      - "8888:8888"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "/app/app-api", "-h"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  mysql-data:
+  redis-data:
