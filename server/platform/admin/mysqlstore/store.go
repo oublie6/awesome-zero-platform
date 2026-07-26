@@ -9,18 +9,24 @@ import (
 	"strings"
 
 	mysql "github.com/go-sql-driver/mysql"
+	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	"github.com/oublie6/awesome-zero-platform/server/platform/admin"
 )
 
 type Store struct {
-	db *sql.DB
+	db    *sql.DB
+	cache *foundationcache.ModelCache
 }
 
 func New(db *sql.DB) (*Store, error) {
+	return NewCached(db, nil)
+}
+
+func NewCached(db *sql.DB, modelCache *foundationcache.ModelCache) (*Store, error) {
 	if db == nil {
 		return nil, fmt.Errorf("mysql database is required")
 	}
-	return &Store{db: db}, nil
+	return &Store{db: db, cache: modelCache}, nil
 }
 
 func (s *Store) ListRoles(ctx context.Context) ([]admin.Role, error) {
@@ -32,8 +38,8 @@ func (s *Store) ListRoles(ctx context.Context) ([]admin.Role, error) {
 	defer rows.Close()
 	roles := make([]admin.Role, 0)
 	for rows.Next() {
-		var role admin.Role
-		if err := rows.Scan(&role.Code, &role.DisplayName, &role.Description, &role.System, &role.CreatedAt, &role.UpdatedAt); err != nil {
+		role, err := scanRole(rows)
+		if err != nil {
 			return nil, err
 		}
 		roles = append(roles, role)
@@ -42,11 +48,25 @@ func (s *Store) ListRoles(ctx context.Context) ([]admin.Role, error) {
 }
 
 func (s *Store) GetRole(ctx context.Context, code string) (admin.Role, error) {
+	code = strings.TrimSpace(code)
+	if s.cache == nil {
+		return s.GetRoleFresh(ctx, code)
+	}
 	var role admin.Role
-	err := s.db.QueryRowContext(ctx, `SELECT role_code, display_name, description, is_system, created_at, updated_at
-		FROM authorization_roles WHERE role_code = ?`, strings.TrimSpace(code)).Scan(
-		&role.Code, &role.DisplayName, &role.Description, &role.System, &role.CreatedAt, &role.UpdatedAt,
-	)
+	err := s.cache.TakeCtx(ctx, &role, s.roleKey(code), func(value any) error {
+		loaded, err := s.GetRoleFresh(ctx, code)
+		if err != nil {
+			return err
+		}
+		*value.(*admin.Role) = loaded
+		return nil
+	})
+	return role, err
+}
+
+func (s *Store) GetRoleFresh(ctx context.Context, code string) (admin.Role, error) {
+	role, err := scanRole(s.db.QueryRowContext(ctx, `SELECT role_code, display_name, description, is_system, created_at, updated_at
+		FROM authorization_roles WHERE role_code = ?`, strings.TrimSpace(code)))
 	if errors.Is(err, sql.ErrNoRows) {
 		return admin.Role{}, admin.ErrNotFound
 	}
@@ -67,7 +87,10 @@ func (s *Store) CreateRole(ctx context.Context, role admin.Role) (admin.Role, er
 	if err != nil {
 		return admin.Role{}, translate(err)
 	}
-	return s.GetRole(ctx, role.Code)
+	if err := s.invalidate(ctx, s.roleKey(role.Code)); err != nil {
+		return admin.Role{}, err
+	}
+	return s.GetRoleFresh(ctx, role.Code)
 }
 
 func (s *Store) UpdateRole(ctx context.Context, role admin.Role) (admin.Role, error) {
@@ -86,15 +109,22 @@ func (s *Store) UpdateRole(ctx context.Context, role admin.Role) (admin.Role, er
 	if err := requireAffected(result); err != nil {
 		return admin.Role{}, err
 	}
-	return s.GetRole(ctx, role.Code)
+	if err := s.invalidate(ctx, s.roleKey(role.Code)); err != nil {
+		return admin.Role{}, err
+	}
+	return s.GetRoleFresh(ctx, role.Code)
 }
 
 func (s *Store) DeleteRole(ctx context.Context, code string) error {
-	result, err := s.db.ExecContext(ctx, `DELETE FROM authorization_roles WHERE role_code = ? AND is_system = 0`, strings.TrimSpace(code))
+	code = strings.TrimSpace(code)
+	result, err := s.db.ExecContext(ctx, `DELETE FROM authorization_roles WHERE role_code = ? AND is_system = 0`, code)
 	if err != nil {
 		return err
 	}
-	return requireAffected(result)
+	if err := requireAffected(result); err != nil {
+		return err
+	}
+	return s.invalidate(ctx, s.roleKey(code))
 }
 
 func (s *Store) ListResources(ctx context.Context) ([]admin.Resource, error) {
@@ -117,6 +147,23 @@ func (s *Store) ListResources(ctx context.Context) ([]admin.Resource, error) {
 }
 
 func (s *Store) GetResource(ctx context.Context, code string) (admin.Resource, error) {
+	code = strings.TrimSpace(code)
+	if s.cache == nil {
+		return s.GetResourceFresh(ctx, code)
+	}
+	var resource admin.Resource
+	err := s.cache.TakeCtx(ctx, &resource, s.resourceKey(code), func(value any) error {
+		loaded, err := s.GetResourceFresh(ctx, code)
+		if err != nil {
+			return err
+		}
+		*value.(*admin.Resource) = loaded
+		return nil
+	})
+	return resource, err
+}
+
+func (s *Store) GetResourceFresh(ctx context.Context, code string) (admin.Resource, error) {
 	row := s.db.QueryRowContext(ctx, `SELECT resource_code, display_name, module_name, resource_pattern,
 		actions_json, description, is_system, created_at, updated_at
 		FROM authorization_resources WHERE resource_code = ?`, strings.TrimSpace(code))
@@ -140,7 +187,10 @@ func (s *Store) CreateResource(ctx context.Context, resource admin.Resource) (ad
 	if err != nil {
 		return admin.Resource{}, translate(err)
 	}
-	return s.GetResource(ctx, resource.Code)
+	if err := s.invalidate(ctx, s.resourceKey(resource.Code)); err != nil {
+		return admin.Resource{}, err
+	}
+	return s.GetResourceFresh(ctx, resource.Code)
 }
 
 func (s *Store) UpdateResource(ctx context.Context, resource admin.Resource) (admin.Resource, error) {
@@ -159,15 +209,22 @@ func (s *Store) UpdateResource(ctx context.Context, resource admin.Resource) (ad
 	if err := requireAffected(result); err != nil {
 		return admin.Resource{}, err
 	}
-	return s.GetResource(ctx, resource.Code)
+	if err := s.invalidate(ctx, s.resourceKey(resource.Code)); err != nil {
+		return admin.Resource{}, err
+	}
+	return s.GetResourceFresh(ctx, resource.Code)
 }
 
 func (s *Store) DeleteResource(ctx context.Context, code string) error {
-	result, err := s.db.ExecContext(ctx, `DELETE FROM authorization_resources WHERE resource_code = ? AND is_system = 0`, strings.TrimSpace(code))
+	code = strings.TrimSpace(code)
+	result, err := s.db.ExecContext(ctx, `DELETE FROM authorization_resources WHERE resource_code = ? AND is_system = 0`, code)
 	if err != nil {
 		return err
 	}
-	return requireAffected(result)
+	if err := requireAffected(result); err != nil {
+		return err
+	}
+	return s.invalidate(ctx, s.resourceKey(code))
 }
 
 func (s *Store) AppendAudit(ctx context.Context, event admin.AuditEvent) error {
@@ -243,6 +300,12 @@ type scanner interface {
 	Scan(...any) error
 }
 
+func scanRole(row scanner) (admin.Role, error) {
+	var role admin.Role
+	err := row.Scan(&role.Code, &role.DisplayName, &role.Description, &role.System, &role.CreatedAt, &role.UpdatedAt)
+	return role, err
+}
+
 func scanResource(row scanner) (admin.Resource, error) {
 	var resource admin.Resource
 	var actions []byte
@@ -283,6 +346,27 @@ func validateResource(resource *admin.Resource) error {
 	}
 	resource.Actions = actions
 	return nil
+}
+
+func (s *Store) roleKey(code string) string {
+	if s.cache == nil {
+		return ""
+	}
+	return s.cache.Key("role", code)
+}
+
+func (s *Store) resourceKey(code string) string {
+	if s.cache == nil {
+		return ""
+	}
+	return s.cache.Key("resource", code)
+}
+
+func (s *Store) invalidate(ctx context.Context, keys ...string) error {
+	if s.cache == nil {
+		return nil
+	}
+	return s.cache.DelCtx(ctx, keys...)
 }
 
 func requireAffected(result sql.Result) error {
