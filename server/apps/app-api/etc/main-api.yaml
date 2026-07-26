@@ -39,3 +39,17 @@ Readiness:
   Timeout: 2s
 Startup:
   ConnectivityTimeout: 3s
+Authentication:
+  Enabled: true
+  Issuer: awesome-zero-platform
+  AccessTokenSecret: local-dev-only-access-token-secret-change-me-0001
+  AccessTTL: 15m
+  RefreshTTL: 720h
+  SessionKeyPrefix: authn:session:
+Authorization:
+  Enabled: true
+Observability:
+  Metrics:
+    Enabled: true
+    Path: /metrics
+    Namespace: awesome_zero_platform
