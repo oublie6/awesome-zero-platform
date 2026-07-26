@@ -66,6 +66,7 @@ services:
       APP_REDIS_ADDR: redis:6379
       APP_REDIS_PASSWORD: ${APP_REDIS_PASSWORD:?set APP_REDIS_PASSWORD}
       APP_AUTH_ACCESS_TOKEN_SECRET: ${APP_AUTH_ACCESS_TOKEN_SECRET:?set APP_AUTH_ACCESS_TOKEN_SECRET}
+      APP_ADMIN_BOOTSTRAP_TOKEN: ${APP_ADMIN_BOOTSTRAP_TOKEN:-}
     ports:
       - "8888:8888"
     read_only: true
@@ -75,6 +76,30 @@ services:
       - no-new-privileges:true
     healthcheck:
       test: ["CMD", "/app/app-api", "-healthcheck", "-healthcheck-url", "http://127.0.0.1:8888/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  admin-web:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/admin-web.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      app-api:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health | grep ok"]
       interval: 30s
       timeout: 5s
       retries: 3

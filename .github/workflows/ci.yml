@@ -37,9 +37,9 @@ jobs:
         run: make fmt-check
       - name: Unit tests
         run: make test
-      - name: Security race tests
+      - name: Security and Admin race tests
         working-directory: server
-        run: go test -race -p 1 -parallel 1 ./platform/authn/... ./platform/authz/...
+        run: go test -race -p 1 -parallel 1 ./platform/authn/... ./platform/authz/... ./platform/admin/...
       - name: Build
         run: make build
       - name: Validate production Compose
@@ -48,7 +48,26 @@ jobs:
           APP_MYSQL_ROOT_PASSWORD: ci-mysql-root-password
           APP_REDIS_PASSWORD: ci-redis-password
           APP_AUTH_ACCESS_TOKEN_SECRET: ci-access-token-secret-0123456789abcdef
+          APP_ADMIN_BOOTSTRAP_TOKEN: ci-admin-bootstrap-token-0123456789abcdef
         run: docker compose -f deploy/production/docker-compose.yml config >/dev/null
+
+  admin-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: clients/admin-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck and build
+        run: npm run build
+      - name: Verify clean client build inputs
+        run: git diff --exit-code -- package.json src
 
   integration:
     runs-on: ubuntu-latest
