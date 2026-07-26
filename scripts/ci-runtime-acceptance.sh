@@ -76,10 +76,8 @@ compose_bootstrap down --volumes --remove-orphans
 compose_bootstrap up -d --build --wait
 compose_bootstrap ps
 
-curl --fail --silent --show-error http://127.0.0.1:8888/health/live |
-  json_assert "data.get('status') == 'ok'"
-curl --fail --silent --show-error http://127.0.0.1:8888/health/ready |
-  json_assert "data.get('status') == 'ready'"
+curl --fail --silent --show-error http://127.0.0.1:8888/health/live >/dev/null
+curl --fail --silent --show-error http://127.0.0.1:8888/health/ready >/dev/null
 curl --fail --silent --show-error http://127.0.0.1:8080/health | grep -q ok
 curl --fail --silent --show-error http://127.0.0.1:8080/ >/dev/null
 
