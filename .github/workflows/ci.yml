@@ -36,10 +36,22 @@ jobs:
       - name: Verify formatting
         run: make fmt-check
       - name: Unit tests
-        run: make test
-      - name: Security race tests
+        id: unit-tests
+        run: |
+          set +e
+          make test > unit-tests.log 2>&1
+          status=$?
+          tail -n 40 unit-tests.log
+          exit $status
+      - name: Upload unit failure log
+        if: failure() && steps.unit-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-failure-log
+          path: unit-tests.log
+      - name: Security and Admin race tests
         working-directory: server
-        run: go test -race -p 1 -parallel 1 ./platform/authn/... ./platform/authz/...
+        run: go test -race -p 1 -parallel 1 ./platform/authn/... ./platform/authz/... ./platform/admin/...
       - name: Build
         run: make build
       - name: Validate production Compose
@@ -48,7 +60,38 @@ jobs:
           APP_MYSQL_ROOT_PASSWORD: ci-mysql-root-password
           APP_REDIS_PASSWORD: ci-redis-password
           APP_AUTH_ACCESS_TOKEN_SECRET: ci-access-token-secret-0123456789abcdef
+          APP_ADMIN_BOOTSTRAP_TOKEN: ci-admin-bootstrap-token-0123456789abcdef
         run: docker compose -f deploy/production/docker-compose.yml config >/dev/null
+
+  admin-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: clients/admin-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck and build
+        id: admin-build
+        run: |
+          set +e
+          npm run build > admin-web-build.log 2>&1
+          status=$?
+          tail -n 40 admin-web-build.log
+          exit $status
+      - name: Upload Admin web failure log
+        if: failure() && steps.admin-build.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-web-failure-log
+          path: clients/admin-web/admin-web-build.log
+      - name: Verify clean client build inputs
+        run: git diff --exit-code -- package.json src
 
   integration:
     runs-on: ubuntu-latest
@@ -71,7 +114,19 @@ jobs:
           make schema-apply
           make seed-apply
       - name: Integration tests
-        run: make integration-test
+        id: integration-tests
+        run: |
+          set +e
+          make integration-test > integration-tests.log 2>&1
+          status=$?
+          tail -n 40 integration-tests.log
+          exit $status
+      - name: Upload integration failure log
+        if: failure() && steps.integration-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-failure-log
+          path: integration-tests.log
       - name: Stop dependencies
         if: always()
         run: make deps-down

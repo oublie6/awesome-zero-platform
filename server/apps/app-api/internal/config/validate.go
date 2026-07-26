@@ -41,7 +41,6 @@ func (c *Config) Prepare() {
 			c.HTTP.CORS.ExposedHeaders = []string{c.HTTP.RequestID.HeaderName}
 		}
 	}
-
 	if c.Readiness.Timeout == 0 {
 		c.Readiness.Timeout = 2 * time.Second
 	}
@@ -70,7 +69,6 @@ func (c *Config) Prepare() {
 			c.Observability.Metrics.Namespace = "awesome_zero_platform"
 		}
 	}
-
 	c.MySQL.Prepare()
 	c.Redis.Prepare()
 	c.MySQL.StartupTimeout = c.Startup.ConnectivityTimeout
@@ -98,9 +96,7 @@ func (c Config) Validate() error {
 	if c.HTTP.MaxBodyBytes < 1 {
 		return fmt.Errorf("http.maxBodyBytes must be greater than 0")
 	}
-	if strings.TrimSpace(c.HTTP.SecurityHeaders.ContentTypeOptions) == "" ||
-		strings.TrimSpace(c.HTTP.SecurityHeaders.FrameOptions) == "" ||
-		strings.TrimSpace(c.HTTP.SecurityHeaders.ReferrerPolicy) == "" {
+	if strings.TrimSpace(c.HTTP.SecurityHeaders.ContentTypeOptions) == "" || strings.TrimSpace(c.HTTP.SecurityHeaders.FrameOptions) == "" || strings.TrimSpace(c.HTTP.SecurityHeaders.ReferrerPolicy) == "" {
 		return fmt.Errorf("http.securityHeaders values must not be empty")
 	}
 	if c.HTTP.CORS.Enabled {
@@ -142,6 +138,12 @@ func (c Config) Validate() error {
 	}
 	if c.Authorization.Enabled && !c.Authentication.Enabled {
 		return fmt.Errorf("authorization requires authentication to be enabled")
+	}
+	if c.Admin.Enabled && (!c.Authentication.Enabled || !c.Authorization.Enabled) {
+		return fmt.Errorf("admin requires authentication and authorization to be enabled")
+	}
+	if token := strings.TrimSpace(c.Admin.BootstrapToken); token != "" && len(token) < 32 {
+		return fmt.Errorf("admin.bootstrapToken must contain at least 32 characters when configured")
 	}
 	if c.Observability.Metrics.Enabled {
 		if !strings.HasPrefix(c.Observability.Metrics.Path, "/") || strings.ContainsAny(c.Observability.Metrics.Path, " \t\r\n") {

@@ -20,6 +20,7 @@ type Config struct {
 	Startup        StartupConfig        `json:",optional"`
 	Authentication AuthenticationConfig `json:",optional"`
 	Authorization  AuthorizationConfig  `json:",optional"`
+	Admin          AdminConfig          `json:",optional"`
 	Observability  ObservabilityConfig  `json:",optional"`
 }
 
@@ -69,6 +70,11 @@ type AuthenticationConfig struct {
 
 type AuthorizationConfig struct {
 	Enabled bool
+}
+
+type AdminConfig struct {
+	Enabled        bool
+	BootstrapToken string `json:",optional"`
 }
 
 type ObservabilityConfig struct {
