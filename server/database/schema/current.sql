@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS identity_password_credentials (
 
 CREATE TABLE IF NOT EXISTS authorization_casbin_rules (
     rule_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    rule_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     ptype VARCHAR(16) NOT NULL,
     v0 VARCHAR(191) NOT NULL DEFAULT '',
     v1 VARCHAR(191) NOT NULL DEFAULT '',
@@ -52,7 +53,7 @@ CREATE TABLE IF NOT EXISTS authorization_casbin_rules (
     v5 VARCHAR(191) NOT NULL DEFAULT '',
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (rule_id),
-    UNIQUE KEY uq_authorization_casbin_rule (ptype, v0, v1, v2, v3, v4, v5),
+    UNIQUE KEY uq_authorization_casbin_rule_hash (rule_hash),
     KEY idx_authorization_casbin_subject (ptype, v0),
     KEY idx_authorization_casbin_object_action (ptype, v1, v2)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
