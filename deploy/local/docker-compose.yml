@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.4.10
+    image: mysql:5.7.44
     environment:
       MYSQL_DATABASE: awesome_zero_platform
       MYSQL_USER: app_local
@@ -13,6 +13,7 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --default-time-zone=+00:00
       - --innodb-buffer-pool-size=64M
+      - --innodb-log-buffer-size=8M
       - --max-connections=32
       - --performance-schema=OFF
       - --skip-log-bin
@@ -22,8 +23,8 @@ services:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uapp_local -plocal-dev-only-mysql-password --silent"]
       interval: 5s
       timeout: 5s
-      retries: 20
-      start_period: 5s
+      retries: 30
+      start_period: 15s
 
   redis:
     image: redis:8.8.0-alpine3.23
