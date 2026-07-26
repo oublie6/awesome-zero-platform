@@ -61,6 +61,20 @@ func (c *Config) Prepare() {
 			c.Authentication.SessionKeyPrefix = "authn:session:"
 		}
 	}
+	if c.Authorization.Cluster.Enabled {
+		if strings.TrimSpace(c.Authorization.Cluster.Channel) == "" {
+			c.Authorization.Cluster.Channel = "awesome-zero-platform:authz:policy-changed"
+		}
+		if c.Authorization.Cluster.PollInterval == 0 {
+			c.Authorization.Cluster.PollInterval = 20 * time.Second
+		}
+		if c.Authorization.Cluster.PublishTimeout == 0 {
+			c.Authorization.Cluster.PublishTimeout = 2 * time.Second
+		}
+		if c.Authorization.Cluster.ReloadTimeout == 0 {
+			c.Authorization.Cluster.ReloadTimeout = 5 * time.Second
+		}
+	}
 	if c.Observability.Metrics.Enabled {
 		if c.Observability.Metrics.Path == "" {
 			c.Observability.Metrics.Path = "/metrics"
@@ -138,6 +152,23 @@ func (c Config) Validate() error {
 	}
 	if c.Authorization.Enabled && !c.Authentication.Enabled {
 		return fmt.Errorf("authorization requires authentication to be enabled")
+	}
+	if c.Authorization.Cluster.Enabled {
+		if !c.Authorization.Enabled {
+			return fmt.Errorf("authorization.cluster requires authorization to be enabled")
+		}
+		if strings.TrimSpace(c.Authorization.Cluster.Channel) == "" {
+			return fmt.Errorf("authorization.cluster.channel must not be empty")
+		}
+		if c.Authorization.Cluster.PollInterval <= 0 {
+			return fmt.Errorf("authorization.cluster.pollInterval must be greater than 0")
+		}
+		if c.Authorization.Cluster.PublishTimeout <= 0 {
+			return fmt.Errorf("authorization.cluster.publishTimeout must be greater than 0")
+		}
+		if c.Authorization.Cluster.ReloadTimeout <= 0 {
+			return fmt.Errorf("authorization.cluster.reloadTimeout must be greater than 0")
+		}
 	}
 	if c.Admin.Enabled && (!c.Authentication.Enabled || !c.Authorization.Enabled) {
 		return fmt.Errorf("admin requires authentication and authorization to be enabled")
