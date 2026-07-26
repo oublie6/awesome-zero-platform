@@ -55,6 +55,11 @@ Redis:
   WriteTimeout: 3s
   StartupTimeout: 3s
   ReadinessTimeout: 2s
+  Model:
+    Enabled: true
+    KeyPrefix: awesome-zero-platform:model
+    TTL: 10m
+    NotFoundTTL: 1m
 Readiness:
   Timeout: 2s
 Startup:
@@ -68,6 +73,13 @@ Authentication:
   SessionKeyPrefix: authn:session:
 Authorization:
   Enabled: true
+  Cluster:
+    Enabled: true
+    InstanceID: local-app-api
+    Channel: awesome-zero-platform:authz:policy-changed
+    PollInterval: 20s
+    PublishTimeout: 2s
+    ReloadTimeout: 5s
 Admin:
   Enabled: true
   BootstrapToken: local-dev-only-admin-bootstrap-token-change-me-0001
