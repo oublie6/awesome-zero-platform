@@ -51,6 +51,9 @@ Authentication:
   SessionKeyPrefix: authn:session:
 Authorization:
   Enabled: true
+Admin:
+  Enabled: true
+  BootstrapToken: ""
 Observability:
   Metrics:
     Enabled: true

@@ -10,6 +10,26 @@ HTTP:
     ContentTypeOptions: nosniff
     FrameOptions: DENY
     ReferrerPolicy: no-referrer
+  CORS:
+    Enabled: true
+    AllowedOrigins:
+      - http://localhost:5173
+    AllowedMethods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    AllowedHeaders:
+      - Content-Type
+      - Origin
+      - Accept
+      - Authorization
+      - X-Request-Id
+    ExposedHeaders:
+      - X-Request-Id
+    AllowCredentials: false
 MySQL:
   Addr: 127.0.0.1:3306
   Database: awesome_zero_platform
@@ -48,6 +68,9 @@ Authentication:
   SessionKeyPrefix: authn:session:
 Authorization:
   Enabled: true
+Admin:
+  Enabled: true
+  BootstrapToken: local-dev-only-admin-bootstrap-token-change-me-0001
 Observability:
   Metrics:
     Enabled: true

@@ -9,31 +9,34 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/observability"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/readiness"
+	"github.com/oublie6/awesome-zero-platform/server/platform/admin"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	"github.com/oublie6/awesome-zero-platform/server/platform/identity"
 )
 
 type ServiceContext struct {
-	Config     config.Config
-	MySQL      database.Handle
-	Redis      cache.Handle
-	Readiness  *readiness.Checker
-	Identity   *identity.Service
-	Authn      *authn.Service
-	Authz      *authz.Service
-	Authorizer authz.Authorizer
-	Metrics    *observability.Metrics
+	Config       config.Config
+	MySQL        database.Handle
+	Redis        cache.Handle
+	Readiness    *readiness.Checker
+	Identity     *identity.Service
+	Authn        *authn.Service
+	SessionAdmin authn.SessionAdministrator
+	Authz        *authz.Service
+	Authorizer   authz.Authorizer
+	AuthzAdmin   authz.Administrator
+	Admin        *admin.Service
+	Metrics      *observability.Metrics
 }
 
-func NewServiceContext(c config.Config, mysql database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {
-	var identityService *identity.Service
-	if mysql != nil && mysql.DB() != nil {
-		identityService = identity.NewService(mysql)
+func NewServiceContext(config config.Config, mysql database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {
+	identityService, err := identity.NewService(mysql.DB(), identity.NewArgon2idHasher())
+	if err != nil {
+		panic(err)
 	}
-
 	return &ServiceContext{
-		Config:    c,
+		Config:    config,
 		MySQL:     mysql,
 		Redis:     redis,
 		Readiness: checker,
