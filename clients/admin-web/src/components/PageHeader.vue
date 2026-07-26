@@ -1,0 +1,3 @@
+<script setup lang="ts">defineProps<{ title: string; description?: string; expert?: boolean }>()</script>
+<template><div class="page-header"><div><div class="title-row"><h1>{{ title }}</h1><el-tag v-if="expert" type="danger" effect="dark">EXPERT MODE</el-tag></div><p v-if="description">{{ description }}</p></div><div><slot /></div></div></template>
+<style scoped>.page-header{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:22px}.title-row{display:flex;align-items:center;gap:12px}h1{margin:0;font-size:24px}p{margin:8px 0 0;color:var(--az-muted);max-width:760px}</style>
