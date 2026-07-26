@@ -31,6 +31,14 @@ type EngineInfo struct {
 	SupportsBatchImport   bool      `json:"supportsBatchImport"`
 	SupportsRoleHierarchy bool      `json:"supportsRoleHierarchy"`
 	LoadedAt              time.Time `json:"loadedAt"`
+	InstanceID            string    `json:"instanceId,omitempty"`
+	LocalPolicyVersion    uint64    `json:"localPolicyVersion"`
+	DatabasePolicyVersion uint64    `json:"databasePolicyVersion"`
+	PolicyRuleCount       int       `json:"policyRuleCount"`
+	SyncHealthy           bool      `json:"syncHealthy"`
+	WatcherConnected      bool      `json:"watcherConnected"`
+	LastSyncAt            time.Time `json:"lastSyncAt,omitempty"`
+	LastSyncError         string    `json:"lastSyncError,omitempty"`
 }
 
 type Explanation struct {
