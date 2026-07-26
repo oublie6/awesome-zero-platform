@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-26
-- Completed:
-- Blockers:
+- Completed: 2026-07-26
+- Blockers: None.
 
 ## Goal
 
@@ -59,18 +59,39 @@ GitHub Actions must report `ci/full: success` for the final commit.
 ### Completed
 
 - Archived Goal 0011.
-- Confirmed the account action column currently uses four `link` buttons, which visually resemble adjacent text rather than distinct controls.
+- Confirmed the account action column used four `link` buttons, which visually resembled adjacent text rather than distinct controls.
+- Replaced all four row actions with compact bordered Element Plus buttons.
+- Arranged `详情`, `编辑`, `启用/禁用`, and `重置密码` in a stable 2×2 grid.
+- Applied distinct semantic styles: info for details, primary for edit, warning/success for disable/enable, and danger for password reset.
+- Kept the original handlers, confirmation behavior, labels, API calls, and fixed-right action column.
+- Set a stable 236px operation-column width and full-width centered buttons with 8px grid gaps.
 
 ### In progress
 
-- Replacing the link actions with compact bordered buttons.
+- None.
 
 ### Remaining
 
-- Update the account action template and scoped layout.
-- Run the full verification gate.
-- Record completion evidence.
+- None.
+
+### Verification status
+
+- Implementation commit: `35f93179777347f72426ceb6836105972034c925`.
+- GitHub Actions run `30226117605` reported `ci/full: success`.
+- Admin Web dependency installation, Vue type checking, and production build passed.
+- Clean client source verification passed.
+- Repository unit, race, build, Compose validation, MySQL 5.7 integration, clustered authorization, and production runtime jobs passed.
+- No backend API, database schema, authorization behavior, or runtime secret changed.
 
 ## Completion Report
 
-Not completed.
+Completed on 2026-07-26.
+
+The account-management operation column now presents four visually independent controls instead of a continuous row of link text:
+
+- `详情` — neutral information button;
+- `编辑` — primary button;
+- `禁用` or `启用` — warning/success button according to account state;
+- `重置密码` — danger button.
+
+The controls are displayed as a 2×2 grid with visible borders, equal widths, centered labels, and 8px spacing. Existing account-management behavior remains unchanged. The implementation passed the full repository gate on commit `35f93179777347f72426ceb6836105972034c925` in GitHub Actions run `30226117605`.
