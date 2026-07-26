@@ -119,6 +119,14 @@ type Repository interface {
 	ListAudit(context.Context, AuditQuery) (AuditPage, error)
 }
 
+type superAdminLocker interface {
+	WithSuperAdminLock(context.Context, func(context.Context) error) error
+}
+
+type freshIdentityReader interface {
+	GetAccountByIDFresh(context.Context, string) (identity.Account, error)
+}
+
 type Service struct {
 	identity      IdentityManager
 	authorization authz.Administrator
@@ -165,26 +173,36 @@ func (s *Service) Bootstrap(ctx context.Context, token string, input BootstrapIn
 	if subtle.ConstantTimeCompare(candidate[:], s.bootstrapHash[:]) != 1 {
 		return identity.Account{}, ErrBootstrapDisabled
 	}
-	available, err := s.BootstrapAvailable(ctx)
-	if err != nil {
-		return identity.Account{}, err
-	}
-	if !available {
-		return identity.Account{}, ErrBootstrapComplete
-	}
-	account, err := s.identity.CreateAccount(ctx, identity.CreateAccountInput{
-		Identity:    identity.Identity{Username: input.Username},
-		DisplayName: input.DisplayName,
-		Status:      identity.StatusActive,
-		Password:    input.Password,
+
+	var account identity.Account
+	err := s.withSuperAdminLock(ctx, func(lockCtx context.Context) error {
+		available, err := s.BootstrapAvailable(lockCtx)
+		if err != nil {
+			return err
+		}
+		if !available {
+			return ErrBootstrapComplete
+		}
+
+		account, err = s.identity.CreateAccount(lockCtx, identity.CreateAccountInput{
+			Identity:    identity.Identity{Username: input.Username},
+			DisplayName: input.DisplayName,
+			Status:      identity.StatusActive,
+			Password:    input.Password,
+		})
+		if err != nil {
+			return err
+		}
+		if err := s.authorization.ReplaceRolesForUser(lockCtx, account.ID, []string{SuperAdminRole}); err != nil {
+			_, _ = s.identity.DisableAccount(lockCtx, account.ID)
+			return fmt.Errorf("assign bootstrap role: %w", err)
+		}
+		return nil
 	})
 	if err != nil {
 		return identity.Account{}, err
 	}
-	if err := s.authorization.ReplaceRolesForUser(ctx, account.ID, []string{SuperAdminRole}); err != nil {
-		_, _ = s.identity.DisableAccount(ctx, account.ID)
-		return identity.Account{}, fmt.Errorf("assign bootstrap role: %w", err)
-	}
+
 	s.audit(ctx, actor, "admin.bootstrap", "account", account.ID, "success", nil)
 	return account, nil
 }
@@ -228,10 +246,17 @@ func (s *Service) SetAccountEnabled(ctx context.Context, accountID string, enabl
 	if enabled {
 		account, err = s.identity.EnableAccount(ctx, accountID)
 	} else {
-		account, err = s.identity.DisableAccount(ctx, accountID)
-		if err == nil {
-			_, _ = s.sessions.RevokeByAccount(ctx, accountID)
-		}
+		err = s.withSuperAdminLock(ctx, func(lockCtx context.Context) error {
+			if err := s.ensureCanDisableSuperAdmin(lockCtx, accountID); err != nil {
+				return err
+			}
+			account, err = s.identity.DisableAccount(lockCtx, accountID)
+			if err != nil {
+				return err
+			}
+			_, _ = s.sessions.RevokeByAccount(lockCtx, accountID)
+			return nil
+		})
 	}
 	if err == nil {
 		s.audit(ctx, actor, "account.status", "account", accountID, "success", map[string]any{"enabled": enabled})
@@ -339,20 +364,27 @@ func (s *Service) RolesForAccount(ctx context.Context, accountID string) ([]stri
 
 func (s *Service) ReplaceAccountRoles(ctx context.Context, accountID string, roles []string, actor Actor) error {
 	roles = uniqueStrings(roles)
-	current, err := s.authorization.RolesForUser(ctx, accountID)
-	if err != nil {
-		return err
-	}
-	if contains(current, SuperAdminRole) && !contains(roles, SuperAdminRole) {
-		users, err := s.authorization.UsersForRole(ctx, SuperAdminRole)
+	err := s.withSuperAdminLock(ctx, func(lockCtx context.Context) error {
+		current, err := s.authorization.RolesForUser(lockCtx, accountID)
 		if err != nil {
 			return err
 		}
-		if len(users) <= 1 {
-			return ErrProtectedRole
+		if contains(current, SuperAdminRole) && !contains(roles, SuperAdminRole) {
+			active, err := s.activeSuperAdminCount(lockCtx)
+			if err != nil {
+				return err
+			}
+			account, err := s.getAccountFresh(lockCtx, accountID)
+			if err != nil {
+				return err
+			}
+			if account.Status == identity.StatusActive && active <= 1 {
+				return ErrProtectedRole
+			}
 		}
-	}
-	if err := s.authorization.ReplaceRolesForUser(ctx, accountID, roles); err != nil {
+		return s.authorization.ReplaceRolesForUser(lockCtx, accountID, roles)
+	})
+	if err != nil {
 		return err
 	}
 	s.audit(ctx, actor, "account.roles.replace", "account", accountID, "success", map[string]any{"roles": roles})
@@ -415,6 +447,63 @@ func (s *Service) ListAudit(ctx context.Context, query AuditQuery) (AuditPage, e
 }
 
 func (s *Service) PasswordParams() identity.PasswordParams { return s.identity.PasswordParams() }
+
+func (s *Service) withSuperAdminLock(ctx context.Context, fn func(context.Context) error) error {
+	if locker, ok := s.repository.(superAdminLocker); ok {
+		return locker.WithSuperAdminLock(ctx, fn)
+	}
+	return fn(ctx)
+}
+
+func (s *Service) getAccountFresh(ctx context.Context, accountID string) (identity.Account, error) {
+	if reader, ok := s.identity.(freshIdentityReader); ok {
+		return reader.GetAccountByIDFresh(ctx, accountID)
+	}
+	return s.identity.GetAccountByID(ctx, accountID)
+}
+
+func (s *Service) activeSuperAdminCount(ctx context.Context) (int, error) {
+	users, err := s.authorization.UsersForRole(ctx, SuperAdminRole)
+	if err != nil {
+		return 0, err
+	}
+	active := 0
+	for _, accountID := range users {
+		account, err := s.getAccountFresh(ctx, accountID)
+		if err != nil {
+			return 0, err
+		}
+		if account.Status == identity.StatusActive {
+			active++
+		}
+	}
+	return active, nil
+}
+
+func (s *Service) ensureCanDisableSuperAdmin(ctx context.Context, accountID string) error {
+	roles, err := s.authorization.RolesForUser(ctx, accountID)
+	if err != nil {
+		return err
+	}
+	if !contains(roles, SuperAdminRole) {
+		return nil
+	}
+	account, err := s.getAccountFresh(ctx, accountID)
+	if err != nil {
+		return err
+	}
+	if account.Status != identity.StatusActive {
+		return nil
+	}
+	active, err := s.activeSuperAdminCount(ctx)
+	if err != nil {
+		return err
+	}
+	if active <= 1 {
+		return ErrProtectedRole
+	}
+	return nil
+}
 
 func (s *Service) audit(ctx context.Context, actor Actor, action, resourceType, resourceID, outcome string, details map[string]any) {
 	_ = s.repository.AppendAudit(ctx, AuditEvent{
