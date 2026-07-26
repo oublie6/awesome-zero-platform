@@ -28,11 +28,11 @@ type refreshRequest struct {
 }
 
 type tokenResponse struct {
-	AccessToken      string    `json:"accessToken"`
-	RefreshToken     string    `json:"refreshToken"`
-	TokenType        string    `json:"tokenType"`
-	AccessExpiresAt  time.Time `json:"accessExpiresAt"`
-	RefreshExpiresAt time.Time `json:"refreshExpiresAt"`
+	AccessToken      string          `json:"accessToken"`
+	RefreshToken     string          `json:"refreshToken"`
+	TokenType        string          `json:"tokenType"`
+	AccessExpiresAt  time.Time       `json:"accessExpiresAt"`
+	RefreshExpiresAt time.Time       `json:"refreshExpiresAt"`
 	Account          accountResponse `json:"account"`
 }
 
@@ -126,7 +126,7 @@ func sessionHandler() http.HandlerFunc {
 		platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), sessionResponse{
 			SessionID: authentication.SessionID,
 			ExpiresAt: authentication.ExpiresAt,
-			Account: accountResponse{ID: authentication.Principal.AccountID, DisplayName: authentication.Principal.DisplayName},
+			Account:   accountResponse{ID: authentication.Principal.AccountID, DisplayName: authentication.Principal.DisplayName},
 		}))
 	}
 }
@@ -196,7 +196,7 @@ func writeTokens(ctx context.Context, w http.ResponseWriter, authentication auth
 		TokenType:        "Bearer",
 		AccessExpiresAt:  tokens.AccessExpiresAt,
 		RefreshExpiresAt: tokens.RefreshExpiresAt,
-		Account: accountResponse{ID: authentication.Principal.AccountID, DisplayName: authentication.Principal.DisplayName},
+		Account:          accountResponse{ID: authentication.Principal.AccountID, DisplayName: authentication.Principal.DisplayName},
 	}))
 }
 
