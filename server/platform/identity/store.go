@@ -7,6 +7,7 @@ import (
 	"time"
 
 	mysql "github.com/go-sql-driver/mysql"
+	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 )
 
 type accountStore interface {
@@ -25,6 +26,17 @@ type credentialStore interface {
 	GetPasswordCredentialByAccountID(context.Context, string) (storedCredential, error)
 	GetPasswordCredentialByAccountIDTx(context.Context, *sql.Tx, string) (storedCredential, error)
 	UpdatePasswordCredentialTx(context.Context, *sql.Tx, storedCredential) error
+}
+
+type accountFreshReader interface {
+	GetAccountByIDFresh(context.Context, string) (Account, error)
+	GetAccountByUsernameFresh(context.Context, string) (Account, error)
+	GetAccountByEmailFresh(context.Context, string) (Account, error)
+	GetAccountByPhoneFresh(context.Context, string) (Account, error)
+}
+
+type accountCacheInvalidator interface {
+	InvalidateAccountCache(context.Context, accountRecord) error
 }
 
 type queryRower interface {
@@ -58,11 +70,16 @@ type storedCredential struct {
 }
 
 type MySQLStore struct {
-	db *sql.DB
+	db    *sql.DB
+	cache *foundationcache.ModelCache
 }
 
 func NewMySQLStore(db *sql.DB) *MySQLStore {
 	return &MySQLStore{db: db}
+}
+
+func NewCachedMySQLStore(db *sql.DB, modelCache *foundationcache.ModelCache) *MySQLStore {
+	return &MySQLStore{db: db, cache: modelCache}
 }
 
 func (s *MySQLStore) InsertAccountTx(ctx context.Context, tx *sql.Tx, record accountRecord) error {
@@ -101,6 +118,14 @@ func (s *MySQLStore) InsertAccountTx(ctx context.Context, tx *sql.Tx, record acc
 }
 
 func (s *MySQLStore) GetAccountByID(ctx context.Context, accountID string) (Account, error) {
+	var account Account
+	err := s.takeAccount(ctx, &account, s.accountIDKey(accountID), func() (Account, error) {
+		return s.GetAccountByIDFresh(ctx, accountID)
+	})
+	return account, err
+}
+
+func (s *MySQLStore) GetAccountByIDFresh(ctx context.Context, accountID string) (Account, error) {
 	return s.getAccount(ctx, s.db, `
 		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
 		FROM identity_accounts
@@ -118,6 +143,14 @@ func (s *MySQLStore) GetAccountByIDTx(ctx context.Context, tx *sql.Tx, accountID
 }
 
 func (s *MySQLStore) GetAccountByUsername(ctx context.Context, usernameKey string) (Account, error) {
+	var account Account
+	err := s.takeAccount(ctx, &account, s.usernameKey(usernameKey), func() (Account, error) {
+		return s.GetAccountByUsernameFresh(ctx, usernameKey)
+	})
+	return account, err
+}
+
+func (s *MySQLStore) GetAccountByUsernameFresh(ctx context.Context, usernameKey string) (Account, error) {
 	return s.getAccount(ctx, s.db, `
 		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
 		FROM identity_accounts
@@ -126,6 +159,14 @@ func (s *MySQLStore) GetAccountByUsername(ctx context.Context, usernameKey strin
 }
 
 func (s *MySQLStore) GetAccountByEmail(ctx context.Context, emailKey string) (Account, error) {
+	var account Account
+	err := s.takeAccount(ctx, &account, s.emailKey(emailKey), func() (Account, error) {
+		return s.GetAccountByEmailFresh(ctx, emailKey)
+	})
+	return account, err
+}
+
+func (s *MySQLStore) GetAccountByEmailFresh(ctx context.Context, emailKey string) (Account, error) {
 	return s.getAccount(ctx, s.db, `
 		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
 		FROM identity_accounts
@@ -134,6 +175,14 @@ func (s *MySQLStore) GetAccountByEmail(ctx context.Context, emailKey string) (Ac
 }
 
 func (s *MySQLStore) GetAccountByPhone(ctx context.Context, phoneKey string) (Account, error) {
+	var account Account
+	err := s.takeAccount(ctx, &account, s.phoneKey(phoneKey), func() (Account, error) {
+		return s.GetAccountByPhoneFresh(ctx, phoneKey)
+	})
+	return account, err
+}
+
+func (s *MySQLStore) GetAccountByPhoneFresh(ctx context.Context, phoneKey string) (Account, error) {
 	return s.getAccount(ctx, s.db, `
 		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
 		FROM identity_accounts
@@ -142,6 +191,10 @@ func (s *MySQLStore) GetAccountByPhone(ctx context.Context, phoneKey string) (Ac
 }
 
 func (s *MySQLStore) UpdateAccountProfile(ctx context.Context, record accountRecord) error {
+	previous, err := s.GetAccountByIDFresh(ctx, record.ID)
+	if err != nil {
+		return err
+	}
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE identity_accounts
 		SET username = ?,
@@ -171,10 +224,14 @@ func (s *MySQLStore) UpdateAccountProfile(ctx context.Context, record accountRec
 		return err
 	}
 
-	return nil
+	return s.invalidateAccounts(ctx, recordFromAccount(previous), record)
 }
 
 func (s *MySQLStore) UpdateAccountStatus(ctx context.Context, accountID string, status AccountStatus, updatedAt time.Time) error {
+	previous, err := s.GetAccountByIDFresh(ctx, accountID)
+	if err != nil {
+		return err
+	}
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE identity_accounts
 		SET status = ?, updated_at = ?
@@ -187,7 +244,14 @@ func (s *MySQLStore) UpdateAccountStatus(ctx context.Context, accountID string, 
 		return err
 	}
 
-	return nil
+	next := recordFromAccount(previous)
+	next.Status = status
+	next.UpdatedAt = updatedAt.UTC()
+	return s.invalidateAccounts(ctx, recordFromAccount(previous), next)
+}
+
+func (s *MySQLStore) InvalidateAccountCache(ctx context.Context, record accountRecord) error {
+	return s.invalidateAccounts(ctx, record)
 }
 
 func (s *MySQLStore) InsertPasswordCredentialTx(ctx context.Context, tx *sql.Tx, credential storedCredential) error {
@@ -242,6 +306,68 @@ func (s *MySQLStore) UpdatePasswordCredentialTx(ctx context.Context, tx *sql.Tx,
 	return nil
 }
 
+func (s *MySQLStore) takeAccount(ctx context.Context, target *Account, key string, loader func() (Account, error)) error {
+	if s.cache == nil {
+		account, err := loader()
+		if err == nil {
+			*target = account
+		}
+		return err
+	}
+	return s.cache.TakeCtx(ctx, target, key, func(value any) error {
+		account, err := loader()
+		if err != nil {
+			return err
+		}
+		*value.(*Account) = account
+		return nil
+	})
+}
+
+func (s *MySQLStore) invalidateAccounts(ctx context.Context, records ...accountRecord) error {
+	if s.cache == nil {
+		return nil
+	}
+	keys := make([]string, 0, len(records)*4)
+	for _, record := range records {
+		keys = append(keys,
+			s.accountIDKey(record.ID),
+			s.usernameKey(record.UsernameKey),
+			s.emailKey(record.EmailKey),
+			s.phoneKey(record.PhoneKey),
+		)
+	}
+	return s.cache.DelCtx(ctx, keys...)
+}
+
+func (s *MySQLStore) accountIDKey(value string) string {
+	if s.cache == nil {
+		return ""
+	}
+	return s.cache.Key("id", value)
+}
+
+func (s *MySQLStore) usernameKey(value string) string {
+	if s.cache == nil || value == "" {
+		return ""
+	}
+	return s.cache.Key("username", value)
+}
+
+func (s *MySQLStore) emailKey(value string) string {
+	if s.cache == nil || value == "" {
+		return ""
+	}
+	return s.cache.Key("email", value)
+}
+
+func (s *MySQLStore) phoneKey(value string) string {
+	if s.cache == nil || value == "" {
+		return ""
+	}
+	return s.cache.Key("phone", value)
+}
+
 func (s *MySQLStore) getAccount(ctx context.Context, rower queryRower, query string, args ...any) (Account, error) {
 	var (
 		account                Account
@@ -283,9 +409,6 @@ func (s *MySQLStore) getPasswordCredential(ctx context.Context, rower queryRower
 		&credential.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return storedCredential{}, wrapIdentityError(ErrPersistence, err)
-		}
 		return storedCredential{}, wrapIdentityError(ErrPersistence, err)
 	}
 
@@ -313,6 +436,29 @@ func translateMySQLError(err error) error {
 	}
 
 	return wrapIdentityError(ErrPersistence, err)
+}
+
+func recordFromAccount(account Account) accountRecord {
+	record := accountRecord{
+		ID:          account.ID,
+		Username:    account.Username,
+		Email:       account.Email,
+		Phone:       account.Phone,
+		DisplayName: account.DisplayName,
+		Status:      account.Status,
+		CreatedAt:   account.CreatedAt,
+		UpdatedAt:   account.UpdatedAt,
+	}
+	if account.Username != "" {
+		_, record.UsernameKey, _ = normalizeUsername(account.Username)
+	}
+	if account.Email != "" {
+		_, record.EmailKey, _ = normalizeEmail(account.Email)
+	}
+	if account.Phone != "" {
+		_, record.PhoneKey, _ = normalizePhone(account.Phone)
+	}
+	return record
 }
 
 func nullString(input string) any {
