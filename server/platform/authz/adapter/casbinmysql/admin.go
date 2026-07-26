@@ -8,11 +8,20 @@ import (
 	"strings"
 
 	"github.com/casbin/casbin/v2/util"
+	"github.com/google/uuid"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 )
 
+const (
+	protectedSuperAdminRole = "platform_super_admin"
+	protectedWildcardObject = "/*"
+	protectedWildcardAction = ".*"
+)
+
 func (e *Engine) EngineInfo(context.Context) authz.EngineInfo {
-	return authz.EngineInfo{
+	loadedAt, localVersion, databaseVersion, syncErr, lastSync, watcherConnected := e.stateSnapshot()
+	rules, _ := e.snapshotRules()
+	info := authz.EngineInfo{
 		ID:                    "casbin",
 		Name:                  "Casbin",
 		Version:               "v2",
@@ -24,8 +33,21 @@ func (e *Engine) EngineInfo(context.Context) authz.EngineInfo {
 		SupportsExplain:       true,
 		SupportsBatchImport:   true,
 		SupportsRoleHierarchy: true,
-		LoadedAt:              e.loadedAt,
+		LoadedAt:              loadedAt,
+		LocalPolicyVersion:    localVersion,
+		DatabasePolicyVersion: databaseVersion,
+		PolicyRuleCount:       len(rules),
+		SyncHealthy:           syncErr == nil && (!e.clusterEnabled || localVersion >= databaseVersion),
+		WatcherConnected:      watcherConnected,
+		LastSyncAt:            lastSync,
 	}
+	if e.clusterEnabled {
+		info.InstanceID = e.cluster.InstanceID
+	}
+	if syncErr != nil {
+		info.LastSyncError = syncErr.Error()
+	}
+	return info
 }
 
 func (e *Engine) ModelText(context.Context) string { return modelText }
@@ -69,12 +91,10 @@ func (e *Engine) ValidateRawRules(_ context.Context, rules []authz.RawRule) erro
 }
 
 func (e *Engine) ReplaceRawRules(ctx context.Context, rules []authz.RawRule) error {
-	if err := e.ValidateRawRules(ctx, rules); err != nil {
-		return err
-	}
-	e.adminMu.Lock()
-	defer e.adminMu.Unlock()
-	return e.replaceRawRulesLocked(rules)
+	_, err := e.mutateRules(ctx, func([]authz.RawRule) ([]authz.RawRule, error) {
+		return copyRules(rules), nil
+	})
+	return err
 }
 
 func (e *Engine) RolesForUser(_ context.Context, accountID string) ([]string, error) {
@@ -121,21 +141,20 @@ func (e *Engine) ReplacePermissionsForRole(ctx context.Context, role string, per
 	if role == "" {
 		return fmt.Errorf("role must not be empty")
 	}
-	rules, err := e.snapshotRules()
-	if err != nil {
-		return err
-	}
-	filtered := rules[:0]
-	for _, rule := range rules {
-		if rule.PType == "p" && len(rule.Values) >= 1 && rule.Values[0] == role {
-			continue
+	_, err := e.mutateRules(ctx, func(rules []authz.RawRule) ([]authz.RawRule, error) {
+		filtered := rules[:0]
+		for _, rule := range rules {
+			if rule.PType == "p" && len(rule.Values) >= 1 && strings.TrimSpace(rule.Values[0]) == role {
+				continue
+			}
+			filtered = append(filtered, rule)
 		}
-		filtered = append(filtered, rule)
-	}
-	for _, permission := range permissions {
-		filtered = append(filtered, authz.RawRule{PType: "p", Values: []string{role, permission.Resource, permission.Action}})
-	}
-	return e.ReplaceRawRules(ctx, filtered)
+		for _, permission := range permissions {
+			filtered = append(filtered, authz.RawRule{PType: "p", Values: []string{role, permission.Resource, permission.Action}})
+		}
+		return filtered, nil
+	})
+	return err
 }
 
 func (e *Engine) ReplaceRolesForUser(ctx context.Context, accountID string, roles []string) error {
@@ -143,30 +162,29 @@ func (e *Engine) ReplaceRolesForUser(ctx context.Context, accountID string, role
 	if accountID == "" {
 		return fmt.Errorf("account id must not be empty")
 	}
-	rules, err := e.snapshotRules()
-	if err != nil {
-		return err
-	}
-	filtered := rules[:0]
-	for _, rule := range rules {
-		if rule.PType == "g" && len(rule.Values) >= 1 && rule.Values[0] == accountID {
-			continue
+	_, err := e.mutateRules(ctx, func(rules []authz.RawRule) ([]authz.RawRule, error) {
+		filtered := rules[:0]
+		for _, rule := range rules {
+			if rule.PType == "g" && len(rule.Values) >= 1 && strings.TrimSpace(rule.Values[0]) == accountID {
+				continue
+			}
+			filtered = append(filtered, rule)
 		}
-		filtered = append(filtered, rule)
-	}
-	seen := map[string]struct{}{}
-	for _, role := range roles {
-		role = strings.TrimSpace(role)
-		if role == "" {
-			return fmt.Errorf("role must not be empty")
+		seen := map[string]struct{}{}
+		for _, role := range roles {
+			role = strings.TrimSpace(role)
+			if role == "" {
+				return nil, fmt.Errorf("role must not be empty")
+			}
+			if _, exists := seen[role]; exists {
+				continue
+			}
+			seen[role] = struct{}{}
+			filtered = append(filtered, authz.RawRule{PType: "g", Values: []string{accountID, role}})
 		}
-		if _, exists := seen[role]; exists {
-			continue
-		}
-		seen[role] = struct{}{}
-		filtered = append(filtered, authz.RawRule{PType: "g", Values: []string{accountID, role}})
-	}
-	return e.ReplaceRawRules(ctx, filtered)
+		return filtered, nil
+	})
+	return err
 }
 
 func (e *Engine) Explain(ctx context.Context, subject, resource, action string) (authz.Explanation, error) {
@@ -242,19 +260,11 @@ func (e *Engine) snapshotRules() ([]authz.RawRule, error) {
 	return rules, nil
 }
 
-func (e *Engine) replaceRawRulesLocked(rules []authz.RawRule) error {
+func (e *Engine) applyRawRules(rules []authz.RawRule) error {
 	previous, err := e.snapshotRules()
 	if err != nil {
 		return err
 	}
-	if err := e.applyRawRules(rules); err != nil {
-		_ = e.applyRawRules(previous)
-		return err
-	}
-	return nil
-}
-
-func (e *Engine) applyRawRules(rules []authz.RawRule) error {
 	e.enforcer.EnableAutoSave(false)
 	defer e.enforcer.EnableAutoSave(true)
 	e.enforcer.ClearPolicy()
@@ -270,13 +280,77 @@ func (e *Engine) applyRawRules(rules []authz.RawRule) error {
 			err = fmt.Errorf("unsupported policy type %q", rule.PType)
 		}
 		if err != nil {
+			_ = e.restoreRawRules(previous)
 			return err
 		}
 	}
 	if err := e.enforcer.SavePolicy(); err != nil {
+		_ = e.restoreRawRules(previous)
 		return fmt.Errorf("save casbin policy: %w", err)
 	}
 	return nil
+}
+
+func (e *Engine) restoreRawRules(rules []authz.RawRule) error {
+	e.enforcer.ClearPolicy()
+	for _, rule := range rules {
+		values := trimmedValues(rule.Values)
+		switch strings.TrimSpace(rule.PType) {
+		case "p":
+			if _, err := e.enforcer.AddNamedPolicy("p", stringSliceToAny(values)...); err != nil {
+				return err
+			}
+		case "g":
+			if _, err := e.enforcer.AddNamedGroupingPolicy("g", stringSliceToAny(values)...); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (e *Engine) validatePolicySafety(current, next []authz.RawRule) error {
+	currentWildcard := hasProtectedWildcard(current)
+	nextWildcard := hasProtectedWildcard(next)
+	currentAdmins := directSuperAdminCount(current)
+	nextAdmins := directSuperAdminCount(next)
+
+	if currentWildcard && !nextWildcard {
+		return fmt.Errorf("protected platform super administrator wildcard permission cannot be removed")
+	}
+	if nextAdmins > 0 && !nextWildcard {
+		return fmt.Errorf("platform super administrator membership requires the protected wildcard permission")
+	}
+	if currentAdmins > 0 && nextAdmins == 0 {
+		return fmt.Errorf("the last direct platform super administrator cannot be removed")
+	}
+	return nil
+}
+
+func hasProtectedWildcard(rules []authz.RawRule) bool {
+	for _, rule := range rules {
+		values := trimmedValues(rule.Values)
+		if strings.TrimSpace(rule.PType) == "p" && len(values) == 3 &&
+			values[0] == protectedSuperAdminRole && values[1] == protectedWildcardObject && values[2] == protectedWildcardAction {
+			return true
+		}
+	}
+	return false
+}
+
+func directSuperAdminCount(rules []authz.RawRule) int {
+	seen := map[string]struct{}{}
+	for _, rule := range rules {
+		values := trimmedValues(rule.Values)
+		if strings.TrimSpace(rule.PType) != "g" || len(values) != 2 || values[1] != protectedSuperAdminRole {
+			continue
+		}
+		if _, err := uuid.Parse(values[0]); err != nil {
+			continue
+		}
+		seen[values[0]] = struct{}{}
+	}
+	return len(seen)
 }
 
 func trimmedValues(values []string) []string {
