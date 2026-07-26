@@ -35,7 +35,7 @@ func (c *Config) Prepare() {
 			c.HTTP.CORS.AllowedMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 		}
 		if len(c.HTTP.CORS.AllowedHeaders) == 0 {
-			c.HTTP.CORS.AllowedHeaders = []string{"Content-Type", "Origin", "Accept", c.HTTP.RequestID.HeaderName}
+			c.HTTP.CORS.AllowedHeaders = []string{"Content-Type", "Origin", "Accept", "Authorization", c.HTTP.RequestID.HeaderName}
 		}
 		if len(c.HTTP.CORS.ExposedHeaders) == 0 {
 			c.HTTP.CORS.ExposedHeaders = []string{c.HTTP.RequestID.HeaderName}
@@ -47,6 +47,28 @@ func (c *Config) Prepare() {
 	}
 	if c.Startup.ConnectivityTimeout == 0 {
 		c.Startup.ConnectivityTimeout = 3 * time.Second
+	}
+	if c.Authentication.Enabled {
+		if c.Authentication.Issuer == "" {
+			c.Authentication.Issuer = c.Name
+		}
+		if c.Authentication.AccessTTL == 0 {
+			c.Authentication.AccessTTL = 15 * time.Minute
+		}
+		if c.Authentication.RefreshTTL == 0 {
+			c.Authentication.RefreshTTL = 30 * 24 * time.Hour
+		}
+		if c.Authentication.SessionKeyPrefix == "" {
+			c.Authentication.SessionKeyPrefix = "authn:session:"
+		}
+	}
+	if c.Observability.Metrics.Enabled {
+		if c.Observability.Metrics.Path == "" {
+			c.Observability.Metrics.Path = "/metrics"
+		}
+		if c.Observability.Metrics.Namespace == "" {
+			c.Observability.Metrics.Namespace = "awesome_zero_platform"
+		}
 	}
 
 	c.MySQL.Prepare()
@@ -61,33 +83,26 @@ func (c Config) Validate() error {
 	if strings.TrimSpace(c.Name) == "" {
 		return fmt.Errorf("name must not be empty")
 	}
-
 	if strings.TrimSpace(c.Host) == "" {
 		return fmt.Errorf("host must not be empty")
 	}
-
 	if c.Port < 1 || c.Port > 65535 {
 		return fmt.Errorf("port must be between 1 and 65535")
 	}
-
 	if strings.TrimSpace(c.HTTP.RequestID.HeaderName) == "" {
 		return fmt.Errorf("http.requestID.headerName must not be empty")
 	}
-
 	if c.HTTP.RequestID.MaxLength < 1 || c.HTTP.RequestID.MaxLength > 256 {
 		return fmt.Errorf("http.requestID.maxLength must be between 1 and 256")
 	}
-
 	if c.HTTP.MaxBodyBytes < 1 {
 		return fmt.Errorf("http.maxBodyBytes must be greater than 0")
 	}
-
 	if strings.TrimSpace(c.HTTP.SecurityHeaders.ContentTypeOptions) == "" ||
 		strings.TrimSpace(c.HTTP.SecurityHeaders.FrameOptions) == "" ||
 		strings.TrimSpace(c.HTTP.SecurityHeaders.ReferrerPolicy) == "" {
 		return fmt.Errorf("http.securityHeaders values must not be empty")
 	}
-
 	if c.HTTP.CORS.Enabled {
 		if len(c.HTTP.CORS.AllowedOrigins) == 0 {
 			return fmt.Errorf("http.cors.allowedOrigins must not be empty when cors is enabled")
@@ -102,22 +117,45 @@ func (c Config) Validate() error {
 			return fmt.Errorf("http.cors.allowedOrigins must not contain * when credentials are enabled")
 		}
 	}
-
 	if c.Readiness.Timeout <= 0 {
 		return fmt.Errorf("readiness.timeout must be greater than 0")
 	}
-
 	if c.Startup.ConnectivityTimeout <= 0 {
 		return fmt.Errorf("startup.connectivityTimeout must be greater than 0")
 	}
-
+	if c.Authentication.Enabled {
+		if strings.TrimSpace(c.Authentication.Issuer) == "" {
+			return fmt.Errorf("authentication.issuer must not be empty")
+		}
+		if len(strings.TrimSpace(c.Authentication.AccessTokenSecret)) < 32 {
+			return fmt.Errorf("authentication.accessTokenSecret must contain at least 32 characters")
+		}
+		if c.Authentication.AccessTTL <= 0 {
+			return fmt.Errorf("authentication.accessTTL must be greater than 0")
+		}
+		if c.Authentication.RefreshTTL <= c.Authentication.AccessTTL {
+			return fmt.Errorf("authentication.refreshTTL must be greater than accessTTL")
+		}
+		if strings.TrimSpace(c.Authentication.SessionKeyPrefix) == "" {
+			return fmt.Errorf("authentication.sessionKeyPrefix must not be empty")
+		}
+	}
+	if c.Authorization.Enabled && !c.Authentication.Enabled {
+		return fmt.Errorf("authorization requires authentication to be enabled")
+	}
+	if c.Observability.Metrics.Enabled {
+		if !strings.HasPrefix(c.Observability.Metrics.Path, "/") || strings.ContainsAny(c.Observability.Metrics.Path, " \t\r\n") {
+			return fmt.Errorf("observability.metrics.path must be an absolute path without whitespace")
+		}
+		if strings.TrimSpace(c.Observability.Metrics.Namespace) == "" {
+			return fmt.Errorf("observability.metrics.namespace must not be empty")
+		}
+	}
 	if err := c.MySQL.Validate(); err != nil {
 		return err
 	}
-
 	if err := c.Redis.Validate(); err != nil {
 		return err
 	}
-
 	return nil
 }
