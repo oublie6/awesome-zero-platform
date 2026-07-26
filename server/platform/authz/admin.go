@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const SuperAdminMutationLock = "awesome-zero-platform:admin:super-admin"
+
 // RawRule is the plugin-neutral transport representation of a native policy row.
 // Casbin currently uses p and g rules, but callers should inspect EngineInfo before
 // assuming a specific policy type or field count.
