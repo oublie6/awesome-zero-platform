@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: ready
-- Started:
-- Completed:
+- State: completed
+- Started: 2026-07-27
+- Completed: 2026-07-27
 - Blockers: None.
 
 ## Goal
@@ -235,6 +235,14 @@ Do not run `production-down` after successful verification. Leave the dedicated 
 - ChatGPT implemented and tested the WebSocket foundation and HTTPS switch.
 - GitHub Actions run `30243462103` passed the complete repository `ci/full` gate.
 - ChatGPT identified the host-specific Docker startup and leave-running state as the only justified Codex supplementary test gap.
+- Codex confirmed clean synchronized `main` at `d421500`.
+- Codex confirmed Docker Engine, Docker Compose, OpenSSL, curl, and Python 3 are available on the host.
+- Codex created private ignored runtime files under `.runtime/codex-https/` with directory mode `0700`.
+- Codex generated a short-lived self-signed certificate for the local supplementary verification.
+- Codex started the dedicated Compose project `awesome-zero-platform-codex-https` with `APP_HTTPS_ENABLED=true`.
+- Codex verified HTTP, HTTPS, TLS certificate serving, Admin Web, bootstrap/login, and authenticated browser-mode WSS through `tls-edge`.
+- Codex recreated only `app-api` with `.runtime/codex-https/runtime.env`, which omits `APP_ADMIN_BOOTSTRAP_TOKEN`; the final container receives an empty bootstrap-token value from the Compose default and `/admin/bootstrap/status` reports unavailable.
+- Codex left the verified HTTPS/WSS stack running.
 
 ### In progress
 
@@ -242,18 +250,55 @@ Do not run `production-down` after successful verification. Leave the dedicated 
 
 ### Remaining
 
-- Codex must perform the host preflight.
-- Create or reuse private runtime certificate and environment files.
-- Start the dedicated production stack with HTTPS enabled.
-- Verify HTTP, HTTPS, authentication, and WSS on the actual host.
-- Remove the bootstrap token from the final running API environment.
-- Leave the verified stack running.
-- Record evidence and commit/push only the permitted goal-report update.
+- None.
 
 ### Verification status
 
-- Not started by Codex.
+- `git status --short --branch` before runtime work: clean `main` synchronized with `origin/main`.
+- `git pull --ff-only origin main`: fast-forwarded to `d421500`.
+- Tool preflight passed: Docker Engine `29.3.1`, Docker Compose `v5.1.1`, OpenSSL `3.0.2`, curl `7.81.0`, Python `3.10.12`.
+- Selected Compose project: `awesome-zero-platform-codex-https`.
+- Selected host ports: base API `127.0.0.1:8888`, base Admin Web `127.0.0.1:8080`, TLS edge HTTP `8081`, TLS edge HTTPS `8443`.
+- Existing port occupants were the same repository's previous `production` Compose project. Codex stopped that project with `down --remove-orphans` only; no Docker volumes or images were removed.
+- `APP_HTTPS_ENABLED=true bash scripts/production-compose.sh --project-name awesome-zero-platform-codex-https --env-file .runtime/codex-https/bootstrap.env config --services` rendered `mysql`, `redis`, `schema`, `app-api`, `admin-web`, and `tls-edge`.
+- Docker Hub pull for `nginxinc/nginx-unprivileged:1.29.4-alpine` timed out; Codex pulled the same tag through `m.daocloud.io` and tagged it locally without changing repository files.
+- Docker build initially stalled on container-side `go mod download`; Codex configured the local `golang:1.25.8-alpine` build image to use `GOPROXY=https://goproxy.cn,direct` and `GOSUMDB=sum.golang.google.cn`, then the required Compose image build succeeded.
+- `APP_HTTPS_ENABLED=true bash scripts/production-compose.sh --project-name awesome-zero-platform-codex-https --env-file .runtime/codex-https/bootstrap.env up -d --build --wait`: passed.
+- Final container state: `mysql`, `redis`, `app-api`, `admin-web`, and `tls-edge` are running and healthy; `schema` completed successfully.
+- HTTP edge liveness: `http://127.0.0.1:8081/healthz` returned `200` with body `ok`.
+- HTTP redirect check: `http://127.0.0.1:8081/admin/` returned `308` with `Location: https://127.0.0.1/admin/`.
+- HTTPS edge liveness: `https://127.0.0.1:8443/health` returned `200` with body `ok` using `curl --insecure` for the generated self-signed certificate.
+- HTTPS Admin Web: `https://127.0.0.1:8443/` returned `200` with `text/html; charset=utf-8`.
+- TLS certificate evidence: self-signed `CN=localhost`, SAN includes `localhost`, `tls-edge`, `127.0.0.1`, the local hostname, and the host primary IPv4 address; validity is 2026-07-27 through 2026-07-30 UTC.
+- Bootstrap status before bootstrap: available.
+- Bootstrap administrator creation: passed; generated credentials remained only in `.runtime/codex-https/operator.env`.
+- Login before bootstrap-token removal: passed; access token was stored only in `.runtime/codex-https/`.
+- Authenticated browser-mode WSS healthcheck before bootstrap-token removal: passed against `wss://tls-edge:8443/ws`, including authenticated handshake, `system.hello`, and ping/pong.
+- Recreated only `app-api` with `.runtime/codex-https/runtime.env`, which does not contain `APP_ADMIN_BOOTSTRAP_TOKEN`.
+- Bootstrap status after final `app-api` recreation: unavailable.
+- Final `app-api` bootstrap-token environment value: present but empty due to the Compose default expression; no bootstrap token secret is present.
+- Login after bootstrap-token removal: passed.
+- Authenticated browser-mode WSS healthcheck after bootstrap-token removal: passed against `wss://tls-edge:8443/ws`, including authenticated handshake, `system.hello`, and ping/pong.
+- `git diff --check`: passed.
+- Final tracked-file diff is limited to this goal file; `.runtime/codex-https/` remains ignored.
+- Final resource snapshot while the stack remained running: host memory available approximately `655MiB`, swap used `0MiB`.
 
 ## Completion Report
 
-Not completed.
+Completed on 2026-07-27.
+
+Codex completed the host-specific supplementary HTTPS/WSS runtime verification on the user's Docker host and left the verified stack running.
+
+Runtime summary:
+
+- Compose project: `awesome-zero-platform-codex-https`.
+- HTTPS enabled: `APP_HTTPS_ENABLED=true`; rendered services include `tls-edge`.
+- Access URLs: `http://127.0.0.1:8081/healthz`, `https://127.0.0.1:8443/health`, and `https://127.0.0.1:8443/`.
+- Certificate type: generated short-lived self-signed certificate under `.runtime/codex-https/`; browsers will not trust it automatically.
+- Container health: `mysql`, `redis`, `app-api`, `admin-web`, and `tls-edge` are running and healthy; `schema` completed successfully.
+- WSS result: authenticated browser-mode realtime healthcheck passed through `wss://tls-edge:8443/ws` both before and after bootstrap-token removal.
+- Bootstrap final state: `/admin/bootstrap/status` reports unavailable; `.runtime/codex-https/runtime.env` omits `APP_ADMIN_BOOTSTRAP_TOKEN`.
+- Secrets, tokens, generated credentials, certificate, and private key remained only under ignored `.runtime/codex-https/` and were not printed or committed.
+- No production code, test code, Compose file, Nginx config, CI file, Makefile, or non-goal documentation file was modified.
+
+Verification report commit and push result are recorded in the final Codex handoff for this goal.
