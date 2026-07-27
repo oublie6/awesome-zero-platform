@@ -15,17 +15,19 @@ The platform currently provides:
 - a Vue 3 Admin control plane with standard and backend-engineer views over the same APIs;
 - an authenticated realtime WebSocket foundation with bounded queues and graceful shutdown;
 - a reusable RFC 9180 HPKE secure-envelope opener for Go and matching engine-independent TypeScript sealer;
-- a code-first Cocos Creator 3.8 LTS client skeleton for the future Fair Doudizhu product;
+- a code-first Cocos Creator 3.8 LTS client skeleton for the Fair Doudizhu product;
+- a pure Fair Doudizhu domain core for three-player private rooms, fairness phases, versioned events, and terminal hand states;
 - Prometheus-compatible HTTP and process metrics;
 - local and production Compose, non-root API and Admin web images, Kubernetes baselines, and GitHub Actions CI.
 
-Fair Doudizhu rooms, rules, gameplay, Commit-Reveal orchestration, production key publication, and other product-specific business capabilities remain deliberately deferred.
+Fair Doudizhu persistence, transport handlers, shuffle/card/bidding/play/scoring rules, production key publication, beacon adapters, and gameplay UI remain deliberately deferred.
 
 ## Project layout
 
 - `server/apps/` — runnable processes and transport composition
 - `server/foundation/` — reusable technical infrastructure without product semantics
 - `server/platform/` — reusable identity, authentication, authorization, Admin, and realtime capabilities
+- `server/business/` — product-specific business modules with explicit domain boundaries
 - `clients/admin-web/` — Vue 3 platform administration client
 - `clients/packages/` — engine-independent reusable client packages
 - `clients/fair-doudizhu-cocos/` — code-first Cocos Creator client composition root
@@ -50,6 +52,9 @@ For the first administrator, configure a random `APP_ADMIN_BOOTSTRAP_TOKEN` of a
 See:
 
 - [Server usage](server/README.md)
+- [Fair Doudizhu requirements](docs/requirements/fair-doudizhu-v1.md)
+- [Fair Doudizhu domain architecture](docs/architecture/fair-doudizhu-domain.md)
+- [Fair Doudizhu command protocol](docs/api/fair-doudizhu-protocol-v1.md)
 - [Secure-envelope architecture](docs/architecture/secure-envelope-v1.md)
 - [Admin architecture](docs/architecture/admin-platform.md)
 - [Admin API](docs/api/admin.md)
