@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-27
-- Completed:
+- Completed: 2026-07-27
 - Blockers: None.
 
 ## Goal
@@ -19,7 +19,7 @@ Harden the completed HTTPS/WSS deployment path so the normal production entrypoi
 - `scripts/ci-runtime-acceptance.sh`
 - `deploy/production/docker-compose.yml`
 - `deploy/production/docker-compose.tls.yml`
-- `deploy/production/tls/nginx.conf`
+- `deploy/production/tls/nginx.conf.template`
 - `docs/operations/production-deployment.md`
 - `.github/workflows/ci.yml`
 
@@ -106,29 +106,71 @@ GitHub Actions runtime acceptance must verify the full HTTP/WS and HTTPS/WSS flo
 
 ### Completed
 
-- Reviewed Codex host verification and confirmed it modified only the permitted goal report.
-- Confirmed the isolated Codex project used a separate named-volume namespace.
-- Reproduced the non-standard-port redirect defect from the current Nginx configuration.
-- Confirmed the first CI runtime attempt failed while unit, Admin Web, and integration jobs passed; an unchanged runtime rerun succeeded, indicating startup-readiness timing sensitivity.
-- Defined the narrow production-hardening scope.
+- Updated `scripts/production-compose.sh` to default `COMPOSE_PROJECT_NAME` to `production` while supporting `APP_COMPOSE_PROJECT_NAME`, existing `COMPOSE_PROJECT_NAME`, and explicit Docker Compose CLI project options.
+- Extended deterministic wrapper tests to cover project-name precedence, stable volume namespace selection, HTTPS switch values, Compose-file selection, argument forwarding, and invalid values.
+- Replaced the static TLS Edge configuration with `deploy/production/tls/nginx.conf.template`.
+- Passed `APP_HTTPS_PORT` into the unprivileged Nginx template renderer while preserving Nginx runtime variables.
+- Added a writable UID/GID-scoped tmpfs for `/etc/nginx/conf.d` while keeping the TLS Edge root filesystem read-only.
+- Corrected HTTP redirects to include the actual externally published HTTPS port.
+- Isolated CI runtime containers and volumes under `awesome-zero-platform-ci-runtime` instead of the production project namespace.
+- Changed initial liveness, readiness, Admin Web, and TLS probes to bounded polling.
+- Added exact HTTP edge health, redirect location, HTTPS health, Admin Web, and WSS runtime assertions.
+- Removed a `pipefail`/`grep -q` metrics SIGPIPE failure mode by reading the complete metrics response before assertion.
+- Documented stable production volume naming, isolated project behavior, trusted certificate requirements, and the fact that self-signed certificates are local-test-only.
 
 ### In progress
 
-- Implementing stable project naming, port-aware redirects, readiness polling, tests, and documentation.
+- None.
 
 ### Remaining
 
-- Update the production wrapper and deterministic tests.
-- Template the TLS Edge configuration and update Compose wiring.
-- Harden runtime acceptance and redirect assertions.
-- Update deployment documentation.
-- Run the complete verification gate and fix any failures.
-- Record completion evidence.
+- None for repository implementation and verification.
+- Host-specific reconciliation of the currently running isolated Codex stack with the original `production` volumes remains a separate supplementary Codex task because ChatGPT cannot access the user's Docker host or its credentials.
 
 ### Verification status
 
-- Not started for Goal 0017.
+- ChatGPT executed the deterministic Compose wrapper test successfully in its available shell environment.
+- ChatGPT rendered the TLS template with `APP_HTTPS_PORT=18443`, confirmed `$host`, `$request_uri`, and WebSocket variables remained intact, and passed local `nginx -t`.
+- Initial implementation run `30258685422` exposed an actual runtime-script SIGPIPE failure after metrics retrieval; ChatGPT fixed it without changing application behavior.
+- Follow-up run `30259158659` exposed the unprivileged Nginx template output directory permission failure; ChatGPT fixed the tmpfs ownership and mode.
+- Final implementation checkpoint: `ad79d60f3364c0428292ab1ad79583dc62674c8a`.
+- Final GitHub Actions run `30259648737` reported `ci/full: success`.
+- Module and generated-code checks passed.
+- Go formatting, unit tests, focused race tests, and build passed.
+- Production HTTPS switch and project-continuity tests passed.
+- Both HTTP/WS and HTTPS/WSS Compose configurations passed validation.
+- Vue type checking and production build passed.
+- MySQL 5.7, Redis, schema, seed, integration, and clustered authorization tests passed.
+- Runtime acceptance passed for readiness polling, HTTP edge health, exact `18081 -> 18443` redirect, HTTPS health, Admin Web, direct and proxied WS, authenticated WSS, hello/pong, metrics, API recreation, bootstrap removal, and clean teardown.
+- No secret, certificate, private key, password, access token, or runtime environment file was committed.
+- No Codex supplementary test was used for implementation or repository verification.
 
 ## Completion Report
 
-Not completed.
+Completed on 2026-07-27.
+
+The normal production entrypoint now retains the stable `production` Compose namespace and therefore continues selecting:
+
+```text
+production_mysql-data
+production_redis-data
+```
+
+HTTPS can be enabled without changing that namespace:
+
+```bash
+APP_HTTPS_ENABLED=true \
+APP_TLS_CERT_FILE=/absolute/path/to/fullchain.pem \
+APP_TLS_KEY_FILE=/absolute/path/to/privkey.pem \
+APP_HTTP_PORT=80 \
+APP_HTTPS_PORT=443 \
+make production-up
+```
+
+Non-standard ports now redirect correctly, for example:
+
+```text
+http://host:8081/path -> https://host:8443/path
+```
+
+A browser-trusted certificate still requires the operator's real domain and certificate files. The repository now provides the correct secure configuration path but does not claim to issue or own those credentials.
