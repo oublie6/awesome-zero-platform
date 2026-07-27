@@ -1,33 +1,37 @@
-# Goal 0020: Fair Doudizhu Product Protocol and Domain Core
+# Goal 0021: Fair Doudizhu Application and Persistence
 
 ## Status
 
-- State: completed
+- State: in_progress
 - Started: 2026-07-28
-- Completed: 2026-07-28
+- Completed: Not yet.
 - Blockers: None.
 
 ## Goal
 
-Define the first executable Fair Doudizhu product contract and implement a pure Go domain core for three-player private rooms, fairness orchestration, and hand lifecycle before adding persistence or transport adapters.
+Implement the transactional Fair Doudizhu application and persistence layer around the Goal 0020 aggregates, including command idempotency, monotonic client sequences, MySQL snapshots, outbox events, encrypted contribution records, and secure-envelope reveal orchestration before adding transport or card rules.
 
 ## Scope
 
-ChatGPT owned architecture, implementation, tests, failure fixes, repository integration, commits, and pushes directly to `main`.
+ChatGPT owns architecture, implementation, tests, failure fixes, schema integration, commits, and pushes directly to `main`.
 
-Delivered:
+Deliver:
 
-1. A v1 product requirement document for classic three-player private-room Doudizhu with no money, recharge, cash-out, public matchmaking, bots, spectators, or voice.
-2. A versioned command/event protocol defining command IDs, client sequence numbers, expected aggregate versions, actor derivation, idempotent replay semantics, stale-command rejection, secure reveal envelopes, and event ordering.
-3. A domain architecture document defining room, seat, hand, fairness contribution, public-beacon, audit, replay, and repository boundaries.
-4. A pure Go business module under `server/business/doudizhu/domain` with room and hand aggregates, explicit state machines, domain events, validation errors, fairness commitments, repository-facing snapshots, and optimistic-version checks.
-5. Unit and race tests covering valid lifecycle paths, invalid transitions, fixed three-seat invariants, owner constraints, fairness commit/reveal progression, commitment mismatch, public-beacon plan mismatch, terminal states, and stale versions.
+1. Application command and result types that enforce the v1 command envelope, trusted actor context, issue/expiry policy, stable error codes, duplicate-result replay, and aggregate version reporting.
+2. Transactional room and hand services covering room creation/join/leave/readiness, atomic hand creation, fairness commit/reveal, beacon locking, lifecycle transitions, terminal handling, and room release after a terminal hand.
+3. Repository and unit-of-work ports for command records, client sequences, room/hand snapshots, protected contribution records, and outbox events.
+4. MySQL 5.7-compatible infrastructure adapters and current complete schema definitions for aggregate snapshots, command results, sequence state, encrypted contribution records, and outbox delivery.
+5. Domain snapshot restoration with invariant validation and no synthetic creation events.
+6. A versioned reveal plaintext and associated-data codec that binds the authenticated actor, server-resolved seat, hand, commitment, command identity, sequence, version, reveal key, and expiry.
+7. Secure-envelope reveal orchestration using an explicit opener port, NFKC phrase normalization, deterministic contribution digests, and zeroization of decrypted buffers where practical.
+8. AES-256-GCM protected contribution records using injected versioned keys and random nonces. Production KMS and key distribution remain deferred, but plaintext must never be written to the database adapter.
+9. Unit, race, SQL-adapter, and real-MySQL integration tests for transaction atomicity, duplicate replay, concurrent sequence protection, optimistic updates, outbox persistence, protected reveal records, and rollback on failures.
 
-The following remain intentionally deferred:
+The following remain outside this goal:
 
-- card representation, deterministic shuffle, dealing, bidding rules, hand-pattern validation, turn rules, scoring, and settlement calculations;
-- HTTP or WebSocket handlers, public-key endpoints, secure-envelope decryption integration, authentication composition, database schemas, Redis coordination, idempotency persistence, and repositories;
-- public-beacon provider adapters, production key management, encrypted-at-rest contribution storage, Admin UI, and Cocos gameplay UI.
+- HTTP/WSS handlers, public routes, authentication composition, realtime fan-out, public-key publication, signed key manifests, and Cocos client reducers;
+- production KMS/HSM integration, key rotation operations, outbox workers, Redis routing, beacon-provider network adapters, and operational Admin UI;
+- card/deck representation, deterministic shuffle, dealing, bidding, hand-pattern validation, turns, scoring, settlement rules, and fairness transcript publication.
 
 ## References
 
@@ -37,37 +41,44 @@ The following remain intentionally deferred:
 - `docs/api/fair-doudizhu-protocol-v1.md`
 - `docs/architecture/secure-envelope-v1.md`
 
-## Acceptance Results
+## Acceptance Criteria
 
-- Product scope is explicitly social and non-gambling; no real-money or value-transfer capability is implied.
-- A room owns exactly three stable seats. Creation fixes the owner in seat 1, joining assigns the first empty seat, and no aggregate method trusts a client-declared seat or actor.
-- The protocol requires `commandId`, `clientSeq`, `expectedVersion`, aggregate identifiers, and versioned command names, and documents original-result replay plus stale/out-of-order rejection for the future application layer.
-- The room aggregate enforces join, leave, ready, owner, full-room, active-hand, start-hand, and finish-hand invariants without transport or persistence dependencies.
-- The hand aggregate implements `FAIRNESS_COMMITTING`, `FAIRNESS_REVEALING`, `WAITING_PUBLIC_BEACON`, `DEALING`, `BIDDING`, `PLAYING`, `SETTLING`, `COMPLETED`, `CANCELLED`, `ABORTED`, and `EXPIRED`.
-- Client commitments are bound to the active hand ID, server-resolved seat, and contribution digest. Commits and reveals are one-per-seat and phase constrained; reveal verification uses constant-time comparison.
-- Public-beacon provider and round are immutable hand metadata. A mismatched beacon is rejected without changing phase, version, or snapshot data.
-- Every accepted domain event increments the aggregate version exactly once; rejected commands leave state and version unchanged; multi-event commands use consecutive versions.
-- Completed, cancelled, aborted, and expired hands reject later mutations.
-- The domain package imports only the Go standard library and contains no foundation, platform, transport, SQL, or Redis dependency.
-- Formatting, unit tests, race tests, and `go vet` passed for the domain package.
-- The committed diff contains only Goal 0020 documents, the new business-domain package, tests, and README navigation updates.
+- Existing command results are returned before sequence or aggregate mutation and are marked `duplicate: true` without re-executing the command.
+- New commands require a positive `clientSeq` greater than the last admitted sequence for the authenticated actor and aggregate. Business rejections after sequence admission consume the sequence and persist an idempotent original rejection result; stale sequence commands fail before aggregate execution.
+- Command result, sequence advancement, aggregate snapshot changes, protected contribution record, and outbox events commit atomically or all roll back.
+- Start-hand updates the room and inserts the corresponding hand in one transaction; terminal hand processing can atomically release the room only for the matching active hand.
+- Room and hand repositories use row locking plus optimistic version predicates and can restore validated aggregates without emitting creation events.
+- Reveal associated data is canonical and includes the command protocol/name, command ID, hand ID, actor, server-resolved seat, client sequence, expected version, commitment, reveal key ID, issued time, and expiry.
+- Reveal plaintext is versioned, bound to the same hand and seat, contains exactly 32 secure-random bytes and the original phrase, and is rejected when malformed, expired, oversized, or context-mismatched.
+- The contribution digest is deterministic from the hand, seat, secure random, and SHA-256 of the NFKC-normalized phrase. The original phrase and random bytes are absent from domain snapshots and outbox payloads.
+- Contribution records are AES-256-GCM encrypted before insertion, store only key ID/nonce/ciphertext/AAD digest and metadata, and fail closed for invalid key sizes or tampering.
+- The MySQL schema is the complete current schema, remains compatible with MySQL 5.7, and advances `foundation_schema_meta.schema_version`.
+- Unit and race tests pass for `business/doudizhu/domain`, `business/doudizhu/application`, and the contribution-protection package.
+- SQL adapter tests verify expected statements and optimistic conflicts; integration tests verify real-MySQL persistence, duplicate replay, sequence serialization, rollback, outbox rows, and absence of plaintext in stored contribution records.
+- Existing generated-code, Admin Web, secure-envelope, platform integration, HTTPS, WSS, and Compose checks remain green when GitHub Actions is available.
+- Final verification evidence, commits, push result, unavailable checks, and intentionally deferred work are recorded honestly.
 
-## Verification Evidence
+## Working State
 
-- Baseline main: `7796e86faf89e0f919e359cb142fab06dfaa598c`.
-- Goal definition commit on `main`: `e59383dc8731accfd57b9eea99e17efe91487cf6`.
-- Implementation commit on `main`: `bf79259d710d2befaf0456fcdf100724cd35f4a6`.
-- Local verification environment: `go version go1.23.2 linux/amd64`. The new package uses only standard-library APIs compatible with the repository's Go 1.25.8 module.
-- `go test -count=1 -p 1 -parallel 1 ./business/doudizhu/domain` succeeded.
-- `go test -race -count=1 -p 1 -parallel 1 ./business/doudizhu/domain` succeeded.
-- `go vet ./business/doudizhu/domain` succeeded.
-- `gofmt` reported no unformatted domain files.
-- A dependency-boundary scan found no imports of `foundation`, `platform`, SQL, or Redis packages.
-- GitHub compare reported the implementation exactly one commit ahead of the Goal definition and listed only the expected 16 changed files.
-- The connected GitHub App moved `main` by fast-forward successfully. As with the previous connector Git-object updates, this ref update emitted no `push` Actions run and no combined commit status. The repository-wide generated-code, Admin Web, integration, HTTPS, WSS, and Compose jobs were therefore not re-executed in this turn; none of their source, configuration, schema, or deployment inputs changed.
+### Completed
+
+- Goal 0020 product, protocol, and pure domain aggregate foundations are complete on `main`.
+- Goal 0021 boundaries, transaction semantics, reveal trust model, and persistence responsibilities were fixed.
+
+### In progress
+
+- Implementing domain restoration, application services, protected contribution storage, MySQL adapters, schema, and tests.
+
+### Remaining
+
+- Run all available verification, inspect the integrated diff, fix failures, complete the Goal report, and push the verified result to `main`.
+
+### Verification status
+
+- Baseline main: `562b2bdf885d42616c43d6348bf56cebc860bcd2`.
+- Goal 0020 domain unit, race, vet, formatting, and dependency-boundary checks succeeded.
+- Goal 0021 implementation verification pending.
 
 ## Completion Report
 
-Goal 0020 is complete. Fair Doudizhu now has an explicit non-gambling v1 product boundary, a versioned command/event contract, documented trust and persistence boundaries, and a tested pure Go domain core for three-player rooms and the complete fairness-to-terminal hand lifecycle.
-
-The next implementation goal should add the application and persistence layer around these aggregates: transactional command idempotency, monotonic client sequences, room/hand repositories, encrypted contribution record references, event outbox, and secure-envelope reveal orchestration. Card, shuffle, bidding, play, and scoring rules should remain a separate versioned goal rather than being mixed into persistence work.
+Pending.
