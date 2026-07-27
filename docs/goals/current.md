@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-26
-- Completed:
-- Blockers:
+- Completed: 2026-07-26
+- Blockers: None.
 
 ## Goal
 
@@ -65,20 +65,49 @@ GitHub Actions must report `ci/full: success` for the final commit.
 ### Completed
 
 - Archived completed Goal 0012.
-- Confirmed the fixed 2×2 layout remains visually dense for the account table.
-- Defined direct-action priority and overflow behavior.
+- Confirmed the fixed 2×2 layout remained visually dense for the account table.
+- Defined direct-action priority as `详情`, `编辑`, `启用/禁用`, then `重置密码`.
+- Added `AccountRowActions.vue` as a dedicated adaptive account-action component.
+- Added a hidden measurement row that records the actual rendered width of every Element Plus button and the three-dot trigger.
+- Added a `ResizeObserver` on each action container so visible and overflow actions are recalculated whenever the cell width changes.
+- Implemented maximum-fit selection from four visible actions down to zero visible actions plus the overflow trigger.
+- Added an Element Plus dropdown containing every action that does not fit directly.
+- Kept `重置密码` red in the dropdown and retained warning/success state styling for disable/enable direct buttons.
+- Replaced the fixed 236px 2×2 operation grid with an adaptive fixed-right column using a 190px minimum width.
+- Preserved all original handlers, confirmations, labels, API calls, and account-management behavior.
 
 ### In progress
 
-- Implementing the width-aware action component and account-table integration.
+- None.
 
 ### Remaining
 
-- Add the adaptive component.
-- Replace the fixed account action grid.
-- Run the full verification gate.
-- Record completion evidence.
+- None.
+
+### Verification status
+
+- Implementation checkpoint: `957e0385db411df44be604e30b4ba70c696d1747`.
+- GitHub Actions run `30228320769` reported `ci/full: success`.
+- Admin Web dependency installation, Vue type checking, and production build passed.
+- Clean client source verification passed.
+- Repository module, generated-code, formatting, Go unit, race, and build checks passed.
+- MySQL 5.7/Redis integration and clustered authorization tests passed.
+- Production Compose runtime acceptance passed.
+- No backend API, database schema, authorization rule, or runtime secret changed.
+- Direct browser screenshot comparison was not available in this execution environment; completion is based on width-aware component behavior, Vue production build, and the full repository runtime gate.
 
 ## Completion Report
 
-Not completed.
+Completed on 2026-07-26.
+
+The account operation column now adapts to its actual rendered width. It displays the maximum number of direct buttons that fit without crowding and automatically moves all remaining actions into a visible three-dot dropdown menu.
+
+Behavior:
+
+- Direct-action priority: `详情`, `编辑`, `启用/禁用`, `重置密码`.
+- If all four fit, all four are shown directly.
+- If fewer fit, the remaining actions are available from the three-dot menu.
+- Resizing the table or viewport triggers an automatic recalculation through `ResizeObserver`.
+- Every action remains reachable and continues to call its original handler.
+
+The implementation was committed directly to `main` and passed the full repository gate on commit `957e0385db411df44be604e30b4ba70c696d1747` in GitHub Actions run `30228320769`.
