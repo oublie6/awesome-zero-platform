@@ -3,9 +3,14 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/deploy/production/docker-compose.yml"
+TLS_COMPOSE_FILE="$ROOT_DIR/deploy/production/docker-compose.tls.yml"
 RUNTIME_DIR="$ROOT_DIR/.runtime"
 BOOTSTRAP_ENV="$RUNTIME_DIR/ci-compose-bootstrap.env"
 FINAL_ENV="$RUNTIME_DIR/ci-compose-final.env"
+TLS_CERT="$RUNTIME_DIR/ci-tls.crt"
+TLS_KEY="$RUNTIME_DIR/ci-tls.key"
+TLS_HTTP_PORT=18081
+TLS_HTTPS_PORT=18443
 
 mkdir -p "$RUNTIME_DIR"
 chmod 700 "$RUNTIME_DIR"
@@ -18,6 +23,13 @@ BOOTSTRAP_TOKEN="$(openssl rand -hex 32)"
 ADMIN_USERNAME="ci-admin"
 ADMIN_PASSWORD="Ci-$(openssl rand -hex 16)"
 
+openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 1 \
+  -subj '/CN=tls-edge' \
+  -addext 'subjectAltName=DNS:tls-edge,DNS:localhost,IP:127.0.0.1' \
+  -keyout "$TLS_KEY" \
+  -out "$TLS_CERT" >/dev/null 2>&1
+chmod 600 "$TLS_CERT" "$TLS_KEY"
+
 write_env() {
   local path="$1"
   local include_bootstrap="$2"
@@ -26,6 +38,10 @@ write_env() {
     printf 'APP_MYSQL_ROOT_PASSWORD=%s\n' "$MYSQL_ROOT_PASSWORD"
     printf 'APP_REDIS_PASSWORD=%s\n' "$REDIS_PASSWORD"
     printf 'APP_AUTH_ACCESS_TOKEN_SECRET=%s\n' "$ACCESS_SECRET"
+    printf 'APP_TLS_CERT_FILE=%s\n' "$TLS_CERT"
+    printf 'APP_TLS_KEY_FILE=%s\n' "$TLS_KEY"
+    printf 'APP_HTTP_PORT=%s\n' "$TLS_HTTP_PORT"
+    printf 'APP_HTTPS_PORT=%s\n' "$TLS_HTTPS_PORT"
     if [[ "$include_bootstrap" == "yes" ]]; then
       printf 'APP_ADMIN_BOOTSTRAP_TOKEN=%s\n' "$BOOTSTRAP_TOKEN"
     fi
@@ -44,15 +60,19 @@ compose_final() {
   docker compose --env-file "$FINAL_ENV" -f "$COMPOSE_FILE" "$@"
 }
 
+compose_tls() {
+  docker compose --env-file "$FINAL_ENV" -f "$COMPOSE_FILE" -f "$TLS_COMPOSE_FILE" "$@"
+}
+
 cleanup() {
   local status=$?
   if [[ "$status" -ne 0 ]]; then
     echo "runtime acceptance failed; preserving final container diagnostics" >&2
-    compose_bootstrap ps >&2 || true
-    compose_bootstrap logs --no-color --tail=300 mysql schema redis app-api admin-web >&2 || true
+    compose_tls ps >&2 || true
+    compose_tls logs --no-color --tail=300 mysql schema redis app-api admin-web tls-edge >&2 || true
   fi
-  compose_final down --volumes --remove-orphans >/dev/null 2>&1 || true
-  rm -f "$BOOTSTRAP_ENV" "$FINAL_ENV"
+  compose_tls down --volumes --remove-orphans >/dev/null 2>&1 || true
+  rm -f "$BOOTSTRAP_ENV" "$FINAL_ENV" "$TLS_CERT" "$TLS_KEY"
 }
 trap cleanup EXIT
 
@@ -68,14 +88,27 @@ json_value() {
 
 wait_http() {
   local url="$1"
+  shift || true
   for _ in $(seq 1 60); do
-    if curl --fail --silent --show-error "$url" >/dev/null; then
+    if curl --fail --silent --show-error "$@" "$url" >/dev/null; then
       return 0
     fi
     sleep 2
   done
   echo "endpoint did not become healthy: $url" >&2
   return 1
+}
+
+realtime_probe() {
+  local service_url="$1"
+  local token="$2"
+  shift 2
+  compose_bootstrap exec -T \
+    -e APP_REALTIME_HEALTHCHECK_TOKEN="$token" \
+    app-api /app/app-api \
+    -realtime-healthcheck \
+    -realtime-healthcheck-url "$service_url" \
+    "$@"
 }
 
 compose_bootstrap down --volumes --remove-orphans
@@ -140,6 +173,13 @@ curl --fail --silent --show-error \
   http://127.0.0.1:8888/admin/system/configuration |
   json_assert "data['code'] == 'OK'"
 
+realtime_probe ws://127.0.0.1:8888/ws "$ACCESS_TOKEN"
+realtime_probe ws://admin-web:8080/ws "$ACCESS_TOKEN" -realtime-healthcheck-browser
+
+compose_tls up -d tls-edge --wait
+wait_http "https://127.0.0.1:${TLS_HTTPS_PORT}/health" --insecure
+realtime_probe wss://tls-edge:8443/ws "$ACCESS_TOKEN" -realtime-healthcheck-browser -realtime-healthcheck-insecure-tls
+
 compose_final up -d --no-deps --force-recreate app-api
 wait_http http://127.0.0.1:8888/health/ready
 
@@ -155,9 +195,11 @@ curl --fail --silent --show-error \
   -H "Authorization: Bearer $FINAL_ACCESS_TOKEN" \
   http://127.0.0.1:8888/admin/me |
   json_assert "'platform_super_admin' in data['data']['roles']"
+realtime_probe ws://admin-web:8080/ws "$FINAL_ACCESS_TOKEN" -realtime-healthcheck-browser
+realtime_probe wss://tls-edge:8443/ws "$FINAL_ACCESS_TOKEN" -realtime-healthcheck-browser -realtime-healthcheck-insecure-tls
 curl --fail --silent --show-error http://127.0.0.1:8080/health | grep -q ok
 
-compose_final ps
-compose_final logs --no-color --tail=200 app-api admin-web
+compose_tls ps
+compose_tls logs --no-color --tail=200 app-api admin-web tls-edge
 
-echo "production container runtime acceptance passed"
+echo "production container HTTP, WebSocket, HTTPS, and WSS runtime acceptance passed"
