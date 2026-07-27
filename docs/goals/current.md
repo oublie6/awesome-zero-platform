@@ -1,36 +1,40 @@
-# Goal 0012: Account Row Action Buttons
+# Goal 0013: Adaptive Account Row Actions
 
 ## Status
 
-- State: completed
+- State: in_progress
 - Started: 2026-07-26
-- Completed: 2026-07-26
-- Blockers: None.
+- Completed:
+- Blockers:
 
 ## Goal
 
-Make every account-row action in the Vue 3 Admin Web visually distinct by replacing text-link actions with four independent compact buttons arranged in a clear two-column layout.
+Replace the fixed 2×2 account-row action layout with an adaptive action bar that measures available width, shows as many direct buttons as fit, and moves the remaining actions into a three-dot dropdown menu.
 
 ## References
 
 - `AGENTS.md`
 - `clients/admin-web/src/views/accounts/AccountsView.vue`
-- `clients/admin-web/src/styles.css`
+- `clients/admin-web/src/components/AccountRowActions.vue`
 
 ## Deliverables
 
-1. Replace the account table row's link-style action texts with four real compact buttons.
-2. Present `详情`, `编辑`, `启用/禁用`, and `重置密码` as independent controls with visible boundaries.
-3. Use a stable two-column action layout so labels neither touch nor resemble one combined button.
-4. Preserve all existing click handlers, confirmation behavior, permissions, labels, and API calls.
-5. Pass Vue type checking, production build, and the repository `ci/full` gate.
+1. Measure the available account action-cell width at runtime with `ResizeObserver`.
+2. Keep the action priority order `详情`, `编辑`, `启用/禁用`, `重置密码`.
+3. Display the maximum number of direct compact buttons that fit without crowding.
+4. Show a three-dot button whenever one or more actions do not fit.
+5. Place all remaining actions in an Element Plus dropdown menu.
+6. Recalculate automatically when the table column or viewport width changes.
+7. Preserve all existing handlers, labels, confirmation behavior, permissions, and API calls.
+8. Pass Vue type checking, production build, and the repository `ci/full` gate.
 
 ## Constraints
 
 - Work directly on `main`; do not create branches or pull requests.
-- Limit production changes to the account-row action presentation.
-- Do not change backend APIs or account-management behavior.
-- Do not use link-style buttons for this row action group.
+- Limit behavior changes to account-row action presentation.
+- Do not change backend APIs or account-management semantics.
+- Do not hide actions permanently; every action must remain reachable through a direct button or dropdown item.
+- Keep destructive action styling distinguishable in the dropdown.
 
 ## Required Verification
 
@@ -47,10 +51,12 @@ GitHub Actions must report `ci/full: success` for the final commit.
 
 ## Acceptance Criteria
 
-- Every account row shows four visibly independent buttons.
-- Buttons are arranged as a 2×2 grid with consistent spacing.
-- Button labels do not touch, overlap, or appear as one continuous string.
-- Enable/disable and reset-password actions remain visually differentiated.
+- The action container measures its actual rendered width.
+- The maximum number of actions that fit are displayed directly.
+- Overflow actions are accessible through a visible three-dot dropdown button.
+- Resizing the container updates direct and overflow actions automatically.
+- No labels overlap or appear crowded.
+- `重置密码` remains visually marked as dangerous in both direct and dropdown forms.
 - Existing actions still call the original handlers.
 - Admin Web build and final `ci/full` pass.
 
@@ -58,40 +64,21 @@ GitHub Actions must report `ci/full: success` for the final commit.
 
 ### Completed
 
-- Archived Goal 0011.
-- Confirmed the account action column used four `link` buttons, which visually resembled adjacent text rather than distinct controls.
-- Replaced all four row actions with compact bordered Element Plus buttons.
-- Arranged `详情`, `编辑`, `启用/禁用`, and `重置密码` in a stable 2×2 grid.
-- Applied distinct semantic styles: info for details, primary for edit, warning/success for disable/enable, and danger for password reset.
-- Kept the original handlers, confirmation behavior, labels, API calls, and fixed-right action column.
-- Set a stable 236px operation-column width and full-width centered buttons with 8px grid gaps.
+- Archived completed Goal 0012.
+- Confirmed the fixed 2×2 layout remains visually dense for the account table.
+- Defined direct-action priority and overflow behavior.
 
 ### In progress
 
-- None.
+- Implementing the width-aware action component and account-table integration.
 
 ### Remaining
 
-- None.
-
-### Verification status
-
-- Implementation commit: `35f93179777347f72426ceb6836105972034c925`.
-- GitHub Actions run `30226117605` reported `ci/full: success`.
-- Admin Web dependency installation, Vue type checking, and production build passed.
-- Clean client source verification passed.
-- Repository unit, race, build, Compose validation, MySQL 5.7 integration, clustered authorization, and production runtime jobs passed.
-- No backend API, database schema, authorization behavior, or runtime secret changed.
+- Add the adaptive component.
+- Replace the fixed account action grid.
+- Run the full verification gate.
+- Record completion evidence.
 
 ## Completion Report
 
-Completed on 2026-07-26.
-
-The account-management operation column now presents four visually independent controls instead of a continuous row of link text:
-
-- `详情` — neutral information button;
-- `编辑` — primary button;
-- `禁用` or `启用` — warning/success button according to account state;
-- `重置密码` — danger button.
-
-The controls are displayed as a 2×2 grid with visible borders, equal widths, centered labels, and 8px spacing. Existing account-management behavior remains unchanged. The implementation passed the full repository gate on commit `35f93179777347f72426ceb6836105972034c925` in GitHub Actions run `30226117605`.
+Not completed.
