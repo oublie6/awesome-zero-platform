@@ -74,7 +74,7 @@ services:
       APP_AUTH_ACCESS_TOKEN_SECRET: ${APP_AUTH_ACCESS_TOKEN_SECRET:?set APP_AUTH_ACCESS_TOKEN_SECRET}
       APP_ADMIN_BOOTSTRAP_TOKEN: ${APP_ADMIN_BOOTSTRAP_TOKEN:-}
     ports:
-      - "8888:8888"
+      - "127.0.0.1:8888:8888"
     read_only: true
     tmpfs:
       - /tmp
@@ -96,7 +96,7 @@ services:
       app-api:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     read_only: true
     tmpfs:
       - /var/cache/nginx
