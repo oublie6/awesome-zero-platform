@@ -46,12 +46,12 @@ func TestConfigRejectsUnsafeOrInconsistentValues(t *testing.T) {
 }
 
 func TestValidateTopic(t *testing.T) {
-	for _, topic := range []string{"game:table-42", "account.123", "room_test"} {
+	for _, topic := range []string{"game:table-42", "account.123", "room_test", " space "} {
 		if err := validateTopic(topic); err != nil {
 			t.Fatalf("validateTopic(%q) error = %v", topic, err)
 		}
 	}
-	for _, topic := range []string{"", " space", "a/b", "*", string(make([]byte, 129))} {
+	for _, topic := range []string{"", "bad topic", "a/b", "*", string(make([]byte, 129))} {
 		if err := validateTopic(topic); err == nil {
 			t.Fatalf("validateTopic(%q) error = nil, want rejection", topic)
 		}
