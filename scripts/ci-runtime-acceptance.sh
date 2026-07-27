@@ -28,7 +28,9 @@ openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 1 \
   -addext 'subjectAltName=DNS:tls-edge,DNS:localhost,IP:127.0.0.1' \
   -keyout "$TLS_KEY" \
   -out "$TLS_CERT" >/dev/null 2>&1
-chmod 600 "$TLS_CERT" "$TLS_KEY"
+# The key is ephemeral, lives under a mode-0700 directory, and is deleted on exit.
+# Bind-mounted files must still be readable by the unprivileged Nginx UID in the container.
+chmod 644 "$TLS_CERT" "$TLS_KEY"
 
 write_env() {
   local path="$1"
@@ -175,6 +177,8 @@ curl --fail --silent --show-error \
 
 realtime_probe ws://127.0.0.1:8888/ws "$ACCESS_TOKEN"
 realtime_probe ws://admin-web:8080/ws "$ACCESS_TOKEN" -realtime-healthcheck-browser
+curl --fail --silent --show-error http://127.0.0.1:8888/metrics |
+  grep -q '^awesome_zero_platform_realtime_connections_accepted_total '
 
 compose_tls up -d tls-edge --wait
 wait_http "https://127.0.0.1:${TLS_HTTPS_PORT}/health" --insecure
