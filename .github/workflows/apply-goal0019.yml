@@ -25,6 +25,7 @@ jobs:
       - name: Restore implementation payload
         run: |
           cat .goal0019.part.* | base64 --decode > "$RUNNER_TEMP/goal0019.tar.gz"
+          echo '7ba95784f104360b4604bdb89ae900c4882ed5265e3ce2c07e8b413c21df6575  '"$RUNNER_TEMP/goal0019.tar.gz" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/goal0019.tar.gz" -C .
       - uses: actions/setup-node@v4
         with:
