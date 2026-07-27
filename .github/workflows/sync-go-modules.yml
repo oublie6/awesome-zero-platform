@@ -26,9 +26,11 @@ jobs:
         with:
           go-version: 1.25.8
           cache: false
-      - name: Generate authoritative module files
+      - name: Rebuild authoritative module files
         working-directory: server
-        run: go mod tidy
+        run: |
+          rm -f go.sum
+          go mod tidy
       - name: Commit module files when changed
         run: |
           git add server/go.mod server/go.sum
