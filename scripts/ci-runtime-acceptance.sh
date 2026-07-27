@@ -2,8 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="$ROOT_DIR/deploy/production/docker-compose.yml"
-TLS_COMPOSE_FILE="$ROOT_DIR/deploy/production/docker-compose.tls.yml"
+PRODUCTION_COMPOSE="$ROOT_DIR/scripts/production-compose.sh"
 RUNTIME_DIR="$ROOT_DIR/.runtime"
 BOOTSTRAP_ENV="$RUNTIME_DIR/ci-compose-bootstrap.env"
 FINAL_ENV="$RUNTIME_DIR/ci-compose-final.env"
@@ -55,15 +54,15 @@ write_env "$BOOTSTRAP_ENV" yes
 write_env "$FINAL_ENV" no
 
 compose_bootstrap() {
-  docker compose --env-file "$BOOTSTRAP_ENV" -f "$COMPOSE_FILE" "$@"
+  APP_HTTPS_ENABLED=false bash "$PRODUCTION_COMPOSE" --env-file "$BOOTSTRAP_ENV" "$@"
 }
 
 compose_final() {
-  docker compose --env-file "$FINAL_ENV" -f "$COMPOSE_FILE" "$@"
+  APP_HTTPS_ENABLED=false bash "$PRODUCTION_COMPOSE" --env-file "$FINAL_ENV" "$@"
 }
 
 compose_tls() {
-  docker compose --env-file "$FINAL_ENV" -f "$COMPOSE_FILE" -f "$TLS_COMPOSE_FILE" "$@"
+  APP_HTTPS_ENABLED=true bash "$PRODUCTION_COMPOSE" --env-file "$FINAL_ENV" "$@"
 }
 
 cleanup() {
@@ -206,4 +205,4 @@ curl --fail --silent --show-error http://127.0.0.1:8080/health | grep -q ok
 compose_tls ps
 compose_tls logs --no-color --tail=200 app-api admin-web tls-edge
 
-echo "production container HTTP, WebSocket, HTTPS, and WSS runtime acceptance passed"
+echo "production container HTTP/WS and HTTPS/WSS switch runtime acceptance passed"
