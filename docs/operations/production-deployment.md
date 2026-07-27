@@ -20,11 +20,23 @@ TLS deployments additionally require certificate and private-key paths supplied 
 - `APP_TLS_CERT_FILE`
 - `APP_TLS_KEY_FILE`
 
+They are required only when `APP_HTTPS_ENABLED=true` selects the TLS edge Compose override.
+
 Never commit a TLS private key. Prefer a managed certificate, ingress secret, gateway secret store, or a tightly controlled group-readable file for the unprivileged TLS container.
 
 ## Production Compose
 
-From the repository root, create an uncommitted environment file or export the required variables, then run:
+The supported production entrypoint is:
+
+```text
+scripts/production-compose.sh
+```
+
+It always loads `deploy/production/docker-compose.yml`. It conditionally adds `deploy/production/docker-compose.tls.yml` according to `APP_HTTPS_ENABLED`.
+
+Accepted enabled values are `true`, `1`, `yes`, and `on`. Accepted disabled values are `false`, `0`, `no`, and `off`. Matching is case-insensitive. The default is `false`, and invalid values fail before Docker Compose starts.
+
+From the repository root, create an uncommitted environment file or export the required variables. For loopback-only HTTP and WS:
 
 ```bash
 export APP_MYSQL_PASSWORD='replace-me'
@@ -32,9 +44,28 @@ export APP_MYSQL_ROOT_PASSWORD='replace-me'
 export APP_REDIS_PASSWORD='replace-me'
 export APP_AUTH_ACCESS_TOKEN_SECRET='replace-with-a-long-random-secret'
 export APP_ADMIN_BOOTSTRAP_TOKEN='replace-with-a-temporary-long-random-token'
+export APP_HTTPS_ENABLED=false
 
-docker compose -f deploy/production/docker-compose.yml up -d --build --wait
+make production-config
+make production-up
 ```
+
+The matching shutdown command is:
+
+```bash
+make production-down
+```
+
+The Makefile targets delegate to the same wrapper. Docker Compose arguments can also be supplied directly, including an external environment file:
+
+```bash
+APP_HTTPS_ENABLED=false \
+  bash scripts/production-compose.sh \
+  --env-file /absolute/path/to/production.env \
+  up -d --build --wait
+```
+
+`APP_HTTPS_ENABLED` controls which Compose files the wrapper selects, so set it in the shell environment before invoking the script. Other deployment values and secrets may be supplied through `--env-file`.
 
 The Compose baseline:
 
@@ -53,7 +84,7 @@ The Compose baseline:
 MySQL data directories are not downgrade-compatible across major versions. If an existing Compose volume was initialized by MySQL 8.x, remove or migrate that volume before starting the 5.7 baseline:
 
 ```bash
-docker compose -f deploy/production/docker-compose.yml down --volumes --remove-orphans
+APP_HTTPS_ENABLED=false bash scripts/production-compose.sh down --volumes --remove-orphans
 ```
 
 Do not run that command against data that has not been backed up. The bundled database is a low-memory deployment baseline, not a recommendation to downgrade a managed production database.
@@ -71,21 +102,27 @@ deploy/production/docker-compose.tls.yml
 deploy/production/tls/nginx.conf
 ```
 
-Provide absolute certificate paths and public ports:
+Enable it with the same production entrypoint:
 
 ```bash
+export APP_HTTPS_ENABLED=true
 export APP_TLS_CERT_FILE='/absolute/path/to/fullchain.pem'
 export APP_TLS_KEY_FILE='/absolute/path/to/privkey.pem'
 export APP_HTTP_PORT=80
 export APP_HTTPS_PORT=443
 
-docker compose \
-  -f deploy/production/docker-compose.yml \
-  -f deploy/production/docker-compose.tls.yml \
-  up -d --build --wait
+make production-config
+make production-up
 ```
 
-The edge redirects HTTP to HTTPS, accepts TLS 1.2 and TLS 1.3, adds HSTS, proxies the Admin Web, and preserves WebSocket Upgrade headers for `wss://<host>/ws`.
+With the switch enabled, the wrapper loads both the base stack and TLS override. The edge redirects HTTP to HTTPS, accepts TLS 1.2 and TLS 1.3, adds HSTS, proxies the Admin Web, and preserves WebSocket Upgrade headers for `wss://<host>/ws`.
+
+To return to the loopback-only HTTP/WS mode, stop the active stack and restart with the switch disabled:
+
+```bash
+APP_HTTPS_ENABLED=true make production-down
+APP_HTTPS_ENABLED=false make production-up
+```
 
 The certificate and private key must be readable by the unprivileged Nginx container UID or group. Do not solve this by placing private keys in the image or source repository.
 
@@ -160,7 +197,7 @@ Readiness depends on MySQL, Redis, and current Casbin policy synchronization. Me
 
 ## Configuration overrides
 
-The production YAML provides non-secret defaults. These environment variables override deployment-specific values:
+The production YAML and wrapper provide non-secret defaults. These environment variables override deployment-specific values:
 
 ```text
 APP_HOST
@@ -175,6 +212,7 @@ APP_REDIS_USERNAME
 APP_REDIS_PASSWORD
 APP_AUTH_ACCESS_TOKEN_SECRET
 APP_ADMIN_BOOTSTRAP_TOKEN
+APP_HTTPS_ENABLED
 APP_TLS_CERT_FILE
 APP_TLS_KEY_FILE
 APP_HTTP_PORT
