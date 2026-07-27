@@ -1,6 +1,8 @@
 package observability
 
 import (
+	"bufio"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -42,6 +44,13 @@ func (m *Metrics) Handler() http.Handler {
 	return promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{})
 }
 
+func (m *Metrics) Registerer() prometheus.Registerer {
+	if m == nil {
+		return nil
+	}
+	return m.registry
+}
+
 func (m *Metrics) Middleware(next http.Handler) http.Handler {
 	if m == nil {
 		return next
@@ -64,4 +73,26 @@ type statusRecorder struct {
 func (w *statusRecorder) WriteHeader(status int) {
 	w.status = status
 	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *statusRecorder) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
+func (w *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := w.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, http.ErrNotSupported
+	}
+	connection, buffered, err := hijacker.Hijack()
+	if err == nil {
+		w.status = http.StatusSwitchingProtocols
+	}
+	return connection, buffered, err
+}
+
+func (w *statusRecorder) Flush() {
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }
