@@ -87,14 +87,22 @@ jobs:
         run: make build
       - name: Validate local Compose
         run: docker compose -f deploy/local/docker-compose.yml config >/dev/null
-      - name: Validate production Compose
+      - name: Test production HTTPS switch
+        run: bash scripts/test-production-compose.sh
+      - name: Validate production Compose modes
         env:
           APP_MYSQL_PASSWORD: ci-mysql-password
           APP_MYSQL_ROOT_PASSWORD: ci-mysql-root-password
           APP_REDIS_PASSWORD: ci-redis-password
           APP_AUTH_ACCESS_TOKEN_SECRET: ci-access-token-secret-0123456789abcdef
           APP_ADMIN_BOOTSTRAP_TOKEN: ci-admin-bootstrap-token-0123456789abcdef
-        run: docker compose -f deploy/production/docker-compose.yml config >/dev/null
+        run: |
+          APP_HTTPS_ENABLED=false bash scripts/production-compose.sh config >/dev/null
+          touch "$RUNNER_TEMP/ci-tls.crt" "$RUNNER_TEMP/ci-tls.key"
+          APP_HTTPS_ENABLED=true \
+            APP_TLS_CERT_FILE="$RUNNER_TEMP/ci-tls.crt" \
+            APP_TLS_KEY_FILE="$RUNNER_TEMP/ci-tls.key" \
+            bash scripts/production-compose.sh config >/dev/null
 
   admin_web:
     runs-on: ubuntu-latest
@@ -209,7 +217,7 @@ jobs:
               state: success ? 'success' : 'failure',
               context: 'ci/full',
               description: success
-                ? 'Go, Vue, MySQL 5.7, realtime WSS, clustered authorization and Compose runtime passed'
+                ? 'Go, Vue, MySQL 5.7, realtime WSS, HTTPS switch and Compose runtime passed'
                 : `Verification failed: ${JSON.stringify(results)}`.slice(0, 140),
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             });
