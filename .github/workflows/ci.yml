@@ -217,7 +217,7 @@ jobs:
         id: runtime-acceptance
         run: |
           set +e
-          bash scripts/si-runtime-acceptance.sh > runtime-acceptance.log 2>&1
+          bash scripts/ci-runtime-acceptance.sh > runtime-acceptance.log 2>&1
           status=$?
           tail -n 200 runtime-acceptance.log
           exit $status
