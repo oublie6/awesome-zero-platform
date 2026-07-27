@@ -8,7 +8,7 @@ import (
 )
 
 type accessLogHijackWriter struct {
-	header  http.Header
+	header   http.Header
 	hijacked bool
 }
 

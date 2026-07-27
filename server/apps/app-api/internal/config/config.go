@@ -21,7 +21,7 @@ type Config struct {
 	Startup        StartupConfig        `json:",optional"`
 	Authentication AuthenticationConfig `json:",optional"`
 	Authorization  AuthorizationConfig  `json:",optional"`
-	Realtime       realtime.Config       `json:",optional"`
+	Realtime       realtime.Config      `json:",optional"`
 	Admin          AdminConfig          `json:",optional"`
 	Observability  ObservabilityConfig  `json:",optional"`
 }

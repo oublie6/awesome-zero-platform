@@ -17,12 +17,12 @@ type Metrics interface {
 
 type noopMetrics struct{}
 
-func (noopMetrics) ConnectionAccepted()        {}
+func (noopMetrics) ConnectionAccepted()       {}
 func (noopMetrics) ConnectionRejected(string) {}
-func (noopMetrics) ConnectionClosed()          {}
-func (noopMetrics) MessageReceived()           {}
-func (noopMetrics) MessageSent()               {}
-func (noopMetrics) SlowConsumer()              {}
+func (noopMetrics) ConnectionClosed()         {}
+func (noopMetrics) MessageReceived()          {}
+func (noopMetrics) MessageSent()              {}
+func (noopMetrics) SlowConsumer()             {}
 
 type PrometheusMetrics struct {
 	active           prometheus.Gauge

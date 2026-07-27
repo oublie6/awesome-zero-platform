@@ -24,13 +24,13 @@ func (testAuthenticator) Authenticate(_ context.Context, token string) (Identity
 }
 
 type testMetrics struct {
-	mu             sync.Mutex
-	accepted       int
-	closed         int
-	rejected       map[string]int
-	received       int
-	sent           int
-	slowConsumers  int
+	mu            sync.Mutex
+	accepted      int
+	closed        int
+	rejected      map[string]int
+	received      int
+	sent          int
+	slowConsumers int
 }
 
 func newTestMetrics() *testMetrics {

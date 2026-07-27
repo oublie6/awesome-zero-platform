@@ -19,10 +19,10 @@ type client struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 
-	send     chan []byte
-	done     chan struct{}
-	finished chan struct{}
-	closeOne sync.Once
+	send      chan []byte
+	done      chan struct{}
+	finished  chan struct{}
+	closeOne  sync.Once
 	closeCode int
 	closeText string
 
