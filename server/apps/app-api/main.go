@@ -12,9 +12,13 @@ import (
 )
 
 var (
-	configFile     = flag.String("f", "etc/main-api.yaml", "the config file")
-	healthcheck    = flag.Bool("healthcheck", false, "check the running app-api liveness endpoint")
-	healthcheckURL = flag.String("healthcheck-url", "http://127.0.0.1:8888/health/live", "liveness URL used by -healthcheck")
+	configFile                = flag.String("f", "etc/main-api.yaml", "the config file")
+	healthcheck               = flag.Bool("healthcheck", false, "check the running app-api liveness endpoint")
+	healthcheckURL            = flag.String("healthcheck-url", "http://127.0.0.1:8888/health/live", "liveness URL used by -healthcheck")
+	realtimeHealthcheck       = flag.Bool("realtime-healthcheck", false, "check an authenticated realtime WebSocket endpoint")
+	realtimeHealthcheckURL    = flag.String("realtime-healthcheck-url", "ws://127.0.0.1:8888/ws", "WebSocket URL used by -realtime-healthcheck")
+	realtimeBrowserProtocol   = flag.Bool("realtime-healthcheck-browser", false, "authenticate the WebSocket probe with browser subprotocols")
+	realtimeHealthcheckUnsafe = flag.Bool("realtime-healthcheck-insecure-tls", false, "allow an untrusted TLS certificate for the realtime probe")
 )
 
 func main() {
@@ -23,6 +27,15 @@ func main() {
 	if *healthcheck {
 		if err := runHealthcheck(*healthcheckURL); err != nil {
 			fmt.Fprintf(os.Stderr, "app-api healthcheck failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if *realtimeHealthcheck {
+		token := os.Getenv("APP_REALTIME_HEALTHCHECK_TOKEN")
+		if err := runRealtimeHealthcheck(*realtimeHealthcheckURL, token, *realtimeBrowserProtocol, *realtimeHealthcheckUnsafe); err != nil {
+			fmt.Fprintf(os.Stderr, "app-api realtime healthcheck failed: %v\n", err)
 			os.Exit(1)
 		}
 		return
