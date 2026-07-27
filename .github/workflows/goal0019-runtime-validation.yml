@@ -1,0 +1,30 @@
+name: Goal 0019 Runtime Validation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    if: github.head_ref == 'goal0019-runtime-validation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Production Compose, HTTPS and WSS acceptance
+        id: runtime
+        run: |
+          set +e
+          bash scripts/ci-runtime-acceptance.sh > runtime-acceptance.log 2>&1
+          status=$?
+          tail -n 200 runtime-acceptance.log
+          exit $status
+      - name: Upload runtime failure log
+        if: failure() && steps.runtime.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: goal0019-runtime-failure
+          path: runtime-acceptance.log
