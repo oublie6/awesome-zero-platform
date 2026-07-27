@@ -34,31 +34,32 @@ assert_capture() {
   : >"$CAPTURE_FILE"
   : >"$PROJECT_CAPTURE_FILE"
 
-  local -a env_args=(
+  local -a unset_args=()
+  local -a assignment_args=(
     PATH="$TEMP_DIR/bin:$PATH"
     PRODUCTION_COMPOSE_CAPTURE="$CAPTURE_FILE"
     PRODUCTION_COMPOSE_PROJECT_CAPTURE="$PROJECT_CAPTURE_FILE"
   )
 
   if [[ "$https_value" == '__unset__' ]]; then
-    env_args+=(-u APP_HTTPS_ENABLED)
+    unset_args+=(-u APP_HTTPS_ENABLED)
   else
-    env_args+=(APP_HTTPS_ENABLED="$https_value")
+    assignment_args+=(APP_HTTPS_ENABLED="$https_value")
   fi
 
   if [[ "$app_project_name" == '__unset__' ]]; then
-    env_args+=(-u APP_COMPOSE_PROJECT_NAME)
+    unset_args+=(-u APP_COMPOSE_PROJECT_NAME)
   else
-    env_args+=(APP_COMPOSE_PROJECT_NAME="$app_project_name")
+    assignment_args+=(APP_COMPOSE_PROJECT_NAME="$app_project_name")
   fi
 
   if [[ "$compose_project_name" == '__unset__' ]]; then
-    env_args+=(-u COMPOSE_PROJECT_NAME)
+    unset_args+=(-u COMPOSE_PROJECT_NAME)
   else
-    env_args+=(COMPOSE_PROJECT_NAME="$compose_project_name")
+    assignment_args+=(COMPOSE_PROJECT_NAME="$compose_project_name")
   fi
 
-  env "${env_args[@]}" bash "$SCRIPT" "$@"
+  env "${unset_args[@]}" "${assignment_args[@]}" bash "$SCRIPT" "$@"
 
   local actual_project
   actual_project="$(cat "$PROJECT_CAPTURE_FILE")"
