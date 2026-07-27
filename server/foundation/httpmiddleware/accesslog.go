@@ -1,6 +1,8 @@
 package httpmiddleware
 
 import (
+	"bufio"
+	"net"
 	"net/http"
 	"time"
 
@@ -33,6 +35,28 @@ func (w *statusWriter) Write(body []byte) (int, error) {
 	}
 
 	return w.ResponseWriter.Write(body)
+}
+
+func (w *statusWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
+func (w *statusWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := w.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, http.ErrNotSupported
+	}
+	connection, buffered, err := hijacker.Hijack()
+	if err == nil {
+		w.statusCode = http.StatusSwitchingProtocols
+	}
+	return connection, buffered, err
+}
+
+func (w *statusWriter) Flush() {
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }
 
 func AccessLog() func(http.Handler) http.Handler {
