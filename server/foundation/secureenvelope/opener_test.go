@@ -113,9 +113,13 @@ func TestOpenerRejectsInvalidMetadataAndLimits(t *testing.T) {
 		t.Fatalf("limit error = %v, want ErrInvalidEnvelope", err)
 	}
 
+	normalOpener, err := NewOpener(keyring)
+	if err != nil {
+		t.Fatal(err)
+	}
 	unknownKey := envelope
 	unknownKey.KeyID = "missing"
-	if _, err = opener.Open(context.Background(), unknownKey, aad); !errors.Is(err, ErrKeyUnavailable) {
+	if _, err = normalOpener.Open(context.Background(), unknownKey, aad); !errors.Is(err, ErrKeyUnavailable) {
 		t.Fatalf("key error = %v, want ErrKeyUnavailable", err)
 	}
 }
