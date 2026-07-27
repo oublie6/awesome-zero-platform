@@ -13,6 +13,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	"github.com/oublie6/awesome-zero-platform/server/platform/identity"
+	"github.com/oublie6/awesome-zero-platform/server/platform/realtime"
 )
 
 type ServiceContext struct {
@@ -27,6 +28,7 @@ type ServiceContext struct {
 	Authorizer   authz.Authorizer
 	AuthzAdmin   authz.Administrator
 	Admin        *admin.Service
+	Realtime     *realtime.Hub
 	Metrics      *observability.Metrics
 }
 
