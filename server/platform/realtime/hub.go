@@ -291,7 +291,6 @@ func (h *Hub) handle(ctx context.Context, connection *client, envelope Envelope)
 			connection.sendError(envelope.ID, "INVALID_TOPIC", "topic payload is invalid")
 			return
 		}
-		request.Topic = strings.TrimSpace(request.Topic)
 		var err error
 		if envelope.Type == TypeTopicSubscribe {
 			err = h.subscribe(connection, request.Topic)
@@ -346,8 +345,7 @@ func (h *Hub) encode(envelope Envelope) ([]byte, error) {
 }
 
 func validateTopic(topic string) error {
-	topic = strings.TrimSpace(topic)
-	if !topicPattern.MatchString(topic) {
+	if topic == "" || topic != strings.TrimSpace(topic) || !topicPattern.MatchString(topic) {
 		return ErrInvalidTopic
 	}
 	return nil
