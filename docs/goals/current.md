@@ -344,4 +344,4 @@ Runtime summary:
 - Bootstrap state: final `app-api` has no non-empty `APP_ADMIN_BOOTSTRAP_TOKEN`; `/admin/bootstrap/status` is unavailable.
 - Isolated rollback volumes remain present: `awesome-zero-platform-codex-https_mysql-data` and `awesome-zero-platform-codex-https_redis-data`.
 - Secrets, private keys, administrator credentials, and access tokens remained only under ignored `.runtime/` paths and were not printed or committed.
-- Goal report commit SHA and push result will be recorded before final handoff.
+- Goal report commit: `7cff1c6692969701d1f37e7166ba81cd95015a42`; pushed to `origin/main`.
