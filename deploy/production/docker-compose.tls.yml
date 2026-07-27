@@ -1,0 +1,27 @@
+services:
+  tls-edge:
+    image: nginxinc/nginx-unprivileged:1.29-alpine
+    restart: unless-stopped
+    depends_on:
+      admin-web:
+        condition: service_healthy
+    ports:
+      - "${APP_HTTP_PORT:-8081}:8080"
+      - "${APP_HTTPS_PORT:-8443}:8443"
+    volumes:
+      - ./tls/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${APP_TLS_CERT_FILE:?set APP_TLS_CERT_FILE}:/etc/nginx/tls/tls.crt:ro
+      - ${APP_TLS_KEY_FILE:?set APP_TLS_KEY_FILE}:/etc/nginx/tls/tls.key:ro
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz | grep ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
