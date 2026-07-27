@@ -178,8 +178,7 @@ type ErrorPayload struct {
 }
 
 func validateEnvelope(envelope Envelope) error {
-	envelope.Type = strings.TrimSpace(envelope.Type)
-	if envelope.Type == "" || len(envelope.Type) > 128 {
+	if envelope.Type == "" || envelope.Type != strings.TrimSpace(envelope.Type) || len(envelope.Type) > 128 {
 		return ErrInvalidEnvelope
 	}
 	if len(envelope.ID) > 128 || len(envelope.Topic) > 128 {
