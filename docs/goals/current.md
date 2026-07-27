@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-27
-- Completed:
-- Blockers:
+- Completed: 2026-07-27
+- Blockers: None.
 
 ## Goal
 
@@ -17,10 +17,15 @@ Add a reusable authenticated WebSocket transport to the platform for future card
 - `server/apps/app-api/internal/bootstrap/bootstrap.go`
 - `server/apps/app-api/internal/config/config.go`
 - `server/platform/authn/authn.go`
+- `server/platform/realtime`
 - `server/foundation/httpmiddleware/accesslog.go`
 - `server/foundation/observability/metrics.go`
 - `clients/admin-web/nginx.conf`
 - `deploy/production/docker-compose.yml`
+- `deploy/production/docker-compose.tls.yml`
+- `deploy/production/tls/nginx.conf`
+- `docs/operations/realtime-websocket.md`
+- `docs/operations/production-deployment.md`
 - `scripts/ci-runtime-acceptance.sh`
 
 ## Deliverables
@@ -84,7 +89,7 @@ system.error
 system.hello
 ```
 
-Topic names are bounded and restricted to a safe character set. The transport does not interpret game semantics.
+Topic names and message types are canonical, bounded, and strictly validated. The transport does not interpret game semantics.
 
 ## Required Verification
 
@@ -135,24 +140,82 @@ GitHub Actions must report `ci/full: success` for the final commit, including We
 ### Completed
 
 - Archived completed Goal 0013.
-- Confirmed the existing authentication service exposes access-token/session validation suitable for handshake authentication.
-- Confirmed the current response-writer wrappers do not preserve `http.Hijacker`, which must be fixed before WebSocket upgrade can work.
-- Selected `github.com/gorilla/websocket` v1.5.3 as the stable WebSocket implementation.
-- Defined HTTPS/WSS as an edge-proxy concern while retaining internal HTTP/WS.
+- Added `github.com/gorilla/websocket` v1.5.3 and synchronized module checksums through the Go toolchain.
+- Added the reusable `server/platform/realtime` Hub, connection lifecycle, protocol contracts, Prometheus metrics, authenticated HTTP upgrade handler, and deterministic tests.
+- Added native Authorization-header authentication and browser subprotocol authentication; URL query tokens are rejected.
+- Reused `authn.AuthenticateAccess`, so handshakes validate the access token, Redis session, and active account status.
+- Added versioned `system.hello`, application ping/pong, topic subscribe/unsubscribe acknowledgements, application handler registration, account-targeted sends, local topic publication, and connection snapshots.
+- Added global/per-account limits, bounded send queues, message-size limits, heartbeat deadlines, one writer goroutine per connection, slow-consumer disconnects, and graceful shutdown.
+- Made message types and topic names canonical and strict so leading/trailing whitespace cannot create split routing keys.
+- Preserved `http.Hijacker`, `http.Flusher`, and response-writer unwrapping through access-log and metrics middleware; WebSocket handshakes are recorded as HTTP 101.
+- Added realtime Prometheus metrics and runtime assertions for the accepted-connection counter.
+- Registered `/ws` on the existing `app-api` port and added an authenticated `-realtime-healthcheck` binary mode.
+- Added Admin Web Nginx `/ws` Upgrade proxying with origin-preserving Host headers and disabled proxy buffering.
+- Bound the base Compose HTTP ports to loopback only.
+- Added a pinned unprivileged Nginx TLS Edge Compose override with externally mounted certificates, HTTPS redirect, TLS 1.2/1.3, HSTS, and WSS proxying.
+- Preserved the external host and port through both Nginx layers so browser Origin checks work on standard and nonstandard HTTPS ports.
+- Extended production runtime acceptance to verify direct WS, Admin Web proxied WS, HTTPS, WSS, browser Origin, hello/pong, metrics, Bootstrap-token removal, API recreation, and post-recreation WS/WSS connections.
+- Added complete realtime and production TLS operational documentation, including the Pod-local routing boundary and future distributed game-node responsibilities.
+- Removed all one-shot module/format synchronization workflows after their authoritative outputs were committed.
 
 ### In progress
 
-- Implementing the generic realtime transport and server integration.
+- None.
 
 ### Remaining
 
-- Add middleware upgrade compatibility.
-- Add realtime package, tests, configuration, and `/ws` registration.
-- Add Nginx WS proxying and optional TLS edge.
-- Extend runtime acceptance for WS/WSS.
-- Run and fix the complete CI gate.
-- Record final completion evidence.
+- None.
+
+### Verification status
+
+- Implementation checkpoint: `207db9eba2abae7ae46eb249a7e7775ca1db95db`.
+- GitHub Actions run `30233228724` reported `ci/full: success`.
+- Module tidy verification, generated-code verification, formatting, Go unit tests, security/Admin/realtime Race tests, and Go build passed.
+- Vue dependency installation, type checking, production build, and clean source verification passed.
+- MySQL 5.7 and Redis startup, schema/seed application, integration tests, and clustered Casbin tests passed.
+- Production Compose runtime acceptance passed with MySQL 5.7, Redis, `app-api`, `admin-web`, and the unprivileged TLS Edge.
+- Runtime authentication used a freshly bootstrapped administrator and validated direct WS, proxied WS, HTTPS, and WSS.
+- Browser-style WS/WSS probes used `Sec-WebSocket-Protocol` and a real Origin header; only `bearer` was selected by the server.
+- Realtime probes received `system.hello`, sent `system.ping`, received `system.pong`, and closed cleanly.
+- Realtime Prometheus metrics were present after accepted connections.
+- The API was recreated without `APP_ADMIN_BOOTSTRAP_TOKEN`; login and WS/WSS still worked afterward.
+- No password, access token, TLS certificate, TLS private key, runtime environment file, generated synchronization workflow, or game-specific implementation remains committed.
 
 ## Completion Report
 
-Not completed.
+Completed on 2026-07-27.
+
+The platform now has a reusable authenticated WebSocket transport suitable as the networking baseline for future card, board, chat, notification, and collaborative modules. It deliberately stops at the transport boundary: game rules, authoritative room state, matchmaking, cross-Pod game routing, reconnect replay, and durable event storage remain responsibilities of future business goals.
+
+External client baseline:
+
+```text
+Local development: HTTP + WS
+Public production: HTTPS + WSS
+```
+
+Endpoints:
+
+```text
+HTTP API: /api paths or direct app-api routes
+WebSocket: /ws
+Metrics: /metrics
+```
+
+Authentication:
+
+```text
+Native client: Authorization: Bearer <access-token>
+Browser client: Sec-WebSocket-Protocol: bearer, <access-token>
+```
+
+Access tokens in query parameters are rejected. TLS terminates at Nginx/Ingress while application containers continue using internal HTTP/WS.
+
+Operational documentation:
+
+```text
+docs/operations/realtime-websocket.md
+docs/operations/production-deployment.md
+```
+
+The implementation was committed directly to `main` and passed the complete repository gate on implementation commit `207db9eba2abae7ae46eb249a7e7775ca1db95db` in GitHub Actions run `30233228724`.
