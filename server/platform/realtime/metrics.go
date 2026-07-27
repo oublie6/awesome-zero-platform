@@ -6,23 +6,23 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type metricsRecorder interface {
-	connectionAccepted()
-	connectionRejected(string)
-	connectionClosed()
-	messageReceived()
-	messageSent()
-	slowConsumer()
+type Metrics interface {
+	ConnectionAccepted()
+	ConnectionRejected(string)
+	ConnectionClosed()
+	MessageReceived()
+	MessageSent()
+	SlowConsumer()
 }
 
 type noopMetrics struct{}
 
-func (noopMetrics) connectionAccepted()        {}
-func (noopMetrics) connectionRejected(string) {}
-func (noopMetrics) connectionClosed()          {}
-func (noopMetrics) messageReceived()           {}
-func (noopMetrics) messageSent()               {}
-func (noopMetrics) slowConsumer()              {}
+func (noopMetrics) ConnectionAccepted()        {}
+func (noopMetrics) ConnectionRejected(string) {}
+func (noopMetrics) ConnectionClosed()          {}
+func (noopMetrics) MessageReceived()           {}
+func (noopMetrics) MessageSent()               {}
+func (noopMetrics) SlowConsumer()              {}
 
 type PrometheusMetrics struct {
 	active           prometheus.Gauge
@@ -99,27 +99,27 @@ func (m *PrometheusMetrics) Collect(channel chan<- prometheus.Metric) {
 	m.slowConsumers.Collect(channel)
 }
 
-func (m *PrometheusMetrics) connectionAccepted() {
+func (m *PrometheusMetrics) ConnectionAccepted() {
 	m.active.Inc()
 	m.accepted.Inc()
 }
 
-func (m *PrometheusMetrics) connectionRejected(reason string) {
+func (m *PrometheusMetrics) ConnectionRejected(reason string) {
 	m.rejected.WithLabelValues(reason).Inc()
 }
 
-func (m *PrometheusMetrics) connectionClosed() {
+func (m *PrometheusMetrics) ConnectionClosed() {
 	m.active.Dec()
 }
 
-func (m *PrometheusMetrics) messageReceived() {
+func (m *PrometheusMetrics) MessageReceived() {
 	m.messagesReceived.Inc()
 }
 
-func (m *PrometheusMetrics) messageSent() {
+func (m *PrometheusMetrics) MessageSent() {
 	m.messagesSent.Inc()
 }
 
-func (m *PrometheusMetrics) slowConsumer() {
+func (m *PrometheusMetrics) SlowConsumer() {
 	m.slowConsumers.Inc()
 }
