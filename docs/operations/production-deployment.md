@@ -15,6 +15,13 @@ Production examples require these values to be supplied outside Git:
 
 The access-token secret must contain at least 32 characters and should be generated from cryptographically secure random bytes. Rotating it invalidates all existing signed access tokens; Redis sessions remain but cannot be used without a newly issued access token.
 
+TLS deployments additionally require certificate and private-key paths supplied outside Git:
+
+- `APP_TLS_CERT_FILE`
+- `APP_TLS_KEY_FILE`
+
+Never commit a TLS private key. Prefer a managed certificate, ingress secret, gateway secret store, or a tightly controlled group-readable file for the unprivileged TLS container.
+
 ## Production Compose
 
 From the repository root, create an uncommitted environment file or export the required variables, then run:
@@ -38,7 +45,10 @@ The Compose baseline:
 - starts the non-root, read-only application container;
 - performs a real HTTP liveness check through the application's `-healthcheck` command;
 - enables go-zero Redis caching for ordinary entity detail reads;
-- enables clustered Casbin synchronization even though the baseline Compose file starts one API instance by default.
+- enables clustered Casbin synchronization even though the baseline Compose file starts one API instance by default;
+- enables the authenticated `/ws` realtime endpoint;
+- proxies WebSocket Upgrade requests through Admin Web Nginx;
+- binds the base HTTP ports to `127.0.0.1` rather than exposing plaintext ports on every host interface.
 
 MySQL data directories are not downgrade-compatible across major versions. If an existing Compose volume was initialized by MySQL 8.x, remove or migrate that volume before starting the 5.7 baseline:
 
@@ -48,7 +58,38 @@ docker compose -f deploy/production/docker-compose.yml down --volumes --remove-o
 
 Do not run that command against data that has not been backed up. The bundled database is a low-memory deployment baseline, not a recommendation to downgrade a managed production database.
 
-This is a baseline for a single-host deployment. Backups, TLS termination, firewall policy, log shipping, monitoring retention, and disaster recovery must be chosen for the actual environment.
+This is a baseline for a single-host deployment. Backups, firewall policy, log shipping, monitoring retention, and disaster recovery must be chosen for the actual environment.
+
+## HTTPS and WSS
+
+Local development may use HTTP and WS. Public production traffic must use HTTPS and WSS through a TLS-terminating edge, ingress, gateway, or load balancer.
+
+The optional single-host edge is defined by:
+
+```text
+deploy/production/docker-compose.tls.yml
+deploy/production/tls/nginx.conf
+```
+
+Provide absolute certificate paths and public ports:
+
+```bash
+export APP_TLS_CERT_FILE='/absolute/path/to/fullchain.pem'
+export APP_TLS_KEY_FILE='/absolute/path/to/privkey.pem'
+export APP_HTTP_PORT=80
+export APP_HTTPS_PORT=443
+
+docker compose \
+  -f deploy/production/docker-compose.yml \
+  -f deploy/production/docker-compose.tls.yml \
+  up -d --build --wait
+```
+
+The edge redirects HTTP to HTTPS, accepts TLS 1.2 and TLS 1.3, adds HSTS, proxies the Admin Web, and preserves WebSocket Upgrade headers for `wss://<host>/ws`.
+
+The certificate and private key must be readable by the unprivileged Nginx container UID or group. Do not solve this by placing private keys in the image or source repository.
+
+The complete realtime protocol, authentication model, client examples, limits, metrics, and multi-instance boundary are documented in `docs/operations/realtime-websocket.md`.
 
 ## Data cache behavior
 
@@ -75,6 +116,12 @@ Policy writes:
 
 Other replicas reload when they observe a newer version. Periodic MySQL version polling repairs missed Pub/Sub messages. A stale or failed policy reload makes `/health/ready` fail while the previous in-memory policy remains intact.
 
+## Realtime multi-instance boundary
+
+Each API replica owns its local WebSocket connections. The generic Hub can send to local account connections and local topic subscribers, but it does not silently pretend to provide distributed room routing.
+
+A multi-Pod game must explicitly choose an authoritative room/game node and a cross-Pod dispatcher. Durable or recoverable game state must not live only in one WebSocket connection or one Pod's memory.
+
 ## Kubernetes
 
 `deploy/kubernetes/base.yaml` and `deploy/kubernetes/admin-web.yaml` contain:
@@ -89,7 +136,7 @@ Other replicas reload when they observe a newer version. Periodic MySQL version 
 - an API PodDisruptionBudget;
 - Pod-name injection through `APP_INSTANCE_ID` for authorization synchronization diagnostics.
 
-The Admin Web Nginx container proxies `/api/` to `app-api:8888`; the Kubernetes API Service exposes the matching port and balances requests across API replicas. Authentication does not require sticky sessions because sessions are stored in Redis.
+The Admin Web Nginx container proxies `/api/` and `/ws` to `app-api:8888`; the Kubernetes API Service exposes the matching port and balances requests across API replicas. Authentication does not require sticky sessions because sessions are stored in Redis. A real game deployment still needs explicit room ownership and cross-Pod event routing as described above.
 
 Before applying the manifests:
 
@@ -98,6 +145,7 @@ Before applying the manifests:
 3. Provide reachable MySQL and Redis Services or change `APP_MYSQL_ADDR` and `APP_REDIS_ADDR`.
 4. Apply `server/database/schema/current.sql` through a deployment Job or CI/CD database stage before rolling out a version that requires it. API Pods must not modify schema during startup.
 5. Add the environment-specific ingress, TLS, network policies, backup policy, and monitoring stack.
+6. Configure ingress WebSocket timeouts and Upgrade forwarding for `/ws`.
 
 The committed manifests deliberately do not contain a Secret object or plaintext production credentials.
 
@@ -106,8 +154,9 @@ The committed manifests deliberately do not contain a Secret object or plaintext
 - Liveness: `GET /health/live`
 - Readiness: `GET /health/ready`
 - Metrics: `GET /metrics`
+- Authenticated realtime probe: `app-api -realtime-healthcheck`
 
-Readiness depends on MySQL, Redis, and current Casbin policy synchronization. Metrics expose process, Go runtime, request-count, and request-duration series. The metrics endpoint should normally be restricted to the monitoring network rather than exposed publicly.
+Readiness depends on MySQL, Redis, and current Casbin policy synchronization. Metrics expose process, Go runtime, HTTP request, and realtime WebSocket series. The metrics endpoint should normally be restricted to the monitoring network rather than exposed publicly.
 
 ## Configuration overrides
 
@@ -126,6 +175,10 @@ APP_REDIS_USERNAME
 APP_REDIS_PASSWORD
 APP_AUTH_ACCESS_TOKEN_SECRET
 APP_ADMIN_BOOTSTRAP_TOKEN
+APP_TLS_CERT_FILE
+APP_TLS_KEY_FILE
+APP_HTTP_PORT
+APP_HTTPS_PORT
 ```
 
 No production credential should be added to `production.yaml`, Compose files, Kubernetes manifests, Docker build arguments, source code, or CI logs.
