@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import AccountRowActions from '@/components/AccountRowActions.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { adminApi } from '@/api/admin'
 import type { Account, Role, SessionView } from '@/types/admin'
@@ -127,16 +128,15 @@ onMounted(load)
         <template #default="scope"><el-tag :type="scope.row.status === 'active' ? 'success' : 'info'">{{ scope.row.status }}</el-tag></template>
       </el-table-column>
       <el-table-column prop="updatedAt" label="更新时间" width="190" />
-      <el-table-column label="操作" width="236" fixed="right">
+      <el-table-column label="操作" min-width="190" fixed="right">
         <template #default="scope">
-          <div class="account-actions">
-            <el-button size="small" type="info" plain @click="showDetail(scope.row)">详情</el-button>
-            <el-button size="small" type="primary" plain @click="openEdit(scope.row)">编辑</el-button>
-            <el-button size="small" :type="scope.row.status === 'active' ? 'warning' : 'success'" plain @click="toggle(scope.row)">
-              {{ scope.row.status === 'active' ? '禁用' : '启用' }}
-            </el-button>
-            <el-button size="small" type="danger" plain @click="reset(scope.row)">重置密码</el-button>
-          </div>
+          <AccountRowActions
+            :status="scope.row.status"
+            @detail="showDetail(scope.row)"
+            @edit="openEdit(scope.row)"
+            @toggle="toggle(scope.row)"
+            @reset="reset(scope.row)"
+          />
         </template>
       </el-table-column>
     </el-table>
@@ -198,19 +198,3 @@ onMounted(load)
     </template>
   </el-drawer>
 </template>
-
-<style scoped>
-.account-actions {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(88px, 1fr));
-  gap: 8px;
-  padding: 4px 0;
-}
-
-.account-actions :deep(.el-button) {
-  width: 100%;
-  margin: 0;
-  justify-content: center;
-}
-</style>
