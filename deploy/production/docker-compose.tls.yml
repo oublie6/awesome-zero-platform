@@ -17,7 +17,7 @@ services:
       - ${APP_TLS_KEY_FILE:?set APP_TLS_KEY_FILE}:/etc/nginx/tls/tls.key:ro
     read_only: true
     tmpfs:
-      - /etc/nginx/conf.d
+      - /etc/nginx/conf.d:uid=101,gid=101,mode=0755
       - /var/cache/nginx
       - /var/run
       - /tmp
