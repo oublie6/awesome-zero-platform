@@ -22,6 +22,11 @@ case "$https_value" in
     ;;
 esac
 
+# Keep the historical production Compose namespace stable so normal production
+# commands continue to select production_mysql-data and production_redis-data.
+# Docker Compose's explicit --project-name/-p option still has higher precedence.
+export COMPOSE_PROJECT_NAME="${APP_COMPOSE_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-production}}"
+
 compose_args=(-f "$BASE_COMPOSE_FILE")
 if [[ "$https_enabled" == true ]]; then
   compose_args+=(-f "$TLS_COMPOSE_FILE")
