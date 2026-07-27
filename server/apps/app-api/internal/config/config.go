@@ -8,6 +8,7 @@ import (
 
 	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
+	"github.com/oublie6/awesome-zero-platform/server/platform/realtime"
 	"github.com/zeromicro/go-zero/rest"
 )
 
@@ -20,6 +21,7 @@ type Config struct {
 	Startup        StartupConfig        `json:",optional"`
 	Authentication AuthenticationConfig `json:",optional"`
 	Authorization  AuthorizationConfig  `json:",optional"`
+	Realtime       realtime.Config       `json:",optional"`
 	Admin          AdminConfig          `json:",optional"`
 	Observability  ObservabilityConfig  `json:",optional"`
 }
