@@ -82,7 +82,7 @@ jobs:
           path: unit-tests.log
       - name: Security and Admin race tests
         working-directory: server
-        run: go test -race -count=1 -p 1 -parallel 1 ./foundation/cache/... ./platform/identity/... ./platform/authn/... ./platform/authz/... ./platform/admin/... ./platform/realtime/...
+        run: go test -race -count=1 -p 1 -parallel 1 ./foundation/cache/... ./foundation/secureenvelope/... ./platform/identity/... ./platform/authn/... ./platform/authz/... ./platform/admin/... ./platform/realtime/...
       - name: Build
         run: make build
       - name: Validate local Compose
@@ -103,6 +103,40 @@ jobs:
             APP_TLS_CERT_FILE="$RUNNER_TEMP/ci-tls.crt" \
             APP_TLS_KEY_FILE="$RUNNER_TEMP/ci-tls.key" \
             bash scripts/production-compose.sh config >/dev/null
+
+  secure_envelope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+          cache-dependency-path: server/go.sum
+      - name: Install client dependencies
+        working-directory: clients/packages/secure-envelope
+        run: npm install --no-audit --no-fund
+      - name: Typecheck, build and test client package
+        working-directory: clients/packages/secure-envelope
+        run: npm test
+      - name: Generate TypeScript interoperability vector
+        working-directory: clients/packages/secure-envelope
+        run: npm run generate:interop-vector -- "$RUNNER_TEMP/secure-envelope-vector.json"
+      - name: Open TypeScript envelope in Go
+        working-directory: server
+        env:
+          SECURE_ENVELOPE_INTEROP_VECTOR: ${{ runner.temp }}/secure-envelope-vector.json
+        run: go test -count=1 -p 1 -parallel 1 ./foundation/secureenvelope
+      - name: Verify Cocos skeleton policy
+        run: |
+          test -f clients/fair-doudizhu-cocos/package.json
+          test -f clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts
+          ! grep -R --line-number --fixed-strings 'Math.random' \
+            clients/packages/secure-envelope/src \
+            clients/fair-doudizhu-cocos/assets/scripts
 
   admin_web:
     runs-on: ubuntu-latest
@@ -174,7 +208,7 @@ jobs:
 
   runtime:
     if: github.event_name == 'push'
-    needs: [unit, admin_web, integration]
+    needs: [unit, secure_envelope, admin_web, integration]
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -183,7 +217,7 @@ jobs:
         id: runtime-acceptance
         run: |
           set +e
-          bash scripts/ci-runtime-acceptance.sh > runtime-acceptance.log 2>&1
+          bash scripts/si-runtime-acceptance.sh > runtime-acceptance.log 2>&1
           status=$?
           tail -n 200 runtime-acceptance.log
           exit $status
@@ -196,7 +230,7 @@ jobs:
 
   report:
     if: always() && github.event_name == 'push'
-    needs: [unit, admin_web, integration, runtime]
+    needs: [unit, secure_envelope, admin_web, integration, runtime]
     runs-on: ubuntu-latest
     steps:
       - name: Publish full verification status
@@ -205,6 +239,7 @@ jobs:
           script: |
             const results = {
               unit: '${{ needs.unit.result }}',
+              secureEnvelope: '${{ needs.secure_envelope.result }}',
               adminWeb: '${{ needs.admin_web.result }}',
               integration: '${{ needs.integration.result }}',
               runtime: '${{ needs.runtime.result }}'
@@ -217,7 +252,7 @@ jobs:
               state: success ? 'success' : 'failure',
               context: 'ci/full',
               description: success
-                ? 'Go, Vue, MySQL 5.7, realtime WSS, HTTPS switch and Compose runtime passed'
+                ? 'Go, secure envelope, Vue, MySQL 5.7, WSS, HTTPS and runtime passed'
                 : `Verification failed: ${JSON.stringify(results)}`.slice(0, 140),
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             });

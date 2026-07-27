@@ -9,6 +9,12 @@ node_modules/
 dist/
 .vite/
 
+# Cocos Creator generated state
+/clients/fair-doudizhu-cocos/library/
+/clients/fair-doudizhu-cocos/temp/
+/clients/fair-doudizhu-cocos/local/
+/clients/fair-doudizhu-cocos/profiles/
+
 # Editors and OS
 .idea/
 .vscode/

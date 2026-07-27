@@ -1,0 +1,12 @@
+{
+  "name": "fair-doudizhu-cocos",
+  "uuid": "41a582f6-d6f6-4f7f-b635-a7b97bb2f138",
+  "version": "0.1.0",
+  "creator": {
+    "version": "3.8.8"
+  },
+  "private": true,
+  "dependencies": {
+    "@awesome-zero-platform/secure-envelope": "file:../packages/secure-envelope"
+  }
+}

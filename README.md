@@ -13,18 +13,22 @@ The platform currently provides:
 - pluggable authorization with Casbin/MySQL as the first adapter;
 - a complete Admin backend for accounts, roles, resources, sessions, audit, one-time bootstrap, standard permissions, and expert authorization tooling;
 - a Vue 3 Admin control plane with standard and backend-engineer views over the same APIs;
+- an authenticated realtime WebSocket foundation with bounded queues and graceful shutdown;
+- a reusable RFC 9180 HPKE secure-envelope opener for Go and matching engine-independent TypeScript sealer;
+- a code-first Cocos Creator 3.8 LTS client skeleton for the future Fair Doudizhu product;
 - Prometheus-compatible HTTP and process metrics;
 - local and production Compose, non-root API and Admin web images, Kubernetes baselines, and GitHub Actions CI.
 
-Product-specific business capabilities, the future Vue user client, WeChat Mini Program, H5, and app clients remain deliberately deferred.
+Fair Doudizhu rooms, rules, gameplay, Commit-Reveal orchestration, production key publication, and other product-specific business capabilities remain deliberately deferred.
 
 ## Project layout
 
 - `server/apps/` — runnable processes and transport composition
 - `server/foundation/` — reusable technical infrastructure without product semantics
-- `server/platform/` — reusable identity, authentication, authorization, and Admin capabilities
+- `server/platform/` — reusable identity, authentication, authorization, Admin, and realtime capabilities
 - `clients/admin-web/` — Vue 3 platform administration client
-- `clients/` — future user-facing clients and stable shared client packages
+- `clients/packages/` — engine-independent reusable client packages
+- `clients/fair-doudizhu-cocos/` — code-first Cocos Creator client composition root
 - `deploy/` — local, container, production Compose, and Kubernetes assets
 - `docs/` — architecture, API, operations, requirements, and goal documentation
 - `scripts/` — project automation scripts
@@ -46,6 +50,7 @@ For the first administrator, configure a random `APP_ADMIN_BOOTSTRAP_TOKEN` of a
 See:
 
 - [Server usage](server/README.md)
+- [Secure-envelope architecture](docs/architecture/secure-envelope-v1.md)
 - [Admin architecture](docs/architecture/admin-platform.md)
 - [Admin API](docs/api/admin.md)
 - [Admin web operations](docs/operations/admin-web.md)
