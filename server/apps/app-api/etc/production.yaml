@@ -64,6 +64,17 @@ Authorization:
     PollInterval: 20s
     PublishTimeout: 2s
     ReloadTimeout: 5s
+Realtime:
+  Enabled: true
+  Path: /ws
+  MaxConnections: 4096
+  MaxConnectionsPerAccount: 4
+  SendQueueSize: 64
+  MaxMessageBytes: 65536
+  HandshakeTimeout: 5s
+  WriteTimeout: 10s
+  PongTimeout: 60s
+  PingInterval: 25s
 Admin:
   Enabled: true
   BootstrapToken: ""
