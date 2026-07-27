@@ -1,1 +1,1 @@
-Temporary CI trigger after module normalization. Remove before merge.
+Temporary CI trigger after secure-envelope test isolation. Remove before merge.
