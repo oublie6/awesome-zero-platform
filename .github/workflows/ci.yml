@@ -37,7 +37,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: module-tidy-diff
-          path: server/module-diff.patch
+          path: |
+            server/module-diff.patch
+            server/go.mod
+            server/go.sum
       - name: Verify generated code
         run: |
           make generate
@@ -79,7 +82,7 @@ jobs:
           path: unit-tests.log
       - name: Security and Admin race tests
         working-directory: server
-        run: go test -race -count=1 -p 1 -parallel 1 ./foundation/cache/... ./platform/identity/... ./platform/authn/... ./platform/authz/... ./platform/admin/...
+        run: go test -race -count=1 -p 1 -parallel 1 ./foundation/cache/... ./platform/identity/... ./platform/authn/... ./platform/authz/... ./platform/admin/... ./platform/realtime/...
       - name: Build
         run: make build
       - name: Validate local Compose
@@ -206,7 +209,7 @@ jobs:
               state: success ? 'success' : 'failure',
               context: 'ci/full',
               description: success
-                ? 'Go, Vue, MySQL 5.7, clustered authorization and Compose runtime passed'
+                ? 'Go, Vue, MySQL 5.7, realtime WSS, clustered authorization and Compose runtime passed'
                 : `Verification failed: ${JSON.stringify(results)}`.slice(0, 140),
               target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             });
