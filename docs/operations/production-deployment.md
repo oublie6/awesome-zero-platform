@@ -67,6 +67,51 @@ APP_HTTPS_ENABLED=false \
 
 `APP_HTTPS_ENABLED` controls which Compose files the wrapper selects, so set it in the shell environment before invoking the script. Other deployment values and secrets may be supplied through `--env-file`.
 
+### Compose project name and data continuity
+
+The wrapper defaults the Compose project name to:
+
+```text
+production
+```
+
+This is deliberate. Docker Compose prefixes ordinary named volumes with the project name, so the default production data volumes are:
+
+```text
+production_mysql-data
+production_redis-data
+```
+
+Keeping the same project name while enabling or disabling HTTPS preserves the existing MySQL and Redis data. The HTTPS switch changes only whether the `tls-edge` service is included; it does not require a new database or Redis volume.
+
+Use the supported environment override only when an intentionally isolated stack is required:
+
+```bash
+APP_COMPOSE_PROJECT_NAME=isolated-test \
+APP_HTTPS_ENABLED=true \
+make production-up
+```
+
+That command selects different volumes such as `isolated-test_mysql-data` and `isolated-test_redis-data`. It does not migrate or copy data from `production_*` volumes.
+
+An explicit Docker Compose `--project-name` or `-p` argument is also forwarded unchanged and has normal Docker Compose precedence:
+
+```bash
+APP_HTTPS_ENABLED=true \
+  bash scripts/production-compose.sh \
+  --project-name isolated-test \
+  up -d --build --wait
+```
+
+Before changing a project name on a host that already contains data, inspect the existing projects and volumes:
+
+```bash
+docker compose ls
+docker volume ls | grep -E '(^|_)mysql-data$|(^|_)redis-data$'
+```
+
+Do not delete or rename production volumes without a verified backup and an explicit migration plan.
+
 The Compose baseline:
 
 - uses `mysql:5.7.44` with a 64 MiB InnoDB buffer pool, disabled Performance Schema, reduced connections, and disabled binary logging so it can run on a small development machine;
@@ -99,7 +144,7 @@ The optional single-host edge is defined by:
 
 ```text
 deploy/production/docker-compose.tls.yml
-deploy/production/tls/nginx.conf
+deploy/production/tls/nginx.conf.template
 ```
 
 Enable it with the same production entrypoint:
@@ -115,16 +160,53 @@ make production-config
 make production-up
 ```
 
-With the switch enabled, the wrapper loads both the base stack and TLS override. The edge redirects HTTP to HTTPS, accepts TLS 1.2 and TLS 1.3, adds HSTS, proxies the Admin Web, and preserves WebSocket Upgrade headers for `wss://<host>/ws`.
+With the switch enabled, the wrapper loads both the base stack and TLS override. The edge redirects HTTP to the exact externally configured `APP_HTTPS_PORT`, accepts TLS 1.2 and TLS 1.3, adds HSTS, proxies the Admin Web, and preserves WebSocket Upgrade headers for `wss://<host>/ws`.
 
-To return to the loopback-only HTTP/WS mode, stop the active stack and restart with the switch disabled:
+For example, the default development-style edge ports behave as follows:
+
+```text
+http://example.test:8081/path
+  -> 308 https://example.test:8443/path
+```
+
+Standard production ports behave as follows:
+
+```text
+http://example.com:80/path
+  -> 308 https://example.com:443/path
+```
+
+To return to the loopback-only HTTP/WS mode, stop the active stack and restart with the switch disabled while retaining the same default `production` project name:
 
 ```bash
 APP_HTTPS_ENABLED=true make production-down
 APP_HTTPS_ENABLED=false make production-up
 ```
 
-The certificate and private key must be readable by the unprivileged Nginx container UID or group. Do not solve this by placing private keys in the image or source repository.
+### Trusted production certificates
+
+A self-signed certificate is suitable only for local verification. Browsers and public clients will not trust it automatically.
+
+A trusted public deployment requires all of the following:
+
+1. a domain name whose DNS records point to the deployment edge;
+2. a certificate whose SAN list contains that exact domain;
+3. the complete certificate chain, usually `fullchain.pem`;
+4. the matching private key, usually `privkey.pem`;
+5. certificate renewal handled by the operator, a certificate manager, an ingress controller, or a managed load balancer.
+
+The single-host Compose edge consumes existing certificate files; it does not request or renew certificates itself. Obtain them through an operator-controlled issuer such as a managed certificate service or an ACME client, then provide absolute paths:
+
+```bash
+APP_HTTPS_ENABLED=true \
+APP_TLS_CERT_FILE=/etc/letsencrypt/live/example.com/fullchain.pem \
+APP_TLS_KEY_FILE=/etc/letsencrypt/live/example.com/privkey.pem \
+APP_HTTP_PORT=80 \
+APP_HTTPS_PORT=443 \
+make production-up
+```
+
+The certificate and private key must be readable by the unprivileged Nginx container UID or group. Do not solve this by placing private keys in the image or source repository. After certificate renewal, recreate or reload only the TLS edge according to the certificate-management method in use.
 
 The complete realtime protocol, authentication model, client examples, limits, metrics, and multi-instance boundary are documented in `docs/operations/realtime-websocket.md`.
 
@@ -212,6 +294,7 @@ APP_REDIS_USERNAME
 APP_REDIS_PASSWORD
 APP_AUTH_ACCESS_TOKEN_SECRET
 APP_ADMIN_BOOTSTRAP_TOKEN
+APP_COMPOSE_PROJECT_NAME
 APP_HTTPS_ENABLED
 APP_TLS_CERT_FILE
 APP_TLS_KEY_FILE
