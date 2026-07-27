@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -31,6 +32,15 @@ func runRealtimeHealthcheck(endpoint, token string, browserProtocol, insecureTLS
 	}
 	headers := http.Header{}
 	if browserProtocol {
+		parsed, err := url.Parse(endpoint)
+		if err != nil || parsed.Host == "" {
+			return fmt.Errorf("parse realtime URL for browser origin")
+		}
+		originScheme := "http"
+		if parsed.Scheme == "wss" {
+			originScheme = "https"
+		}
+		headers.Set("Origin", originScheme+"://"+parsed.Host)
 		dialer.Subprotocols = []string{"bearer", token}
 	} else {
 		headers.Set("Authorization", "Bearer "+token)
