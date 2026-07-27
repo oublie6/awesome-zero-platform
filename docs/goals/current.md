@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: ready
-- Started:
-- Completed:
+- State: completed
+- Started: 2026-07-27
+- Completed: 2026-07-27
 - Blockers: None.
 
 ## Goal
@@ -274,6 +274,15 @@ Do not leave both projects stopped.
 - Stable production project naming, port-aware redirects, readiness polling, and trusted-certificate documentation are in `main`.
 - Goal 0017 final run `30260057847` reported `ci/full: success`.
 - ChatGPT identified actual host volume reconciliation as the only remaining Codex-specific task.
+- Codex confirmed clean synchronized `main` at `12d662e`.
+- Codex confirmed Docker Engine `29.3.1` and Docker Compose `v5.1.1` are available.
+- Codex confirmed original production volumes `production_mysql-data` and `production_redis-data` exist.
+- Codex recorded the running isolated project `awesome-zero-platform-codex-https`, its ports, health, and retained volumes before cutover.
+- Codex found private production environment files under `.runtime/` and verified the production database, Redis, and administrator credential path without printing secrets.
+- Codex created private production HTTPS runtime state under ignored `.runtime/codex-production-https/`.
+- Codex validated the stable `production` HTTPS Compose configuration before stopping the isolated stack.
+- Codex stopped only the isolated project containers with `down --remove-orphans`; no volumes were removed.
+- Codex started the stable `production` project with `APP_HTTPS_ENABLED=true`, verified production volume mounts, HTTP, HTTPS, TLS, authentication, and browser-mode WSS, and left `production` running.
 
 ### In progress
 
@@ -281,18 +290,58 @@ Do not leave both projects stopped.
 
 ### Remaining
 
-- Codex must inspect the actual host projects, volumes, credentials, and ports.
-- Validate production startup prerequisites without exposing secrets.
-- Safely stop the isolated project without deleting its volumes.
-- Start and verify the stable `production` project with HTTPS enabled.
-- Prove exact production volume mounts and authenticated WSS.
-- Leave production running or restore the isolated stack on failure.
-- Record and push only the permitted verification report.
+- None.
 
 ### Verification status
 
-- Not started by Codex.
+- Preflight `git status --short --branch`: clean `main` synchronized with `origin/main`.
+- `git pull --ff-only origin main`: fast-forwarded to `12d662e`.
+- Docker/Compose preflight passed: Docker Engine `29.3.1`, Docker Compose `v5.1.1`.
+- Existing Docker state before cutover: isolated project `awesome-zero-platform-codex-https` was running with healthy `mysql`, `redis`, `app-api`, `admin-web`, and `tls-edge`; stable `production` project had no running containers.
+- Existing production volumes: `production_mysql-data` and `production_redis-data` exist with Compose project labels for `production`.
+- Isolated rollback volumes retained before and after cutover: `awesome-zero-platform-codex-https_mysql-data` and `awesome-zero-platform-codex-https_redis-data`.
+- Port ownership before cutover: `8888`, `8080`, `8081`, and `8443` were owned by the expected isolated project.
+- Production credentials were sourced from private `.runtime/` files; core production secrets differ from the Goal 0016 isolated runtime secrets.
+- Production MySQL credential preflight against `production_mysql-data`: passed using a temporary no-port container; the container was removed and the volume was not removed.
+- Production Redis credential preflight against `production_redis-data`: passed using a temporary no-port container; the container was removed and the volume was not removed.
+- Private production runtime file: `.runtime/codex-production-https/production-runtime.env` with mode `0600`.
+- Certificate type: generated self-signed local certificate under `.runtime/codex-production-https/`; browser trust remains deferred.
+- Production Compose validation: `APP_COMPOSE_PROJECT_NAME=production APP_HTTPS_ENABLED=true bash scripts/production-compose.sh --env-file .runtime/codex-production-https/production-runtime.env config --services` rendered `mysql`, `redis`, `schema`, `app-api`, `admin-web`, and `tls-edge`.
+- Rendered Compose project name: `production`; rendered named volumes are `mysql-data` and `redis-data`, which resolve to `production_mysql-data` and `production_redis-data` for the stable project.
+- Isolated project stop command: `APP_COMPOSE_PROJECT_NAME=awesome-zero-platform-codex-https APP_HTTPS_ENABLED=true bash scripts/production-compose.sh --env-file .runtime/codex-https/runtime.env down --remove-orphans`; no `--volumes` option was used.
+- Production startup: `APP_COMPOSE_PROJECT_NAME=production APP_HTTPS_ENABLED=true bash scripts/production-compose.sh --env-file .runtime/codex-production-https/production-runtime.env up -d --build --wait` passed.
+- Final mount proof: `production_mysql-data -> /var/lib/mysql`; `production_redis-data -> /data`.
+- Final container state: `mysql`, `redis`, `app-api`, `admin-web`, and `tls-edge` are running and healthy; `schema` completed successfully.
+- HTTP liveness: `http://127.0.0.1:8081/healthz` returned `200` with body `ok`.
+- HTTP redirect: `http://127.0.0.1:8081/admin/` returned `308` with `Location: https://127.0.0.1:8443/admin/`.
+- HTTPS liveness: `https://127.0.0.1:8443/health` returned `200` with body `ok` using explicit insecure verification for the generated self-signed certificate.
+- HTTPS Admin Web: `https://127.0.0.1:8443/` returned `200` with `text/html; charset=utf-8`.
+- Served certificate evidence: self-signed `CN=localhost`, issuer `CN=localhost`, SAN includes `localhost`, `tls-edge`, `127.0.0.1`, the local hostname, and the host primary IPv4 address; validity is 2026-07-27 through 2026-08-03 UTC.
+- Production administrator login using private credentials: passed; access token was stored only under ignored `.runtime/codex-production-https/`.
+- Browser-mode realtime WSS healthcheck: passed against `wss://tls-edge:8443/ws`, including authenticated handshake, `system.hello`, and ping/pong.
+- Final bootstrap-token state: app-api environment contains no non-empty bootstrap token; `/admin/bootstrap/status` reports unavailable.
+- Final Compose project: `production` remains running.
+- Final resource snapshot while production remained running: host memory available approximately `629MiB`, swap used `0MiB`.
+- Final tracked-file diff is limited to this goal file; private runtime files remain ignored.
+- `git diff --check`: passed.
 
 ## Completion Report
 
-Not completed.
+Completed on 2026-07-27.
+
+Codex reconciled the host from the isolated HTTPS test project to the stable `production` Compose project and left `production` running.
+
+Runtime summary:
+
+- Final Compose project: `production`.
+- Final volume mounts: `production_mysql-data -> /var/lib/mysql`; `production_redis-data -> /data`.
+- Non-sensitive ports: API `127.0.0.1:8888`, Admin Web `127.0.0.1:8080`, HTTP edge `8081`, HTTPS edge `8443`.
+- HTTP result: `/healthz` returned `200 ok`; ordinary HTTP `/admin/` returned `308` with `Location: https://127.0.0.1:8443/admin/`.
+- HTTPS result: `/health` returned `200 ok`; `/` returned Admin Web HTML.
+- WSS result: browser-mode authenticated realtime healthcheck passed through `wss://tls-edge:8443/ws`, including handshake, `system.hello`, and ping/pong.
+- Certificate status: self-signed local certificate, expires 2026-08-03 UTC; browser trust remains deferred.
+- Container health: `mysql`, `redis`, `app-api`, `admin-web`, and `tls-edge` are healthy; `schema` completed successfully.
+- Bootstrap state: final `app-api` has no non-empty `APP_ADMIN_BOOTSTRAP_TOKEN`; `/admin/bootstrap/status` is unavailable.
+- Isolated rollback volumes remain present: `awesome-zero-platform-codex-https_mysql-data` and `awesome-zero-platform-codex-https_redis-data`.
+- Secrets, private keys, administrator credentials, and access tokens remained only under ignored `.runtime/` paths and were not printed or committed.
+- Goal report commit SHA and push result will be recorded before final handoff.
