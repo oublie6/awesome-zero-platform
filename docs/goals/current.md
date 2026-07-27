@@ -1,130 +1,240 @@
-# Goal 0015: WebSocket Baseline and HTTPS Switch
+# Goal 0016: Codex Local HTTPS/WSS Runtime Verification
 
 ## Status
 
-- State: completed
-- Started: 2026-07-27
-- Completed: 2026-07-27
+- State: ready
+- Started:
+- Completed:
 - Blockers: None.
 
 ## Goal
 
-Keep the completed reusable WebSocket transport as the platform realtime baseline and add one explicit production HTTPS switch so operators can use the same deployment entrypoint for HTTP/WS or HTTPS/WSS without manually assembling Compose files.
+Use Codex CLI on the user's actual repository host to perform the one supplementary verification that ChatGPT cannot execute from its connected-repository environment: start the production Compose stack with `APP_HTTPS_ENABLED=true` against the host's real Docker daemon, verify actual host-level HTTPS and WSS behavior, and leave the verified stack running for the user.
+
+This is a runtime-only supplementary goal. The WebSocket foundation and HTTPS switch are already implemented and passed the complete repository CI gate. Codex must not repeat normal development testing or modify source code.
+
+## Why This Requires Codex CLI
+
+- ChatGPT completed the implementation, deterministic tests, CI integration, and repository verification.
+- GitHub Actions already passed Go, Vue, MySQL 5.7, Redis, integration, race, HTTP/WS, HTTPS/WSS, and Compose runtime acceptance.
+- ChatGPT cannot access the user's Codex CLI host, local Docker daemon, occupied ports, host filesystem certificate paths, or the final running containers.
+- The exact remaining gap is therefore host-specific deployment verification and leaving HTTPS/WSS running on that host.
+
+## Baseline
+
+- Completed implementation and goal checkpoint: `397e794c8d66b35876b267db8b24845e6391fa95`.
+- Final GitHub Actions run: `30243462103` with `ci/full: success`.
+- Production entrypoint: `scripts/production-compose.sh`.
+- HTTPS switch: `APP_HTTPS_ENABLED=true`.
+- TLS remains terminated by the `tls-edge` Nginx container; the Go `app-api` continues to use internal HTTP/WS on port `8888`.
 
 ## References
 
 - `AGENTS.md`
-- `server/platform/realtime`
+- `docs/operations/production-deployment.md`
+- `docs/operations/realtime-websocket.md`
+- `scripts/production-compose.sh`
 - `deploy/production/docker-compose.yml`
 - `deploy/production/docker-compose.tls.yml`
 - `deploy/production/tls/nginx.conf`
-- `docs/operations/realtime-websocket.md`
-- `docs/operations/production-deployment.md`
-- `scripts/production-compose.sh`
-- `scripts/test-production-compose.sh`
-- `scripts/ci-runtime-acceptance.sh`
-- `.github/workflows/ci.yml`
+- `clients/admin-web/nginx.conf`
 - `Makefile`
 
-## Deliverables
+## Codex Scope
 
-1. Preserve the existing authenticated `/ws` transport, bounded connection lifecycle, topic routing, metrics, reverse proxying, and WSS edge.
-2. Add `APP_HTTPS_ENABLED` as the explicit production deployment switch, defaulting to disabled.
-3. Add one production Compose wrapper that always loads the base stack and conditionally loads the TLS edge override.
-4. Accept clear boolean values and fail fast for invalid switch values.
-5. Keep HTTP/WS available when the switch is disabled and HTTPS/WSS available when enabled.
-6. Require the existing external TLS certificate and key inputs only when HTTPS is enabled through Compose interpolation.
-7. Add Makefile production targets that use the wrapper instead of requiring operators to remember Compose file combinations.
-8. Add deterministic shell coverage for switch parsing, selected Compose files, argument forwarding, and invalid values.
-9. Update CI Compose validation and runtime acceptance to exercise both switch states through the same wrapper.
-10. Update production deployment documentation with the final operator commands and configuration variables.
-11. Pass the complete repository `ci/full` gate.
+Codex may perform only the following supplementary work:
 
-## Constraints
+1. Confirm the repository is on clean, synchronized `main`.
+2. Check that Docker Engine, Docker Compose, OpenSSL, curl, and Python 3 are available.
+3. Start one non-destructive local production stack with HTTPS enabled.
+4. Verify the actual host ports, TLS endpoint, HTTP redirect response, authenticated WSS connection, container health, and final running state.
+5. Update only the status, working-state, verification-status, and completion-report sections of this file.
+6. Commit and push only the permitted goal-report update directly to `main`.
 
-- Work directly on `main`; do not create branches or pull requests.
-- ChatGPT owns implementation, tests, fixes, verification, commits, and pushes.
-- Do not delegate routine testing or implementation to Codex.
-- Do not redesign or duplicate the existing realtime transport.
-- Do not terminate TLS inside the Go application; TLS remains an edge responsibility.
-- Do not commit certificates, private keys, passwords, access tokens, or runtime environment files.
-- Preserve existing HTTP APIs, authentication behavior, Admin Web behavior, MySQL 5.7 compatibility, and Kubernetes deployment semantics.
-- Keep local development compatible with HTTP/WS.
+Codex must not run the full Go/Vue/CI test suite again, because those checks are already complete and do not depend on the user's host.
 
-## Required Verification
+## Runtime Preparation
 
-```bash
-bash scripts/test-production-compose.sh
+Use a dedicated ignored runtime directory:
 
-APP_MYSQL_PASSWORD=test \
-APP_MYSQL_ROOT_PASSWORD=test-root \
-APP_REDIS_PASSWORD=test-redis \
-APP_AUTH_ACCESS_TOKEN_SECRET=test-access-token-secret-0123456789abcdef \
-APP_HTTPS_ENABLED=false \
-bash scripts/production-compose.sh config >/dev/null
-
-touch /tmp/awesome-zero-platform-ci.crt /tmp/awesome-zero-platform-ci.key
-APP_MYSQL_PASSWORD=test \
-APP_MYSQL_ROOT_PASSWORD=test-root \
-APP_REDIS_PASSWORD=test-redis \
-APP_AUTH_ACCESS_TOKEN_SECRET=test-access-token-secret-0123456789abcdef \
-APP_HTTPS_ENABLED=true \
-APP_TLS_CERT_FILE=/tmp/awesome-zero-platform-ci.crt \
-APP_TLS_KEY_FILE=/tmp/awesome-zero-platform-ci.key \
-bash scripts/production-compose.sh config >/dev/null
-
-cd server
-go mod tidy
-git diff --exit-code -- go.mod go.sum
-go test -p 1 -parallel 1 ./platform/realtime/... ./foundation/httpmiddleware/... ./foundation/observability/... ./apps/app-api/internal/bootstrap/...
-go test -race -count=1 -p 1 -parallel 1 ./platform/realtime/... ./foundation/httpmiddleware/... ./foundation/observability/...
-cd ..
-
-make generate
-git diff --exit-code -- server/apps/app-api
-make fmt-check
-make test
-make build
-
-cd clients/admin-web
-npm install --no-audit --no-fund
-npm run build
-cd ../..
-
-docker compose -f deploy/local/docker-compose.yml config >/dev/null
-git diff --check
+```text
+.runtime/codex-https/
 ```
 
-GitHub Actions must report `ci/full: success` for the final commit. Its runtime job must exercise HTTP/WS with the switch disabled and HTTPS/WSS with the switch enabled.
+Requirements:
+
+- Set the directory mode to `0700`.
+- Do not place any certificate, private key, password, token, generated environment file, or administrator credential outside `.runtime/codex-https/`.
+- Do not print secret values in terminal summaries, logs, the goal report, Git commits, or chat output.
+- Reuse readable certificate paths already supplied by the user through `APP_TLS_CERT_FILE` and `APP_TLS_KEY_FILE` when both are available.
+- Otherwise generate a short-lived self-signed certificate under the runtime directory. Include SAN entries for `localhost`, `tls-edge`, `127.0.0.1`, the local hostname when resolvable, and the host's primary IPv4 address when safely detectable.
+- A self-signed certificate is acceptable for this host-level test; use explicit insecure verification only for that generated certificate and state clearly that browsers will not trust it automatically.
+- Store the certificate and key using absolute paths. Keep the runtime directory private; make the mounted key file readable by the unprivileged TLS container without making the runtime directory broadly accessible.
+
+Create private ignored files as needed, including:
+
+```text
+.runtime/codex-https/bootstrap.env
+.runtime/codex-https/runtime.env
+.runtime/codex-https/operator.env
+.runtime/codex-https/tls.crt
+.runtime/codex-https/tls.key
+```
+
+Generate cryptographically random values for the MySQL, MySQL root, Redis, access-token, bootstrap-token, and temporary administrator credentials. `bootstrap.env` may contain `APP_ADMIN_BOOTSTRAP_TOKEN`; `runtime.env` must omit it so the final running API does not retain bootstrap capability. `operator.env` may retain the generated local administrator username and password with mode `0600`, but they must not be printed or committed.
+
+## Port and Existing-Service Safety
+
+- Do not stop, replace, or reconfigure unrelated containers or host services.
+- Do not delete any Docker volume.
+- Do not use `down --volumes`, `docker system prune`, or similarly destructive commands.
+- Before startup, check host listeners and existing Compose projects.
+- The base production stack requires loopback ports `8888` and `8080`. If either is occupied by an unrelated process or an unknown deployment, stop and document a blocker instead of killing it.
+- Prefer public edge ports `8081` and `8443` when available. If they are occupied, choose free unprivileged alternatives such as `18081` and `18443`, write them to the runtime environment files, and record the selected non-secret port numbers.
+- Use the dedicated Compose project name:
+
+```text
+awesome-zero-platform-codex-https
+```
+
+## Required Procedure
+
+### 1. Preflight
+
+```bash
+git status --short --branch
+git pull --ff-only
+
+docker version
+docker compose version
+openssl version
+curl --version
+python3 --version
+```
+
+Stop with a documented blocker when the working tree is not clean, `main` cannot fast-forward, a required tool is unavailable, Docker is unreachable, or required host ports cannot be used safely.
+
+### 2. Validate the selected HTTPS configuration
+
+The wrapper reads `APP_HTTPS_ENABLED` from its process environment, so prefix every wrapper invocation explicitly:
+
+```bash
+APP_HTTPS_ENABLED=true \
+  bash scripts/production-compose.sh \
+  --project-name awesome-zero-platform-codex-https \
+  --env-file .runtime/codex-https/bootstrap.env \
+  config --services
+```
+
+Confirm that the rendered service list includes:
+
+```text
+mysql
+schema
+redis
+app-api
+admin-web
+tls-edge
+```
+
+Do not rerun `scripts/test-production-compose.sh`, `make test`, frontend builds, race tests, or the complete CI runtime script; those are outside this supplementary gap.
+
+### 3. Start HTTPS mode
+
+```bash
+APP_HTTPS_ENABLED=true \
+  bash scripts/production-compose.sh \
+  --project-name awesome-zero-platform-codex-https \
+  --env-file .runtime/codex-https/bootstrap.env \
+  up -d --build --wait
+```
+
+Inspect the real running state:
+
+```bash
+APP_HTTPS_ENABLED=true \
+  bash scripts/production-compose.sh \
+  --project-name awesome-zero-platform-codex-https \
+  --env-file .runtime/codex-https/bootstrap.env \
+  ps
+```
+
+All required services must be running and healthy, and `tls-edge` must be present.
+
+### 4. Verify host-level HTTP and HTTPS
+
+Using the selected `APP_HTTP_PORT` and `APP_HTTPS_PORT`:
+
+- Confirm `http://127.0.0.1:<http-port>/healthz` returns `200` and body `ok`.
+- Confirm an ordinary HTTP path returns `308` and an HTTPS redirect location. When non-standard ports are used, record the exact `Location` header instead of silently assuming it points to the selected HTTPS port.
+- Confirm `https://127.0.0.1:<https-port>/health` returns `200` and body `ok`.
+- Confirm `https://127.0.0.1:<https-port>/` returns a successful Admin Web response.
+- Inspect the served certificate and negotiated TLS connection with `openssl s_client` or equivalent evidence.
+- Use normal certificate verification for a user-provided trusted certificate. Use `curl --insecure` only when Codex generated the self-signed runtime certificate.
+
+### 5. Bootstrap once, authenticate, and verify WSS
+
+- Query `/admin/bootstrap/status` through the API loopback endpoint.
+- If bootstrap is available, create one temporary local administrator using the private bootstrap token and the private administrator credentials in `operator.env`.
+- Log in and obtain an access token without printing it.
+- Execute the repository's existing realtime healthcheck from the `app-api` container against the TLS edge:
+
+```text
+wss://tls-edge:8443/ws
+```
+
+Use browser-mode authentication and insecure TLS only for the generated self-signed certificate. The check must complete the authenticated WebSocket handshake and hello/pong flow.
+
+After bootstrap succeeds:
+
+1. switch subsequent Compose operations to `.runtime/codex-https/runtime.env`, which does not contain `APP_ADMIN_BOOTSTRAP_TOKEN`;
+2. recreate only `app-api` as needed so the final running process no longer receives the bootstrap token;
+3. confirm `/admin/bootstrap/status` reports unavailable;
+4. log in again and repeat the authenticated WSS healthcheck.
+
+Do not expose the access token, administrator password, bootstrap token, database passwords, or Redis password.
+
+### 6. Final running-state verification
+
+Confirm all of the following while leaving the stack running:
+
+- `mysql`, `redis`, `app-api`, `admin-web`, and `tls-edge` are running and healthy.
+- Direct host HTTPS is reachable at the recorded URL.
+- Authenticated WSS succeeds through `tls-edge`.
+- The final `app-api` does not receive `APP_ADMIN_BOOTSTRAP_TOKEN`.
+- No tracked source, test, CI, deployment, or documentation file changed except the permitted sections of this goal file.
+- Runtime files remain under ignored `.runtime/codex-https/`.
+
+Do not run `production-down` after successful verification. Leave the dedicated Compose project running for the user.
+
+## Failure Handling
+
+- Do not edit production code, tests, Compose files, Nginx configuration, Makefile targets, CI, or documentation to repair a failure.
+- Capture only non-secret diagnostics: the failing command, exit status, selected ports, `docker compose ps`, relevant redacted container logs, and whether the certificate was user-provided or self-signed.
+- On a partial failed startup, stop only the dedicated project with `down --remove-orphans`; never remove volumes unless the user explicitly authorizes it.
+- Set the goal state to `blocked` and return the evidence to ChatGPT for diagnosis and any required fix.
 
 ## Acceptance Criteria
 
-- `APP_HTTPS_ENABLED` defaults to false.
-- Accepted false values select only `deploy/production/docker-compose.yml`.
-- Accepted true values select both the base and TLS Compose files.
-- Invalid switch values exit nonzero with a clear error.
-- All remaining arguments, including `--env-file`, are forwarded to `docker compose` unchanged.
-- `make production-up`, `make production-down`, and `make production-config` use the unified wrapper.
-- HTTP/WS startup does not require certificate variables.
-- HTTPS/WSS startup uses the existing TLS edge and requires certificate/key paths.
-- CI validates both generated Compose configurations.
-- Runtime acceptance verifies direct WS, proxied WS, HTTPS, WSS, hello/pong, metrics, API recreation, and clean shutdown through the unified deployment entrypoint.
-- Documentation clearly distinguishes local HTTP/WS, production switch-off behavior, and public HTTPS/WSS behavior.
-- Final `ci/full` passes.
+- Codex works from clean synchronized `main` without creating a branch or pull request.
+- The dedicated Compose project uses `APP_HTTPS_ENABLED=true` and includes `tls-edge`.
+- Real host containers start successfully and become healthy.
+- Host HTTP is reachable and returns the expected redirect response for ordinary paths.
+- Host HTTPS serves the Admin Web and health endpoint using the selected certificate.
+- An authenticated browser-mode WSS healthcheck passes through `tls-edge`.
+- Bootstrap is disabled in the final running `app-api` process.
+- Secrets and certificates remain only in ignored runtime files and are not printed or committed.
+- No production or test source file is modified.
+- The successful stack remains running at the end.
+- The completion report records the Compose project name, selected non-secret ports, access URLs, certificate type, container health summary, WSS result, commit SHA, and push result.
 
 ## Working State
 
 ### Completed
 
-- Preserved the existing reusable authenticated WebSocket transport without duplicating or redesigning it.
-- Added `scripts/production-compose.sh` as the single production Compose entrypoint.
-- Added `APP_HTTPS_ENABLED`, defaulting to false, with case-insensitive support for `true/false`, `1/0`, `yes/no`, and `on/off`.
-- Added clear rejection for invalid switch values before Docker Compose execution.
-- Added `scripts/test-production-compose.sh` to verify default behavior, all accepted values, base/TLS file selection, argument forwarding, and invalid-value failure.
-- Added `production-config`, `production-up`, and `production-down` Makefile targets.
-- Updated CI to execute the switch tests and validate both HTTP/WS and HTTPS/WSS Compose configurations.
-- Updated runtime acceptance to use the wrapper with the switch disabled for HTTP/WS and enabled for HTTPS/WSS.
-- Updated production deployment documentation with the final switch, commands, certificate requirements, and shutdown behavior.
+- ChatGPT implemented and tested the WebSocket foundation and HTTPS switch.
+- GitHub Actions run `30243462103` passed the complete repository `ci/full` gate.
+- ChatGPT identified the host-specific Docker startup and leave-running state as the only justified Codex supplementary test gap.
 
 ### In progress
 
@@ -132,42 +242,18 @@ GitHub Actions must report `ci/full: success` for the final commit. Its runtime 
 
 ### Remaining
 
-- None.
+- Codex must perform the host preflight.
+- Create or reuse private runtime certificate and environment files.
+- Start the dedicated production stack with HTTPS enabled.
+- Verify HTTP, HTTPS, authentication, and WSS on the actual host.
+- Remove the bootstrap token from the final running API environment.
+- Leave the verified stack running.
+- Record evidence and commit/push only the permitted goal-report update.
 
 ### Verification status
 
-- ChatGPT executed the deterministic production Compose switch test successfully in its available shell environment.
-- GitHub Actions run `30243099785` reported `ci/full: success` for implementation checkpoint `93198145de07584250dfd6dd55d8bb9288881b4c`.
-- Module and generated-code checks passed.
-- Go formatting, unit tests, focused race tests, and build passed.
-- The production HTTPS switch test passed.
-- Both switch-off and switch-on Compose configuration validation passed.
-- Vue type checking and production build passed.
-- MySQL 5.7, Redis, schema, seed, integration, and clustered authorization tests passed.
-- Production runtime acceptance passed for direct WS, Admin Web proxied WS, HTTPS, WSS, browser authentication, hello/pong, metrics, API recreation, and shutdown through the unified wrapper.
-- No certificate, private key, password, access token, or runtime environment file was committed.
-- No Codex supplementary test was required.
+- Not started by Codex.
 
 ## Completion Report
 
-Completed on 2026-07-27.
-
-The platform retains the completed generic WebSocket foundation at `/ws` and now exposes one explicit production transport switch:
-
-```text
-APP_HTTPS_ENABLED=false  -> base Compose only, HTTP + WS on loopback-bound ports
-APP_HTTPS_ENABLED=true   -> base Compose + TLS edge, HTTPS + WSS
-```
-
-Operators no longer need to remember or manually combine Compose files. The supported commands are:
-
-```bash
-APP_HTTPS_ENABLED=false make production-up
-
-APP_HTTPS_ENABLED=true \
-APP_TLS_CERT_FILE=/absolute/path/to/fullchain.pem \
-APP_TLS_KEY_FILE=/absolute/path/to/privkey.pem \
-make production-up
-```
-
-The implementation passed the complete repository gate on commit `93198145de07584250dfd6dd55d8bb9288881b4c` in GitHub Actions run `30243099785`.
+Not completed.
