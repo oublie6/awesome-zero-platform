@@ -200,8 +200,8 @@ curl --fail --silent --show-error \
 
 realtime_probe ws://127.0.0.1:8888/ws "$ACCESS_TOKEN"
 realtime_probe ws://admin-web:8080/ws "$ACCESS_TOKEN" -realtime-healthcheck-browser
-curl --fail --silent --show-error http://127.0.0.1:8888/metrics |
-  grep -q '^awesome_zero_platform_realtime_connections_accepted_total '
+METRICS="$(curl --fail --silent --show-error http://127.0.0.1:8888/metrics)"
+grep -q '^awesome_zero_platform_realtime_connections_accepted_total ' <<<"$METRICS"
 
 compose_tls up -d tls-edge --wait
 wait_http "http://127.0.0.1:${TLS_HTTP_PORT}/healthz"
