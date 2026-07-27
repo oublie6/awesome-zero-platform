@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-27
-- Completed:
+- Completed: 2026-07-27
 - Blockers: None.
 
 ## Goal
@@ -20,6 +20,8 @@ Keep the completed reusable WebSocket transport as the platform realtime baselin
 - `deploy/production/tls/nginx.conf`
 - `docs/operations/realtime-websocket.md`
 - `docs/operations/production-deployment.md`
+- `scripts/production-compose.sh`
+- `scripts/test-production-compose.sh`
 - `scripts/ci-runtime-acceptance.sh`
 - `.github/workflows/ci.yml`
 - `Makefile`
@@ -114,27 +116,58 @@ GitHub Actions must report `ci/full: success` for the final commit. Its runtime 
 
 ### Completed
 
-- Confirmed Goal 0014 already provides the reusable authenticated WebSocket transport and TLS edge.
-- Identified that HTTPS currently requires operators to manually append `deploy/production/docker-compose.tls.yml`, so there is no explicit unified switch yet.
-- Defined `APP_HTTPS_ENABLED` and a wrapper-based deployment interface as the narrow completion scope.
+- Preserved the existing reusable authenticated WebSocket transport without duplicating or redesigning it.
+- Added `scripts/production-compose.sh` as the single production Compose entrypoint.
+- Added `APP_HTTPS_ENABLED`, defaulting to false, with case-insensitive support for `true/false`, `1/0`, `yes/no`, and `on/off`.
+- Added clear rejection for invalid switch values before Docker Compose execution.
+- Added `scripts/test-production-compose.sh` to verify default behavior, all accepted values, base/TLS file selection, argument forwarding, and invalid-value failure.
+- Added `production-config`, `production-up`, and `production-down` Makefile targets.
+- Updated CI to execute the switch tests and validate both HTTP/WS and HTTPS/WSS Compose configurations.
+- Updated runtime acceptance to use the wrapper with the switch disabled for HTTP/WS and enabled for HTTPS/WSS.
+- Updated production deployment documentation with the final switch, commands, certificate requirements, and shutdown behavior.
 
 ### In progress
 
-- Implementing the production HTTPS switch, wrapper, tests, CI integration, and documentation.
+- None.
 
 ### Remaining
 
-- Add the production Compose wrapper and deterministic switch tests.
-- Add Makefile targets.
-- Route CI and runtime acceptance through the wrapper.
-- Update production documentation.
-- Run and fix the complete verification gate.
-- Record final evidence and completion status.
+- None.
 
 ### Verification status
 
-- Not started for Goal 0015.
+- ChatGPT executed the deterministic production Compose switch test successfully in its available shell environment.
+- GitHub Actions run `30243099785` reported `ci/full: success` for implementation checkpoint `93198145de07584250dfd6dd55d8bb9288881b4c`.
+- Module and generated-code checks passed.
+- Go formatting, unit tests, focused race tests, and build passed.
+- The production HTTPS switch test passed.
+- Both switch-off and switch-on Compose configuration validation passed.
+- Vue type checking and production build passed.
+- MySQL 5.7, Redis, schema, seed, integration, and clustered authorization tests passed.
+- Production runtime acceptance passed for direct WS, Admin Web proxied WS, HTTPS, WSS, browser authentication, hello/pong, metrics, API recreation, and shutdown through the unified wrapper.
+- No certificate, private key, password, access token, or runtime environment file was committed.
+- No Codex supplementary test was required.
 
 ## Completion Report
 
-Not completed.
+Completed on 2026-07-27.
+
+The platform retains the completed generic WebSocket foundation at `/ws` and now exposes one explicit production transport switch:
+
+```text
+APP_HTTPS_ENABLED=false  -> base Compose only, HTTP + WS on loopback-bound ports
+APP_HTTPS_ENABLED=true   -> base Compose + TLS edge, HTTPS + WSS
+```
+
+Operators no longer need to remember or manually combine Compose files. The supported commands are:
+
+```bash
+APP_HTTPS_ENABLED=false make production-up
+
+APP_HTTPS_ENABLED=true \
+APP_TLS_CERT_FILE=/absolute/path/to/fullchain.pem \
+APP_TLS_KEY_FILE=/absolute/path/to/privkey.pem \
+make production-up
+```
+
+The implementation passed the complete repository gate on commit `93198145de07584250dfd6dd55d8bb9288881b4c` in GitHub Actions run `30243099785`.
