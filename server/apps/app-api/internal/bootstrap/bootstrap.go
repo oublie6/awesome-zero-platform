@@ -26,6 +26,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz/adapter/casbinmysql"
 	"github.com/oublie6/awesome-zero-platform/server/platform/identity"
+	"github.com/oublie6/awesome-zero-platform/server/platform/realtime"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/rest"
 	restrouter "github.com/zeromicro/go-zero/rest/router"
@@ -42,6 +43,7 @@ type App struct {
 	mysql    database.Handle
 	redis    cache.Handle
 	authz    *casbinmysql.Engine
+	realtime *realtime.Hub
 	stopOnce sync.Once
 }
 
@@ -54,11 +56,18 @@ func New(configFile string) (*App, error) {
 	}
 
 	cfg.Prepare()
+	cfg.Realtime.Prepare()
 	if err := cfg.ApplyEnvironment(); err != nil {
 		return nil, fmt.Errorf("apply environment configuration: %w", err)
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("validate config %q: %w", configFile, err)
+	}
+	if err := cfg.Realtime.Validate(); err != nil {
+		return nil, fmt.Errorf("validate realtime config %q: %w", configFile, err)
+	}
+	if cfg.Realtime.Enabled && !cfg.Authentication.Enabled {
+		return nil, fmt.Errorf("realtime transport requires authentication")
 	}
 
 	platformresponse.InstallHTTPHandlers()
@@ -108,7 +117,11 @@ func New(configFile string) (*App, error) {
 	}
 
 	var authorizationEngine *casbinmysql.Engine
+	var realtimeHub *realtime.Hub
 	closeResources := func() {
+		if realtimeHub != nil {
+			_ = realtimeHub.Close(context.Background())
+		}
 		if authorizationEngine != nil {
 			_ = authorizationEngine.Close()
 		}
@@ -165,6 +178,23 @@ func New(configFile string) (*App, error) {
 		svcCtx.Authn = authentication
 		svcCtx.SessionAdmin = sessionStore
 		sessionAdmin = sessionStore
+	}
+
+	if cfg.Realtime.Enabled {
+		var realtimeMetrics realtime.Metrics
+		if metrics != nil {
+			realtimeMetrics, err = realtime.NewPrometheusMetrics(metrics.Registerer(), cfg.Observability.Metrics.Namespace)
+			if err != nil {
+				closeResources()
+				return nil, fmt.Errorf("initialize realtime metrics: %w", err)
+			}
+		}
+		realtimeHub, err = realtime.New(cfg.Realtime, realtimeAuthenticator{service: svcCtx.Authn}, realtimeMetrics)
+		if err != nil {
+			closeResources()
+			return nil, fmt.Errorf("initialize realtime transport: %w", err)
+		}
+		svcCtx.Realtime = realtimeHub
 	}
 
 	var authorizationAdmin authz.Administrator
@@ -230,16 +260,20 @@ func New(configFile string) (*App, error) {
 	handler.RegisterHandlers(server, svcCtx)
 	securityhttp.Register(server, svcCtx)
 	adminhttp.Register(server, svcCtx)
+	if realtimeHub != nil {
+		server.AddRoutes([]rest.Route{{Method: http.MethodGet, Path: cfg.Realtime.Path, Handler: realtimeHub.Handler().ServeHTTP}})
+	}
 	if metrics != nil {
 		server.AddRoutes([]rest.Route{{Method: http.MethodGet, Path: cfg.Observability.Metrics.Path, Handler: metrics.Handler().ServeHTTP}})
 	}
 
 	return &App{
-		Config: cfg,
-		server: server,
-		mysql:  mysqlResource,
-		redis:  redisClient,
-		authz:  authorizationEngine,
+		Config:   cfg,
+		server:   server,
+		mysql:    mysqlResource,
+		redis:    redisClient,
+		authz:    authorizationEngine,
+		realtime: realtimeHub,
 	}, nil
 }
 
@@ -253,6 +287,9 @@ func (a *App) Stop() {
 		return
 	}
 	a.stopOnce.Do(func() {
+		if a.realtime != nil {
+			_ = a.realtime.Close(context.Background())
+		}
 		a.server.Stop()
 		if a.authz != nil {
 			_ = a.authz.Close()
@@ -264,6 +301,25 @@ func (a *App) Stop() {
 			_ = a.mysql.Close()
 		}
 	})
+}
+
+type realtimeAuthenticator struct {
+	service *authn.Service
+}
+
+func (a realtimeAuthenticator) Authenticate(ctx context.Context, rawToken string) (realtime.Identity, error) {
+	if a.service == nil {
+		return realtime.Identity{}, realtime.ErrAuthenticationFailed
+	}
+	authentication, err := a.service.AuthenticateAccess(ctx, rawToken)
+	if err != nil {
+		return realtime.Identity{}, realtime.ErrAuthenticationFailed
+	}
+	return realtime.Identity{
+		AccountID:   authentication.Principal.AccountID,
+		SessionID:   authentication.SessionID,
+		DisplayName: authentication.Principal.DisplayName,
+	}, nil
 }
 
 type namedProbe struct {
