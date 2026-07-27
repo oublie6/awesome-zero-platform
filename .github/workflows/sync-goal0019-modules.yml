@@ -1,0 +1,32 @@
+name: Sync Goal 0019 Modules
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.head_ref == 'goal0019-validation'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: goal0019-validation
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+      - name: Normalize module files and self-clean
+        working-directory: server
+        run: go mod tidy
+      - name: Commit normalized module files
+        run: |
+          rm -f .github/workflows/sync-goal0019-modules.yml .github/goal0019-validation.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: normalize secure envelope module files'
+          git push origin HEAD:goal0019-validation
