@@ -3,8 +3,9 @@ SERVER_DIR := server
 APP_API_DIR := $(SERVER_DIR)/apps/app-api
 APP_API_SPEC := $(APP_API_DIR)/app.api
 LOCAL_COMPOSE := docker compose -f deploy/local/docker-compose.yml
+PRODUCTION_COMPOSE := bash scripts/production-compose.sh
 
-.PHONY: generate run build test fmt fmt-check deps-up deps-down deps-reset schema-apply seed-apply integration-test
+.PHONY: generate run build test fmt fmt-check deps-up deps-down deps-reset schema-apply seed-apply integration-test production-config production-up production-down
 
 generate:
 	cd $(SERVER_DIR) && $(GOCTL) api go --api apps/app-api/app.api --dir apps/app-api --style gozero
@@ -43,3 +44,12 @@ seed-apply:
 
 integration-test:
 	cd $(SERVER_DIR) && APP_API_INTEGRATION=1 go test -count=1 -p 1 -parallel 1 -tags=integration ./...
+
+production-config:
+	$(PRODUCTION_COMPOSE) config
+
+production-up:
+	$(PRODUCTION_COMPOSE) up -d --build --wait
+
+production-down:
+	$(PRODUCTION_COMPOSE) down --remove-orphans
