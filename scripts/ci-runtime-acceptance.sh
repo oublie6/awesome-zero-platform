@@ -8,6 +8,7 @@ BOOTSTRAP_ENV="$RUNTIME_DIR/ci-compose-bootstrap.env"
 FINAL_ENV="$RUNTIME_DIR/ci-compose-final.env"
 TLS_CERT="$RUNTIME_DIR/ci-tls.crt"
 TLS_KEY="$RUNTIME_DIR/ci-tls.key"
+COMPOSE_PROJECT="awesome-zero-platform-ci-runtime"
 TLS_HTTP_PORT=18081
 TLS_HTTPS_PORT=18443
 
@@ -54,15 +55,21 @@ write_env "$BOOTSTRAP_ENV" yes
 write_env "$FINAL_ENV" no
 
 compose_bootstrap() {
-  APP_HTTPS_ENABLED=false bash "$PRODUCTION_COMPOSE" --env-file "$BOOTSTRAP_ENV" "$@"
+  APP_COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT" \
+    APP_HTTPS_ENABLED=false \
+    bash "$PRODUCTION_COMPOSE" --env-file "$BOOTSTRAP_ENV" "$@"
 }
 
 compose_final() {
-  APP_HTTPS_ENABLED=false bash "$PRODUCTION_COMPOSE" --env-file "$FINAL_ENV" "$@"
+  APP_COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT" \
+    APP_HTTPS_ENABLED=false \
+    bash "$PRODUCTION_COMPOSE" --env-file "$FINAL_ENV" "$@"
 }
 
 compose_tls() {
-  APP_HTTPS_ENABLED=true bash "$PRODUCTION_COMPOSE" --env-file "$FINAL_ENV" "$@"
+  APP_COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT" \
+    APP_HTTPS_ENABLED=true \
+    bash "$PRODUCTION_COMPOSE" --env-file "$FINAL_ENV" "$@"
 }
 
 cleanup() {
@@ -100,6 +107,19 @@ wait_http() {
   return 1
 }
 
+assert_body() {
+  local url="$1"
+  local expected="$2"
+  shift 2
+  local actual
+  actual="$(curl --fail --silent --show-error "$@" "$url")"
+  if [[ "$actual" != "$expected" ]]; then
+    printf 'unexpected response body from %s: got %q, expected %q\n' \
+      "$url" "$actual" "$expected" >&2
+    return 1
+  fi
+}
+
 realtime_probe() {
   local service_url="$1"
   local token="$2"
@@ -116,10 +136,14 @@ compose_bootstrap down --volumes --remove-orphans
 compose_bootstrap up -d --build --wait
 compose_bootstrap ps
 
-curl --fail --silent --show-error http://127.0.0.1:8888/health/live >/dev/null
-curl --fail --silent --show-error http://127.0.0.1:8888/health/ready >/dev/null
-curl --fail --silent --show-error http://127.0.0.1:8080/health | grep -q ok
-curl --fail --silent --show-error http://127.0.0.1:8080/ >/dev/null
+# Compose health and application readiness are related but not identical. Poll
+# every externally asserted endpoint so a brief liveness/readiness lag cannot
+# create a false runtime failure.
+wait_http http://127.0.0.1:8888/health/live
+wait_http http://127.0.0.1:8888/health/ready
+wait_http http://127.0.0.1:8080/health
+wait_http http://127.0.0.1:8080/
+assert_body http://127.0.0.1:8080/health ok
 
 BOOTSTRAP_STATUS="$(curl --fail --silent --show-error http://127.0.0.1:8888/admin/bootstrap/status)"
 printf '%s' "$BOOTSTRAP_STATUS" | json_assert "data['data']['available'] is True"
@@ -180,7 +204,24 @@ curl --fail --silent --show-error http://127.0.0.1:8888/metrics |
   grep -q '^awesome_zero_platform_realtime_connections_accepted_total '
 
 compose_tls up -d tls-edge --wait
+wait_http "http://127.0.0.1:${TLS_HTTP_PORT}/healthz"
+assert_body "http://127.0.0.1:${TLS_HTTP_PORT}/healthz" ok
+
+read -r redirect_code redirect_url < <(
+  curl --silent --show-error --output /dev/null \
+    --write-out '%{http_code} %{redirect_url}\n' \
+    "http://127.0.0.1:${TLS_HTTP_PORT}/admin/"
+)
+expected_redirect="https://127.0.0.1:${TLS_HTTPS_PORT}/admin/"
+if [[ "$redirect_code" != "308" || "$redirect_url" != "$expected_redirect" ]]; then
+  printf 'unexpected HTTPS redirect: status=%q location=%q expected=%q\n' \
+    "$redirect_code" "$redirect_url" "$expected_redirect" >&2
+  exit 1
+fi
+
 wait_http "https://127.0.0.1:${TLS_HTTPS_PORT}/health" --insecure
+assert_body "https://127.0.0.1:${TLS_HTTPS_PORT}/health" ok --insecure
+wait_http "https://127.0.0.1:${TLS_HTTPS_PORT}/" --insecure
 realtime_probe wss://tls-edge:8443/ws "$ACCESS_TOKEN" -realtime-healthcheck-browser -realtime-healthcheck-insecure-tls
 
 compose_final up -d --no-deps --force-recreate app-api
@@ -200,9 +241,9 @@ curl --fail --silent --show-error \
   json_assert "'platform_super_admin' in data['data']['roles']"
 realtime_probe ws://admin-web:8080/ws "$FINAL_ACCESS_TOKEN" -realtime-healthcheck-browser
 realtime_probe wss://tls-edge:8443/ws "$FINAL_ACCESS_TOKEN" -realtime-healthcheck-browser -realtime-healthcheck-insecure-tls
-curl --fail --silent --show-error http://127.0.0.1:8080/health | grep -q ok
+assert_body http://127.0.0.1:8080/health ok
 
 compose_tls ps
 compose_tls logs --no-color --tail=200 app-api admin-web tls-edge
 
-echo "production container HTTP/WS and HTTPS/WSS switch runtime acceptance passed"
+echo "production container HTTP/WS and HTTPS/WSS hardening runtime acceptance passed"
