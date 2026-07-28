@@ -30,6 +30,8 @@ type Service struct {
 	clock      Clock
 	ids        IDGenerator
 	setups     HandSetupProvider
+	beacons    BeaconVerifier
+	liveHands  LiveHandRuntime
 	opener     EnvelopeOpener
 	protector  ContributionProtector
 	normalizer PhraseNormalizer
@@ -41,12 +43,14 @@ func NewService(
 	clock Clock,
 	ids IDGenerator,
 	setups HandSetupProvider,
+	beacons BeaconVerifier,
+	liveHands LiveHandRuntime,
 	opener EnvelopeOpener,
 	protector ContributionProtector,
 	normalizer PhraseNormalizer,
 	config Config,
 ) (*Service, error) {
-	if store == nil || clock == nil || ids == nil || setups == nil || opener == nil || protector == nil || normalizer == nil {
+	if store == nil || clock == nil || ids == nil || setups == nil || beacons == nil || liveHands == nil || opener == nil || protector == nil || normalizer == nil {
 		return nil, fmt.Errorf("%w: application dependencies", ErrInvalidCommand)
 	}
 	if config.MaxCommandTTL <= 0 || config.MaxClockSkew < 0 || config.MaxRevealPhraseBytes <= 0 {
@@ -54,13 +58,15 @@ func NewService(
 	}
 	return &Service{
 		store: store, clock: clock, ids: ids, setups: setups,
-		opener: opener, protector: protector, normalizer: normalizer, config: config,
+		beacons: beacons, liveHands: liveHands, opener: opener,
+		protector: protector, normalizer: normalizer, config: config,
 	}, nil
 }
 
 type mutationOutcome struct {
 	aggregateVersion uint64
 	events           []domain.Event
+	rollback         func()
 }
 
 type aggregateMutationError struct {
@@ -93,6 +99,7 @@ func (s *Service) execute(
 	}
 
 	var result CommandResult
+	var rollback func()
 	err = s.store.WithinCommand(ctx, actor, command.CommandID, func(txCtx context.Context, tx Transaction) error {
 		now := s.clock.Now().UTC()
 		stored, completed, err := tx.ClaimCommand(txCtx, actor, command, now)
@@ -155,6 +162,7 @@ func (s *Service) execute(
 			}
 			return nil
 		}
+		rollback = outcome.rollback
 
 		outbox, refs, err := s.buildOutbox(actor, command, outcome.events, now)
 		if err != nil {
@@ -182,6 +190,9 @@ func (s *Service) execute(
 		return nil
 	})
 	if err != nil {
+		if rollback != nil {
+			rollback()
+		}
 		return CommandResult{}, err
 	}
 	return result, nil
