@@ -17,6 +17,7 @@ func TestLiveDirectorySerializesConcurrentBidsForOneHand(t *testing.T) {
 	if err := directory.Add(game.Descriptor(), game); err != nil {
 		t.Fatal(err)
 	}
+	command := bidCommand(t, 1, 1, bidding.ScoreOne)
 
 	const workers = 2
 	results := make([]gamecore.CommandOutcome, workers)
@@ -28,7 +29,7 @@ func TestLiveDirectorySerializesConcurrentBidsForOneHand(t *testing.T) {
 		go func(index int) {
 			defer wait.Done()
 			<-start
-			results[index], errorsSeen[index] = directory.Apply(game.InstanceID(), bidCommand(t, 1, 1, bidding.ScoreOne))
+			results[index], errorsSeen[index] = directory.Apply(game.InstanceID(), command)
 		}(index)
 	}
 	close(start)
@@ -70,18 +71,20 @@ func TestLiveDirectoryKeepsSeparateHandsIndependent(t *testing.T) {
 	if err := directory.Add(second.Descriptor(), second); err != nil {
 		t.Fatal(err)
 	}
+	firstCommand := bidCommand(t, 1, 1, bidding.ScorePass)
+	secondCommand := bidCommand(t, 2, 1, bidding.ScorePass)
 
 	var wait sync.WaitGroup
 	wait.Add(2)
 	errorsSeen := make(chan error, 2)
 	go func() {
 		defer wait.Done()
-		_, err := directory.Apply(first.InstanceID(), bidCommand(t, 1, 1, bidding.ScorePass))
+		_, err := directory.Apply(first.InstanceID(), firstCommand)
 		errorsSeen <- err
 	}()
 	go func() {
 		defer wait.Done()
-		_, err := directory.Apply(second.InstanceID(), bidCommand(t, 2, 1, bidding.ScorePass))
+		_, err := directory.Apply(second.InstanceID(), secondCommand)
 		errorsSeen <- err
 	}()
 	wait.Wait()
