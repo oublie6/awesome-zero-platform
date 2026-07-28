@@ -65,7 +65,7 @@ func verifyCompletedRecord(record gamecore.FinalRecord) (FinalVerificationReport
 		payload.HandID != string(record.InstanceID()) || payload.StateVersion != record.Version() {
 		return FinalVerificationReport{}, invalidEvidence("completed identity", gamecore.ErrVerificationFailed)
 	}
-	setup, transcript, setupDigest, transcriptDigest, err := verifyCommonEvidence(payload.HandID, payload.SetupArtifact, payload.SetupDigest, payload.Transcript, payload.TranscriptDigest)
+	setup, _, setupDigest, transcriptDigest, err := verifyCommonEvidence(payload.HandID, payload.SetupArtifact, payload.SetupDigest, payload.Transcript, payload.TranscriptDigest)
 	if err != nil {
 		return FinalVerificationReport{}, err
 	}
@@ -158,7 +158,7 @@ func verifyAbortedRecord(record gamecore.FinalRecord) (FinalVerificationReport, 
 
 func verifyCommonEvidence(handID, artifactText, artifactDigestText, transcriptText, transcriptDigestText string) (randomizedsetup.Setup, carddeck.Transcript, string, string, error) {
 	artifactPayload, err := base64.RawURLEncoding.DecodeString(artifactText)
-	if err != nil || len(artifactPayload) == 0 {
+	if err != nil || len(artifactPayload) == 0 || base64.RawURLEncoding.EncodeToString(artifactPayload) != artifactText {
 		return randomizedsetup.Setup{}, carddeck.Transcript{}, "", "", invalidEvidence("setup artifact encoding", err)
 	}
 	artifactDigest, err := decodeDigest(artifactDigestText)
@@ -175,7 +175,7 @@ func verifyCommonEvidence(handID, artifactText, artifactDigestText, transcriptTe
 	}
 
 	transcriptBytes, err := base64.RawURLEncoding.DecodeString(transcriptText)
-	if err != nil || len(transcriptBytes) == 0 {
+	if err != nil || len(transcriptBytes) == 0 || base64.RawURLEncoding.EncodeToString(transcriptBytes) != transcriptText {
 		return randomizedsetup.Setup{}, carddeck.Transcript{}, "", "", invalidEvidence("transcript encoding", err)
 	}
 	transcript, err := carddeck.ParseTranscript(transcriptBytes)
@@ -229,6 +229,9 @@ func replayPlaying(setup randomizedsetup.Setup, landlord uint8, expected playing
 	}
 	var actual playing.Snapshot
 	for _, action := range expected.History {
+		if action.Seat < 1 || action.Seat > 3 {
+			return playing.Snapshot{}, [3][]carddeck.Card{}, gamecore.ErrVerificationFailed
+		}
 		switch action.Type {
 		case playing.ActionPlay:
 			remaining, removeErr := removeCardsForVerification(hands[action.Seat-1], action.Cards)
