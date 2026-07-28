@@ -1,2 +1,2 @@
 Temporary pull-request event trigger for Goal 0022. No implementation is carried on this branch.
-Retry: capture exact commit and push failure after all targeted verification passed.
+Retry: exclude workflow files from the verified implementation push.
