@@ -1,0 +1,37 @@
+name: Goal 0022 Runtime Verify
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: goal-0022-runtime-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime:
+    if: github.head_ref == 'goal0022-ci-trigger'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Production Compose runtime acceptance
+        id: runtime-acceptance
+        run: |
+          set +e
+          bash scripts/ci-runtime-acceptance.sh > runtime-acceptance.log 2>&1
+          status=$?
+          tail -n 200 runtime-acceptance.log
+          exit $status
+      - name: Upload runtime acceptance failure log
+        if: failure() && steps.runtime-acceptance.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: goal0022-runtime-acceptance-failure-log
+          path: runtime-acceptance.log
