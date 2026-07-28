@@ -2,8 +2,8 @@
 
 ## Status
 
-- State: ready
-- Started: Not yet.
+- State: in_progress
+- Started: 2026-07-28
 - Completed: Not yet.
 - Blockers: None.
 
@@ -140,11 +140,11 @@ The following remain outside this goal:
 
 ### In progress
 
-- None.
+- Implementing server-seed custody, verified beacon handling, deterministic live-hand startup, identity-scoped views, terminal transcript payloads, and final archive persistence.
 
 ### Remaining
 
-- Implement the complete Goal 0025 scope and verification.
+- Complete implementation, tests, documentation, and main-only verification.
 
 ## Completion Report
 
