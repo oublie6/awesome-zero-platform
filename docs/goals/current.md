@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-28
-- Completed: Not yet.
+- Completed: 2026-07-28
 - Blockers: None.
 
 ## Goal
@@ -78,16 +78,20 @@ The following remain outside this goal:
 - `docs/architecture/overview.md`
 - `docs/architecture/extensible-game-runtime.md`
 - `docs/architecture/gamecore-v1.md`
+- `docs/architecture/doudizhu-live-hand-runtime-v1.md`
 - `docs/architecture/fair-doudizhu-domain.md`
 - `docs/architecture/fair-doudizhu-application-persistence.md`
 - `docs/architecture/fair-doudizhu-card-shuffle-v1.md`
 - `docs/architecture/reveal-key-lifecycle-v1.md`
 - `docs/requirements/fair-doudizhu-v1.md`
 - `server/business/gamecore`
+- `server/business/gamecore/infrastructure/mysqlarchive`
 - `server/business/doudizhu/application`
 - `server/business/doudizhu/domain/carddeck`
+- `server/business/doudizhu/domain/livehand`
 - `server/business/doudizhu/domain/randomizedsetup`
 - `server/business/doudizhu/infrastructure/mysqlstore`
+- `server/business/doudizhu/infrastructure/runtime`
 - `server/foundation/revealkeys`
 - `server/database/schema/current.sql`
 - `.github/workflows/doudizhu.yml`
@@ -135,17 +139,82 @@ The following remain outside this goal:
 
 ### Completed
 
-- Goal 0024 was completed, verified, cleaned up, and archived.
-- The user confirmed that active private card state is memory-only and the database is used for completed or explicitly aborted game archives.
+- Added in-memory server-seed custody with cryptographic entropy, Goal 0023-compatible commitment generation, copy isolation, duplicate protection, concurrency safety, and zeroising release.
+- Added a setup provider that binds the active signed reveal-key manifest and configured beacon plan without persisting the server seed.
+- Added the application `BeaconVerifier` boundary and required the verifier-returned value before domain beacon lock.
+- Added a concrete in-memory Doudizhu live game containing the deterministic setup, all current hands, landlord cards, transcript material, version, and phase.
+- Added a runtime coordinator that validates complete fairness evidence, generates and verifies the existing setup artifact, registers the live game, compensates failed database transactions, and releases pre-live secrets.
+- Integrated deterministic live-game creation into `MarkHandDealt` before persistence advances the Hand to `BIDDING`.
+- Added server-derived, identity-scoped public and private views with copy isolation and no cross-seat card disclosure.
+- Added versioned terminal payloads and retry-safe explicit abort handling.
+- Added the idempotent MySQL final-record archive and schema version `0011`; active card state remains absent from MySQL and Redis.
+- Added formal architecture documentation for seed custody, active-memory authority, transaction compensation, terminal disclosure, and final archive behavior.
+- Completed focused, race, vet, full-repository, real MySQL/Redis, client interoperability, Compose, and production runtime verification.
+- Removed every temporary repair/final-verification workflow, script, trigger file, and temporary Issue.
 
 ### In progress
 
-- Implementing server-seed custody, verified beacon handling, deterministic live-hand startup, identity-scoped views, terminal transcript payloads, and final archive persistence.
+- None.
 
 ### Remaining
 
-- Complete implementation, tests, documentation, and main-only verification.
+- Deferred to later goals: bidding and landlord selection, doubling, legal play patterns, turn comparison and passes, scoring and settlement, authenticated HTTP/WSS gameplay transport, automatic beacon adapters, and active-game crash recovery.
 
 ## Completion Report
 
-Pending.
+### Delivered implementation
+
+- Server-seed custody: `8f6b9f5a7c5903338be919be6b2d9d1ebe02d22f`, `0489082670bee5560ff6fb88b9ea2818d78589c2`.
+- Concrete live hand and common integration ports: `06156273b1af588aab5af8d0f0b3c275789a24c7`, `d2a81cca1bb476375baeb4db406c17b8576a7f14`, `bf012ef489212e48750ce43b445791391b1a09a9`.
+- Verified beacon, transaction compensation, and application lifecycle: `8ffff50f64c335b4c888804ff6fa1029e2bc4753`, `4e9e8f90cd17c725e6dd840c2345f40a60568f63`, `2351c256499627de752333840ff33edc951ba38e`.
+- Trusted identity-scoped live views: `12b0e4a2e8f5004279200a54abc22d798a3c42ee`, `243e4a73f7afa679d0407acd918869d95ea16f39`, `d310dc1dd4485d1985d097423c6bae8d4404ca24`.
+- Immutable MySQL final archive and retry-safety: `9bcf15d2198e6b5e0c27a97a54cee04e39512d19`, `70d88fc7292738a317634a213bcda427deef53cb`, `8fffc4e0ca030a4738b07bc9bb023ea4629c6ac8`.
+- Formal architecture: `9f6a38faa04ea60ab2c3451199ad6c59ca381f9e`, `0e0c931b027e538365eec68b99dbdb50c555009c`.
+
+### Actual failure and repair
+
+The first full-main verification, `CI 30361241969`, exposed three concrete integration defects:
+
+1. four newly added Go files had not been committed with the repository's Go 1.25.8 `gofmt` output;
+2. the bootstrap integration test still expected schema version `0010` after `game_final_records` raised the schema to `0011`;
+3. two real-MySQL service fixtures still called the old `NewService` signature without `BeaconVerifier` and `LiveHandRuntime` dependencies.
+
+The dependent focused run `30361429871` was skipped because the upstream full CI failed; it was not an additional code failure.
+
+Commit `831084b412812d352d998fcb308eb4e626c26969` applied the exact formatting, schema assertion, table assertion, and fixture repairs. Main-only repair run `30368046405` then passed focused ordinary tests, `-race`, `go vet`, MySQL/Redis startup, schema and seed application, and real MySQL integration.
+
+### Final verification
+
+A temporary read-only `workflow_run` verifier locked commit `8d19f901ba1481b2e62c964f5da768da2087b4e9` and ran the repository's real verification commands against latest `main`.
+
+Both final runs succeeded:
+
+- `30370110270` — server, clients, full integration, and production runtime all succeeded;
+- `30370288259` — repeated latest-main verification also succeeded and published `goal0025/final-full: success`.
+
+The verified surface included:
+
+- `go mod tidy` cleanliness;
+- generated-code and Go 1.25.8 formatting checks;
+- Goal 0025 focused ordinary, race, and vet checks;
+- all Go unit tests;
+- Security and Admin race tests;
+- server build and local/production Compose validation;
+- Secure Envelope tests and TypeScript/Go interoperability;
+- signed reveal-key manifest interoperability;
+- Cocos deterministic-randomness policy;
+- Admin Web build;
+- complete MySQL 5.7 and Redis integration;
+- production container startup, HTTP, authenticated WebSocket, HTTPS, WSS, administrator bootstrap/login, and cleanup.
+
+No acceptance check remained unavailable.
+
+### Main-only workflow and cleanup
+
+All implementation, repair, documentation, and cleanup commits were written directly to `main`. No feature branch, verification branch, or pull request was created.
+
+Temporary repair automation was removed by `fce05d4267b173ccaed04e24f54f5fbae5b975a5`; temporary Issues #12 and #13 were closed. The final verifier was removed by `db898ed4848f14bb9ced8739f0df64d2dab0d2ba` after its first run started, preventing further repeated triggers. Repository fetches confirmed the temporary workflow, script, and trigger paths no longer exist.
+
+### Deferred work
+
+Goal 0025 intentionally does not implement bidding, landlord selection, gameplay commands, settlement, public gameplay transport, automatic beacon-provider verification, or active-hand crash restoration. These remain versioned follow-on goals and must preserve the Goal 0023 deterministic bytes, Goal 0024 generic gamecore contracts, and the active-memory/terminal-archive boundary documented in `doudizhu-live-hand-runtime-v1.md`.
