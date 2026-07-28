@@ -1,89 +1,90 @@
-# Goal 0021: Fair Doudizhu Application and Persistence
+# Goal 0022: Reveal Key Lifecycle and Signed Manifests
 
 ## Status
 
-- State: completed
-- Started: 2026-07-28
-- Completed: 2026-07-28
+- State: ready
+- Started: Not yet.
+- Completed: Not yet.
 - Blockers: None.
 
 ## Goal
 
-Implement the transactional Fair Doudizhu application and persistence layer around the Goal 0020 aggregates, including command idempotency, monotonic client sequences, MySQL snapshots, outbox events, encrypted contribution records, and secure-envelope reveal orchestration before adding transport or card rules.
+Implement the production-oriented trust and lifecycle boundary for Fair Doudizhu HPKE reveal keys before card and shuffle rules: versioned X25519 key records, signed Ed25519 public-key manifests, public lookup APIs, client verification and rollback protection, and immutable per-hand reveal-key context.
 
 ## Scope
 
-ChatGPT owned architecture, implementation review, tests, failure diagnosis and fixes, schema integration, repository verification, commits, and pushes directly to `main`.
+ChatGPT owns architecture, implementation, tests, failure diagnosis and fixes, schema/API/client integration, repository verification, commits, and pushes directly to `main`.
 
-Delivered:
+Deliver:
 
-1. Application command and result types enforcing the v1 command envelope, trusted actor context, issue/expiry policy, stable error codes, duplicate-result replay, and aggregate version reporting.
-2. Transactional room and hand services covering room creation/join/leave/readiness, atomic hand creation, fairness commit/reveal, beacon locking, lifecycle transitions, terminal handling, and room release after a terminal hand.
-3. Repository and unit-of-work ports for command records, client sequences, room/hand snapshots, protected contribution records, and outbox events.
-4. MySQL 5.7-compatible infrastructure adapters and complete current schema definitions for aggregate snapshots, command results, sequence state, encrypted contribution records, and outbox delivery.
-5. Domain snapshot restoration with invariant validation and no synthetic creation events.
-6. A versioned reveal plaintext and canonical associated-data codec binding the authenticated actor, server-resolved seat, hand, commitment, command identity, sequence, version, reveal key, issue time, and expiry.
-7. Secure-envelope reveal orchestration with an explicit opener port, NFKC phrase normalization, deterministic contribution digests, and decrypted-buffer clearing where practical.
-8. AES-256-GCM protected contribution records with injected versioned keys and random nonces; plaintext is never passed to the MySQL adapter.
-9. Unit, race, SQL-adapter, real-MySQL, Redis, Compose, HTTP/WS, and HTTPS/WSS verification.
-10. A permanent dedicated Fair Doudizhu GitHub Actions workflow for focused module and MySQL verification.
+1. A reusable reveal-key registry model with `active`, `retiring`, `retired`, and `revoked` states, validity windows, retirement grace, current-key selection, and exact `keyId` lookup.
+2. Canonical versioned public-key manifests containing protocol and suite identifiers, `manifestVersion`, `keyId`, raw X25519 public key, `publicKeySha256`, validity times, `signatureKeyId`, and an Ed25519 signature.
+3. Server-side manifest signing and verification primitives with deterministic canonical encoding and no production private keys committed to the repository.
+4. TypeScript client verification with an explicit embedded-root/configuration boundary, Ed25519 signature verification, fixed-suite enforcement, time validation, key/hash validation, and monotonic `manifestVersion` rollback protection.
+5. Public HTTP contracts for `GET /api/v1/crypto/reveal-keys/current` and `GET /api/v1/crypto/reveal-keys/{keyId}`, including cache headers and rotation-aware behavior.
+6. Fair Doudizhu hand metadata that locks both reveal `keyId` and `publicKeySha256` at hand creation and preserves them through snapshots and persistence.
+7. Reveal execution that rejects expired, retired-without-grace, revoked, or hash-mismatched key contexts while allowing an already-started hand to continue on a valid `retiring` key during its grace window.
+8. Explicit emergency-revocation behavior: unfinished hands bound to a revoked key cannot accept reveals and must be aborted or restarted through the existing terminal-hand flow.
+9. Configuration/bootstrap boundaries for X25519 private material, Ed25519 signing material, root public keys, and future Secret/KMS/HSM providers; test fixtures may use deterministic non-production keys.
+10. Unit, race, TypeScript, interoperability, HTTP contract, MySQL 5.7/Redis integration, and available full-repository CI verification.
 
-The following remain intentionally deferred:
+The following remain outside this goal:
 
-- HTTP/WSS handlers, public routes, authentication composition, realtime fan-out, public-key publication, signed key manifests, and Cocos client reducers;
-- production KMS/HSM integration, key rotation operations, outbox workers, Redis routing, beacon-provider network adapters, and operational Admin UI;
-- card/deck representation, deterministic shuffle, dealing, bidding, hand-pattern validation, turns, scoring, settlement rules, and fairness transcript publication.
+- production KMS/HSM network adapters and automated operational rotation jobs;
+- certificate pinning or replacement of HTTPS/WSS transport security;
+- card/deck representation, deterministic shuffle, dealing, gameplay rules, fairness transcript publication, and Cocos gameplay UI;
+- public matchmaking, robots, spectators, voice, payments, withdrawals, or tradable assets.
 
 ## References
 
 - `AGENTS.md`
 - `docs/requirements/fair-doudizhu-v1.md`
+- `docs/architecture/secure-envelope-v1.md`
 - `docs/architecture/fair-doudizhu-domain.md`
 - `docs/architecture/fair-doudizhu-application-persistence.md`
 - `docs/api/fair-doudizhu-protocol-v1.md`
 - `docs/api/fair-doudizhu-application-v1.md`
-- `docs/architecture/secure-envelope-v1.md`
+- `docs/architecture/reveal-key-lifecycle-v1.md` (to be created)
+- `docs/api/reveal-key-manifest-v1.md` (to be created)
 
-## Acceptance Results
+## Acceptance Criteria
 
-- Existing command results are loaded before timing, sequence, or aggregate mutation and are returned with `duplicate: true` without re-execution.
-- New commands require a positive monotonic `clientSeq` per authenticated actor and aggregate. Business rejections after admission consume the sequence and persist the original rejection; stale sequences fail before aggregate execution.
-- Command result, sequence advancement, room/hand snapshots, protected contribution record, and outbox events share one transaction and roll back together on infrastructure failure.
-- Start-hand updates the room and inserts the hand atomically. Terminal hand processing releases only the matching active hand from the room in the same transaction.
-- MySQL command and sequence streams are serialized, aggregate rows are locked for update, and snapshot updates use optimistic version predicates.
-- Restored room and hand snapshots are validated against domain invariants and do not emit synthetic creation events.
-- Reveal AAD is canonical and binds protocol/name, command ID, hand, actor, server-resolved seat, sequence, expected version, commitment, reveal key, issued time, and expiry.
-- Reveal plaintext is versioned, context-bound, strictly decoded, limited in size, and contains exactly 32 secure-random bytes plus the original UTF-8 phrase.
-- Contribution digests are deterministic from hand, seat, secure random, and SHA-256 of the NFKC-normalized phrase. Raw phrase and random bytes are absent from snapshots and outbox payloads.
-- Contribution plaintext is protected with AES-256-GCM before persistence. Records contain only metadata, key ID, nonce, ciphertext, and AAD digest and reject invalid keys, modified metadata, modified ciphertext, or wrong AAD.
-- The complete MySQL 5.7 schema advanced to version `0009` and includes rooms, hands, command results, client sequences, contribution records, and outbox events.
-- Unit tests, race tests, `go vet`, generated-code verification, formatting, secure-envelope interoperability, Admin Web build, real MySQL/Redis integration, and production runtime acceptance all passed.
-- The final repository diff contains only the Goal 0021 application/persistence implementation, its tests/docs/schema/CI integration, three focused CI corrections, and this completion report.
+- The registry rejects malformed identifiers, invalid X25519 key sizes, duplicate keys, overlapping or contradictory lifecycle data, non-monotonic manifest versions, and configurations without exactly one selectable current key.
+- `active` keys are selectable for new hands only inside their validity interval. `retiring` keys are not selected for new hands but remain usable by already-bound hands through the configured grace deadline. `retired` and `revoked` keys are never usable for reveal decryption.
+- A manifest has one deterministic canonical byte representation. Signing the same fields produces the same signed content; changing any signed field makes verification fail.
+- Manifests use Ed25519 and the fixed Secure Envelope v1 HPKE suite. The public-key hash is SHA-256 over the raw 32-byte X25519 public key and is checked on both server and client.
+- The TypeScript verifier trusts only configured root public keys, rejects unknown signing keys, invalid signatures, malformed Base64URL, wrong suite/protocol, invalid time windows, hash mismatches, and lower `manifestVersion` values than the persisted high-water mark.
+- Public-key endpoints return signed manifests only, use stable JSON and error contracts, emit `ETag` plus bounded cache headers, support exact historical lookup during retirement grace, and do not expose private material.
+- Every new hand locks `revealKeyId` and `revealPublicKeySha256`; restoration and MySQL snapshots preserve both values and reject missing or malformed hashes.
+- Reveal orchestration resolves the hand-bound key context and fails closed on unknown, expired, retired, revoked, or hash-mismatched keys. A valid retiring key remains accepted only for hands created before retirement and only until its grace deadline.
+- Emergency revocation tests prove that an unfinished hand cannot continue revealing with the revoked key and can enter the documented abort/restart flow without exposing plaintext.
+- Production configuration examples contain references or environment-variable names only. No real X25519, Ed25519, database-protection, KMS, or HSM private key is committed.
+- Go unit and race tests, TypeScript tests, Go/TypeScript interoperability, schema/adapter tests, real MySQL 5.7 and Redis integration, generated-code checks, formatting, vet, Admin Web build, Compose, HTTP/WS, HTTPS/WSS, and available full CI remain green.
+- Final verification evidence records exact commands, actual failures and fixes, CI run IDs, commit SHAs, push result, unavailable checks, and intentionally deferred work.
 
-## Verification Evidence
+## Working State
 
-- Baseline main: `562b2bdf885d42616c43d6348bf56cebc860bcd2`.
-- Goal definition commit: `264c2257b9f3aec96118a95b1ab656b8bf21c9be`.
-- Integrated application/persistence implementation checkpoint: `c4cd8c3f8fd6e72c8b47cba1f9306aff6044fa29`.
-- Initial CI run `30318515145` exposed three concrete defects: one Go formatting difference, an outdated bootstrap schema-version assertion (`0008` instead of `0009`), and two missing explicit `domain.AccountID` conversions in the MySQL integration test.
-- Corrections were committed as `f8b2a25232917cb21c256f4a96340dd254df1b4d`, `cad55a7cc60781f6de8c2a2e33f69022e4c7ccf3`, and `8095c6b2c5bd9402a2372b3471860eb5d47042bc`.
-- A temporary latest-`main` verification workflow was used because GitHub App content commits and ordinary `push` workflow status emission were inconsistent during this execution. Its first runtime attempt correctly exposed a verification-harness environment-precedence bug: a step-level bootstrap token overrode the runtime script's generated env-file token. Product code and containers were healthy; the harness was isolated and corrected.
-- Verified implementation commit: `864d7d9a7e1ab46c1a410cd12eff47f7d0999c6f`.
-- Full verification run `30322515954` succeeded. It passed:
-  - `go mod tidy` cleanliness;
-  - goctl generated-code repeatability and `gofmt` cleanliness;
-  - all repository Go unit tests;
-  - Fair Doudizhu `-race` tests and `go vet`;
-  - TypeScript secure-envelope build/tests and TypeScript-to-Go HPKE interoperability;
-  - Admin Web typecheck/build;
-  - clean MySQL 5.7 and Redis schema/seed/integration tests, including concurrent duplicate commands, sequence serialization, optimistic updates, rollback, outbox persistence, and protected contribution storage;
-  - production Compose startup, administrator bootstrap and login, HTTP/WS, HTTPS redirect/health, authenticated WSS, bootstrap-token removal, and final login/realtime checks.
-- Commit status `ci/goal0021` was recorded as `success` for the verified implementation commit and points to run `30322515954`.
-- The temporary verification workflow was deleted in cleanup commit `69eea25b3dca6bac6d41dcb59d4165080bdea765`. That cleanup changed no production, schema, client, or test code.
-- GitHub compare from the Goal 0020 baseline through cleanup reported the expected Goal 0021 files only: application/domain restoration, infrastructure adapters, tests, schema, focused CI, README, and protocol/architecture documentation.
+### Completed
+
+- Goal 0019 Secure Envelope HPKE foundation is complete.
+- Goal 0020 Fair Doudizhu protocol and pure domain aggregates are complete.
+- Goal 0021 application and persistence are complete.
+- Repository inspection found no existing signed reveal-key manifest, lifecycle registry, public-key endpoint, or client verification implementation.
+
+### In progress
+
+- Goal definition committed first; implementation has not started.
+
+### Remaining
+
+- Design and implement the lifecycle, manifest, client verification, hand binding, persistence, public API, bootstrap configuration, tests, integration, CI verification, and completion report.
+
+### Verification status
+
+- Baseline main before Goal definition: `7030ba87d30ab5dc45969561e6c829afcbb071b2`.
+- Goal 0021 full verification run `30322515954` was previously successful.
+- Goal 0022 implementation verification pending.
 
 ## Completion Report
 
-Goal 0021 is complete. Fair Doudizhu now has a tested transactional application boundary and MySQL persistence layer around its room and hand aggregates. Duplicate commands replay their original results, client sequences are serialized, aggregate versions are protected, mutations and outbox records commit atomically, sensitive reveal plaintext is HPKE-opened and NFKC-normalized before deterministic digest verification, and the original contribution is encrypted with AES-256-GCM before database insertion.
-
-The next goal should implement the versioned card/deck model, deterministic shuffle and verification transcript, and dealing result as pure domain/application modules. HTTP/WSS transport should remain separate so card and fairness rules can be tested without network concerns.
+Pending.
