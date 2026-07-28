@@ -1,0 +1,46 @@
+{
+  "handId": "hand-golden-0023",
+  "serverSeed": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+  "serverCommitment": "cb6414d436b59516b3a621d677620e400ac9b71a564442bea77e2d04507afff4",
+  "contributions": [
+    {
+      "seat": 1,
+      "digest": "1112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f30",
+      "commitment": "4cb261c8b8fe284e3eccd88aa9753fc7ccb878b7190d13d7f035425149c1f449"
+    },
+    {
+      "seat": 2,
+      "digest": "22232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4041",
+      "commitment": "7f163af2725455888d24e2449cb84e8eccff1f1ef20077df5b1d5e07176df76e"
+    },
+    {
+      "seat": 3,
+      "digest": "333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152",
+      "commitment": "331e0ff58ae1ddc28384177ee99a1ed268bfb860d750ff4401361c3b7b7d2b29"
+    }
+  ],
+  "beaconProvider": "test-beacon",
+  "beaconRound": "round-2026-07-28",
+  "beaconDigest": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+  "beaconProofRef": "proof:test:0023",
+  "revealKeyId": "reveal-key-golden",
+  "revealPublicKeySha256": "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f",
+  "shuffleSeedDigest": "f8df4ee40ca5bb4cfaed63044a9aca016ccf68ab59fc22c83dfba992814b91b6",
+  "randomStreamFirst64": "cbfdc336cbf4bf0bc94aab8ded3cc4b262bd9d6413e8088b89b8ca87c9ffeea439a04f4c506aacf701ba0af9c52bf756d14996be5bdbebdebd8a7f93963c6719",
+  "deck": [
+    "S3", "SK", "HJ", "D4", "S4", "CK", "SA", "S7", "D8", "HK", "CJ", "YJ",
+    "H5", "SQ", "CA", "CQ", "SJ", "S6", "C3", "C8", "DK", "C5", "HA", "C10",
+    "D2", "HQ", "S10", "DJ", "C2", "D5", "C6", "H3", "D3", "H6", "H4", "S8",
+    "S5", "H7", "D7", "H9", "S2", "DA", "D9", "H8", "C7", "C9", "C4", "H10",
+    "D10", "H2", "XJ", "S9", "DQ", "D6"
+  ],
+  "deckDigest": "8194d7b8039ab847a2f8047b54093dd1184b2e0af3c227563753859b801c9dc1",
+  "hands": [
+    ["S3", "D4", "SA", "HK", "H5", "CQ", "C3", "C5", "D2", "DJ", "C6", "H6", "S5", "H9", "D9", "C9", "D10"],
+    ["SK", "S4", "S7", "CJ", "SQ", "SJ", "C8", "HA", "HQ", "C2", "H3", "H4", "H7", "S2", "H8", "C4", "H2"],
+    ["HJ", "CK", "D8", "YJ", "CA", "S6", "DK", "C10", "S10", "D5", "D3", "S8", "D7", "DA", "C7", "H10", "XJ"]
+  ],
+  "landlordCards": ["S9", "DQ", "D6"],
+  "dealDigest": "cace5d5c0f1f43aba8259bc09a4c57016426bc7bdedd671f82885cd56064a284",
+  "transcriptDigest": "6533de376fc13a945dfc99db54b94b9e2530747f82efe8653b7772c4ef947690"
+}
