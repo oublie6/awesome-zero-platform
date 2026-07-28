@@ -14,3 +14,11 @@ import (
 func (integrationLiveRuntime) Bid(context.Context, domain.HandID, domain.AccountID, uint64, bidding.Score) (application.LiveHandCommandResult, error) {
 	return application.LiveHandCommandResult{}, errors.New("not used")
 }
+
+func (integrationLiveRuntime) Play(context.Context, domain.HandID, domain.AccountID, uint64, []string) (application.LiveHandCommandResult, error) {
+	return application.LiveHandCommandResult{}, errors.New("not used")
+}
+
+func (integrationLiveRuntime) Pass(context.Context, domain.HandID, domain.AccountID, uint64) (application.LiveHandCommandResult, error) {
+	return application.LiveHandCommandResult{}, errors.New("not used")
+}
