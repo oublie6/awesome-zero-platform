@@ -85,10 +85,10 @@ func TestCalculateRejectsInvalidSnapshots(t *testing.T) {
 	valid := Input{
 		LandlordSeat: 1,
 		WinningScore: bidding.ScoreOne,
-		Playing: completedSnapshot(1, playAction(t, 1, 1, "C3")),
+		Playing:      completedSnapshot(1, playAction(t, 1, 1, "C3")),
 	}
 	tests := []struct {
-		name string
+		name   string
 		mutate func(*Input)
 	}{
 		{name: "invalid landlord", mutate: func(input *Input) { input.LandlordSeat = 0 }},
