@@ -33,10 +33,10 @@ type StoredRecord struct {
 
 type storedRow struct {
 	instanceID, gameID, ruleset, module, fairness, status string
-	participant                                             uint8
-	version                                                 uint64
-	payload, digest                                         []byte
-	archivedAt                                              time.Time
+	participant                                           uint8
+	version                                               uint64
+	payload, digest                                       []byte
+	archivedAt                                            time.Time
 }
 
 func New(db *sql.DB, clock Clock) (*Archive, error) {
