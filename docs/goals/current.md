@@ -2,8 +2,8 @@
 
 ## Status
 
-- State: ready
-- Started: Not yet.
+- State: in_progress
+- Started: 2026-07-28
 - Completed: Not yet.
 - Blockers: None.
 
@@ -70,18 +70,20 @@ The following remain outside this goal:
 - Goal 0020 Fair Doudizhu protocol and pure domain aggregates are complete.
 - Goal 0021 application and persistence are complete.
 - Repository inspection found no existing signed reveal-key manifest, lifecycle registry, public-key endpoint, or client verification implementation.
+- Goal 0022 definition was committed first as `1bdfd4a219d8bbd0476027d1880a16423a2df40e`.
 
 ### In progress
 
-- Goal definition committed first; implementation has not started.
+- Implementing lifecycle validation, signed manifests, client verification, immutable hand key binding, persistence, public APIs, bootstrap configuration, and tests.
 
 ### Remaining
 
-- Design and implement the lifecycle, manifest, client verification, hand binding, persistence, public API, bootstrap configuration, tests, integration, CI verification, and completion report.
+- Run targeted and full verification, inspect failures and fix root causes, complete the Goal report, and remove any temporary verification workflow.
 
 ### Verification status
 
 - Baseline main before Goal definition: `7030ba87d30ab5dc45969561e6c829afcbb071b2`.
+- Goal definition commit: `1bdfd4a219d8bbd0476027d1880a16423a2df40e`.
 - Goal 0021 full verification run `30322515954` was previously successful.
 - Goal 0022 implementation verification pending.
 
