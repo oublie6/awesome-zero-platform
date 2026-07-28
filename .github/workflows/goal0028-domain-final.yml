@@ -1,0 +1,79 @@
+name: Goal 0028 Domain Final Verification
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: goal0028-domain-final-main
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: Publish pending status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          curl --fail --silent --show-error -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
+            -d "{\"state\":\"pending\",\"context\":\"goal0028/domain-final\",\"description\":\"Goal 0028 domain verification is running\",\"target_url\":\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\"}"
+      - name: Format Goal 0028 files
+        run: |
+          gofmt -w server/business/doudizhu/domain/settlement
+          gofmt -w server/business/doudizhu/domain/playing/state.go
+          gofmt -w server/business/doudizhu/domain/livehand
+          gofmt -w server/business/doudizhu/infrastructure/runtime/live_hand_playing.go
+          gofmt -w server/business/doudizhu/infrastructure/runtime/live_hand_playing_result_test.go
+      - name: Ordinary tests
+        working-directory: server
+        run: go test -count=1 ./business/doudizhu/...
+      - name: Focused race tests
+        working-directory: server
+        run: go test -count=1 -race -p=1 ./business/doudizhu/domain/playing ./business/doudizhu/domain/settlement ./business/doudizhu/domain/livehand ./business/doudizhu/application ./business/doudizhu/infrastructure/runtime
+      - name: Integration-tag compile
+        working-directory: server
+        run: go test -run '^$' -tags=integration ./business/doudizhu/infrastructure/mysqlstore
+      - name: Doudizhu vet
+        working-directory: server
+        run: go vet ./business/doudizhu/...
+      - name: Commit formatting if needed
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/business/doudizhu
+          git commit -m "style: format Goal 0028 completion"
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Publish result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main
+          sha="$(git rev-parse origin/main)"
+          if [ "${{ job.status }}" = "success" ]; then state=success; description="Goal 0028 domain, application, race, integration compile, and vet passed"; else state=failure; description="Goal 0028 domain verification failed"; fi
+          curl --fail --silent --show-error -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
+            -d "{\"state\":\"${state}\",\"context\":\"goal0028/domain-final\",\"description\":\"${description}\",\"target_url\":\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\"}"
