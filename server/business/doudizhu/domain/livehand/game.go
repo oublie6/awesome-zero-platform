@@ -15,29 +15,29 @@ import (
 )
 
 const (
-	PublicViewVersion   = "doudizhu-live-public-view-v1"
-	PrivateViewVersion  = "doudizhu-live-private-view-v1"
-	TerminalPayloadV1   = "doudizhu-live-terminal-v1"
-	PhaseBidding        = "BIDDING"
-	PhaseAborted        = "ABORTED"
+	PublicViewVersion  = "doudizhu-live-public-view-v1"
+	PrivateViewVersion = "doudizhu-live-private-view-v1"
+	TerminalPayloadV1  = "doudizhu-live-terminal-v1"
+	PhaseBidding       = "BIDDING"
+	PhaseAborted       = "ABORTED"
 )
 
 var (
 	ErrUnsupportedCommand = errors.New("doudizhu live hand: gameplay command is not implemented")
-	ErrViewerNotSeated     = errors.New("doudizhu live hand: viewer is not seated")
+	ErrViewerNotSeated    = errors.New("doudizhu live hand: viewer is not seated")
 )
 
 type Game struct {
-	id          gamecore.InstanceID
-	seats       [3]domain.HandSeat
-	phase       string
-	version     uint64
-	artifact    gamecore.SetupArtifact
-	setup       randomizedsetup.Setup
-	material    gamecore.FairnessMaterial
-	transcript  carddeck.Transcript
-	current     [3][carddeck.CardsPerSeat]carddeck.Card
-	terminal    bool
+	id         gamecore.InstanceID
+	seats      [3]domain.HandSeat
+	phase      string
+	version    uint64
+	artifact   gamecore.SetupArtifact
+	setup      randomizedsetup.Setup
+	material   gamecore.FairnessMaterial
+	transcript carddeck.Transcript
+	current    [3][carddeck.CardsPerSeat]carddeck.Card
+	terminal   bool
 }
 
 type SeatView struct {
@@ -47,15 +47,15 @@ type SeatView struct {
 }
 
 type PublicView struct {
-	Version       string       `json:"v"`
-	HandID        string       `json:"handId"`
-	Phase         string       `json:"phase"`
-	StateVersion  uint64       `json:"stateVersion"`
-	Seats         [3]SeatView  `json:"seats"`
-	SetupDigest   string       `json:"setupDigest"`
-	DeckDigest    string       `json:"deckDigest"`
-	DealDigest    string       `json:"dealDigest"`
-	LandlordCount int          `json:"landlordCardCount"`
+	Version       string      `json:"v"`
+	HandID        string      `json:"handId"`
+	Phase         string      `json:"phase"`
+	StateVersion  uint64      `json:"stateVersion"`
+	Seats         [3]SeatView `json:"seats"`
+	SetupDigest   string      `json:"setupDigest"`
+	DeckDigest    string      `json:"deckDigest"`
+	DealDigest    string      `json:"dealDigest"`
+	LandlordCount int         `json:"landlordCardCount"`
 }
 
 type PrivateView struct {
@@ -66,17 +66,17 @@ type PrivateView struct {
 }
 
 type TerminalPayload struct {
-	Version          string       `json:"v"`
-	HandID           string       `json:"handId"`
-	Status           string       `json:"status"`
-	Reason           string       `json:"reason"`
-	StateVersion     uint64       `json:"stateVersion"`
-	SetupArtifact    string       `json:"setupArtifact"`
-	SetupDigest      string       `json:"setupDigest"`
-	Transcript       string       `json:"transcript"`
-	TranscriptDigest string       `json:"transcriptDigest"`
-	CurrentHands     [3][]string  `json:"currentHands"`
-	LandlordCards    []string     `json:"landlordCards"`
+	Version          string      `json:"v"`
+	HandID           string      `json:"handId"`
+	Status           string      `json:"status"`
+	Reason           string      `json:"reason"`
+	StateVersion     uint64      `json:"stateVersion"`
+	SetupArtifact    string      `json:"setupArtifact"`
+	SetupDigest      string      `json:"setupDigest"`
+	Transcript       string      `json:"transcript"`
+	TranscriptDigest string      `json:"transcriptDigest"`
+	CurrentHands     [3][]string `json:"currentHands"`
+	LandlordCards    []string    `json:"landlordCards"`
 }
 
 func New(snapshot domain.HandSnapshot, material gamecore.FairnessMaterial, artifact gamecore.SetupArtifact) (*Game, error) {

@@ -187,8 +187,10 @@ func (testBeaconVerifier) Verify(_ context.Context, _ domain.BeaconPlan, value d
 
 type testLiveRuntime struct{}
 
-func (testLiveRuntime) Start(context.Context, domain.HandSnapshot) error { return errors.New("not used") }
-func (testLiveRuntime) RollbackStart(context.Context, domain.HandID) error { return nil }
+func (testLiveRuntime) Start(context.Context, domain.HandSnapshot) error {
+	return errors.New("not used")
+}
+func (testLiveRuntime) RollbackStart(context.Context, domain.HandID) error   { return nil }
 func (testLiveRuntime) ReleasePrepared(context.Context, domain.HandID) error { return nil }
 func (testLiveRuntime) PublicView(context.Context, domain.HandID, domain.AccountID) (LiveHandView, error) {
 	return LiveHandView{}, errors.New("not used")

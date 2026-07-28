@@ -21,10 +21,10 @@ type SetupClock interface {
 }
 
 type SeededHandSetupProvider struct {
-	seeds       *SeedVault
-	revealKeys  RevealKeySource
-	clock       SetupClock
-	beaconPlan  domain.BeaconPlan
+	seeds      *SeedVault
+	revealKeys RevealKeySource
+	clock      SetupClock
+	beaconPlan domain.BeaconPlan
 }
 
 func NewSeededHandSetupProvider(seeds *SeedVault, revealKeys RevealKeySource, clock SetupClock, beaconPlan domain.BeaconPlan) (*SeededHandSetupProvider, error) {

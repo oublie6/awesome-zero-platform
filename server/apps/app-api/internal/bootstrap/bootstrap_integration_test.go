@@ -50,8 +50,8 @@ func TestIntegrationDependenciesAndHealth(t *testing.T) {
 	if err := app.mysql.DB().QueryRowContext(ctx, "SELECT meta_value FROM foundation_schema_meta WHERE meta_key = ?", "schema_version").Scan(&schemaVersion); err != nil {
 		t.Fatalf("query schema version: %v", err)
 	}
-	if schemaVersion != "0010" {
-		t.Fatalf("schema version = %q, want 0010", schemaVersion)
+	if schemaVersion != "0011" {
+		t.Fatalf("schema version = %q, want 0011", schemaVersion)
 	}
 
 	for _, table := range []string{
@@ -59,6 +59,7 @@ func TestIntegrationDependenciesAndHealth(t *testing.T) {
 		"authorization_resources",
 		"authorization_policy_state",
 		"platform_audit_events",
+		"game_final_records",
 	} {
 		var count int
 		if err := app.mysql.DB().QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?", table).Scan(&count); err != nil {

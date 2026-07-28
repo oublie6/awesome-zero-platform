@@ -56,9 +56,9 @@ ON DUPLICATE KEY UPDATE instance_id = VALUES(instance_id)`,
 	}
 	var stored struct {
 		gameID, ruleset, module, fairness, status string
-		participant                           uint8
-		version                               uint64
-		payload, digest                       []byte
+		participant                               uint8
+		version                                   uint64
+		payload, digest                           []byte
 	}
 	err = a.db.QueryRowContext(ctx, `
 SELECT game_id, ruleset_version, module_version, fairness_suite_id,

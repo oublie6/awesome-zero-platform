@@ -26,6 +26,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/protection"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/textnormalization"
+	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
 
 func TestApplicationPersistenceWithRealMySQL(t *testing.T) {
@@ -49,7 +50,7 @@ func TestApplicationPersistenceWithRealMySQL(t *testing.T) {
 	opener := &integrationOpener{}
 	keyring, _ := protection.NewStaticKeyring("storage-key-1", map[string][]byte{"storage-key-1": bytes.Repeat([]byte{7}, 32)})
 	protector, _ := protection.New(keyring)
-	service, err := application.NewService(store, clock, ids, integrationSetup{}, opener, protector, textnormalization.NFKC{}, application.DefaultConfig())
+	service, err := application.NewService(store, clock, ids, integrationSetup{}, integrationBeaconVerifier{}, integrationLiveRuntime{}, opener, protector, textnormalization.NFKC{}, application.DefaultConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,6 +321,7 @@ func newIntegrationService(t *testing.T, db *sql.DB, prefix string) (*applicatio
 	}
 	service, err := application.NewService(
 		store, clock, &integrationIDs{prefix: prefix}, integrationSetup{},
+		integrationBeaconVerifier{}, integrationLiveRuntime{},
 		&integrationOpener{}, protector, textnormalization.NFKC{}, application.DefaultConfig(),
 	)
 	if err != nil {
@@ -367,6 +369,35 @@ type integrationSetup struct{}
 func (integrationSetup) PrepareHand(context.Context, domain.RoomSnapshot, domain.HandID) (application.HandSetup, error) {
 	return application.HandSetup{}, fmt.Errorf("not used")
 }
+
+func (integrationSetup) ReleaseHand(context.Context, domain.HandID) error { return nil }
+
+type integrationBeaconVerifier struct{}
+
+func (integrationBeaconVerifier) Verify(_ context.Context, _ domain.BeaconPlan, value domain.BeaconValue) (domain.BeaconValue, error) {
+	return value, nil
+}
+
+type integrationLiveRuntime struct{}
+
+func (integrationLiveRuntime) Start(context.Context, domain.HandSnapshot) error {
+	return fmt.Errorf("not used")
+}
+func (integrationLiveRuntime) RollbackStart(context.Context, domain.HandID) error   { return nil }
+func (integrationLiveRuntime) ReleasePrepared(context.Context, domain.HandID) error { return nil }
+func (integrationLiveRuntime) PublicView(context.Context, domain.HandID, domain.AccountID) (application.LiveHandView, error) {
+	return application.LiveHandView{}, fmt.Errorf("not used")
+}
+func (integrationLiveRuntime) PrivateView(context.Context, domain.HandID, domain.AccountID) (application.LiveHandView, error) {
+	return application.LiveHandView{}, fmt.Errorf("not used")
+}
+func (integrationLiveRuntime) Abort(context.Context, domain.HandID, string) (gamecore.FinalRecord, error) {
+	return gamecore.FinalRecord{}, fmt.Errorf("not used")
+}
+func (integrationLiveRuntime) RetryArchive(context.Context, domain.HandID) (gamecore.FinalRecord, error) {
+	return gamecore.FinalRecord{}, fmt.Errorf("not used")
+}
+func (integrationLiveRuntime) Contains(domain.HandID) bool { return false }
 
 type integrationOpener struct {
 	plaintext []byte
