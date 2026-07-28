@@ -1,2 +1,2 @@
 Temporary pull-request event trigger for Goal 0022. No implementation is carried on this branch.
-Retry: capture exact failure log.
+Retry: corrected lifecycle fixture version order.
