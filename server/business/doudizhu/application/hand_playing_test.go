@@ -47,13 +47,13 @@ func TestSubmitLiveHandPassUsesTrustedMembershipAndRuntimeOnly(t *testing.T) {
 
 func TestSubmitLiveHandPlayingRejectsUnauthorizedOrInvalidRequests(t *testing.T) {
 	tests := []struct {
-		name string
-		phase domain.HandPhase
-		actor domain.AccountID
+		name    string
+		phase   domain.HandPhase
+		actor   domain.AccountID
 		version uint64
-		cards []string
-		pass bool
-		want error
+		cards   []string
+		pass    bool
+		want    error
 	}{
 		{name: "outsider play", phase: domain.HandBidding, actor: "outsider", version: 1, cards: []string{"C3"}, want: domain.ErrNotSeated},
 		{name: "wrong persisted phase", phase: domain.HandDealing, actor: "player-1", version: 1, cards: []string{"C3"}, want: domain.ErrWrongPhase},
@@ -86,14 +86,14 @@ func TestSubmitLiveHandPlayingRejectsUnauthorizedOrInvalidRequests(t *testing.T)
 
 type playRuntime struct {
 	LiveHandRuntime
-	result LiveHandCommandResult
-	err error
-	playCalls int
-	passCalls int
-	handID domain.HandID
-	actor domain.AccountID
+	result          LiveHandCommandResult
+	err             error
+	playCalls       int
+	passCalls       int
+	handID          domain.HandID
+	actor           domain.AccountID
 	expectedVersion uint64
-	cards []string
+	cards           []string
 }
 
 func (r *playRuntime) Play(_ context.Context, handID domain.HandID, actor domain.AccountID, expectedVersion uint64, cards []string) (LiveHandCommandResult, error) {
