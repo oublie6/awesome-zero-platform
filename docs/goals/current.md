@@ -1,59 +1,76 @@
-# Goal 0024: Extensible Game Core and Versioned Module Boundary
+# Goal 0025: Verified Doudizhu Setup, In-Memory Hands, and Final Archive
 
 ## Status
 
-- State: completed
-- Started: 2026-07-28
-- Completed: 2026-07-28
+- State: ready
+- Started: Not yet.
+- Completed: Not yet.
 - Blockers: None.
 
 ## Goal
 
-Extract a small reusable business-level game core from the verified Doudizhu fairness implementation so the platform can support additional games without coupling common runtime contracts to Doudizhu cards, three seats, landlord dealing, bidding, scoring, or client UI. Establish the agreed lifecycle in which an active game instance is authoritative in process memory, commands are serialized per instance, and only completed or explicitly aborted final records are passed to persistence. Preserve every Goal 0023 Doudizhu v1 canonical byte and golden-vector output.
+Integrate the verified fairness and gamecore foundations into a real Doudizhu hand-start lifecycle. Generate and retain the server seed only in process memory, require public-beacon evidence to pass an application verifier, build the existing deterministic setup artifact after all reveals, create an in-memory Doudizhu live game that owns every player's current hand, expose identity-scoped public/private views, and persist only immutable completed or aborted final records through an idempotent MySQL archive. Do not persist the active deck, current hands, landlord cards, or server seed in the live Hand snapshot, Redis, command results, outbox events, or ordinary logs.
 
 ## Scope
 
-ChatGPT owned architecture, implementation, tests, failure diagnosis and fixes, documentation, repository verification, commits, and pushes directly to `main`.
+ChatGPT owns architecture, implementation, tests, failure diagnosis and fixes, documentation, repository verification, commits, and pushes directly to `main`.
 
-Delivered:
+Deliver:
 
-1. Created `server/business/gamecore` as reusable business code under `server/business`, independent of platform and technical-foundation packages.
-2. Added validated immutable `GameID`, `RulesetVersion`, `ModuleVersion`, `FairnessSuiteID`, `ArtifactVersion`, `InstanceID`, `Descriptor`, and exact `DescriptorKey` values.
-3. Added an explicit compile-time `RandomizedSetupModule` registry with duplicate rejection, exact lookup, fixed registered identity, and cloned mutable inputs.
-4. Added a common fairness-material envelope binding the exact descriptor, instance ID, server seed and commitment, ordered participant contribution digests and commitments, beacon evidence, and reveal-key audit metadata.
-5. Added standard-library-only deterministic primitives:
-   - HMAC-SHA256 counter byte stream;
-   - unbiased bounded sampling with rejection;
-   - Fisher–Yates index permutation for game-selected item counts.
-6. Added an immutable versioned `SetupArtifact` envelope whose canonical payload remains owned by the concrete game module.
-7. Added `server/business/doudizhu/domain/randomizedsetup`, which adapts the existing Card/Deck v1 shuffle and deal implementation to `gamecore` without changing any Goal 0023 algorithm or canonical bytes.
-8. Added a test-only non-Doudizhu sequence module with four participants and eleven items, proving the common core has no three-seat or 54-card assumption.
-9. Added the game-owned `LiveGame` contract for opaque commands, public/private views, completion records, and abort records.
-10. Added an in-memory `LiveDirectory` that:
-    - is authoritative for active instances;
-    - stores a fixed descriptor for each registered instance;
-    - serializes commands per instance;
-    - allows different instances to execute concurrently;
-    - never persists ordinary in-progress commands;
-    - rejects commands while finalization is pending;
-    - removes an instance only after final archive success.
-11. Added immutable completed/aborted `FinalRecord` envelopes and the narrow `FinalRecordArchive` port.
-12. Added exact retry semantics: a terminal command or abort creates one logical final record and invokes the game once; archive delivery may retry the same record, so the archive adapter must be idempotent by instance ID and digest.
-13. Documented the v1 failure policy: unexpected process loss may void active games; Redis is not a hand store; snapshots, action-log replay, live migration, cross-instance routing, and database adapters remain future explicit capabilities.
-14. Updated the Fair Doudizhu workflow to include `gamecore` in focused unit, race, and vet checks.
-15. Added architecture and contract documentation covering dependency direction, module ownership, fairness, artifacts, live authority, private views, final archive behavior, failure policy, multi-instance evolution, and deferred integration.
+1. Add a Doudizhu server-seed custodian that:
+   - obtains exactly 32 bytes from an injected cryptographic entropy source;
+   - computes the unchanged Goal 0023 hand-bound server commitment;
+   - retains the seed only in process memory by hand ID;
+   - rejects duplicate preparation and unknown release/read operations;
+   - returns copies rather than mutable internal seed storage;
+   - clears retained seed bytes when a hand is discarded or finalised.
+2. Add a production-oriented `HandSetupProvider` implementation that combines:
+   - the in-memory server-seed custodian;
+   - the currently active signed reveal-key manifest;
+   - an explicitly configured public-beacon plan;
+   - the existing `application.HandSetup` contract.
+3. Add an application `BeaconVerifier` port. `LockHandBeacon` must never pass caller-supplied evidence directly into the Hand aggregate; the verified value returned by the port is authoritative and must still match the committed provider and round.
+4. Add a concrete Doudizhu `LiveGame` implementation that owns:
+   - the immutable randomized setup artifact;
+   - the full initial deck and deal;
+   - each seat's current cards in memory;
+   - landlord cards in memory;
+   - the fairness material needed to construct a terminal transcript;
+   - the live-game version and phase.
+5. Keep Doudizhu-specific cards, seats, hands, landlord cards, payloads, and transcript construction inside the Doudizhu module. Do not add card or hand semantics to `gamecore`.
+6. Add canonical, versioned live-view payloads:
+   - public view: hand ID, phase, version, seat identities/positions, remaining-card counts, public setup digests, and no private cards;
+   - private view: the authenticated viewer's exact current cards plus the public fields;
+   - no view may expose another seat's cards, the server seed, the complete deck, unrevealed landlord cards, or raw contribution plaintext.
+7. Add a Doudizhu live-hand runtime coordinator that:
+   - retrieves the retained seed only after the Hand snapshot has three accepted reveals and one verified locked beacon;
+   - builds `gamecore.FairnessMaterial` in stable seat order;
+   - generates and verifies the existing `randomizedsetup` artifact;
+   - constructs and registers the concrete live game in `gamecore.LiveDirectory`;
+   - supports transaction compensation without archiving an uncommitted live game;
+   - releases pre-deal secrets when a hand terminates before live-game creation.
+8. Integrate `Service.MarkHandDealt` so that `DEALING -> BIDDING` succeeds only when the deterministic live game has been created. The persisted Hand snapshot records phase/commitment/evidence metadata only; it must not contain the deck or current cards.
+9. Add authenticated application query methods for public and private live-hand views. Private view resolution must derive the viewer's seat from the persisted Hand seat assignment rather than trusting a client-supplied seat number.
+10. Add lifecycle compensation hooks to the command executor so in-memory preparation/registration is rolled back when the surrounding database transaction fails, without changing command idempotency semantics.
+11. Add immutable Doudizhu terminal payloads that include the final status/reason, setup artifact, current/initial card state as appropriate, and a verifiable Goal 0023 fairness transcript. Transcript disclosure occurs only for completed or explicitly aborted live hands.
+12. Add an idempotent MySQL implementation of `gamecore.FinalRecordArchive` and update the complete current schema. The archive must:
+    - insert one final record per game instance;
+    - accept an exact retry of the same instance ID and digest;
+    - reject a conflicting retry;
+    - store the opaque final payload and integrity digest;
+    - never store an active-game snapshot or current-hand update.
+13. Integrate explicit live-hand abort with the archive path. Normal completed-game archival remains callable by the live game contract, while bidding/play/settlement commands that produce a normal completion remain deferred.
+14. Document exact ownership, lifecycle, failure, disclosure, transaction-compensation, and persistence boundaries.
+15. Add focused unit, property, race, vet, import-boundary, SQL-mock/real-MySQL integration, schema, formatting, full-repository, and production runtime verification.
 
-The following remain intentionally deferred:
+The following remain outside this goal:
 
-- integrating randomized setup or `LiveDirectory` into the existing Doudizhu Room/Hand application flow;
-- production Doudizhu bidding, current-hand mutation, play patterns, turns, scoring, settlement, and replay;
-- production server-seed generation/custody and public-beacon proof adapters;
-- a concrete database implementation of `FinalRecordArchive` and any resulting current-schema update;
-- active-game snapshots, command event-log recovery, ownership transfer, or live migration;
-- generic lobby, matchmaking, table, spectator, or gateway routing capabilities;
-- HTTP/WSS contracts and concrete client game-module loading;
-- production Mahjong, poker, dice, board-game, or other game implementations;
-- dynamic plugins, reflection-based discovery, scripting engines, universal rule DSLs, and universal card/tile/state schemas.
+- bidding decisions, landlord selection, doubling, legal play-pattern recognition, turn comparison, passes, scoring, spring rules, settlement calculations, and replay UI;
+- public HTTP/WSS game-command or view endpoints;
+- automatic public-beacon network fetching or provider-specific cryptographic proof algorithms; this goal defines and enforces the verifier boundary and supplies deterministic adapters for tests;
+- active-game snapshots, Redis hand storage, command event-log recovery, process-crash restoration, live migration, or cross-instance ownership transfer;
+- dynamic game plugins, rule DSLs, universal card/tile schemas, or a shared gameplay state machine;
+- encrypting ordinary completed-game payloads at the application field level; database access control and storage/backup encryption remain deployment concerns.
 
 ## References
 
@@ -61,104 +78,65 @@ The following remain intentionally deferred:
 - `docs/architecture/overview.md`
 - `docs/architecture/extensible-game-runtime.md`
 - `docs/architecture/gamecore-v1.md`
-- `docs/architecture/fair-doudizhu-card-shuffle-v1.md`
 - `docs/architecture/fair-doudizhu-domain.md`
+- `docs/architecture/fair-doudizhu-application-persistence.md`
+- `docs/architecture/fair-doudizhu-card-shuffle-v1.md`
+- `docs/architecture/reveal-key-lifecycle-v1.md`
 - `docs/requirements/fair-doudizhu-v1.md`
 - `server/business/gamecore`
+- `server/business/doudizhu/application`
+- `server/business/doudizhu/domain/carddeck`
 - `server/business/doudizhu/domain/randomizedsetup`
-- `server/business/doudizhu/domain/carddeck/testdata/golden-v1.json`
+- `server/business/doudizhu/infrastructure/mysqlstore`
+- `server/foundation/revealkeys`
+- `server/database/schema/current.sql`
 - `.github/workflows/doudizhu.yml`
 
-## Acceptance Results
+## Constraints
 
-- `gamecore` production files import only the Go standard library. A static import/vocabulary boundary test rejects concrete-game imports and Doudizhu-specific concepts.
-- Descriptor tests reject empty, whitespace-padded, oversized, invalid participant-count, and mismatched identities.
-- The registry rejects duplicates, resolves exact versioned keys, returns `ErrModuleNotFound` for unknown keys, and prevents mutable module identity from changing the registered contract.
-- Fairness material rejects count/order mismatches and zero cryptographic evidence; its canonical digest changes when any bound contribution changes.
-- The generic HMAC counter stream has a committed stable 64-byte vector.
-- Rejection sampling has a scripted test proving a biased candidate below the threshold is discarded.
-- Permutations are validated for counts `1`, `2`, `7`, `54`, and `137`.
-- The test-only sequence module uses four participants and eleven items and generates/verifies through the same registry contract without importing Doudizhu.
-- The Doudizhu adapter recomputes server/client commitments using the existing Goal 0023 functions and delegates shuffle/deal to the unchanged `carddeck` package.
-- Golden compatibility fixes the same Goal 0023 server commitment, client commitments, first 64 random bytes, shuffle seed, complete deck, three hands, landlord cards, deck digest, and deal digest.
-- Adapter tests reject altered participant commitments, altered payloads, unsupported artifact versions, and descriptor mismatches.
-- Live-directory tests prove duplicate rejection, fixed descriptor identity, opaque copied command/view payloads, and public/private view routing.
-- Twelve concurrent commands for one instance never overlap inside the concrete game.
-- Two different instances enter their game implementations concurrently, proving there is no process-wide gameplay lock.
-- Ordinary commands make zero archive calls.
-- Archive failure retains one pending final record, blocks further commands, and retries the identical digest without reapplying the terminal command.
-- Abort failure similarly retains one aborted record and does not call the concrete abort operation again.
-- A concurrent second terminal command observes the removed/closed entry and cannot mutate an already archived game.
-- No MySQL schema, migration, Redis state, HTTP/WSS contract, or frontend production file was added.
+- Follow `AGENTS.md`; all edits and commits go directly to `main`. Do not create a feature branch, verification branch, or pull request.
+- Existing Goal 0023 canonical bytes, commitments, random stream, shuffle, deal, transcript, and golden vectors are immutable.
+- Existing Goal 0024 gamecore descriptor, artifact, directory, and final-record contracts remain generic. Any small gamecore change must be justified by the first real integration and must remain free of Doudizhu vocabulary.
+- The server seed, complete deck, landlord cards, and players' current cards must not be added to `domain.HandSnapshot`, MySQL active-hand rows, Redis, outbox payloads, command-result payloads, or normal logs.
+- Active private game state is authoritative only in memory. The database may retain room/hand coordination metadata and protected commit-reveal records, but not live card state.
+- Database persistence is terminal-record-only for the live game. Do not write a database row for every bid, play, or view.
+- Private view authorization derives seat ownership from trusted server state.
+- The public-beacon verifier result, not raw request data, is passed to the domain aggregate.
+- Randomness uses `crypto/rand` or an injected `io.Reader`; do not use `math/rand`, time, UUID bytes, process-global mutable randomness, or client-only entropy.
+- Do not add frontend production code or public transport contracts.
+- Update the complete current schema only; do not add migration history or committed patch SQL.
+- Run memory-intensive verification sequentially with low-concurrency Go commands.
 
-## Verification Evidence
+## Acceptance Criteria
 
-### Formal implementation commits
-
-- Goal lifecycle decision: `a5d0d7792cc6038e24fec4beeb84372869c39597`.
-- Error and canonical encoding boundaries: `77711e1abef00fd3058e8224179a0ddf77427ccc`, `721f21e4ff87f03888d34023e645f4fc189f2af7`.
-- Descriptor and fairness material: `a761e858ae6e9d92dbc9739e1a32fa3cf1eb5ff5`, `ee37f3ef9fb3f167685007bf10cf74c3f06750ef`.
-- Deterministic primitives and setup registry: `b0433640987b24fc975c38ad5c760647bd2e64a4`, `c8b3f73c1c6e1dd66c63f67b9f38612f6b103689`.
-- In-memory live lifecycle: `4f1ffb1586952e82ff4d0cf56959b111978fe491`.
-- Core, import-boundary, and concurrency/lifecycle tests: `ebf1969a446880c8b975fa5fe82c87a4094dc0f8`, `54e370fe0fd266655022ac183cc59915805b996e`, `092c54543f91f12e422b32b91263eece2a716bd6`.
-- Doudizhu adapter and golden compatibility: `814fd83bbc66263f0f0eea198688e5249a8e6ec8`, `10edf1fa572b42bf53cb832c0bfbf6d9ed4dc2b4`.
-- Runtime architecture and contract documentation: `344f3e62fb1068fb9eb85b0689bc62e943693e57`, `7b030ab2236766fa7b50bee186f3c7f5a0d05cfa`.
-- Focused workflow coverage: `04d8f66f405f6db09875535e8fdaf54219125832`.
-
-### Preliminary local verification
-
-A local isolated Go module was used before repository writes to compile the new packages and run focused ordinary and race tests. The repository's authoritative verification remained GitHub Actions with Go `1.25.8`.
-
-### Real repository verification
-
-- Fair Doudizhu run `30357225829`: success.
-  - focused ordinary unit tests including `gamecore`, all Doudizhu domains, application, and infrastructure packages;
-  - focused `-race` tests;
-  - focused `go vet`;
-  - signed reveal-key manifest TypeScript tests and Go-to-TypeScript interoperability;
-  - real MySQL 5.7 Doudizhu integration.
-- Full CI run `30357226064`: success.
-  - `go mod tidy` cleanliness;
-  - generated-code repeatability;
-  - exact Go `1.25.8` formatting;
-  - all Go unit tests;
-  - Security/Admin race tests;
-  - all Go builds;
-  - local and production Compose validation;
-  - production HTTPS mode checks;
-  - Secure Envelope client and interoperability tests;
-  - Cocos skeleton policy;
-  - Admin Web typecheck/build;
-  - full real MySQL 5.7 and Redis integration.
-- Production runtime acceptance run `30357610609`: success.
-  - production containers and dependencies;
-  - HTTP and authenticated WebSocket behavior;
-  - HTTPS and WSS behavior;
-  - administrator bootstrap and login;
-  - graceful acceptance cleanup.
-- A repeated Fair Doudizhu run `30357610683` and repeated full CI run `30357610627` also succeeded after the temporary runtime workflow was introduced.
-
-### Failures and fixes
-
-- No implementation, unit, race, vet, formatting, module, build, integration, or runtime failure occurred in the formal repository verification.
-- The first temporary CI PR closed automatically when its head was aligned exactly with the updated base before a new marker commit. A second CI-only PR was opened from the marker commit; no functional code changed.
-- The first branch-cleanup workflow listened only for `pull_request.closed` and did not run in this connector-driven close path. It was changed to run when a cleanup-only PR opened; cleanup run `30357929126` then successfully deleted `goal0024-ci-trigger`.
-
-### Cleanup evidence
-
-- CI-only PRs `#9`, `#10`, and `#11` are closed and were never merged.
-- Branch `goal0024-ci-trigger` was deleted; direct file access by that ref returns `404`.
-- Temporary runtime and cleanup workflow files were deleted from `main`.
-- Final cleanup commit before this completion report: `16e8131b06f9903dc104acf5f1a80da93368309d`.
+- Seed-custody tests prove exact 32-byte generation, commitment compatibility, duplicate rejection, copy isolation, release zeroisation, entropy failure handling, and concurrency safety.
+- The setup provider binds one active reveal-key manifest, its decoded SHA-256 public-key digest, one configured beacon plan, and one newly retained server seed to the returned Hand setup.
+- Beacon-lock application tests prove unverified, mismatched, altered, zero-digest, and verifier-failure evidence cannot advance the Hand; only the verifier-returned value is locked.
+- The concrete live game starts with the exact Goal 0023 deterministic deck, three 17-card hands, and three landlord cards for the golden material.
+- Public view contains no card codes/IDs, seed, full deck, landlord cards, or contribution plaintext.
+- Each private seat view contains exactly that seat's 17 cards and no other seat's cards.
+- Mutating a returned view payload cannot mutate live state.
+- Runtime setup rejects missing seed, wrong Hand phase, incomplete contributions, missing/mismatched beacon, descriptor mismatch, tampered artifact, and duplicate live instance IDs.
+- `MarkHandDealt` does not advance the persisted Hand to `BIDDING` unless live registration succeeds.
+- A database transaction failure after live registration invokes compensation and leaves no uncommitted live instance.
+- A successful `MarkHandDealt` leaves the seed and card state only inside approved in-memory components and persists no deck/hand fields.
+- Private query resolution rejects non-seated users and ignores any caller attempt to choose another seat.
+- Explicit abort builds and verifies a fairness transcript, archives one final record, removes the live instance only after archive success, and clears retained seed material.
+- Archive retry with the same instance ID and digest is idempotent; a conflicting digest is rejected.
+- The archive schema contains final metadata, opaque payload, digest, and timestamps, but no active-hand/current-card table.
+- `gamecore` still imports only the standard library and contains no Doudizhu/card/landlord vocabulary.
+- `go test -count=1 -p 1 -parallel 1 ./business/gamecore/... ./business/doudizhu/domain/... ./business/doudizhu/application/... ./business/doudizhu/infrastructure/runtime/... ./business/gamecore/infrastructure/mysqlarchive/...` succeeds.
+- The corresponding `-race` and `go vet` checks succeed.
+- Real MySQL 5.7 integration proves schema application and archive idempotency/conflict behavior.
+- Existing module tidy, generated-code, formatting, all Go unit, Secure Envelope, Admin Web, MySQL/Redis integration, Compose, HTTP/WS, HTTPS/WSS, and production runtime checks remain green.
+- Final evidence records exact commits, actual failures/fixes, main-only verification method, unavailable checks, and intentionally deferred work.
 
 ## Working State
 
 ### Completed
 
-- Versioned game identity, fairness material, deterministic random primitives, setup artifacts, explicit registry, Doudizhu compatibility adapter, test-only alternate module, in-memory live directory, terminal archive contract, failure policy, documentation, and CI coverage are complete.
-- Active game state is now architecturally fixed as concrete game-owned in-memory state; only completed or explicitly aborted records cross the persistence port.
-- All required focused, full, integration, and production runtime checks passed.
-- Temporary verification resources were removed.
+- Goal 0024 was completed, verified, cleaned up, and archived.
+- The user confirmed that active private card state is memory-only and the database is used for completed or explicitly aborted game archives.
 
 ### In progress
 
@@ -166,10 +144,8 @@ A local isolated Go module was used before repository writes to compile the new 
 
 ### Remaining
 
-- None within Goal 0024.
+- Implement the complete Goal 0025 scope and verification.
 
 ## Completion Report
 
-Goal 0024 is complete. The repository now has a small reusable game business core that supports exact versioned game modules without turning Doudizhu concepts into platform-wide assumptions. Doudizhu remains the first concrete adapter and preserves every Goal 0023 deterministic result. Active game instances own their private state in memory, commands are serialized per instance, different games can run concurrently, and only immutable completed or aborted final records cross a narrow archive port.
-
-The next stage should integrate this foundation into a real Doudizhu lifecycle: generate and protect the server seed behind its commitment, consume adapter-verified beacon evidence, construct the existing deterministic setup artifact, create the concrete in-memory Doudizhu game state with each player's current hand, expose authenticated private/public views, implement bidding and gameplay commands incrementally, and archive the final record and fairness transcript only after completion or explicit abort. The generic core should remain unchanged unless a second real game exposes a genuinely shared requirement.
+Pending.
