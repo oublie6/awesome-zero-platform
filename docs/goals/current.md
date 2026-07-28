@@ -9,7 +9,7 @@
 
 ## Goal
 
-Extract a small reusable business-level game core from the verified Doudizhu fairness implementation so the platform can support additional games without coupling common runtime contracts to Doudizhu cards, three seats, landlord dealing, bidding, scoring, or client UI. Preserve every Goal 0023 Doudizhu v1 canonical byte and golden-vector output.
+Extract a small reusable business-level game core from the verified Doudizhu fairness implementation so the platform can support additional games without coupling common runtime contracts to Doudizhu cards, three seats, landlord dealing, bidding, scoring, or client UI. Establish the agreed lifecycle in which an active game instance is authoritative in process memory, commands are serialized per instance, and only completed or explicitly aborted final records are passed to persistence. Preserve every Goal 0023 Doudizhu v1 canonical byte and golden-vector output.
 
 ## Scope
 
@@ -36,17 +36,26 @@ Deliver:
 9. Preserve the Goal 0023 Doudizhu golden vector byte-for-byte, including commitments, first 64 random bytes, shuffled deck, hands, landlord cards, and all digests.
 10. Add a test-only non-Doudizhu module or sequence with a different participant count and item count to prove the common core contains no three-seat or 54-card assumption.
 11. Add architecture and API documentation for descriptor selection, registration, dependency direction, artifact ownership, compatibility, and deferred runtime integration.
-12. Add focused unit, property, race, vet, import-boundary, golden-compatibility, and full-repository verification.
+12. Define a small game-owned `LiveGame` contract whose concrete implementation owns private state such as hands, tile walls, hidden boards, or other gameplay state; `gamecore` treats commands, views, and final records as opaque immutable byte payloads.
+13. Implement an in-memory live-game directory that:
+   - is the only runtime authority for active instances;
+   - serializes commands per game instance;
+   - exposes public/private views only through the concrete game implementation;
+   - does not persist on every command;
+   - removes an instance only after a completed or aborted record has been accepted by an archive port.
+14. Define a narrow `FinalRecordArchive` port. The runtime calls it exactly once for a terminal completion or explicit abort and never for an ordinary in-progress command.
+15. Document and test the failure policy: an unexpected process loss may abort active games in this version; no snapshot/event-log recovery is promised, Redis is not a hand store, and future recovery can be added behind explicit ports without changing game-specific state ownership.
+16. Add focused unit, property, race, vet, import-boundary, golden-compatibility, live-runtime concurrency/lifecycle, and full-repository verification.
 
 The following remain outside this goal:
 
-- integrating randomized setup into the current Doudizhu Hand aggregate or application command flow;
+- integrating randomized setup or the generic live directory into the current Doudizhu Room/Hand application command flow;
+- implementing Doudizhu bidding, play patterns, turns, scoring, settlement, or replay required for a production `LiveGame`;
 - generating, encrypting, persisting, or disclosing production server seeds;
 - public-beacon network adapters and proof validation;
-- generic lobby, matchmaking, room, table, match-session, or spectator capabilities;
-- database schema changes or generic JSON persistence for every game;
+- generic lobby, matchmaking, room, table, match-session, spectator, or cross-instance routing capabilities;
+- database schema changes, in-progress game snapshots, command event-log recovery, or generic JSON persistence for every game;
 - HTTP/WSS contracts, Cocos/client module loading, game catalog UI, or downloadable game plugins;
-- Doudizhu bidding, play patterns, turns, scoring, settlement, or replay;
 - Mahjong, poker, dice, board-game, or other production game implementations;
 - dynamic shared libraries, reflection-based plugin discovery, scripting engines, a rule DSL, or runtime code downloads.
 
@@ -73,6 +82,9 @@ The following remain outside this goal:
 - Module registration is compile-time and explicit. Do not use dynamic plugins, reflection-based discovery, global init registration, or runtime source loading.
 - Common deterministic primitives must use only the Go standard library and must not depend on time, global entropy, `math/rand`, floating point, map iteration, platform endianness, database, HTTP, Redis, or framework state.
 - Existing Doudizhu v1 domains, canonical encodings, and test vectors are immutable. Incompatible changes require a new explicit version.
+- Active game state remains owned by the concrete in-memory game instance. `gamecore` must not inspect or persist game-specific private state.
+- The live directory must use per-instance serialization rather than one process-wide gameplay lock.
+- Final archival is at-most-once from the runtime's perspective; an archive implementation is responsible for idempotency by game instance ID.
 - Do not add production fake games. A non-Doudizhu implementation may exist only in tests to prove the extension boundary.
 - Do not modify the MySQL schema or add migration files.
 - Do not add frontend production code.
@@ -94,8 +106,14 @@ The following remain outside this goal:
 - The existing Doudizhu package retains ownership of Card, Deck, DealResult, transcript payload, and every Doudizhu-specific algorithm version.
 - A test-only non-Doudizhu module with a different participant count and item count registers, generates an artifact, and verifies it without importing Doudizhu.
 - Tests reject descriptor mismatch, participant-order mismatch, altered fairness material, unsupported artifact versions, duplicate registration, and module/artifact identity mismatch.
+- The live directory rejects duplicate instance IDs and descriptor mismatches, routes commands and views to the correct game-owned instance, and keeps active state exclusively in memory.
+- Concurrent commands for one instance are serialized; commands for different instances are not forced through one process-wide gameplay lock.
+- Ordinary commands never call the final archive. A terminal command archives once and removes the instance only after archive success; archive failure leaves the terminal instance available for retry without reapplying the command.
+- Explicit abort archives one final aborted record and removes the instance only after archive success; repeated completion/abort attempts cannot create duplicate runtime archival calls.
+- Public/private views are copies returned by the concrete game and the runtime never exposes another participant's private state by inspecting payloads.
+- There is no database, Redis, HTTP, WebSocket, logger, clock, or framework dependency in `gamecore`.
 - Import-boundary tests or static inspection prove `gamecore` does not import any concrete game and concrete modules do not import one another.
-- Architecture documentation clearly distinguishes reusable gamecore, concrete modules, future lobby/runtime capabilities, and client modules.
+- Architecture documentation clearly distinguishes reusable gamecore, concrete modules, in-memory live authority, terminal archive persistence, future recovery/routing capabilities, and client modules.
 - `go test -count=1 -p 1 -parallel 1 ./business/gamecore/... ./business/doudizhu/domain/...` succeeds.
 - `go test -race -count=1 -p 1 -parallel 1 ./business/gamecore/... ./business/doudizhu/domain/...` succeeds.
 - `go vet ./business/gamecore/... ./business/doudizhu/domain/...` succeeds.
@@ -109,14 +127,15 @@ The following remain outside this goal:
 - Goal 0023 was completed, verified, cleaned up, and archived.
 - The extension requirement was converted into `docs/architecture/extensible-game-runtime.md`.
 - The architecture fixes a one-way dependency from concrete games to `gamecore`, an explicit compile-time registry, game-owned setup artifacts, and no universal rule framework.
+- The active-game storage decision is fixed: concrete live instances are authoritative in memory; only completed or explicitly aborted final records cross the archive port.
 
 ### In progress
 
-- Designing and implementing `server/business/gamecore` while preserving all Doudizhu v1 outputs.
+- Implementing `server/business/gamecore`, the Doudizhu setup adapter, and the in-memory live-game lifecycle while preserving all Doudizhu v1 outputs.
 
 ### Remaining
 
-- Implement descriptors, registry, common fairness primitives, randomized-setup contract, Doudizhu adapter, test-only alternate module, documentation, and full verification.
+- Implement descriptors, registry, common fairness primitives, randomized-setup contract, Doudizhu adapter, test-only alternate module, live directory, terminal archive contract, documentation, and full verification.
 
 ### Verification status
 
