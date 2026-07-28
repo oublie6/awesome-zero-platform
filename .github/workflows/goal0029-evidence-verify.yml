@@ -30,22 +30,41 @@ jobs:
         run: |
           gofmt -w \
             server/business/doudizhu/domain/livehand/evidence.go \
-            server/business/doudizhu/domain/livehand/evidence_test.go
+            server/business/doudizhu/domain/livehand/evidence_test.go \
+            server/business/doudizhu/application/final_evidence.go \
+            server/business/doudizhu/application/final_evidence_test.go \
+            server/business/gamecore/infrastructure/mysqlarchive/archive.go
       - name: Ordinary tests
         working-directory: server
-        run: go test -count=1 -p 1 -parallel 1 ./business/doudizhu/domain/livehand/...
+        run: |
+          go test -count=1 -p 1 -parallel 1 \
+            ./business/doudizhu/domain/livehand/... \
+            ./business/doudizhu/application/... \
+            ./business/gamecore/infrastructure/mysqlarchive/...
       - name: Race tests
         working-directory: server
-        run: go test -race -count=1 -p 1 -parallel 1 ./business/doudizhu/domain/livehand/...
+        run: |
+          go test -race -count=1 -p 1 -parallel 1 \
+            ./business/doudizhu/domain/livehand/... \
+            ./business/doudizhu/application/... \
+            ./business/gamecore/infrastructure/mysqlarchive/...
+      - name: Integration-tag compile
+        working-directory: server
+        run: go test -tags=integration -run '^$' ./business/doudizhu/infrastructure/mysqlstore/... ./business/gamecore/infrastructure/mysqlarchive/...
       - name: Vet
         working-directory: server
-        run: go vet ./business/doudizhu/domain/livehand/...
+        run: go vet ./business/doudizhu/domain/livehand/... ./business/doudizhu/application/... ./business/gamecore/infrastructure/mysqlarchive/...
       - name: Commit formatting
         run: |
           if ! git diff --quiet; then
             git config user.name github-actions[bot]
             git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add server/business/doudizhu/domain/livehand/evidence.go server/business/doudizhu/domain/livehand/evidence_test.go
+            git add \
+              server/business/doudizhu/domain/livehand/evidence.go \
+              server/business/doudizhu/domain/livehand/evidence_test.go \
+              server/business/doudizhu/application/final_evidence.go \
+              server/business/doudizhu/application/final_evidence_test.go \
+              server/business/gamecore/infrastructure/mysqlarchive/archive.go
             git commit -m "style: format Goal 0029 final evidence"
             git push origin HEAD:main
           fi
