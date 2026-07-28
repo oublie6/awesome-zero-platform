@@ -17,10 +17,10 @@ const (
 )
 
 var (
-	ErrInvalidSeat = errors.New("doudizhu playing: invalid seat")
-	ErrWrongTurn = errors.New("doudizhu playing: wrong turn")
-	ErrCannotPass = errors.New("doudizhu playing: cannot pass")
-	ErrDoesNotBeat = errors.New("doudizhu playing: play does not beat leader")
+	ErrInvalidSeat     = errors.New("doudizhu playing: invalid seat")
+	ErrWrongTurn       = errors.New("doudizhu playing: wrong turn")
+	ErrCannotPass      = errors.New("doudizhu playing: cannot pass")
+	ErrDoesNotBeat     = errors.New("doudizhu playing: play does not beat leader")
 	ErrPlayingComplete = errors.New("doudizhu playing: playing is complete")
 )
 
@@ -86,10 +86,10 @@ func (s *State) Play(seat uint8, cards []carddeck.Card, handEmpty bool) (Snapsho
 	storedCards := append([]carddeck.Card(nil), cards...)
 	storedPattern := candidate
 	s.history = append(s.history, Action{
-		Number: s.revision,
-		Type: ActionPlay,
-		Seat: seat,
-		Cards: storedCards,
+		Number:  s.revision,
+		Type:    ActionPlay,
+		Seat:    seat,
+		Cards:   storedCards,
 		Pattern: &storedPattern,
 	})
 	s.leadingSeat = seat
@@ -134,15 +134,15 @@ func (s *State) Snapshot() Snapshot {
 		return Snapshot{Version: StateVersion}
 	}
 	result := Snapshot{
-		Version: StateVersion,
-		Revision: s.revision,
-		CurrentSeat: s.currentSeat,
-		LeadingSeat: s.leadingSeat,
+		Version:      StateVersion,
+		Revision:     s.revision,
+		CurrentSeat:  s.currentSeat,
+		LeadingSeat:  s.leadingSeat,
 		LeadingCards: append([]carddeck.Card(nil), s.leadingCards...),
-		PassCount: s.passCount,
-		Complete: s.complete,
-		WinnerSeat: s.winnerSeat,
-		History: make([]Action, len(s.history)),
+		PassCount:    s.passCount,
+		Complete:     s.complete,
+		WinnerSeat:   s.winnerSeat,
+		History:      make([]Action, len(s.history)),
 	}
 	if s.leadingPattern != nil {
 		pattern := *s.leadingPattern

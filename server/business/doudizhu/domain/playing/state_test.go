@@ -22,10 +22,10 @@ func TestStatePlayAdvancesTurnAndTracksLeader(t *testing.T) {
 
 func TestStateRejectsInvalidActionsWithoutMutation(t *testing.T) {
 	tests := []struct {
-		name string
+		name    string
 		prepare func(*testing.T, *State)
-		run func(*testing.T, *State) error
-		want error
+		run     func(*testing.T, *State) error
+		want    error
 	}{
 		{
 			name: "pass empty trick",
