@@ -41,3 +41,13 @@ manifest = manifest.replace(
     1,
 )
 manifest_path.write_text(manifest)
+
+test_path = Path('clients/packages/secure-envelope/test/manifest.test.mjs')
+test_text = test_path.read_text()
+if '  SUITE_V1,\n' not in test_text:
+    raise SystemExit('Goal 0022 fix patch did not find SUITE_V1 test import')
+if '    suite: SUITE_V1,\n' not in test_text:
+    raise SystemExit('Goal 0022 fix patch did not find SUITE_V1 test usage')
+test_text = test_text.replace('  SUITE_V1,\n', '  SECURE_ENVELOPE_SUITE,\n', 1)
+test_text = test_text.replace('    suite: SUITE_V1,\n', '    suite: SECURE_ENVELOPE_SUITE,\n', 1)
+test_path.write_text(test_text)
