@@ -1,0 +1,22 @@
+name: Goal 0022 Cleanup
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'goal0022-ci-trigger'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close temporary PR and delete trigger branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr close "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --comment 'Goal 0022 final verification passed; removing the temporary CI-only trigger.'
+          gh api --method DELETE "repos/${{ github.repository }}/git/refs/heads/goal0022-ci-trigger"
