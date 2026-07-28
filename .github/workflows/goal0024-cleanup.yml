@@ -1,0 +1,29 @@
+name: Goal 0024 Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.head.ref == 'goal0024-ci-trigger'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete temporary CI branch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: 'heads/goal0024-ci-trigger'
+              });
+            } catch (error) {
+              if (error.status !== 422 && error.status !== 404) {
+                throw error;
+              }
+            }
