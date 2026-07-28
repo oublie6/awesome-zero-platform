@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
+	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
 
 func TestDuplicateReturnsOriginalBeforeExpiry(t *testing.T) {
@@ -129,7 +130,18 @@ func newCommandTestService(t *testing.T) (*Service, *testStore, *testClock) {
 	t.Helper()
 	store := newTestStore()
 	clock := &testClock{now: time.Now().UTC().Truncate(time.Millisecond)}
-	service, err := NewService(store, clock, &testIDs{}, testSetup{}, testOpener{}, testProtector{}, testNormalizer{}, DefaultConfig())
+	service, err := NewService(
+		store,
+		clock,
+		&testIDs{},
+		testSetup{},
+		testBeaconVerifier{},
+		testLiveRuntime{},
+		testOpener{},
+		testProtector{},
+		testNormalizer{},
+		DefaultConfig(),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,6 +177,32 @@ type testSetup struct{}
 func (testSetup) PrepareHand(context.Context, domain.RoomSnapshot, domain.HandID) (HandSetup, error) {
 	return HandSetup{}, errors.New("not used")
 }
+func (testSetup) ReleaseHand(context.Context, domain.HandID) error { return nil }
+
+type testBeaconVerifier struct{}
+
+func (testBeaconVerifier) Verify(_ context.Context, _ domain.BeaconPlan, value domain.BeaconValue) (domain.BeaconValue, error) {
+	return value, nil
+}
+
+type testLiveRuntime struct{}
+
+func (testLiveRuntime) Start(context.Context, domain.HandSnapshot) error { return errors.New("not used") }
+func (testLiveRuntime) RollbackStart(context.Context, domain.HandID) error { return nil }
+func (testLiveRuntime) ReleasePrepared(context.Context, domain.HandID) error { return nil }
+func (testLiveRuntime) PublicView(context.Context, domain.HandID, domain.AccountID) (LiveHandView, error) {
+	return LiveHandView{}, errors.New("not used")
+}
+func (testLiveRuntime) PrivateView(context.Context, domain.HandID, domain.AccountID) (LiveHandView, error) {
+	return LiveHandView{}, errors.New("not used")
+}
+func (testLiveRuntime) Abort(context.Context, domain.HandID, string) (gamecore.FinalRecord, error) {
+	return gamecore.FinalRecord{}, errors.New("not used")
+}
+func (testLiveRuntime) RetryArchive(context.Context, domain.HandID) (gamecore.FinalRecord, error) {
+	return gamecore.FinalRecord{}, errors.New("not used")
+}
+func (testLiveRuntime) Contains(domain.HandID) bool { return false }
 
 type testOpener struct{}
 
@@ -209,6 +247,16 @@ func (s *testStore) WithinCommand(ctx context.Context, _ domain.AccountID, _ str
 	}
 	s.state = copyState
 	return nil
+}
+
+func (s *testStore) LoadHand(_ context.Context, id domain.HandID) (domain.HandSnapshot, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	snapshot, ok := s.state.hands[string(id)]
+	if !ok {
+		return domain.HandSnapshot{}, ErrNotFound
+	}
+	return snapshot, nil
 }
 
 func (s testState) clone() testState {
