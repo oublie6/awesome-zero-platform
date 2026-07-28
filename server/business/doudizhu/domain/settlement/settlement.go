@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/bidding"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/carddeck"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/playing"
 )
 
@@ -26,18 +27,18 @@ type Input struct {
 }
 
 type Result struct {
-	Version       string     `json:"v"`
-	LandlordSeat  uint8      `json:"landlordSeat"`
-	WinnerSeat    uint8      `json:"winnerSeat"`
-	LandlordWon   bool       `json:"landlordWon"`
-	BaseScore     uint8      `json:"baseScore"`
-	BombCount     uint8      `json:"bombCount"`
-	RocketCount   uint8      `json:"rocketCount"`
-	Spring        bool       `json:"spring"`
-	AntiSpring    bool       `json:"antiSpring"`
-	Multiplier    uint64     `json:"multiplier"`
-	FinalStake    uint64     `json:"finalStake"`
-	SeatPoints    [3]int64   `json:"seatPoints"`
+	Version      string   `json:"v"`
+	LandlordSeat uint8    `json:"landlordSeat"`
+	WinnerSeat   uint8    `json:"winnerSeat"`
+	LandlordWon  bool     `json:"landlordWon"`
+	BaseScore    uint8    `json:"baseScore"`
+	BombCount    uint8    `json:"bombCount"`
+	RocketCount  uint8    `json:"rocketCount"`
+	Spring       bool     `json:"spring"`
+	AntiSpring   bool     `json:"antiSpring"`
+	Multiplier   uint64   `json:"multiplier"`
+	FinalStake   uint64   `json:"finalStake"`
+	SeatPoints   [3]int64 `json:"seatPoints"`
 }
 
 func Calculate(input Input) (Result, error) {
@@ -48,6 +49,7 @@ func Calculate(input Input) (Result, error) {
 	plays := [3]int{}
 	bombs := 0
 	rockets := 0
+	var seen [carddeck.DeckSize]bool
 	for index, action := range input.Playing.History {
 		if action.Number != uint64(index+1) || action.Seat < 1 || action.Seat > 3 {
 			return Result{}, fmt.Errorf("%w: action %d ordering or seat", ErrInvalidInput, index)
@@ -64,6 +66,12 @@ func Calculate(input Input) (Result, error) {
 			analyzed, err := playing.Analyze(action.Cards)
 			if err != nil || analyzed != *action.Pattern {
 				return Result{}, fmt.Errorf("%w: play action %d pattern", ErrInvalidInput, index)
+			}
+			for _, card := range action.Cards {
+				if seen[card] {
+					return Result{}, fmt.Errorf("%w: card %d reused", ErrInvalidInput, card)
+				}
+				seen[card] = true
 			}
 			plays[action.Seat-1]++
 			switch action.Pattern.Kind {
