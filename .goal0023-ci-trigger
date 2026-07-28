@@ -1,2 +1,2 @@
 Temporary CI-only trigger for Goal 0023. No feature implementation is carried on this branch.
-Final clean verification after Go 1.25.8 formatting.
+Runtime verification against the current main after clean CI success.
