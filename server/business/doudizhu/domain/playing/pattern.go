@@ -29,7 +29,7 @@ const (
 )
 
 var (
-	ErrInvalidPattern = errors.New("doudizhu playing: invalid card pattern")
+	ErrInvalidPattern      = errors.New("doudizhu playing: invalid card pattern")
 	ErrInvalidPatternValue = errors.New("doudizhu playing: invalid pattern value")
 )
 
