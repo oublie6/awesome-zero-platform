@@ -111,6 +111,25 @@ CREATE TABLE IF NOT EXISTS platform_audit_events (
         ON DELETE SET NULL
 ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS game_final_records (
+    instance_id VARCHAR(128) NOT NULL,
+    game_id VARCHAR(128) NOT NULL,
+    ruleset_version VARCHAR(128) NOT NULL,
+    module_version VARCHAR(128) NOT NULL,
+    fairness_suite_id VARCHAR(128) NOT NULL,
+    participant_count TINYINT UNSIGNED NOT NULL,
+    final_status VARCHAR(16) NOT NULL,
+    final_version BIGINT UNSIGNED NOT NULL,
+    payload LONGBLOB NOT NULL,
+    record_digest BINARY(32) NOT NULL,
+    archived_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (instance_id),
+    KEY idx_game_final_records_game_archived (game_id, archived_at),
+    KEY idx_game_final_records_status_archived (final_status, archived_at),
+    CONSTRAINT chk_game_final_records_participants CHECK (participant_count BETWEEN 1 AND 255),
+    CONSTRAINT chk_game_final_records_status CHECK (final_status IN ('completed', 'aborted'))
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS doudizhu_rooms (
     room_id VARCHAR(128) NOT NULL,
     owner_account_id VARCHAR(128) NOT NULL,
@@ -245,7 +264,7 @@ INSERT IGNORE INTO authorization_policy_state (policy_key, version)
 VALUES ('global', 1);
 
 INSERT INTO foundation_schema_meta (meta_key, meta_value)
-VALUES ('schema_version', '0010')
+VALUES ('schema_version', '0011')
 ON DUPLICATE KEY UPDATE
     meta_value = VALUES(meta_value),
     updated_at = CURRENT_TIMESTAMP(6);
