@@ -1,0 +1,98 @@
+name: Goal 0022 Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.goal0022/**'
+      - '.github/workflows/goal0022-apply.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goal-0022-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+          cache-dependency-path: server/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Restore and apply payload
+        run: |
+          cat .goal0022/part* | base64 --decode > "$RUNNER_TEMP/goal0022.tar.gz"
+          echo 'b2b1f95a781693f5e3458d24d2b67fe15666af1aed5e94964776f98baa585dc6  '"$RUNNER_TEMP/goal0022.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/goal0022.tar.gz"
+          python3 apply_goal0022.py
+          rm -rf .goal0022 .goal0022-payload.b64 apply_goal0022.py .github/workflows/goal0022-apply.yml
+      - name: Format and normalize modules
+        run: |
+          find \
+            server/foundation/revealkeys \
+            server/business/doudizhu \
+            server/apps/app-api/internal/cryptohttp \
+            server/apps/app-api/internal/config \
+            server/apps/app-api/internal/svc \
+            server/apps/app-api/internal/bootstrap \
+            -name '*.go' -print0 | xargs -0 gofmt -w
+          cd server
+          go mod tidy
+      - name: Go unit tests
+        working-directory: server
+        run: >-
+          go test -count=1 -p 1 -parallel 1
+          ./foundation/revealkeys/...
+          ./business/doudizhu/domain/...
+          ./business/doudizhu/application/...
+          ./business/doudizhu/infrastructure/securetransport/...
+          ./apps/app-api/internal/cryptohttp/...
+          ./apps/app-api/internal/config/...
+          ./apps/app-api/internal/bootstrap/...
+      - name: Go race tests
+        working-directory: server
+        run: >-
+          go test -race -count=1 -p 1 -parallel 1
+          ./foundation/revealkeys/...
+          ./business/doudizhu/domain/...
+          ./business/doudizhu/application/...
+          ./business/doudizhu/infrastructure/securetransport/...
+      - name: Go vet
+        working-directory: server
+        run: >-
+          go vet
+          ./foundation/revealkeys/...
+          ./business/doudizhu/...
+          ./apps/app-api/internal/cryptohttp/...
+          ./apps/app-api/internal/config/...
+          ./apps/app-api/internal/bootstrap/...
+      - name: TypeScript tests
+        working-directory: clients/packages/secure-envelope
+        run: |
+          npm install --no-audit --no-fund --no-package-lock
+          npm test
+      - name: Go to TypeScript manifest interoperability
+        run: |
+          cd server
+          go run ./foundation/revealkeys/cmd/manifest-vector "$RUNNER_TEMP/reveal-key-manifest.json"
+          cd ../clients/packages/secure-envelope
+          npm run verify:manifest-interop -- "$RUNNER_TEMP/reveal-key-manifest.json"
+      - name: Commit verified implementation
+        run: |
+          git status --short
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: add reveal key lifecycle and signed manifests'
+          git push origin HEAD:main
