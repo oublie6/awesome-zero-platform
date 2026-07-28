@@ -2,7 +2,7 @@ name: Goal 0024 Cleanup
 
 on:
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
