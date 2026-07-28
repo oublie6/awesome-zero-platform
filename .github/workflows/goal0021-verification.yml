@@ -102,12 +102,6 @@ jobs:
           path: ${{ runner.temp }}/goal0021-integration.log
       - name: Compose and runtime acceptance
         id: runtime
-        env:
-          APP_MYSQL_PASSWORD: ci-mysql-password
-          APP_MYSQL_ROOT_PASSWORD: ci-mysql-root-password
-          APP_REDIS_PASSWORD: ci-redis-password
-          APP_AUTH_ACCESS_TOKEN_SECRET: ci-access-token-secret-0123456789abcdef
-          APP_ADMIN_BOOTSTRAP_TOKEN: ci-admin-bootstrap-token-0123456789abcdef
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -130,8 +124,19 @@ jobs:
           set +e
           {
             docker compose -f deploy/local/docker-compose.yml config >/dev/null
-            APP_HTTPS_ENABLED=false bash scripts/production-compose.sh config >/dev/null
-            bash scripts/ci-runtime-acceptance.sh
+            APP_MYSQL_PASSWORD=ci-mysql-password \
+              APP_MYSQL_ROOT_PASSWORD=ci-mysql-root-password \
+              APP_REDIS_PASSWORD=ci-redis-password \
+              APP_AUTH_ACCESS_TOKEN_SECRET=ci-access-token-secret-0123456789abcdef \
+              APP_ADMIN_BOOTSTRAP_TOKEN=ci-admin-bootstrap-token-0123456789abcdef \
+              APP_HTTPS_ENABLED=false \
+              bash scripts/production-compose.sh config >/dev/null
+            env -u APP_MYSQL_PASSWORD \
+              -u APP_MYSQL_ROOT_PASSWORD \
+              -u APP_REDIS_PASSWORD \
+              -u APP_AUTH_ACCESS_TOKEN_SECRET \
+              -u APP_ADMIN_BOOTSTRAP_TOKEN \
+              bash scripts/ci-runtime-acceptance.sh
           } > "$RUNNER_TEMP/goal0021-runtime.log" 2>&1
           status=$?
           if [[ "$status" -ne 0 && -f .runtime/bootstrap-response.json ]]; then
