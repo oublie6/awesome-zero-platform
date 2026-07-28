@@ -11,7 +11,7 @@ import (
 )
 
 func TestDeriveFirstBidderGolden(t *testing.T) {
-	var digest carddeck.Digest
+	var digest carddeck.DealDigest
 	for index := range digest {
 		digest[index] = byte(index)
 	}
@@ -29,7 +29,7 @@ func TestDeriveFirstBidderGolden(t *testing.T) {
 }
 
 func TestDeriveFirstBidderRejectsZeroDigest(t *testing.T) {
-	if _, err := DeriveFirstBidder(carddeck.Digest{}); !errors.Is(err, ErrInvalidDealDigest) {
+	if _, err := DeriveFirstBidder(carddeck.DealDigest{}); !errors.Is(err, ErrInvalidDealDigest) {
 		t.Fatalf("error=%v want ErrInvalidDealDigest", err)
 	}
 }
@@ -39,7 +39,7 @@ func TestDeriveFirstBidderAlwaysReturnsStableSeat(t *testing.T) {
 		var encoded [8]byte
 		binary.BigEndian.PutUint64(encoded[:], value)
 		sum := sha256.Sum256(encoded[:])
-		digest := carddeck.Digest(sum)
+		digest := carddeck.DealDigest(sum)
 		first, err := DeriveFirstBidder(digest)
 		if err != nil {
 			t.Fatalf("value=%d error=%v", value, err)
