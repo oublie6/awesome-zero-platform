@@ -16,18 +16,21 @@ The platform currently provides:
 - an authenticated realtime WebSocket foundation with bounded queues and graceful shutdown;
 - a reusable RFC 9180 HPKE secure-envelope opener for Go and matching engine-independent TypeScript sealer;
 - a code-first Cocos Creator 3.8 LTS client skeleton for the Fair Doudizhu product;
-- a pure Fair Doudizhu domain core for three-player private rooms, fairness phases, versioned events, and terminal hand states;
+- a Fair Doudizhu product/domain core with three-player rooms and the full fairness-to-terminal hand lifecycle;
+- a transactional Fair Doudizhu application and MySQL persistence layer with command-row idempotency, monotonic client sequences, optimistic snapshots, encrypted contribution records, and an event outbox;
 - Prometheus-compatible HTTP and process metrics;
 - local and production Compose, non-root API and Admin web images, Kubernetes baselines, and GitHub Actions CI.
 
-Fair Doudizhu persistence, transport handlers, shuffle/card/bidding/play/scoring rules, production key publication, beacon adapters, and gameplay UI remain deliberately deferred.
+Fair Doudizhu transport endpoints, public key publication, outbox delivery, card/deck rules, deterministic shuffle, bidding, play, scoring, fairness transcript publication, and gameplay UI remain deliberately deferred.
 
 ## Project layout
 
 - `server/apps/` — runnable processes and transport composition
 - `server/foundation/` — reusable technical infrastructure without product semantics
 - `server/platform/` — reusable identity, authentication, authorization, Admin, and realtime capabilities
-- `server/business/` — product-specific business modules with explicit domain boundaries
+- `server/business/doudizhu/domain/` — pure Fair Doudizhu aggregates and state machines
+- `server/business/doudizhu/application/` — commands, idempotency, sequence policy, reveal orchestration, and persistence ports
+- `server/business/doudizhu/infrastructure/` — MySQL, secure transport, protected contribution, normalization, and runtime adapters
 - `clients/admin-web/` — Vue 3 platform administration client
 - `clients/packages/` — engine-independent reusable client packages
 - `clients/fair-doudizhu-cocos/` — code-first Cocos Creator client composition root
@@ -54,7 +57,9 @@ See:
 - [Server usage](server/README.md)
 - [Fair Doudizhu requirements](docs/requirements/fair-doudizhu-v1.md)
 - [Fair Doudizhu domain architecture](docs/architecture/fair-doudizhu-domain.md)
+- [Fair Doudizhu application persistence](docs/architecture/fair-doudizhu-application-persistence.md)
 - [Fair Doudizhu command protocol](docs/api/fair-doudizhu-protocol-v1.md)
+- [Fair Doudizhu application contract](docs/api/fair-doudizhu-application-v1.md)
 - [Secure-envelope architecture](docs/architecture/secure-envelope-v1.md)
 - [Admin architecture](docs/architecture/admin-platform.md)
 - [Admin API](docs/api/admin.md)
