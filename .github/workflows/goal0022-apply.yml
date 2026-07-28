@@ -71,43 +71,51 @@ jobs:
           go mod tidy
       - name: Go unit tests
         working-directory: server
-        run: >-
-          go test -count=1 -p 1 -parallel 1
-          ./foundation/revealkeys/...
-          ./business/doudizhu/domain/...
-          ./business/doudizhu/application/...
-          ./business/doudizhu/infrastructure/securetransport/...
-          ./apps/app-api/internal/cryptohttp/...
-          ./apps/app-api/internal/config/...
-          ./apps/app-api/internal/bootstrap/...
+        run: |
+          set -o pipefail
+          go test -count=1 -p 1 -parallel 1 \
+            ./foundation/revealkeys/... \
+            ./business/doudizhu/domain/... \
+            ./business/doudizhu/application/... \
+            ./business/doudizhu/infrastructure/securetransport/... \
+            ./apps/app-api/internal/cryptohttp/... \
+            ./apps/app-api/internal/config/... \
+            ./apps/app-api/internal/bootstrap/... \
+            2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
       - name: Go race tests
         working-directory: server
-        run: >-
-          go test -race -count=1 -p 1 -parallel 1
-          ./foundation/revealkeys/...
-          ./business/doudizhu/domain/...
-          ./business/doudizhu/application/...
-          ./business/doudizhu/infrastructure/securetransport/...
+        run: |
+          set -o pipefail
+          go test -race -count=1 -p 1 -parallel 1 \
+            ./foundation/revealkeys/... \
+            ./business/doudizhu/domain/... \
+            ./business/doudizhu/application/... \
+            ./business/doudizhu/infrastructure/securetransport/... \
+            2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
       - name: Go vet
         working-directory: server
-        run: >-
-          go vet
-          ./foundation/revealkeys/...
-          ./business/doudizhu/...
-          ./apps/app-api/internal/cryptohttp/...
-          ./apps/app-api/internal/config/...
-          ./apps/app-api/internal/bootstrap/...
+        run: |
+          set -o pipefail
+          go vet \
+            ./foundation/revealkeys/... \
+            ./business/doudizhu/... \
+            ./apps/app-api/internal/cryptohttp/... \
+            ./apps/app-api/internal/config/... \
+            ./apps/app-api/internal/bootstrap/... \
+            2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
       - name: TypeScript tests
         working-directory: clients/packages/secure-envelope
         run: |
-          npm install --no-audit --no-fund --no-package-lock
-          npm test
+          set -o pipefail
+          npm install --no-audit --no-fund --no-package-lock 2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
+          npm test 2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
       - name: Go to TypeScript manifest interoperability
         run: |
+          set -o pipefail
           cd server
-          go run ./foundation/revealkeys/cmd/manifest-vector "$RUNNER_TEMP/reveal-key-manifest.json"
+          go run ./foundation/revealkeys/cmd/manifest-vector "$RUNNER_TEMP/reveal-key-manifest.json" 2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
           cd ../clients/packages/secure-envelope
-          npm run verify:manifest-interop -- "$RUNNER_TEMP/reveal-key-manifest.json"
+          npm run verify:manifest-interop -- "$RUNNER_TEMP/reveal-key-manifest.json" 2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
       - name: Commit verified implementation
         run: |
           git status --short
@@ -116,6 +124,19 @@ jobs:
           git add -A
           git commit -m 'feat: add reveal key lifecycle and signed manifests'
           git push origin HEAD:main
+      - name: Report failure log
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Goal 0022 apply run ${{ github.run_id }} failure log (tail):"
+            echo
+            echo '```text'
+            if [ -f "$RUNNER_TEMP/goal0022-last.log" ]; then tail -c 50000 "$RUNNER_TEMP/goal0022-last.log"; else echo 'No captured command log.'; fi
+            echo '```'
+          } > "$RUNNER_TEMP/goal0022-comment.md"
+          gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body-file "$RUNNER_TEMP/goal0022-comment.md"
       - name: Report workflow result
         if: always()
         env:
