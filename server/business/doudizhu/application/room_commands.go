@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -67,24 +68,37 @@ func (s *Service) StartRoomHand(ctx context.Context, actor domain.AccountID, com
 			if err != nil {
 				return mutationOutcome{}, wrapInfrastructure("prepare hand setup", err)
 			}
+			release := func() error {
+				return s.setups.ReleaseHand(context.Background(), input.HandID)
+			}
+			failAfterPreparation := func(cause error) (mutationOutcome, error) {
+				if releaseErr := release(); releaseErr != nil {
+					cause = errors.Join(cause, wrapInfrastructure("release prepared hand setup", releaseErr))
+				}
+				return mutationOutcome{}, cause
+			}
 			if setup.HandID != input.HandID || setup.HandID == "" {
-				return mutationOutcome{}, wrapInfrastructure("prepare hand setup", fmt.Errorf("%w: hand setup ID mismatch", ErrInvalidCommand))
+				return failAfterPreparation(wrapInfrastructure("prepare hand setup", fmt.Errorf("%w: hand setup ID mismatch", ErrInvalidCommand)))
 			}
 			hand, handEvents, err := domain.NewHand(
 				setup.HandID, roomSnapshot.ID, seats, setup.ServerCommitment, setup.RevealKeyID, setup.BeaconPlan,
 				domain.RevealKeyBinding{PublicKeySHA256: setup.RevealPublicKeySHA256, BoundAt: setup.RevealKeyBoundAt},
 			)
 			if err != nil {
-				return mutationOutcome{}, wrapInfrastructure("construct prepared hand", err)
+				return failAfterPreparation(wrapInfrastructure("construct prepared hand", err))
 			}
 			if err := tx.InsertHand(txCtx, hand.Snapshot(), now); err != nil {
-				return mutationOutcome{}, err
+				return failAfterPreparation(err)
 			}
 			if err := tx.UpdateRoom(txCtx, room.Snapshot(), roomSnapshot.Version, now); err != nil {
-				return mutationOutcome{}, err
+				return failAfterPreparation(err)
 			}
 			events := append(append([]domain.Event{}, roomEvents...), handEvents...)
-			return mutationOutcome{aggregateVersion: room.Snapshot().Version, events: events}, nil
+			return mutationOutcome{
+				aggregateVersion: room.Snapshot().Version,
+				events:           events,
+				rollback:         release,
+			}, nil
 		})
 }
 
