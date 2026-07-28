@@ -81,13 +81,27 @@ jobs:
           npm run build
           git diff --exit-code -- package.json src
       - name: Real MySQL and Redis integration
+        id: integration
         run: |
-          make deps-reset
-          make schema-apply
-          make seed-apply
-          make integration-test
-          make deps-down
+          set +e
+          {
+            make deps-reset
+            make schema-apply
+            make seed-apply
+            make integration-test
+            make deps-down
+          } > "$RUNNER_TEMP/goal0021-integration.log" 2>&1
+          status=$?
+          tail -n 240 "$RUNNER_TEMP/goal0021-integration.log"
+          exit $status
+      - name: Upload integration failure log
+        if: failure() && steps.integration.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: goal0021-integration-failure
+          path: ${{ runner.temp }}/goal0021-integration.log
       - name: Compose and runtime acceptance
+        id: runtime
         env:
           APP_MYSQL_PASSWORD: ci-mysql-password
           APP_MYSQL_ROOT_PASSWORD: ci-mysql-root-password
@@ -95,9 +109,21 @@ jobs:
           APP_AUTH_ACCESS_TOKEN_SECRET: ci-access-token-secret-0123456789abcdef
           APP_ADMIN_BOOTSTRAP_TOKEN: ci-admin-bootstrap-token-0123456789abcdef
         run: |
-          docker compose -f deploy/local/docker-compose.yml config >/dev/null
-          APP_HTTPS_ENABLED=false bash scripts/production-compose.sh config >/dev/null
-          bash scripts/ci-runtime-acceptance.sh
+          set +e
+          {
+            docker compose -f deploy/local/docker-compose.yml config >/dev/null
+            APP_HTTPS_ENABLED=false bash scripts/production-compose.sh config >/dev/null
+            bash scripts/ci-runtime-acceptance.sh
+          } > "$RUNNER_TEMP/goal0021-runtime.log" 2>&1
+          status=$?
+          tail -n 240 "$RUNNER_TEMP/goal0021-runtime.log"
+          exit $status
+      - name: Upload runtime failure log
+        if: failure() && steps.runtime.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: goal0021-runtime-failure
+          path: ${{ runner.temp }}/goal0021-runtime.log
       - name: Stop dependencies after failure
         if: always()
         run: |
