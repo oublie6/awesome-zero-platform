@@ -9,6 +9,7 @@ import (
 
 type Store interface {
 	WithinCommand(context.Context, domain.AccountID, string, func(context.Context, Transaction) error) error
+	LoadHand(context.Context, domain.HandID) (domain.HandSnapshot, error)
 }
 
 type Transaction interface {
