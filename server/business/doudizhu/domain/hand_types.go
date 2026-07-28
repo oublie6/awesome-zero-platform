@@ -1,6 +1,10 @@
 package domain
 
-import "fmt"
+import (
+	"crypto/sha256"
+	"fmt"
+	"time"
+)
 
 type HandPhase string
 
@@ -37,6 +41,13 @@ type BeaconPlan struct {
 	Round    string
 }
 
+type RevealPublicKeyHash [sha256.Size]byte
+
+type RevealKeyBinding struct {
+	PublicKeySHA256 RevealPublicKeyHash
+	BoundAt         time.Time
+}
+
 type BeaconValue struct {
 	Provider string
 	Round    string
@@ -61,38 +72,44 @@ type ContributionSnapshot struct {
 }
 
 type HandSnapshot struct {
-	ID                HandID
-	RoomID            RoomID
-	Phase             HandPhase
-	Seats             [3]HandSeat
-	ServerCommitment  ServerCommitment
-	RevealKeyID       string
-	BeaconPlan        BeaconPlan
-	Beacon            *BeaconValue
-	Contributions     [3]ContributionSnapshot
-	TerminationReason string
-	Version           uint64
+	ID                    HandID
+	RoomID                RoomID
+	Phase                 HandPhase
+	Seats                 [3]HandSeat
+	ServerCommitment      ServerCommitment
+	RevealKeyID           string
+	RevealPublicKeySHA256 RevealPublicKeyHash
+	RevealKeyBoundAt      time.Time
+	BeaconPlan            BeaconPlan
+	Beacon                *BeaconValue
+	Contributions         [3]ContributionSnapshot
+	TerminationReason     string
+	Version               uint64
 }
 
 type Hand struct {
-	id                HandID
-	roomID            RoomID
-	phase             HandPhase
-	seats             [3]HandSeat
-	serverCommitment  ServerCommitment
-	revealKeyID       string
-	beaconPlan        BeaconPlan
-	beacon            *BeaconValue
-	contributions     [3]contributionState
-	terminationReason string
-	version           uint64
+	id                    HandID
+	roomID                RoomID
+	phase                 HandPhase
+	seats                 [3]HandSeat
+	serverCommitment      ServerCommitment
+	revealKeyID           string
+	revealPublicKeySHA256 RevealPublicKeyHash
+	revealKeyBoundAt      time.Time
+	beaconPlan            BeaconPlan
+	beacon                *BeaconValue
+	contributions         [3]contributionState
+	terminationReason     string
+	version               uint64
 }
 
 type HandCreatedPayload struct {
-	RoomID      RoomID
-	Seats       [3]HandSeat
-	RevealKeyID string
-	BeaconPlan  BeaconPlan
+	RoomID                RoomID
+	Seats                 [3]HandSeat
+	RevealKeyID           string
+	RevealPublicKeySHA256 RevealPublicKeyHash
+	RevealKeyBoundAt      time.Time
+	BeaconPlan            BeaconPlan
 }
 
 type FairnessSeatPayload struct {
@@ -122,6 +139,7 @@ func NewHand(
 	serverCommitment ServerCommitment,
 	revealKeyID string,
 	beaconPlan BeaconPlan,
+	revealBindings ...RevealKeyBinding,
 ) (*Hand, []Event, error) {
 	if err := validateIdentifier("handId", string(id)); err != nil {
 		return nil, nil, err
@@ -135,6 +153,21 @@ func NewHand(
 	if err := validateIdentifier("revealKeyId", revealKeyID); err != nil {
 		return nil, nil, err
 	}
+	if len(revealBindings) > 1 {
+		return nil, nil, fmt.Errorf("%w: reveal key binding count", ErrInvalidArgument)
+	}
+	binding := RevealKeyBinding{}
+	if len(revealBindings) == 1 {
+		binding = revealBindings[0]
+	} else {
+		// Compatibility for domain tests created before Goal 0022. This derived
+		// hash cannot pass production lifecycle authorization for a real key.
+		binding.PublicKeySHA256 = sha256.Sum256([]byte(revealKeyID))
+		binding.BoundAt = time.Unix(0, 0).UTC()
+	}
+	if binding.PublicKeySHA256 == (RevealPublicKeyHash{}) || binding.BoundAt.IsZero() {
+		return nil, nil, fmt.Errorf("%w: reveal key binding", ErrInvalidArgument)
+	}
 	if err := validateBeaconPlan(beaconPlan); err != nil {
 		return nil, nil, err
 	}
@@ -143,19 +176,23 @@ func NewHand(
 	}
 
 	hand := &Hand{
-		id:               id,
-		roomID:           roomID,
-		phase:            HandFairnessCommitting,
-		seats:            seats,
-		serverCommitment: serverCommitment,
-		revealKeyID:      revealKeyID,
-		beaconPlan:       beaconPlan,
+		id:                    id,
+		roomID:                roomID,
+		phase:                 HandFairnessCommitting,
+		seats:                 seats,
+		serverCommitment:      serverCommitment,
+		revealKeyID:           revealKeyID,
+		revealPublicKeySHA256: binding.PublicKeySHA256,
+		revealKeyBoundAt:      binding.BoundAt.UTC(),
+		beaconPlan:            beaconPlan,
 	}
 	event := hand.record(EventHandCreated, HandCreatedPayload{
-		RoomID:      roomID,
-		Seats:       seats,
-		RevealKeyID: revealKeyID,
-		BeaconPlan:  beaconPlan,
+		RoomID:                roomID,
+		Seats:                 seats,
+		RevealKeyID:           revealKeyID,
+		RevealPublicKeySHA256: binding.PublicKeySHA256,
+		RevealKeyBoundAt:      binding.BoundAt.UTC(),
+		BeaconPlan:            beaconPlan,
 	})
 	return hand, []Event{event}, nil
 }
@@ -179,16 +216,18 @@ func (h *Hand) Snapshot() HandSnapshot {
 		beacon = &copyValue
 	}
 	return HandSnapshot{
-		ID:                h.id,
-		RoomID:            h.roomID,
-		Phase:             h.phase,
-		Seats:             h.seats,
-		ServerCommitment:  h.serverCommitment,
-		RevealKeyID:       h.revealKeyID,
-		BeaconPlan:        h.beaconPlan,
-		Beacon:            beacon,
-		Contributions:     contributions,
-		TerminationReason: h.terminationReason,
-		Version:           h.version,
+		ID:                    h.id,
+		RoomID:                h.roomID,
+		Phase:                 h.phase,
+		Seats:                 h.seats,
+		ServerCommitment:      h.serverCommitment,
+		RevealKeyID:           h.revealKeyID,
+		RevealPublicKeySHA256: h.revealPublicKeySHA256,
+		RevealKeyBoundAt:      h.revealKeyBoundAt,
+		BeaconPlan:            h.beaconPlan,
+		Beacon:                beacon,
+		Contributions:         contributions,
+		TerminationReason:     h.terminationReason,
+		Version:               h.version,
 	}
 }

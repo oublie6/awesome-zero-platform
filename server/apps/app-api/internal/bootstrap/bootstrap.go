@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/adminhttp"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/config"
+	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/cryptohttp"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/handler"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/securityhttp"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/svc"
@@ -17,6 +19,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/observability"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/readiness"
 	platformresponse "github.com/oublie6/awesome-zero-platform/server/foundation/response"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/revealkeys"
 	"github.com/oublie6/awesome-zero-platform/server/platform/admin"
 	"github.com/oublie6/awesome-zero-platform/server/platform/admin/mysqlstore"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
@@ -136,6 +139,14 @@ func New(configFile string) (*App, error) {
 
 	svcCtx := svc.NewServiceContext(cfg, mysqlResource, redisClient, checker)
 	svcCtx.Metrics = metrics
+	if cfg.RevealKeys.Enabled {
+		revealRegistry, err := revealkeys.NewFromJSON(cfg.RevealKeys.StaticJSON, func() time.Time { return time.Now().UTC() })
+		if err != nil {
+			closeResources()
+			return nil, fmt.Errorf("initialize reveal key registry: %w", err)
+		}
+		svcCtx.RevealKeys = revealRegistry
+	}
 
 	var identityModelCache *cache.ModelCache
 	var adminModelCache *cache.ModelCache
@@ -258,6 +269,7 @@ func New(configFile string) (*App, error) {
 	}
 
 	handler.RegisterHandlers(server, svcCtx)
+	cryptohttp.Register(server, svcCtx)
 	securityhttp.Register(server, svcCtx)
 	adminhttp.Register(server, svcCtx)
 	if realtimeHub != nil {

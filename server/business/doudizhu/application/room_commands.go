@@ -70,7 +70,10 @@ func (s *Service) StartRoomHand(ctx context.Context, actor domain.AccountID, com
 			if setup.HandID != input.HandID || setup.HandID == "" {
 				return mutationOutcome{}, wrapInfrastructure("prepare hand setup", fmt.Errorf("%w: hand setup ID mismatch", ErrInvalidCommand))
 			}
-			hand, handEvents, err := domain.NewHand(setup.HandID, roomSnapshot.ID, seats, setup.ServerCommitment, setup.RevealKeyID, setup.BeaconPlan)
+			hand, handEvents, err := domain.NewHand(
+				setup.HandID, roomSnapshot.ID, seats, setup.ServerCommitment, setup.RevealKeyID, setup.BeaconPlan,
+				domain.RevealKeyBinding{PublicKeySHA256: setup.RevealPublicKeySHA256, BoundAt: setup.RevealKeyBoundAt},
+			)
 			if err != nil {
 				return mutationOutcome{}, wrapInfrastructure("construct prepared hand", err)
 			}

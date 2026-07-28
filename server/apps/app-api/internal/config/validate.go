@@ -176,6 +176,9 @@ func (c Config) Validate() error {
 	if token := strings.TrimSpace(c.Admin.BootstrapToken); token != "" && len(token) < 32 {
 		return fmt.Errorf("admin.bootstrapToken must contain at least 32 characters when configured")
 	}
+	if c.RevealKeys.Enabled && strings.TrimSpace(c.RevealKeys.StaticJSON) == "" {
+		return fmt.Errorf("revealKeys.staticJSON must not be empty when reveal key publication is enabled")
+	}
 	if c.Observability.Metrics.Enabled {
 		if !strings.HasPrefix(c.Observability.Metrics.Path, "/") || strings.ContainsAny(c.Observability.Metrics.Path, " \t\r\n") {
 			return fmt.Errorf("observability.metrics.path must be an absolute path without whitespace")

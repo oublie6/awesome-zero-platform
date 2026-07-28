@@ -168,7 +168,7 @@ func (testSetup) PrepareHand(context.Context, domain.RoomSnapshot, domain.HandID
 
 type testOpener struct{}
 
-func (testOpener) Open(context.Context, SecureEnvelope, []byte) ([]byte, error) {
+func (testOpener) Open(context.Context, SecureEnvelope, []byte, RevealKeyContext) ([]byte, error) {
 	return nil, errors.New("not used")
 }
 

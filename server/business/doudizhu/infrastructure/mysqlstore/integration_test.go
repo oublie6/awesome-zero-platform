@@ -373,7 +373,7 @@ type integrationOpener struct {
 	calls     atomic.Int32
 }
 
-func (o *integrationOpener) Open(context.Context, application.SecureEnvelope, []byte) ([]byte, error) {
+func (o *integrationOpener) Open(context.Context, application.SecureEnvelope, []byte, application.RevealKeyContext) ([]byte, error) {
 	o.calls.Add(1)
 	return append([]byte(nil), o.plaintext...), nil
 }

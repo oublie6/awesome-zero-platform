@@ -120,8 +120,17 @@ type ProtectedPayload struct {
 }
 
 type HandSetup struct {
-	HandID           domain.HandID
-	ServerCommitment domain.ServerCommitment
-	RevealKeyID      string
-	BeaconPlan       domain.BeaconPlan
+	HandID                domain.HandID
+	ServerCommitment      domain.ServerCommitment
+	RevealKeyID           string
+	RevealPublicKeySHA256 domain.RevealPublicKeyHash
+	RevealKeyBoundAt      time.Time
+	BeaconPlan            domain.BeaconPlan
+}
+
+type RevealKeyContext struct {
+	KeyID           string
+	PublicKeySHA256 [32]byte
+	BoundAt         time.Time
+	UseAt           time.Time
 }

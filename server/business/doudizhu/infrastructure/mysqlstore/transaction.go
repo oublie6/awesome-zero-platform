@@ -184,10 +184,10 @@ func (t *transaction) InsertHand(ctx context.Context, snapshot domain.HandSnapsh
 	}
 	_, err = t.tx.ExecContext(ctx, `
 INSERT INTO doudizhu_hands (
-    hand_id, room_id, phase, reveal_key_id, aggregate_version,
+    hand_id, room_id, phase, reveal_key_id, reveal_public_key_sha256, aggregate_version,
     snapshot_json, created_at, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		snapshot.ID, snapshot.RoomID, snapshot.Phase, snapshot.RevealKeyID, snapshot.Version,
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		snapshot.ID, snapshot.RoomID, snapshot.Phase, snapshot.RevealKeyID, snapshot.RevealPublicKeySHA256[:], snapshot.Version,
 		encoded, createdAt.UTC(), createdAt.UTC())
 	return translateInsertError(err)
 }
@@ -215,9 +215,9 @@ func (t *transaction) UpdateHand(ctx context.Context, snapshot domain.HandSnapsh
 	}
 	result, err := t.tx.ExecContext(ctx, `
 UPDATE doudizhu_hands
-SET phase = ?, reveal_key_id = ?, aggregate_version = ?, snapshot_json = ?, updated_at = ?
+SET phase = ?, reveal_key_id = ?, reveal_public_key_sha256 = ?, aggregate_version = ?, snapshot_json = ?, updated_at = ?
 WHERE hand_id = ? AND aggregate_version = ?`,
-		snapshot.Phase, snapshot.RevealKeyID, snapshot.Version, encoded, updatedAt.UTC(), snapshot.ID, previousVersion)
+		snapshot.Phase, snapshot.RevealKeyID, snapshot.RevealPublicKeySHA256[:], snapshot.Version, encoded, updatedAt.UTC(), snapshot.ID, previousVersion)
 	return optimisticResult(result, err)
 }
 

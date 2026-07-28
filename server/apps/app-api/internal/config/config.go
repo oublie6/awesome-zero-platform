@@ -24,6 +24,7 @@ type Config struct {
 	Realtime       realtime.Config      `json:",optional"`
 	Admin          AdminConfig          `json:",optional"`
 	Observability  ObservabilityConfig  `json:",optional"`
+	RevealKeys     RevealKeysConfig     `json:",optional"`
 }
 
 type HTTPConfig struct {
@@ -87,6 +88,11 @@ type AuthorizationClusterConfig struct {
 type AdminConfig struct {
 	Enabled        bool
 	BootstrapToken string `json:",optional,env=APP_ADMIN_BOOTSTRAP_TOKEN"`
+}
+
+type RevealKeysConfig struct {
+	Enabled    bool
+	StaticJSON string `json:",optional,env=APP_REVEAL_KEYS_STATIC_JSON"`
 }
 
 type ObservabilityConfig struct {

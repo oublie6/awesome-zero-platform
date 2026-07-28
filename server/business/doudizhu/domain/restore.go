@@ -83,20 +83,25 @@ func RestoreHand(snapshot HandSnapshot) (*Hand, error) {
 	if err := validateIdentifier("revealKeyId", snapshot.RevealKeyID); err != nil {
 		return nil, err
 	}
+	if snapshot.RevealPublicKeySHA256 == (RevealPublicKeyHash{}) || snapshot.RevealKeyBoundAt.IsZero() {
+		return nil, fmt.Errorf("%w: reveal key binding", ErrInvalidArgument)
+	}
 	if err := validateBeaconPlan(snapshot.BeaconPlan); err != nil {
 		return nil, err
 	}
 
 	hand := &Hand{
-		id:                snapshot.ID,
-		roomID:            snapshot.RoomID,
-		phase:             snapshot.Phase,
-		seats:             snapshot.Seats,
-		serverCommitment:  snapshot.ServerCommitment,
-		revealKeyID:       snapshot.RevealKeyID,
-		beaconPlan:        snapshot.BeaconPlan,
-		terminationReason: snapshot.TerminationReason,
-		version:           snapshot.Version,
+		id:                    snapshot.ID,
+		roomID:                snapshot.RoomID,
+		phase:                 snapshot.Phase,
+		seats:                 snapshot.Seats,
+		serverCommitment:      snapshot.ServerCommitment,
+		revealKeyID:           snapshot.RevealKeyID,
+		revealPublicKeySHA256: snapshot.RevealPublicKeySHA256,
+		revealKeyBoundAt:      snapshot.RevealKeyBoundAt.UTC(),
+		beaconPlan:            snapshot.BeaconPlan,
+		terminationReason:     snapshot.TerminationReason,
+		version:               snapshot.Version,
 	}
 	if snapshot.Beacon != nil {
 		if snapshot.Beacon.Provider != snapshot.BeaconPlan.Provider || snapshot.Beacon.Round != snapshot.BeaconPlan.Round {

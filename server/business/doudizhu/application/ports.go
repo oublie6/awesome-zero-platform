@@ -35,7 +35,7 @@ type HandSetupProvider interface {
 	PrepareHand(context.Context, domain.RoomSnapshot, domain.HandID) (HandSetup, error)
 }
 type EnvelopeOpener interface {
-	Open(context.Context, SecureEnvelope, []byte) ([]byte, error)
+	Open(context.Context, SecureEnvelope, []byte, RevealKeyContext) ([]byte, error)
 }
 type ContributionProtector interface {
 	Seal(context.Context, []byte, []byte) (ProtectedPayload, error)

@@ -42,7 +42,12 @@ func (s *Service) SubmitHandReveal(ctx context.Context, actor domain.AccountID, 
 			if err != nil {
 				return mutationOutcome{}, &aggregateMutationError{cause: err, currentVersion: snapshot.Version}
 			}
-			plaintext, err := s.opener.Open(txCtx, input.Envelope, aad)
+			plaintext, err := s.opener.Open(txCtx, input.Envelope, aad, RevealKeyContext{
+				KeyID:           snapshot.RevealKeyID,
+				PublicKeySHA256: [32]byte(snapshot.RevealPublicKeySHA256),
+				BoundAt:         snapshot.RevealKeyBoundAt,
+				UseAt:           now,
+			})
 			if err != nil {
 				return mutationOutcome{}, &aggregateMutationError{cause: ErrRevealInvalid, currentVersion: snapshot.Version}
 			}

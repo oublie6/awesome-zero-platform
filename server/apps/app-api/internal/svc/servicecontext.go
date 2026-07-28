@@ -9,6 +9,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/observability"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/readiness"
+	"github.com/oublie6/awesome-zero-platform/server/foundation/revealkeys"
 	"github.com/oublie6/awesome-zero-platform/server/platform/admin"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
@@ -30,6 +31,7 @@ type ServiceContext struct {
 	Admin        *admin.Service
 	Realtime     *realtime.Hub
 	Metrics      *observability.Metrics
+	RevealKeys   *revealkeys.Registry
 }
 
 func NewServiceContext(c config.Config, mysql database.Handle, redis cache.Handle, checker *readiness.Checker) *ServiceContext {

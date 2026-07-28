@@ -131,6 +131,7 @@ CREATE TABLE IF NOT EXISTS doudizhu_hands (
     room_id VARCHAR(128) NOT NULL,
     phase VARCHAR(40) NOT NULL,
     reveal_key_id VARCHAR(128) NOT NULL,
+    reveal_public_key_sha256 BINARY(32) NOT NULL,
     aggregate_version BIGINT UNSIGNED NOT NULL,
     snapshot_json JSON NOT NULL,
     created_at DATETIME(6) NOT NULL,
@@ -244,7 +245,7 @@ INSERT IGNORE INTO authorization_policy_state (policy_key, version)
 VALUES ('global', 1);
 
 INSERT INTO foundation_schema_meta (meta_key, meta_value)
-VALUES ('schema_version', '0009')
+VALUES ('schema_version', '0010')
 ON DUPLICATE KEY UPDATE
     meta_value = VALUES(meta_value),
     updated_at = CURRENT_TIMESTAMP(6);

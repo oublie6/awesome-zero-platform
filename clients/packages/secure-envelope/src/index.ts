@@ -1,6 +1,7 @@
 export * from './base64url.js'
 export * from './constants.js'
 export * from './errors.js'
+export * from './manifest.js'
 export * from './random.js'
 export * from './sealer.js'
 export type * from './types.js'

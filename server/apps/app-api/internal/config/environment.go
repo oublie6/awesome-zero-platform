@@ -19,6 +19,14 @@ func (c *Config) ApplyEnvironment() error {
 	applyString("APP_AUTH_ACCESS_TOKEN_SECRET", &c.Authentication.AccessTokenSecret)
 	applyString("APP_ADMIN_BOOTSTRAP_TOKEN", &c.Admin.BootstrapToken)
 	applyString("APP_INSTANCE_ID", &c.Authorization.Cluster.InstanceID)
+	applyString("APP_REVEAL_KEYS_STATIC_JSON", &c.RevealKeys.StaticJSON)
+	if raw := strings.TrimSpace(os.Getenv("APP_REVEAL_KEYS_ENABLED")); raw != "" {
+		enabled, err := strconv.ParseBool(raw)
+		if err != nil {
+			return fmt.Errorf("parse APP_REVEAL_KEYS_ENABLED: %w", err)
+		}
+		c.RevealKeys.Enabled = enabled
+	}
 
 	if raw := strings.TrimSpace(os.Getenv("APP_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
