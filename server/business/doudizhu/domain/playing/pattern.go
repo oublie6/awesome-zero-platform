@@ -294,10 +294,50 @@ func remainingCards(counts [15]int) int {
 }
 
 func validatePattern(value Pattern) error {
-	if value.Version != RulesVersion || !knownKind(value.Kind) || value.SequenceLength == 0 || value.CardCount == 0 || value.MainRank > carddeck.RankBigJoker {
+	if value.Version != RulesVersion || !knownKind(value.Kind) || value.SequenceLength == 0 || value.CardCount == 0 || value.MainRank > carddeck.RankBigJoker || !validPatternStructure(value) {
 		return fmt.Errorf("%w: %#v", ErrInvalidPatternValue, value)
 	}
 	return nil
+}
+
+func validPatternStructure(value Pattern) bool {
+	sequenceLength := int(value.SequenceLength)
+	cardCount := int(value.CardCount)
+	ordinaryRank := value.MainRank <= carddeck.RankTwo
+	sequenceRank := value.MainRank <= carddeck.RankAce && int(value.MainRank)-sequenceLength+1 >= int(carddeck.RankThree)
+
+	switch value.Kind {
+	case KindSingle:
+		return sequenceLength == 1 && cardCount == 1
+	case KindPair:
+		return sequenceLength == 1 && cardCount == 2 && ordinaryRank
+	case KindTriple:
+		return sequenceLength == 1 && cardCount == 3 && ordinaryRank
+	case KindTripleWithSingle:
+		return sequenceLength == 1 && cardCount == 4 && ordinaryRank
+	case KindTripleWithPair:
+		return sequenceLength == 1 && cardCount == 5 && ordinaryRank
+	case KindStraight:
+		return sequenceLength >= 5 && cardCount == sequenceLength && sequenceRank
+	case KindConsecutivePairs:
+		return sequenceLength >= 3 && cardCount == 2*sequenceLength && sequenceRank
+	case KindAirplane:
+		return sequenceLength >= 2 && cardCount == 3*sequenceLength && sequenceRank
+	case KindAirplaneWithSingles:
+		return sequenceLength >= 2 && cardCount == 4*sequenceLength && sequenceRank
+	case KindAirplaneWithPairs:
+		return sequenceLength >= 2 && cardCount == 5*sequenceLength && sequenceRank
+	case KindFourWithTwoSingles:
+		return sequenceLength == 1 && cardCount == 6 && ordinaryRank
+	case KindFourWithTwoPairs:
+		return sequenceLength == 1 && cardCount == 8 && ordinaryRank
+	case KindBomb:
+		return sequenceLength == 1 && cardCount == 4 && ordinaryRank
+	case KindRocket:
+		return sequenceLength == 1 && cardCount == 2 && value.MainRank == carddeck.RankBigJoker
+	default:
+		return false
+	}
 }
 
 func knownKind(kind Kind) bool {
