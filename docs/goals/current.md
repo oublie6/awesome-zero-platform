@@ -2,8 +2,8 @@
 
 ## Status
 
-- State: ready
-- Started: Not yet.
+- State: in_progress
+- Started: 2026-07-28
 - Completed: Not yet.
 - Blockers: None.
 
@@ -100,18 +100,20 @@ The following remain outside this goal:
 - Goal 0022 reveal-key lifecycle and signed manifests was completed, fully verified, archived, and cleaned up.
 - Repository inspection found no existing Card/Deck v1 package, deterministic shuffle implementation, deal result, or fairness transcript implementation.
 - The existing hand lifecycle, contribution commitment contract, beacon plan, application/persistence boundaries, and focused Fair Doudizhu CI were reviewed.
+- Goal 0023 definition was committed first as `bf3cbd8f74bbb93f4d4aafab58c39e058b7df72f`.
 
 ### In progress
 
-- None.
+- Implementing the card model, canonical encodings, deterministic stream, unbiased shuffle, deal result, transcript, tests, and documentation.
 
 ### Remaining
 
-- Implement the card model, canonical deck, deterministic stream, rejection sampling, shuffle, deal, transcript, golden vectors, tests, documentation, and full verification.
+- Run focused and full verification, inspect actual failures, fix root causes, record evidence, and complete the Goal.
 
 ### Verification status
 
 - Baseline main before Goal 0023 definition: `34ca67357b56db6d15d04214f1430534a73f895d` plus Goal 0022 cleanup commits through `8f53b446480ec910b3fda3a2bf2b8a3d418817d7`.
+- Goal definition commit: `bf3cbd8f74bbb93f4d4aafab58c39e058b7df72f`.
 - Goal 0022 final main CI `30335660784`, Fair Doudizhu `30335660790`, and runtime acceptance `30335660783` succeeded.
 - Goal 0023 implementation verification pending.
 
