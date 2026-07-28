@@ -119,12 +119,15 @@ jobs:
           npm run verify:manifest-interop -- "$RUNNER_TEMP/reveal-key-manifest.json" 2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
       - name: Commit verified implementation
         run: |
-          git status --short
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'feat: add reveal key lifecycle and signed manifests'
-          git push origin HEAD:main
+          set -o pipefail
+          {
+            git status --short
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -A
+            git commit -m 'feat: add reveal key lifecycle and signed manifests'
+            git push origin HEAD:main
+          } 2>&1 | tee "$RUNNER_TEMP/goal0022-last.log"
       - name: Report failure log
         if: failure() && github.event_name == 'pull_request'
         env:
