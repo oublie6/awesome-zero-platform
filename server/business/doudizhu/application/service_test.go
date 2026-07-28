@@ -145,7 +145,7 @@ type testClock struct {
 	now time.Time
 }
 
-func (c *testClock) Now() time.Time { c.mu.RLock(); defer c.mu.RUnlock(); return c.now }
+func (c *testClock) Now() time.Time      { c.mu.RLock(); defer c.mu.RUnlock(); return c.now }
 func (c *testClock) Set(value time.Time) { c.mu.Lock(); c.now = value; c.mu.Unlock() }
 
 type testIDs struct {
@@ -153,15 +153,33 @@ type testIDs struct {
 	n  int
 }
 
-func (g *testIDs) NewID() (string, error) { g.mu.Lock(); defer g.mu.Unlock(); g.n++; return fmt.Sprintf("id-%d", g.n), nil }
+func (g *testIDs) NewID() (string, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.n++
+	return fmt.Sprintf("id-%d", g.n), nil
+}
 
 type testSetup struct{}
-func (testSetup) PrepareHand(context.Context, domain.RoomSnapshot, domain.HandID) (HandSetup, error) { return HandSetup{}, errors.New("not used") }
+
+func (testSetup) PrepareHand(context.Context, domain.RoomSnapshot, domain.HandID) (HandSetup, error) {
+	return HandSetup{}, errors.New("not used")
+}
+
 type testOpener struct{}
-func (testOpener) Open(context.Context, SecureEnvelope, []byte) ([]byte, error) { return nil, errors.New("not used") }
+
+func (testOpener) Open(context.Context, SecureEnvelope, []byte) ([]byte, error) {
+	return nil, errors.New("not used")
+}
+
 type testProtector struct{}
-func (testProtector) Seal(context.Context, []byte, []byte) (ProtectedPayload, error) { return ProtectedPayload{}, errors.New("not used") }
+
+func (testProtector) Seal(context.Context, []byte, []byte) (ProtectedPayload, error) {
+	return ProtectedPayload{}, errors.New("not used")
+}
+
 type testNormalizer struct{}
+
 func (testNormalizer) Normalize(value string) (string, error) { return value, nil }
 
 type testState struct {
@@ -195,34 +213,114 @@ func (s *testStore) WithinCommand(ctx context.Context, _ domain.AccountID, _ str
 
 func (s testState) clone() testState {
 	copyState := testState{commands: map[string]StoredCommandResult{}, sequences: map[string]uint64{}, rooms: map[string]domain.RoomSnapshot{}, hands: map[string]domain.HandSnapshot{}, records: map[string]ProtectedContributionRecord{}, outbox: append([]OutboxEvent(nil), s.outbox...)}
-	for key, value := range s.commands { copyState.commands[key] = StoredCommandResult{Command: value.Command, Result: cloneResult(value.Result)} }
-	for key, value := range s.sequences { copyState.sequences[key] = value }
-	for key, value := range s.rooms { copyState.rooms[key] = value }
-	for key, value := range s.hands { copyState.hands[key] = value }
-	for key, value := range s.records { copyState.records[key] = value }
+	for key, value := range s.commands {
+		copyState.commands[key] = StoredCommandResult{Command: value.Command, Result: cloneResult(value.Result)}
+	}
+	for key, value := range s.sequences {
+		copyState.sequences[key] = value
+	}
+	for key, value := range s.rooms {
+		copyState.rooms[key] = value
+	}
+	for key, value := range s.hands {
+		copyState.hands[key] = value
+	}
+	for key, value := range s.records {
+		copyState.records[key] = value
+	}
 	return copyState
 }
 
 type testTx struct{ state *testState }
 
-func testCommandKey(actor domain.AccountID, commandID string) string { return string(actor) + "|" + commandID }
-func testSequenceKey(aggregateType domain.AggregateType, aggregateID string, actor domain.AccountID) string { return string(aggregateType) + "|" + aggregateID + "|" + string(actor) }
+func testCommandKey(actor domain.AccountID, commandID string) string {
+	return string(actor) + "|" + commandID
+}
+func testSequenceKey(aggregateType domain.AggregateType, aggregateID string, actor domain.AccountID) string {
+	return string(aggregateType) + "|" + aggregateID + "|" + string(actor)
+}
 
 func (t *testTx) ClaimCommand(_ context.Context, actor domain.AccountID, command Command, _ time.Time) (StoredCommandResult, bool, error) {
 	key := testCommandKey(actor, command.CommandID)
-	if stored, ok := t.state.commands[key]; ok { return stored, stored.Result.Version != "", nil }
-	stored := StoredCommandResult{Command: command}; t.state.commands[key] = stored; return stored, false, nil
+	if stored, ok := t.state.commands[key]; ok {
+		return stored, stored.Result.Version != "", nil
+	}
+	stored := StoredCommandResult{Command: command}
+	t.state.commands[key] = stored
+	return stored, false, nil
 }
-func (t *testTx) CompleteCommand(_ context.Context, actor domain.AccountID, commandID string, result CommandResult, _ time.Time) error { key := testCommandKey(actor, commandID); stored := t.state.commands[key]; stored.Result = cloneResult(result); t.state.commands[key] = stored; return nil }
-func (t *testTx) LockClientSequence(_ context.Context, aggregateType domain.AggregateType, aggregateID string, actor domain.AccountID) (uint64, error) { return t.state.sequences[testSequenceKey(aggregateType, aggregateID, actor)], nil }
-func (t *testTx) SaveClientSequence(_ context.Context, aggregateType domain.AggregateType, aggregateID string, actor domain.AccountID, sequence uint64, _ time.Time) error { key := testSequenceKey(aggregateType, aggregateID, actor); if sequence <= t.state.sequences[key] { return ErrSequenceConflict }; t.state.sequences[key] = sequence; return nil }
-func (t *testTx) InsertRoom(_ context.Context, snapshot domain.RoomSnapshot, _ time.Time) error { if _, exists := t.state.rooms[string(snapshot.ID)]; exists { return ErrAlreadyExists }; t.state.rooms[string(snapshot.ID)] = snapshot; return nil }
-func (t *testTx) LoadRoomForUpdate(_ context.Context, id domain.RoomID) (domain.RoomSnapshot, error) { snapshot, ok := t.state.rooms[string(id)]; if !ok { return domain.RoomSnapshot{}, ErrNotFound }; return snapshot, nil }
-func (t *testTx) UpdateRoom(_ context.Context, snapshot domain.RoomSnapshot, previousVersion uint64, _ time.Time) error { current, ok := t.state.rooms[string(snapshot.ID)]; if !ok { return ErrNotFound }; if current.Version != previousVersion { return ErrOptimisticConflict }; t.state.rooms[string(snapshot.ID)] = snapshot; return nil }
-func (t *testTx) InsertHand(_ context.Context, snapshot domain.HandSnapshot, _ time.Time) error { t.state.hands[string(snapshot.ID)] = snapshot; return nil }
-func (t *testTx) LoadHandForUpdate(_ context.Context, id domain.HandID) (domain.HandSnapshot, error) { snapshot, ok := t.state.hands[string(id)]; if !ok { return domain.HandSnapshot{}, ErrNotFound }; return snapshot, nil }
-func (t *testTx) UpdateHand(_ context.Context, snapshot domain.HandSnapshot, previousVersion uint64, _ time.Time) error { current, ok := t.state.hands[string(snapshot.ID)]; if !ok { return ErrNotFound }; if current.Version != previousVersion { return ErrOptimisticConflict }; t.state.hands[string(snapshot.ID)] = snapshot; return nil }
-func (t *testTx) InsertContributionRecord(_ context.Context, record ProtectedContributionRecord) error { t.state.records[record.RecordID] = record; return nil }
-func (t *testTx) AppendOutbox(_ context.Context, events []OutboxEvent) error { t.state.outbox = append(t.state.outbox, events...); return nil }
+func (t *testTx) CompleteCommand(_ context.Context, actor domain.AccountID, commandID string, result CommandResult, _ time.Time) error {
+	key := testCommandKey(actor, commandID)
+	stored := t.state.commands[key]
+	stored.Result = cloneResult(result)
+	t.state.commands[key] = stored
+	return nil
+}
+func (t *testTx) LockClientSequence(_ context.Context, aggregateType domain.AggregateType, aggregateID string, actor domain.AccountID) (uint64, error) {
+	return t.state.sequences[testSequenceKey(aggregateType, aggregateID, actor)], nil
+}
+func (t *testTx) SaveClientSequence(_ context.Context, aggregateType domain.AggregateType, aggregateID string, actor domain.AccountID, sequence uint64, _ time.Time) error {
+	key := testSequenceKey(aggregateType, aggregateID, actor)
+	if sequence <= t.state.sequences[key] {
+		return ErrSequenceConflict
+	}
+	t.state.sequences[key] = sequence
+	return nil
+}
+func (t *testTx) InsertRoom(_ context.Context, snapshot domain.RoomSnapshot, _ time.Time) error {
+	if _, exists := t.state.rooms[string(snapshot.ID)]; exists {
+		return ErrAlreadyExists
+	}
+	t.state.rooms[string(snapshot.ID)] = snapshot
+	return nil
+}
+func (t *testTx) LoadRoomForUpdate(_ context.Context, id domain.RoomID) (domain.RoomSnapshot, error) {
+	snapshot, ok := t.state.rooms[string(id)]
+	if !ok {
+		return domain.RoomSnapshot{}, ErrNotFound
+	}
+	return snapshot, nil
+}
+func (t *testTx) UpdateRoom(_ context.Context, snapshot domain.RoomSnapshot, previousVersion uint64, _ time.Time) error {
+	current, ok := t.state.rooms[string(snapshot.ID)]
+	if !ok {
+		return ErrNotFound
+	}
+	if current.Version != previousVersion {
+		return ErrOptimisticConflict
+	}
+	t.state.rooms[string(snapshot.ID)] = snapshot
+	return nil
+}
+func (t *testTx) InsertHand(_ context.Context, snapshot domain.HandSnapshot, _ time.Time) error {
+	t.state.hands[string(snapshot.ID)] = snapshot
+	return nil
+}
+func (t *testTx) LoadHandForUpdate(_ context.Context, id domain.HandID) (domain.HandSnapshot, error) {
+	snapshot, ok := t.state.hands[string(id)]
+	if !ok {
+		return domain.HandSnapshot{}, ErrNotFound
+	}
+	return snapshot, nil
+}
+func (t *testTx) UpdateHand(_ context.Context, snapshot domain.HandSnapshot, previousVersion uint64, _ time.Time) error {
+	current, ok := t.state.hands[string(snapshot.ID)]
+	if !ok {
+		return ErrNotFound
+	}
+	if current.Version != previousVersion {
+		return ErrOptimisticConflict
+	}
+	t.state.hands[string(snapshot.ID)] = snapshot
+	return nil
+}
+func (t *testTx) InsertContributionRecord(_ context.Context, record ProtectedContributionRecord) error {
+	t.state.records[record.RecordID] = record
+	return nil
+}
+func (t *testTx) AppendOutbox(_ context.Context, events []OutboxEvent) error {
+	t.state.outbox = append(t.state.outbox, events...)
+	return nil
+}
 
 var _ = sha256.Sum256
