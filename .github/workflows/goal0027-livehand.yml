@@ -1,0 +1,89 @@
+name: Goal 0027 Livehand Integration
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: goal0027-livehand-main
+  cancel-in-progress: false
+
+jobs:
+  integrate-and-verify:
+    if: github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: Publish pending status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
+            -d "{\"state\":\"pending\",\"context\":\"goal0027/livehand\",\"description\":\"Livehand integration is running\",\"target_url\":\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\"}"
+
+      - name: Apply livehand integration
+        run: python3 scripts/goal0027_integrate_livehand.py
+
+      - name: Format changed Go files
+        run: |
+          gofmt -w server/business/doudizhu/domain/livehand/game.go
+          gofmt -w server/business/doudizhu/domain/livehand/playing_test.go
+
+      - name: Verify Doudizhu playing integration
+        working-directory: server
+        run: |
+          go test -count=1 ./business/doudizhu/domain/playing ./business/doudizhu/domain/livehand
+          go test -count=1 -race ./business/doudizhu/domain/playing ./business/doudizhu/domain/livehand
+          go vet ./business/doudizhu/domain/playing ./business/doudizhu/domain/livehand
+
+      - name: Commit verified integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/business/doudizhu/domain/livehand/game.go server/business/doudizhu/domain/livehand/playing_test.go
+          git rm scripts/goal0027_integrate_livehand.py
+          git commit -m "feat: integrate Doudizhu play turns into live hand"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Publish result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main
+          sha="$(git rev-parse origin/main)"
+          if [ "${{ job.status }}" = "success" ]; then
+            state=success
+            description="Livehand play/pass tests, race, and vet succeeded"
+          else
+            state=failure
+            description="Livehand integration failed"
+          fi
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/statuses/${sha}" \
+            -d "{\"state\":\"${state}\",\"context\":\"goal0027/livehand\",\"description\":\"${description}\",\"target_url\":\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\"}"
