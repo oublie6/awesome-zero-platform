@@ -65,7 +65,7 @@ type State struct {
 	landlord      uint8
 }
 
-func New(dealDigest carddeck.Digest) (*State, error) {
+func New(dealDigest carddeck.DealDigest) (*State, error) {
 	first, err := DeriveFirstBidder(dealDigest)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func newState(first uint8) *State {
 	return &State{firstBidder: first, currentBidder: first}
 }
 
-func DeriveFirstBidder(dealDigest carddeck.Digest) (uint8, error) {
+func DeriveFirstBidder(dealDigest carddeck.DealDigest) (uint8, error) {
 	if digestIsZero(dealDigest) {
 		return 0, ErrInvalidDealDigest
 	}
@@ -161,7 +161,7 @@ func (s *State) Snapshot() Snapshot {
 
 func nextPosition(position uint8) uint8 { return position%3 + 1 }
 
-func digestIsZero(value carddeck.Digest) bool {
+func digestIsZero(value carddeck.DealDigest) bool {
 	var combined byte
 	for _, item := range value {
 		combined |= item
