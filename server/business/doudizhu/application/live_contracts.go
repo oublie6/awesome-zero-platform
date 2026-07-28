@@ -32,6 +32,8 @@ type LiveHandRuntime interface {
 	RollbackStart(context.Context, domain.HandID) error
 	ReleasePrepared(context.Context, domain.HandID) error
 	Bid(context.Context, domain.HandID, domain.AccountID, uint64, bidding.Score) (LiveHandCommandResult, error)
+	Play(context.Context, domain.HandID, domain.AccountID, uint64, []string) (LiveHandCommandResult, error)
+	Pass(context.Context, domain.HandID, domain.AccountID, uint64) (LiveHandCommandResult, error)
 	PublicView(context.Context, domain.HandID, domain.AccountID) (LiveHandView, error)
 	PrivateView(context.Context, domain.HandID, domain.AccountID) (LiveHandView, error)
 	Abort(context.Context, domain.HandID, string) (gamecore.FinalRecord, error)
