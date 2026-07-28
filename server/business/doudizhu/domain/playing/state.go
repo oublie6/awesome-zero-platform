@@ -129,6 +129,30 @@ func (s *State) Pass(seat uint8) (Snapshot, error) {
 	return s.Snapshot(), nil
 }
 
+func (s *State) Clone() *State {
+	if s == nil {
+		return nil
+	}
+	clone := &State{
+		revision:     s.revision,
+		currentSeat:  s.currentSeat,
+		leadingSeat:  s.leadingSeat,
+		leadingCards: append([]carddeck.Card(nil), s.leadingCards...),
+		passCount:    s.passCount,
+		complete:     s.complete,
+		winnerSeat:   s.winnerSeat,
+		history:      make([]Action, len(s.history)),
+	}
+	if s.leadingPattern != nil {
+		pattern := *s.leadingPattern
+		clone.leadingPattern = &pattern
+	}
+	for index, action := range s.history {
+		clone.history[index] = cloneAction(action)
+	}
+	return clone
+}
+
 func (s *State) Snapshot() Snapshot {
 	if s == nil {
 		return Snapshot{Version: StateVersion}

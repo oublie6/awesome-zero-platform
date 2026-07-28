@@ -15,6 +15,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/carddeck"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/playing"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/randomizedsetup"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/settlement"
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
 
@@ -22,6 +23,7 @@ const (
 	PublicViewVersion     = "doudizhu-live-public-view-v1"
 	PrivateViewVersion    = "doudizhu-live-private-view-v1"
 	TerminalPayloadV1     = "doudizhu-live-terminal-v1"
+	CompletedPayloadV1    = "doudizhu-live-completed-v1"
 	BidCommandVersion     = "doudizhu-live-bid-command-v1"
 	BidResultVersion      = "doudizhu-live-bid-result-v1"
 	PlayCommandVersion    = "doudizhu-live-play-command-v1"
@@ -31,6 +33,7 @@ const (
 	PhaseNoLandlord       = "NO_LANDLORD"
 	PhasePlaying          = "PLAYING"
 	PhaseGameplayComplete = "GAMEPLAY_COMPLETE"
+	PhaseCompleted        = "COMPLETED"
 	PhaseAborted          = "ABORTED"
 )
 
@@ -58,6 +61,7 @@ type Game struct {
 	winningScore bidding.Score
 	playingSeat  uint8
 	winnerSeat   uint8
+	settlement   *settlement.Result
 	terminal     bool
 }
 
@@ -88,12 +92,13 @@ type PassCommand struct {
 }
 
 type PlayResult struct {
-	Version      string           `json:"v"`
-	HandID       string           `json:"handId"`
-	StateVersion uint64           `json:"stateVersion"`
-	Phase        string           `json:"phase"`
-	Playing      playing.Snapshot `json:"playing"`
-	WinnerSeat   uint8            `json:"winnerSeat,omitempty"`
+	Version      string             `json:"v"`
+	HandID       string             `json:"handId"`
+	StateVersion uint64             `json:"stateVersion"`
+	Phase        string             `json:"phase"`
+	Playing      playing.Snapshot   `json:"playing"`
+	WinnerSeat   uint8              `json:"winnerSeat,omitempty"`
+	Settlement   *settlement.Result `json:"settlement,omitempty"`
 }
 
 type SeatView struct {
@@ -103,22 +108,23 @@ type SeatView struct {
 }
 
 type PublicView struct {
-	Version       string            `json:"v"`
-	HandID        string            `json:"handId"`
-	Phase         string            `json:"phase"`
-	StateVersion  uint64            `json:"stateVersion"`
-	Seats         [3]SeatView       `json:"seats"`
-	SetupDigest   string            `json:"setupDigest"`
-	DeckDigest    string            `json:"deckDigest"`
-	DealDigest    string            `json:"dealDigest"`
-	LandlordCount int               `json:"landlordCardCount"`
-	Bidding       bidding.Snapshot  `json:"bidding"`
-	LandlordSeat  uint8             `json:"landlordSeat,omitempty"`
-	WinningScore  bidding.Score     `json:"winningScore,omitempty"`
-	PlayingSeat   uint8             `json:"playingSeat,omitempty"`
-	LandlordCards []string          `json:"landlordCards,omitempty"`
-	Playing       *playing.Snapshot `json:"playing,omitempty"`
-	WinnerSeat    uint8             `json:"winnerSeat,omitempty"`
+	Version       string             `json:"v"`
+	HandID        string             `json:"handId"`
+	Phase         string             `json:"phase"`
+	StateVersion  uint64             `json:"stateVersion"`
+	Seats         [3]SeatView        `json:"seats"`
+	SetupDigest   string             `json:"setupDigest"`
+	DeckDigest    string             `json:"deckDigest"`
+	DealDigest    string             `json:"dealDigest"`
+	LandlordCount int                `json:"landlordCardCount"`
+	Bidding       bidding.Snapshot   `json:"bidding"`
+	LandlordSeat  uint8              `json:"landlordSeat,omitempty"`
+	WinningScore  bidding.Score      `json:"winningScore,omitempty"`
+	PlayingSeat   uint8              `json:"playingSeat,omitempty"`
+	LandlordCards []string           `json:"landlordCards,omitempty"`
+	Playing       *playing.Snapshot  `json:"playing,omitempty"`
+	WinnerSeat    uint8              `json:"winnerSeat,omitempty"`
+	Settlement    *settlement.Result `json:"settlement,omitempty"`
 }
 
 type PrivateView struct {
@@ -140,6 +146,25 @@ type TerminalPayload struct {
 	TranscriptDigest string      `json:"transcriptDigest"`
 	CurrentHands     [3][]string `json:"currentHands"`
 	LandlordCards    []string    `json:"landlordCards"`
+}
+
+type CompletedPayload struct {
+	Version          string            `json:"v"`
+	HandID           string            `json:"handId"`
+	Status           string            `json:"status"`
+	StateVersion     uint64            `json:"stateVersion"`
+	SetupArtifact    string            `json:"setupArtifact"`
+	SetupDigest      string            `json:"setupDigest"`
+	Transcript       string            `json:"transcript"`
+	TranscriptDigest string            `json:"transcriptDigest"`
+	Bidding          bidding.Snapshot  `json:"bidding"`
+	Playing          playing.Snapshot  `json:"playing"`
+	Settlement       settlement.Result `json:"settlement"`
+	FinalHands       [3][]string       `json:"finalHands"`
+	LandlordCards    []string          `json:"landlordCards"`
+	LandlordSeat     uint8             `json:"landlordSeat"`
+	WinningScore     bidding.Score     `json:"winningScore"`
+	WinnerSeat       uint8             `json:"winnerSeat"`
 }
 
 func New(snapshot domain.HandSnapshot, material gamecore.FairnessMaterial, artifact gamecore.SetupArtifact) (*Game, error) {
@@ -289,6 +314,8 @@ func (g *Game) applyPlaying(command gamecore.Command) (gamecore.CommandOutcome, 
 		return gamecore.CommandOutcome{}, fmt.Errorf("%w: got %d want %d", playing.ErrWrongTurn, command.ActorPosition, current.CurrentSeat)
 	}
 
+	candidatePlay := g.play.Clone()
+	candidateHands := cloneHands(g.current)
 	var snapshot playing.Snapshot
 	switch version {
 	case PlayCommandVersion:
@@ -296,20 +323,20 @@ func (g *Game) applyPlaying(command gamecore.Command) (gamecore.CommandOutcome, 
 		if err != nil {
 			return gamecore.CommandOutcome{}, err
 		}
-		remaining, err := removeHeldCards(g.current[command.ActorPosition-1], cards)
+		remaining, err := removeHeldCards(candidateHands[command.ActorPosition-1], cards)
 		if err != nil {
 			return gamecore.CommandOutcome{}, err
 		}
-		snapshot, err = g.play.Play(command.ActorPosition, cards, len(remaining) == 0)
+		snapshot, err = candidatePlay.Play(command.ActorPosition, cards, len(remaining) == 0)
 		if err != nil {
 			return gamecore.CommandOutcome{}, err
 		}
-		g.current[command.ActorPosition-1] = remaining
+		candidateHands[command.ActorPosition-1] = remaining
 	case PassCommandVersion:
 		if _, err := decodePassCommand(command.Payload); err != nil {
 			return gamecore.CommandOutcome{}, err
 		}
-		snapshot, err = g.play.Pass(command.ActorPosition)
+		snapshot, err = candidatePlay.Pass(command.ActorPosition)
 		if err != nil {
 			return gamecore.CommandOutcome{}, err
 		}
@@ -319,24 +346,102 @@ func (g *Game) applyPlaying(command gamecore.Command) (gamecore.CommandOutcome, 
 		return gamecore.CommandOutcome{}, fmt.Errorf("%w: playing command %q", gamecore.ErrUnsupportedVersion, version)
 	}
 
-	g.version++
-	g.playingSeat = snapshot.CurrentSeat
+	nextVersion := g.version + 1
+	phase := PhasePlaying
+	var settlementResult *settlement.Result
+	var finalPayload []byte
 	if snapshot.Complete {
-		g.phase = PhaseGameplayComplete
-		g.winnerSeat = snapshot.WinnerSeat
+		calculated, err := settlement.Calculate(settlement.Input{
+			LandlordSeat: g.landlordSeat,
+			WinningScore: g.winningScore,
+			Playing:      snapshot,
+		})
+		if err != nil {
+			return gamecore.CommandOutcome{}, err
+		}
+		settlementResult = &calculated
+		phase = PhaseCompleted
+		finalPayload, err = g.buildCompletedPayload(nextVersion, snapshot, calculated, candidateHands)
+		if err != nil {
+			return gamecore.CommandOutcome{}, err
+		}
 	}
-	payload, err := json.Marshal(PlayResult{
+	resultPayload, err := json.Marshal(PlayResult{
 		Version:      PlayResultVersion,
 		HandID:       string(g.id),
-		StateVersion: g.version,
-		Phase:        g.phase,
+		StateVersion: nextVersion,
+		Phase:        phase,
 		Playing:      snapshot,
-		WinnerSeat:   g.winnerSeat,
+		WinnerSeat:   snapshot.WinnerSeat,
+		Settlement:   settlementResult,
 	})
 	if err != nil {
 		return gamecore.CommandOutcome{}, err
 	}
-	return gamecore.CommandOutcome{Version: g.version, Payload: payload}, nil
+
+	g.play = candidatePlay
+	g.current = candidateHands
+	g.version = nextVersion
+	g.playingSeat = snapshot.CurrentSeat
+	if snapshot.Complete {
+		g.phase = PhaseCompleted
+		g.winnerSeat = snapshot.WinnerSeat
+		settled := *settlementResult
+		g.settlement = &settled
+		g.terminal = true
+		clearMaterial(&g.material)
+		return gamecore.CommandOutcome{
+			Version:      g.version,
+			Payload:      resultPayload,
+			Terminal:     true,
+			FinalPayload: finalPayload,
+		}, nil
+	}
+	return gamecore.CommandOutcome{Version: g.version, Payload: resultPayload}, nil
+}
+
+func (g *Game) buildCompletedPayload(version uint64, play playing.Snapshot, result settlement.Result, hands [3][]carddeck.Card) ([]byte, error) {
+	transcriptBytes, err := g.transcript.CanonicalBytes()
+	if err != nil {
+		return nil, err
+	}
+	var finalHands [3][]string
+	for index := range hands {
+		finalHands[index], err = cardCodes(hands[index])
+		if err != nil {
+			return nil, err
+		}
+	}
+	landlordCards, err := cardCodes(g.setup.LandlordCards[:])
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(CompletedPayload{
+		Version:          CompletedPayloadV1,
+		HandID:           string(g.id),
+		Status:           string(gamecore.FinalStatusCompleted),
+		StateVersion:     version,
+		SetupArtifact:    base64.RawURLEncoding.EncodeToString(g.artifact.Payload()),
+		SetupDigest:      hexDigest(g.artifact.Digest()),
+		Transcript:       base64.RawURLEncoding.EncodeToString(transcriptBytes),
+		TranscriptDigest: hex.EncodeToString(g.transcript.TranscriptDigest[:]),
+		Bidding:          g.auction.Snapshot(),
+		Playing:          play,
+		Settlement:       result,
+		FinalHands:       finalHands,
+		LandlordCards:    landlordCards,
+		LandlordSeat:     g.landlordSeat,
+		WinningScore:     g.winningScore,
+		WinnerSeat:       play.WinnerSeat,
+	})
+}
+
+func cloneHands(source [3][]carddeck.Card) [3][]carddeck.Card {
+	var result [3][]carddeck.Card
+	for index := range source {
+		result[index] = append([]carddeck.Card(nil), source[index]...)
+	}
+	return result
 }
 
 func (g *Game) View(request gamecore.ViewRequest) (gamecore.GameView, error) {
@@ -456,6 +561,7 @@ func (g *Game) publicView() (PublicView, error) {
 		LandlordCards: landlordCards,
 		Playing:       playSnapshot,
 		WinnerSeat:    g.winnerSeat,
+		Settlement:    cloneSettlement(g.settlement),
 	}, nil
 }
 
@@ -542,6 +648,14 @@ func removeHeldCards(hand, played []carddeck.Card) ([]carddeck.Card, error) {
 		remaining = append(remaining[:found], remaining[found+1:]...)
 	}
 	return remaining, nil
+}
+
+func cloneSettlement(value *settlement.Result) *settlement.Result {
+	if value == nil {
+		return nil
+	}
+	result := *value
+	return &result
 }
 
 func decodeBidCommand(payload []byte) (BidCommand, error) {
