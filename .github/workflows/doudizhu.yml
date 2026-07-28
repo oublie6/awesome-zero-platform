@@ -1,0 +1,76 @@
+name: Fair Doudizhu
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fair-doudizhu-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+          cache-dependency-path: server/go.sum
+      - name: Unit tests
+        working-directory: server
+        run: >-
+          go test -count=1 -p 1 -parallel 1
+          ./business/doudizhu/domain/...
+          ./business/doudizhu/application/...
+          ./business/doudizhu/infrastructure/protection/...
+          ./business/doudizhu/infrastructure/mysqlstore/...
+          ./business/doudizhu/infrastructure/runtime/...
+          ./business/doudizhu/infrastructure/securetransport/...
+          ./business/doudizhu/infrastructure/textnormalization/...
+      - name: Race tests
+        working-directory: server
+        run: >-
+          go test -race -count=1 -p 1 -parallel 1
+          ./business/doudizhu/domain/...
+          ./business/doudizhu/application/...
+          ./business/doudizhu/infrastructure/protection/...
+          ./business/doudizhu/infrastructure/mysqlstore/...
+          ./business/doudizhu/infrastructure/runtime/...
+          ./business/doudizhu/infrastructure/textnormalization/...
+      - name: Vet
+        working-directory: server
+        run: >-
+          go vet
+          ./business/doudizhu/domain/...
+          ./business/doudizhu/application/...
+          ./business/doudizhu/infrastructure/...
+
+  mysql_integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+          cache-dependency-path: server/go.sum
+      - name: Start MySQL and Redis
+        run: make deps-reset
+      - name: Apply current schema and seed
+        run: |
+          make schema-apply
+          make seed-apply
+      - name: Doudizhu real-MySQL integration
+        working-directory: server
+        env:
+          APP_API_INTEGRATION: "1"
+        run: go test -count=1 -p 1 -parallel 1 -tags=integration ./business/doudizhu/infrastructure/mysqlstore
+      - name: Stop dependencies
+        if: always()
+        run: make deps-down
