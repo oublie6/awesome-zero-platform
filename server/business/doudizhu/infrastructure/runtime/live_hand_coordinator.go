@@ -92,6 +92,9 @@ func (c *LiveHandCoordinator) ReleasePrepared(ctx context.Context, handID domain
 	if c.Contains(handID) {
 		return fmt.Errorf("%w: live hand %s still active", domain.ErrHandActive, handID)
 	}
+	if !c.seeds.Contains(handID) {
+		return nil
+	}
 	return c.seeds.Release(handID)
 }
 
@@ -139,7 +142,11 @@ func (c *LiveHandCoordinator) Abort(ctx context.Context, handID domain.HandID, r
 		return record, nil
 	}
 	c.mu.RUnlock()
-	if pending, ok, err := c.directory.PendingFinalRecord(gamecore.InstanceID(handID)); err == nil && ok {
+	pending, ok, pendingErr := c.directory.PendingFinalRecord(gamecore.InstanceID(handID))
+	if pendingErr != nil && !errors.Is(pendingErr, gamecore.ErrInstanceNotFound) {
+		return gamecore.FinalRecord{}, pendingErr
+	}
+	if ok {
 		record, retryErr := c.directory.RetryArchive(gamecore.InstanceID(handID))
 		if retryErr != nil {
 			return pending, retryErr
