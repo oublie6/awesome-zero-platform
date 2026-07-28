@@ -33,6 +33,7 @@ type Clock interface{ Now() time.Time }
 type IDGenerator interface{ NewID() (string, error) }
 type HandSetupProvider interface {
 	PrepareHand(context.Context, domain.RoomSnapshot, domain.HandID) (HandSetup, error)
+	ReleaseHand(context.Context, domain.HandID) error
 }
 type EnvelopeOpener interface {
 	Open(context.Context, SecureEnvelope, []byte, RevealKeyContext) ([]byte, error)
