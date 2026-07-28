@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -66,7 +67,7 @@ func NewService(
 type mutationOutcome struct {
 	aggregateVersion uint64
 	events           []domain.Event
-	rollback         func()
+	rollback         func() error
 }
 
 type aggregateMutationError struct {
@@ -99,7 +100,7 @@ func (s *Service) execute(
 	}
 
 	var result CommandResult
-	var rollback func()
+	var rollback func() error
 	err = s.store.WithinCommand(ctx, actor, command.CommandID, func(txCtx context.Context, tx Transaction) error {
 		now := s.clock.Now().UTC()
 		stored, completed, err := tx.ClaimCommand(txCtx, actor, command, now)
@@ -191,7 +192,9 @@ func (s *Service) execute(
 	})
 	if err != nil {
 		if rollback != nil {
-			rollback()
+			if rollbackErr := rollback(); rollbackErr != nil {
+				err = errors.Join(err, fmt.Errorf("compensate in-memory mutation: %w", rollbackErr))
+			}
 		}
 		return CommandResult{}, err
 	}
