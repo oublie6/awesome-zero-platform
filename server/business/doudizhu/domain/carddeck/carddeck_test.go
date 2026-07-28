@@ -207,22 +207,24 @@ func TestTranscriptTamperingFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	cases := map[string]func(*Transcript){
-		"version":           func(value *Transcript) { value.Versions.Shuffle = "other" },
-		"hand":              func(value *Transcript) { value.HandID += "x" },
-		"server-seed":       func(value *Transcript) { value.ServerSeed[0] ^= 1 },
-		"server-commit":     func(value *Transcript) { value.ServerCommitment[0] ^= 1 },
-		"contribution":      func(value *Transcript) { value.Contributions[1].Digest[0] ^= 1 },
-		"client-commit":     func(value *Transcript) { value.Contributions[1].Commitment[0] ^= 1 },
-		"beacon-provider":   func(value *Transcript) { value.Beacon.Provider += "x" },
-		"beacon-round":      func(value *Transcript) { value.Beacon.Round += "x" },
-		"beacon-digest":     func(value *Transcript) { value.Beacon.Digest[0] ^= 1 },
-		"beacon-proof":      func(value *Transcript) { value.Beacon.ProofRef += "x" },
-		"reveal-key-id":     func(value *Transcript) { value.RevealKey.KeyID += "x" },
-		"reveal-key-hash":   func(value *Transcript) { value.RevealKey.PublicKeySHA256[0] ^= 1 },
-		"seed-digest":       func(value *Transcript) { value.ShuffleSeedDigest[0] ^= 1 },
-		"deck":              func(value *Transcript) { value.Deck[0], value.Deck[1] = value.Deck[1], value.Deck[0] },
-		"deck-digest":       func(value *Transcript) { value.DeckDigest[0] ^= 1 },
-		"deal":              func(value *Transcript) { value.Deal.hands[0][0], value.Deal.hands[1][0] = value.Deal.hands[1][0], value.Deal.hands[0][0] },
+		"version":         func(value *Transcript) { value.Versions.Shuffle = "other" },
+		"hand":            func(value *Transcript) { value.HandID += "x" },
+		"server-seed":     func(value *Transcript) { value.ServerSeed[0] ^= 1 },
+		"server-commit":   func(value *Transcript) { value.ServerCommitment[0] ^= 1 },
+		"contribution":    func(value *Transcript) { value.Contributions[1].Digest[0] ^= 1 },
+		"client-commit":   func(value *Transcript) { value.Contributions[1].Commitment[0] ^= 1 },
+		"beacon-provider": func(value *Transcript) { value.Beacon.Provider += "x" },
+		"beacon-round":    func(value *Transcript) { value.Beacon.Round += "x" },
+		"beacon-digest":   func(value *Transcript) { value.Beacon.Digest[0] ^= 1 },
+		"beacon-proof":    func(value *Transcript) { value.Beacon.ProofRef += "x" },
+		"reveal-key-id":   func(value *Transcript) { value.RevealKey.KeyID += "x" },
+		"reveal-key-hash": func(value *Transcript) { value.RevealKey.PublicKeySHA256[0] ^= 1 },
+		"seed-digest":     func(value *Transcript) { value.ShuffleSeedDigest[0] ^= 1 },
+		"deck":            func(value *Transcript) { value.Deck[0], value.Deck[1] = value.Deck[1], value.Deck[0] },
+		"deck-digest":     func(value *Transcript) { value.DeckDigest[0] ^= 1 },
+		"deal": func(value *Transcript) {
+			value.Deal.hands[0][0], value.Deal.hands[1][0] = value.Deal.hands[1][0], value.Deal.hands[0][0]
+		},
 		"deal-digest":       func(value *Transcript) { value.DealDigest[0] ^= 1 },
 		"transcript-digest": func(value *Transcript) { value.TranscriptDigest[0] ^= 1 },
 	}
@@ -300,8 +302,8 @@ func goldenTranscriptInput(t *testing.T) TranscriptInput {
 	return TranscriptInput{
 		HandID: handID, ServerSeed: serverSeed, ServerCommitment: serverCommitment,
 		Contributions: contributions,
-		Beacon: BeaconEvidence{Provider: "test-beacon", Round: "round-2026-07-28", Digest: beacon, ProofRef: "proof:test:0023"},
-		RevealKey: RevealKeyAudit{KeyID: "reveal-key-golden", PublicKeySHA256: revealHash},
+		Beacon:        BeaconEvidence{Provider: "test-beacon", Round: "round-2026-07-28", Digest: beacon, ProofRef: "proof:test:0023"},
+		RevealKey:     RevealKeyAudit{KeyID: "reveal-key-golden", PublicKeySHA256: revealHash},
 	}
 }
 
