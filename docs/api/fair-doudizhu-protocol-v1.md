@@ -2,13 +2,13 @@
 
 ## 1. Purpose
 
-This document defines the engine-independent command and event contract for Fair Doudizhu. It is a business protocol carried over authenticated HTTPS or WSS. It does not replace TLS, authentication, or the secure envelope used for sensitive reveal plaintext.
+This document defines the engine-independent business protocol for Fair Doudizhu. Authenticated HTTPS or WSS carries the protocol. It does not replace TLS, authentication, authorization, command idempotency, or the secure envelope used for sensitive reveal plaintext.
 
-All names are versioned. Unknown versions or command names fail closed.
+Every protocol, command, result, and event name is versioned. Unknown versions and names fail closed.
 
 ## 2. Command envelope
 
-A state-changing command has this shape:
+A state-changing client command has this shape:
 
 ```json
 {
@@ -19,7 +19,8 @@ A state-changing command has this shape:
   "aggregateId": "room_019c0123",
   "clientSeq": 17,
   "expectedVersion": 6,
-  "issuedAt": "2026-07-28T00:00:00Z",
+  "issuedAt": "2026-07-28T00:00:00.000Z",
+  "expiresAt": "2026-07-28T00:01:00.000Z",
   "payload": {
     "ready": true
   }
@@ -34,11 +35,13 @@ Required fields:
 - `aggregateType` — `room` or `hand` as required by the command;
 - `aggregateId` — target room or hand ID;
 - `clientSeq` — positive monotonic sequence for the authenticated account and aggregate stream;
-- `expectedVersion` — exact aggregate version observed by the client;
-- `issuedAt` — auxiliary UTC timestamp used by application expiration policy;
+- `expectedVersion` — exact aggregate version observed by the client, or `0` only for aggregate creation;
+- `issuedAt` and `expiresAt` — UTC timestamps with millisecond precision and a bounded validity window;
 - `payload` — command-specific object.
 
-The envelope must not contain authoritative `accountId`, `actorId`, `ownerId`, `role`, or `seat`. The server derives the actor from the authenticated session and resolves membership from the aggregate.
+The envelope must not contain authoritative `accountId`, `actorId`, `ownerId`, `role`, or `seat`. The server derives the actor from the authenticated session and resolves membership and seat from the aggregate.
+
+The application computes a SHA-256 digest over the versioned command name and canonical payload representation. A `commandId` is bound to the complete command metadata and payload, not only to the outer envelope.
 
 ## 3. Command result
 
@@ -55,6 +58,8 @@ An accepted command returns:
   "aggregateVersion": 7,
   "events": [
     {
+      "aggregateType": "room",
+      "aggregateId": "room_019c0123",
       "name": "doudizhu.room.ready-changed.v1",
       "version": 7
     }
@@ -62,12 +67,31 @@ An accepted command returns:
 }
 ```
 
-When persistence is implemented, a repeated `commandId` for the same authenticated actor returns the original result with `duplicate: true`. The aggregate is not invoked a second time.
+A rejected command uses the same result protocol with `accepted: false`, an empty `events` array, and a stable failure object:
 
-A rejected command uses the platform error envelope and one of these stable business codes:
+```json
+{
+  "v": "fair-doudizhu-command-result-v1",
+  "commandId": "019c0123-4567-7abc-8def-0123456789ab",
+  "accepted": false,
+  "duplicate": false,
+  "aggregateType": "room",
+  "aggregateId": "room_019c0123",
+  "aggregateVersion": 8,
+  "events": [],
+  "failure": {
+    "code": "DDZ_VERSION_CONFLICT",
+    "message": "aggregate version conflict",
+    "currentVersion": 8
+  }
+}
+```
+
+Stable business codes are:
 
 - `DDZ_INVALID_COMMAND`
 - `DDZ_FORBIDDEN`
+- `DDZ_NOT_FOUND`
 - `DDZ_NOT_SEATED`
 - `DDZ_ROOM_FULL`
 - `DDZ_ROOM_NOT_READY`
@@ -79,14 +103,32 @@ A rejected command uses the platform error envelope and one of these stable busi
 - `DDZ_VERSION_CONFLICT`
 - `DDZ_SEQUENCE_CONFLICT`
 - `DDZ_HAND_TERMINAL`
+- `DDZ_REVEAL_INVALID`
+- `DDZ_CONFLICT`
 
-A version conflict includes the current aggregate version in non-sensitive error details so the client can reload state.
+Unexpected database, cryptographic-provider, ID-generation, or commit failures are infrastructure errors. They are not persisted as business decisions.
 
-## 4. Room commands
+## 4. Idempotency, ordering, and retries
 
-### `doudizhu.room.join.v1`
+A command is uniquely identified by `(authenticatedActor, commandId)`.
 
-Target: `room`.
+- The first transaction claims the command row and completes the original result atomically with aggregate, sequence, contribution, and outbox writes.
+- Concurrent exact copies wait for that row and then return the stored result with `duplicate: true`.
+- Exact duplicates are replayed before expiry, sequence, decryption, or aggregate mutation checks, so a reconnect can safely retry an old command.
+- Reusing the same ID with changed metadata or payload returns `DDZ_CONFLICT`.
+- A new command must have `clientSeq` greater than the last admitted sequence for `(aggregateType, aggregateId, actor)`.
+- A business rejection after sequence admission consumes the sequence and is replayable.
+- A malformed, expired, or stale-sequence command does not advance the sequence.
+- A MySQL deadlock or lock-wait timeout rolls back all writes and is retryable with the same command ID.
+- A version conflict is a completed business decision; the client reloads state and creates a newly considered command with a new ID and higher sequence.
+
+WSS delivery does not make a command one-time. All replay and ordering guarantees are server-side and database-backed.
+
+## 5. Room commands
+
+### `doudizhu.room.create.v1`
+
+Target: new `room`; `expectedVersion` must be `0`.
 
 Payload:
 
@@ -94,13 +136,21 @@ Payload:
 {}
 ```
 
-The server assigns the first empty fixed seat. A client cannot request a seat.
+The authenticated actor becomes owner and seat 1.
+
+### `doudizhu.room.join.v1`
+
+Target: `room`.
+
+```json
+{}
+```
+
+The server assigns the first empty fixed seat. The client cannot request a seat.
 
 ### `doudizhu.room.leave.v1`
 
 Target: `room`.
-
-Payload:
 
 ```json
 {}
@@ -112,8 +162,6 @@ The room resolves the actor's seat. Leaving is rejected while a hand is active.
 
 Target: `room`.
 
-Payload:
-
 ```json
 {
   "ready": true
@@ -124,39 +172,21 @@ Payload:
 
 Target: `room`.
 
-Payload:
-
 ```json
 {
   "handId": "hand_019c0123"
 }
 ```
 
-Only the server-recognized room owner may start. Before constructing the hand, the application also locks the server commitment, reveal key ID, and beacon plan from trusted server configuration.
+Only the server-recognized owner may start. The application locks trusted server commitment, reveal key ID, and public-beacon plan while atomically updating the room and inserting the hand.
 
-### `doudizhu.room.hand.finish.v1`
+Room release after a terminal hand is an internal application operation inside the terminal hand transaction; clients do not send a separate authoritative finish command.
 
-Target: `room`.
-
-This is an internal application command, not a direct client command.
-
-Payload:
-
-```json
-{
-  "handId": "hand_019c0123"
-}
-```
-
-It is issued only after the corresponding hand is terminal.
-
-## 5. Hand commands
+## 6. Hand commands
 
 ### `doudizhu.hand.fairness.commit.submit.v1`
 
 Target: `hand`.
-
-Payload:
 
 ```json
 {
@@ -170,63 +200,72 @@ Exactly one commitment is accepted per server-resolved seat in `FAIRNESS_COMMITT
 
 Target: `hand`.
 
-Payload:
-
 ```json
 {
   "secureEnvelope": {
-    "v": "secure-envelope-v1",
+    "version": "secure-envelope-v1",
     "keyId": "reveal-key-2026-07",
-    "suite": "DHKEM(X25519,HKDF-SHA256)/HKDF-SHA256/AES-256-GCM",
-    "enc": "base64url",
+    "suite": "hpke-x25519-hkdf-sha256-aes-256-gcm",
+    "encapsulatedKey": "base64url-32-bytes",
     "ciphertext": "base64url"
   }
 }
 ```
 
-The HPKE associated data binds at least:
+The HPKE associated data canonically binds:
 
-- protocol version and command name;
+- reveal AAD protocol version;
+- command protocol and command name;
 - reveal key ID;
 - command ID;
-- aggregate/hand ID;
-- client sequence;
-- expected version;
-- prior client commitment;
-- server-resolved actor and seat context;
-- expiration policy data.
+- aggregate type and hand ID;
+- authenticated actor and server-resolved seat;
+- client sequence and expected version;
+- the seat's prior commitment;
+- issue and expiry timestamps.
 
-After decryption and validation, the application invokes the domain with the computed contribution digest and encrypted-record reference. Raw plaintext is never placed in a domain event.
-
-### `doudizhu.hand.beacon.lock.v1`
-
-Target: `hand`. Internal application command.
-
-Payload:
+The decrypted plaintext is strict JSON:
 
 ```json
 {
-  "provider": "nist-randomness-beacon",
-  "round": "2026-07-28T00:00:00Z",
-  "digest": "base64url-32-bytes",
-  "proofRef": "beacon-proof-opaque-reference"
+  "v": "fair-doudizhu-reveal-v1",
+  "handId": "hand_019c0123",
+  "seat": 1,
+  "secureRandom": "base64url-exactly-32-bytes",
+  "phrase": "the original user phrase",
+  "normalization": "NFKC-v1"
 }
 ```
 
-The provider and round must match the plan locked at hand creation.
+The server verifies context, normalizes the phrase using Unicode NFKC, recomputes the contribution digest and commitment, encrypts the original plaintext for protected storage, and gives the domain only the digest plus opaque record ID. Plaintext is never written to a domain event or aggregate snapshot.
 
-### Internal phase commands
+### `doudizhu.hand.beacon.lock.v1`
 
-These are application commands emitted only after their future rule modules have succeeded:
+Internal application command targeting `hand`:
+
+```json
+{
+  "provider": "configured-beacon",
+  "round": "locked-round-id",
+  "digest": "base64url-32-bytes",
+  "proofRef": "opaque-proof-reference"
+}
+```
+
+The provider and round must match immutable hand metadata. Network fetching and proof verification are infrastructure responsibilities.
+
+### Internal lifecycle commands
+
+These are issued by trusted application/rule modules, not accepted directly from arbitrary clients:
 
 - `doudizhu.hand.dealt.v1` — `DEALING -> BIDDING`;
 - `doudizhu.hand.play.start.v1` — `BIDDING -> PLAYING`;
 - `doudizhu.hand.settlement.start.v1` — `PLAYING -> SETTLING`;
-- `doudizhu.hand.complete.v1` — `SETTLING -> COMPLETED`.
+- `doudizhu.hand.complete.v1` — `SETTLING -> COMPLETED` and atomically releases the room.
 
 ### Terminal commands
 
-- `doudizhu.hand.cancel.v1` — normal pre-deal cancellation;
+- `doudizhu.hand.cancel.v1` — controlled pre-deal cancellation;
 - `doudizhu.hand.abort.v1` — integrity or operational failure;
 - `doudizhu.hand.expire.v1` — timeout policy reached.
 
@@ -238,11 +277,11 @@ Payload:
 }
 ```
 
-External clients do not supply arbitrary authoritative terminal reasons. Transport maps permitted user actions to server-controlled reason codes.
+Transport maps permitted actions to server-controlled reason codes. External clients do not supply arbitrary authoritative reasons.
 
-## 6. Event envelope
+## 7. Event envelope
 
-Persisted or realtime events use:
+Persisted and realtime events use:
 
 ```json
 {
@@ -252,8 +291,9 @@ Persisted or realtime events use:
   "aggregateType": "hand",
   "aggregateId": "hand_019c0123",
   "version": 8,
-  "occurredAt": "2026-07-28T00:00:01Z",
+  "occurredAt": "2026-07-28T00:00:01.000Z",
   "causationCommandId": "019c0123-4567-7abc-8def-0123456789ab",
+  "actorAccountId": "019c0000-0000-7000-8000-000000000001",
   "payload": {
     "from": "FAIRNESS_COMMITTING",
     "to": "FAIRNESS_REVEALING"
@@ -261,9 +301,9 @@ Persisted or realtime events use:
 }
 ```
 
-Events for one aggregate are strictly ordered by `version`. A reconnecting client loads an authoritative snapshot and may then consume events newer than the snapshot version.
+Events for one aggregate are strictly ordered by `version`. The database enforces uniqueness of `(aggregateType, aggregateId, version)`. Delivery is at-least-once, so consumers deduplicate by `eventId` or aggregate version and must not process later versions before earlier versions for the same aggregate.
 
-Domain event names fixed by Goal 0020 are:
+Domain event names are:
 
 - `doudizhu.room.created.v1`
 - `doudizhu.room.player-joined.v1`
@@ -279,25 +319,21 @@ Domain event names fixed by Goal 0020 are:
 - `doudizhu.hand.phase-changed.v1`
 - `doudizhu.hand.terminated.v1`
 
-Sensitive contribution plaintext, active private cards, full active deck order, access tokens, and private keys are never event payload fields.
+Sensitive contribution plaintext, secure random values, normalized phrases, active private cards, full active deck order, access tokens, and private keys are forbidden event fields.
 
-## 7. Replay, ordering, and concurrency
+## 8. Concurrency model
 
-WSS does not make a command one-time. Clients retry after reconnect and may accidentally send the same JSON more than once.
+The MySQL implementation uses `READ COMMITTED` and fine-grained row serialization:
 
-The server therefore enforces all of these independently:
+1. command-result row for the actor and command ID;
+2. client-sequence row for actor and aggregate;
+3. target aggregate row;
+4. matching room row after the hand row for terminal hand operations.
 
-1. unique command ID and persisted original result;
-2. monotonic client sequence;
-3. exact expected aggregate version;
-4. phase and membership validation inside the aggregate;
-5. database uniqueness and atomic command/event persistence;
-6. server-controlled actor and seat resolution.
+Unrelated rooms and hands can execute concurrently. Same-aggregate commands intentionally serialize and then use `expectedVersion` and phase rules to establish one authoritative order. Future multi-aggregate operations must preserve the documented lock order to avoid deadlocks.
 
-A new command with stale aggregate state must fail rather than silently overwrite newer state. The client reloads the snapshot and decides whether to issue a new command with a new ID and sequence.
+## 9. Transport privacy
 
-## 8. Transport privacy
+Reveal commands use both WSS and `secure-envelope-v1`. HPKE is defense in depth so ordinary reverse-proxy and transport middleware need not see reveal plaintext.
 
-Reveal commands use both WSS and `secure-envelope-v1`. HPKE is defense in depth so TLS termination, reverse-proxy access logs, and ordinary middleware do not need to see the reveal plaintext.
-
-The server application necessarily decrypts the contribution to verify it. HPKE does not protect against a compromised application process or stolen private key; key management, memory exposure reduction, encrypted storage, audit access, and rotation remain separate controls.
+The application process necessarily decrypts the contribution to verify it. HPKE does not protect against a compromised application process or stolen private key. Key management, memory-exposure reduction, encrypted storage, audit access, and rotation are separate controls.
