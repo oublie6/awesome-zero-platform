@@ -14,6 +14,7 @@ require (
 	github.com/redis/go-redis/v9 v9.21.0
 	github.com/zeromicro/go-zero v1.10.2
 	golang.org/x/crypto v0.54.0
+	golang.org/x/text v0.40.0
 )
 
 require (
@@ -32,7 +33,7 @@ require (
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8d0a398ab // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.3.1 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
@@ -56,7 +57,6 @@ require (
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/grpc v1.80.0 // indirect
