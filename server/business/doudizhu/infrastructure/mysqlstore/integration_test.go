@@ -228,7 +228,10 @@ func TestConcurrentRoomJoinsPreventLostUpdatesWithRealMySQL(t *testing.T) {
 	db := openIntegrationDB(t)
 	prefix := fmt.Sprintf("g21-join-%d", time.Now().UnixNano())
 	owner := domain.AccountID(prefix + "-owner")
-	actors := []domain.AccountID{prefix + "-actor-2", prefix + "-actor-3"}
+	actors := []domain.AccountID{
+		domain.AccountID(prefix + "-actor-2"),
+		domain.AccountID(prefix + "-actor-3"),
+	}
 	roomID := prefix + "-room"
 	cleanupIntegrationRows(t, db, prefix)
 	defer cleanupIntegrationRows(t, db, prefix)
