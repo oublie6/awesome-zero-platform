@@ -1,2 +1,2 @@
 Temporary pull-request event trigger for Goal 0022. No implementation is carried on this branch.
-Final verification: current main CI, Fair Doudizhu CI, and production runtime acceptance.
+Fix verification: enable MySQL native password and run the full integration suite.
