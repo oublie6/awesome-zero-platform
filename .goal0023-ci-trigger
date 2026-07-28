@@ -1,2 +1,2 @@
 Temporary CI-only trigger for Goal 0023. No feature implementation is carried on this branch.
-Runtime verification against the current main after clean CI success.
+Cleanup after successful Goal 0023 completion and verification.
