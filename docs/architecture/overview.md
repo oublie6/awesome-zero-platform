@@ -28,6 +28,18 @@ Initial platform capabilities are expected to include identity, user, authorizat
 
 Business modules belong in `server/business` and must remain separate from reusable platform capabilities. The `business` directory should not be created until the first real product module is implemented.
 
+## Game runtime policy
+
+Reusable versioning, deterministic-randomness, setup-artifact, active-instance, and final-record contracts live in `server/business/gamecore`. Concrete games own their rules and private state.
+
+Active private game state is process-memory authority. The database stores coordination metadata and immutable completed or explicitly aborted final records, not continuously updated hands or decks.
+
+Detailed contracts:
+
+- `docs/architecture/extensible-game-runtime.md` — module and dependency boundaries;
+- `docs/architecture/gamecore-v1.md` — reusable randomized setup and live-directory contracts;
+- `docs/architecture/doudizhu-live-hand-runtime-v1.md` — concrete Doudizhu seed, live-hand, view, compensation, and final-archive lifecycle.
+
 ## Evolution strategy
 
 A platform or business module can remain in-process while exposing a stable interface. When independent scaling, ownership, deployment, or reliability requirements appear, the same interface can be backed by RPC or messaging.
