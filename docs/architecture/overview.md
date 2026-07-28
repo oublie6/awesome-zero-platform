@@ -38,7 +38,8 @@ Detailed contracts:
 
 - `docs/architecture/extensible-game-runtime.md` — module and dependency boundaries;
 - `docs/architecture/gamecore-v1.md` — reusable randomized setup and live-directory contracts;
-- `docs/architecture/doudizhu-live-hand-runtime-v1.md` — concrete Doudizhu seed, live-hand, view, compensation, and final-archive lifecycle.
+- `docs/architecture/doudizhu-live-hand-runtime-v1.md` — concrete Doudizhu seed, live-hand, view, compensation, and final-archive lifecycle;
+- `docs/architecture/doudizhu-score-bidding-v1.md` — deterministic first bidder, memory-only score bidding, landlord transition, and no-landlord policy.
 
 ## Evolution strategy
 
