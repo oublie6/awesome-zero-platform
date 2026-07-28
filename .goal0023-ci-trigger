@@ -1,1 +1,2 @@
 Temporary CI-only trigger for Goal 0023. No feature implementation is carried on this branch.
+Retry: apply exact Go 1.25.8 formatter output.
