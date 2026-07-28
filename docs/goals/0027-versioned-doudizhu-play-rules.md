@@ -2,100 +2,101 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-29
-- Completed: Not yet.
+- Completed: 2026-07-29
 - Blockers: None.
 
 ## Goal
 
 Implement the complete versioned Doudizhu playing phase on top of the verified in-memory live hand. Recognize and compare legal card patterns, validate ownership, serialize play and pass commands, advance turns, detect the winning seat, and expose reconnect-safe public/private views without writing ordinary gameplay state to MySQL or Redis.
 
-## Scope
+## Delivered
 
-ChatGPT owns architecture, implementation, tests, failure diagnosis and fixes, documentation, verification, commits, and pushes directly to `main`.
-
-Deliver:
-
-1. Define `doudizhu-play-rules-v1` with explicit legal patterns:
+1. Defined `doudizhu-play-rules-v1` with:
    - single, pair, triple;
    - triple with single and triple with pair;
    - straight and consecutive pairs;
    - airplane, airplane with single wings, and airplane with pair wings;
    - four with two singles and four with two pairs;
    - bomb and rocket.
-2. Define exact v1 ambiguities:
-   - straights, consecutive pairs, and airplane bodies cannot contain rank `2` or jokers;
-   - airplane body ranks are consecutive and each contributes exactly three body cards;
-   - airplane wings cannot use a body rank;
-   - single wings may repeat a non-body rank when the physical cards exist;
-   - pair wings must be distinct pairs;
-   - four-with-two-singles permits the two attachments to form a pair;
-   - four-with-two-pairs requires two distinct pairs.
-3. Add pure pattern analysis with invalid-card, duplicate-card, malformed-pattern, and copy-isolation protection.
-4. Add deterministic comparison:
-   - rocket beats every non-rocket pattern;
-   - bombs beat every non-bomb, non-rocket pattern;
-   - ordinary patterns compare only when kind and structure length match;
-   - the higher main rank wins.
-5. Add strict versioned play and pass commands for the concrete live game.
-6. Require the server-resolved current playing seat and exact expected live version.
-7. Validate that every submitted physical card is currently held by the actor, then remove each exactly once.
-8. Track the leading play, leading seat, current seat, pass count, ordered public play history, and remaining card counts.
-9. Reject pass when there is no outstanding leading play and clear the trick only after both opponents pass.
-10. When a player empties their hand, enter an explicit gameplay-complete state with the winning seat; settlement remains Goal 0028.
-11. Keep ordinary play/pass state exclusively in the live in-memory game and route application calls through `gamecore.LiveDirectory.Apply`.
-12. Preserve Goal 0023 shuffle/deal/transcript bytes, Goal 0024 generic runtime semantics, Goal 0025 terminal archive behavior, and Goal 0026 bidding state.
-13. Document the exact rules, command payloads, views, concurrency, and deferred transport behavior.
-14. Run focused formatting, ordinary tests, `-race`, `go vet`, full repository, real MySQL/Redis, build, Compose, and production runtime verification.
+2. Fixed all sequence and attachment ambiguities, including exclusion of `2` and jokers from sequence bodies, repeated physical single wings, distinct pair wings, and explicit four-with-two behavior.
+3. Added strict physical-card and pattern validation:
+   - invalid cards and repeated physical cards fail;
+   - fabricated pattern values with inconsistent kind, count, sequence length, or rank fail;
+   - rocket, bomb, ordinary-kind, and equal-structure comparison is deterministic.
+4. Added a pure `playing.State` that owns current seat, leading play, pass count, public history, gameplay completion, and winner.
+5. Added strict versioned play and pass commands to `livehand.Game`.
+6. Added exact live-version, turn, physical-card ownership, legal-pattern, and leader-beating validation.
+7. Added copy-isolated public/private reconnect views with remaining counts, leading pattern, ordered action history, and winner.
+8. Added two-pass trick reset and initiative return to the previous leading seat.
+9. Added `GAMEPLAY_COMPLETE` when a player empties their hand; settlement remains Goal 0028.
+10. Routed authenticated play/pass application calls through `gamecore.LiveDirectory.Apply` without ordinary MySQL, Redis, outbox, Hand-snapshot, command-result, or archive writes.
+11. Proved same-hand serialization and separate-hand independence under concurrency.
+12. Added `docs/architecture/doudizhu-play-rules-v1.md` and linked it from the architecture overview.
 
-Outside this goal:
+## Constraints Preserved
 
-- bombs, rocket, spring, and other score multipliers;
-- settlement amounts and `SETTLING -> COMPLETED` orchestration;
-- public HTTP/WSS gameplay transport and durable network-command replay cache;
-- active-hand persistence, Redis card state, crash restoration, live migration, or cross-instance ownership transfer;
-- Cocos gameplay screens.
-
-## Constraints
-
-- All edits and commits go directly to `main`; do not create a branch or pull request.
+- All edits and commits went directly to `main`; no branch or pull request was created.
 - Active cards, turns, plays, and passes remain process-memory authority.
-- Ordinary gameplay must not write database command rows, Hand snapshots, outbox rows, archives, or Redis state.
-- Clients cannot choose an authoritative seat; application/runtime code derives it from trusted membership.
-- Expected live version is mandatory and exact.
-- Rejected commands must leave all live state unchanged.
-- `gamecore` remains game-agnostic and standard-library-only.
+- Clients cannot choose an authoritative seat.
+- Goal 0023 shuffle/deal/transcript bytes are unchanged.
+- Goal 0024 `gamecore` semantics remain game-agnostic.
+- Goal 0025 terminal archive behavior and Goal 0026 bidding behavior remain compatible.
 
-## Acceptance Criteria
+## Acceptance Results
 
 - Every listed pattern has positive and negative deterministic tests.
-- Duplicate or invalid physical cards are rejected.
-- Same-type comparison, length mismatch, bomb override, and rocket override are tested.
-- Play commands reject wrong turn, stale version, malformed JSON, unsupported versions, cards not held, illegal patterns, and plays that do not beat the leader without mutation.
-- Pass commands reject the leading player and an empty trick without mutation.
-- Two passes reset the trick and return initiative to the prior leading seat.
-- A legal play removes exact cards, updates remaining counts, and advances the turn.
-- Emptying a hand records the winner and stops further gameplay commands.
+- Duplicate, invalid, non-held, malformed, stale, wrong-turn, non-beating, and post-completion commands fail without mutation.
+- Two passes reset the trick and return initiative correctly.
+- Winning play empties the exact hand, records the winner, and stops gameplay commands.
 - Same-hand concurrent commands serialize; separate hands remain independent.
-- Ordinary gameplay does not enter the database transaction path.
-- Focused and full verification remain green.
-
-## Working State
-
-### Completed
-
-- Goal 0026 score bidding and landlord transition is completed and archived.
-- Goal 0027 rules and lifecycle boundary are explicit.
-
-### In progress
-
-- Implementing the pure versioned card-pattern analyzer and comparator.
-
-### Remaining
-
-- Integrate the pure rules into `livehand`, runtime/application boundaries, views, tests, documentation, and final verification.
+- Application tests prove ordinary play/pass uses trusted membership and the live runtime only.
+- Full repository and production runtime verification passed.
 
 ## Completion Report
 
-Pending.
+### Implementation commits
+
+- Goal boundary: `ce98099a`.
+- Pattern analyzer and comparison: `ba15c5b3`, `72ccbd1e`, `9b7635d1`.
+- Pure turn state: `d6ca4456`, `2a0877c5`, `44b9dafa`.
+- Concrete livehand integration: `e0d85089`.
+- Application/runtime routing and compatibility fixtures: `e9f30938`, `17756d87`, `5978c6b7`, `7dee2ac5`, `b6b3cd25`, `e99d381a`, `fc3b04aa`.
+- Concurrency and strict pattern-value validation: `89a52e72`, `d524d398`.
+- Architecture documentation: `d7487afd`, `181e8918`.
+
+### Focused verification
+
+- `30378393088` — pattern formatting, ordinary tests, race, and vet succeeded.
+- `30378748668` — turn-state formatting, ordinary tests, race, and vet succeeded.
+- `30379210039` — livehand play/pass integration, ordinary tests, race, and vet succeeded.
+- `30379791708` — application/runtime tests, integration-tag compilation, race, and vet succeeded.
+- `30380384125` — all Doudizhu domain tests, concurrency, race, and vet succeeded.
+
+### Final verification
+
+Run `30380620548` locked commit `6854af796de6d2113ec7c346ef37fdfb0bd9259d` and succeeded across:
+
+- module tidy, generated-code consistency, and Go 1.25.8 formatting;
+- Goal 0027 focused ordinary, race, and vet checks;
+- all Go tests and Security/Admin race tests;
+- server build and local/production Compose validation;
+- Secure Envelope and signed-manifest TypeScript/Go interoperability;
+- Cocos deterministic-randomness policy and Admin Web build;
+- full MySQL 5.7 and Redis integration;
+- production container startup, HTTP, authenticated WebSocket, HTTPS, WSS, administrator bootstrap/login, and cleanup.
+
+No acceptance check remained unavailable.
+
+### Cleanup
+
+All temporary Goal 0027 scripts and focused workflows were removed after their successful runs. The temporary final verifier was removed by `753e114274477394e83e9896ee2e15e7e6c2c1b8`, preventing additional triggers. No Goal 0027 temporary workflow remains in the repository.
+
+### Deferred to Goal 0028 and later
+
+- bomb, rocket, spring, and anti-spring multipliers;
+- landlord/farmer settlement and `SETTLING -> COMPLETED` orchestration;
+- normal terminal archive with complete play and settlement evidence;
+- public HTTP/WSS gameplay transport and Cocos screens;
+- active-hand crash recovery or cross-instance migration.
