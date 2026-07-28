@@ -1,9 +1,8 @@
 name: Goal 0025 Main Fix
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
+  push:
+    branches: [main]
 
 permissions:
   contents: write
@@ -15,7 +14,6 @@ concurrency:
 
 jobs:
   fix:
-    if: github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
