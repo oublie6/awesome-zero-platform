@@ -11,3 +11,11 @@ import (
 func (testLiveRuntime) Bid(context.Context, domain.HandID, domain.AccountID, uint64, bidding.Score) (LiveHandCommandResult, error) {
 	return LiveHandCommandResult{}, errors.New("not used")
 }
+
+func (testLiveRuntime) Play(context.Context, domain.HandID, domain.AccountID, uint64, []string) (LiveHandCommandResult, error) {
+	return LiveHandCommandResult{}, errors.New("not used")
+}
+
+func (testLiveRuntime) Pass(context.Context, domain.HandID, domain.AccountID, uint64) (LiveHandCommandResult, error) {
+	return LiveHandCommandResult{}, errors.New("not used")
+}
