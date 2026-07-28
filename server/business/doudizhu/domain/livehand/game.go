@@ -13,20 +13,25 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/bidding"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/carddeck"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/playing"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/randomizedsetup"
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
 
 const (
-	PublicViewVersion  = "doudizhu-live-public-view-v1"
-	PrivateViewVersion = "doudizhu-live-private-view-v1"
-	TerminalPayloadV1  = "doudizhu-live-terminal-v1"
-	BidCommandVersion  = "doudizhu-live-bid-command-v1"
-	BidResultVersion   = "doudizhu-live-bid-result-v1"
-	PhaseBidding       = "BIDDING"
-	PhaseNoLandlord    = "NO_LANDLORD"
-	PhasePlaying       = "PLAYING"
-	PhaseAborted       = "ABORTED"
+	PublicViewVersion     = "doudizhu-live-public-view-v1"
+	PrivateViewVersion    = "doudizhu-live-private-view-v1"
+	TerminalPayloadV1     = "doudizhu-live-terminal-v1"
+	BidCommandVersion     = "doudizhu-live-bid-command-v1"
+	BidResultVersion      = "doudizhu-live-bid-result-v1"
+	PlayCommandVersion    = "doudizhu-live-play-command-v1"
+	PassCommandVersion    = "doudizhu-live-pass-command-v1"
+	PlayResultVersion     = "doudizhu-live-play-result-v1"
+	PhaseBidding          = "BIDDING"
+	PhaseNoLandlord       = "NO_LANDLORD"
+	PhasePlaying          = "PLAYING"
+	PhaseGameplayComplete = "GAMEPLAY_COMPLETE"
+	PhaseAborted          = "ABORTED"
 )
 
 var (
@@ -34,6 +39,7 @@ var (
 	ErrViewerNotSeated    = errors.New("doudizhu live hand: viewer is not seated")
 	ErrVersionConflict    = errors.New("doudizhu live hand: version conflict")
 	ErrMalformedCommand   = errors.New("doudizhu live hand: malformed command")
+	ErrCardNotHeld        = errors.New("doudizhu live hand: card not held")
 )
 
 type Game struct {
@@ -46,10 +52,12 @@ type Game struct {
 	material     gamecore.FairnessMaterial
 	transcript   carddeck.Transcript
 	auction      *bidding.State
+	play         *playing.State
 	current      [3][]carddeck.Card
 	landlordSeat uint8
 	winningScore bidding.Score
 	playingSeat  uint8
+	winnerSeat   uint8
 	terminal     bool
 }
 
@@ -70,6 +78,24 @@ type BidResult struct {
 	RequiresTermination bool             `json:"requiresTermination"`
 }
 
+type PlayCommand struct {
+	Version string   `json:"v"`
+	Cards   []string `json:"cards"`
+}
+
+type PassCommand struct {
+	Version string `json:"v"`
+}
+
+type PlayResult struct {
+	Version      string           `json:"v"`
+	HandID       string           `json:"handId"`
+	StateVersion uint64           `json:"stateVersion"`
+	Phase        string           `json:"phase"`
+	Playing      playing.Snapshot `json:"playing"`
+	WinnerSeat   uint8            `json:"winnerSeat,omitempty"`
+}
+
 type SeatView struct {
 	Position       uint8            `json:"position"`
 	AccountID      domain.AccountID `json:"accountId"`
@@ -77,20 +103,22 @@ type SeatView struct {
 }
 
 type PublicView struct {
-	Version       string           `json:"v"`
-	HandID        string           `json:"handId"`
-	Phase         string           `json:"phase"`
-	StateVersion  uint64           `json:"stateVersion"`
-	Seats         [3]SeatView      `json:"seats"`
-	SetupDigest   string           `json:"setupDigest"`
-	DeckDigest    string           `json:"deckDigest"`
-	DealDigest    string           `json:"dealDigest"`
-	LandlordCount int              `json:"landlordCardCount"`
-	Bidding       bidding.Snapshot `json:"bidding"`
-	LandlordSeat  uint8            `json:"landlordSeat,omitempty"`
-	WinningScore  bidding.Score    `json:"winningScore,omitempty"`
-	PlayingSeat   uint8            `json:"playingSeat,omitempty"`
-	LandlordCards []string         `json:"landlordCards,omitempty"`
+	Version       string            `json:"v"`
+	HandID        string            `json:"handId"`
+	Phase         string            `json:"phase"`
+	StateVersion  uint64            `json:"stateVersion"`
+	Seats         [3]SeatView       `json:"seats"`
+	SetupDigest   string            `json:"setupDigest"`
+	DeckDigest    string            `json:"deckDigest"`
+	DealDigest    string            `json:"dealDigest"`
+	LandlordCount int               `json:"landlordCardCount"`
+	Bidding       bidding.Snapshot  `json:"bidding"`
+	LandlordSeat  uint8             `json:"landlordSeat,omitempty"`
+	WinningScore  bidding.Score     `json:"winningScore,omitempty"`
+	PlayingSeat   uint8             `json:"playingSeat,omitempty"`
+	LandlordCards []string          `json:"landlordCards,omitempty"`
+	Playing       *playing.Snapshot `json:"playing,omitempty"`
+	WinnerSeat    uint8             `json:"winnerSeat,omitempty"`
 }
 
 type PrivateView struct {
@@ -187,12 +215,19 @@ func (g *Game) Apply(command gamecore.Command) (gamecore.CommandOutcome, error) 
 	if g == nil || g.terminal {
 		return gamecore.CommandOutcome{}, fmt.Errorf("%w: terminal live hand", gamecore.ErrInstanceNotFound)
 	}
-	if g.phase != PhaseBidding {
+	if g.phase != PhaseBidding && g.phase != PhasePlaying {
 		return gamecore.CommandOutcome{}, fmt.Errorf("%w: phase %s", ErrUnsupportedCommand, g.phase)
 	}
 	if command.ExpectedVersion != g.version {
 		return gamecore.CommandOutcome{}, fmt.Errorf("%w: got %d want %d", ErrVersionConflict, command.ExpectedVersion, g.version)
 	}
+	if g.phase == PhasePlaying {
+		return g.applyPlaying(command)
+	}
+	return g.applyBid(command)
+}
+
+func (g *Game) applyBid(command gamecore.Command) (gamecore.CommandOutcome, error) {
 	bid, err := decodeBidCommand(command.Payload)
 	if err != nil {
 		return gamecore.CommandOutcome{}, err
@@ -210,11 +245,16 @@ func (g *Game) Apply(command gamecore.Command) (gamecore.CommandOutcome, error) 
 			g.phase = PhaseNoLandlord
 			requiresTermination = true
 		case snapshot.Landlord != 0:
+			turns, err := playing.NewState(snapshot.Landlord)
+			if err != nil {
+				return gamecore.CommandOutcome{}, err
+			}
 			index := snapshot.Landlord - 1
 			g.current[index] = append(g.current[index], g.setup.LandlordCards[:]...)
 			g.landlordSeat = snapshot.Landlord
 			g.winningScore = snapshot.HighestScore
 			g.playingSeat = snapshot.Landlord
+			g.play = turns
 			g.phase = PhasePlaying
 		}
 	}
@@ -229,6 +269,69 @@ func (g *Game) Apply(command gamecore.Command) (gamecore.CommandOutcome, error) 
 		WinningScore:        g.winningScore,
 		PlayingSeat:         g.playingSeat,
 		RequiresTermination: requiresTermination,
+	})
+	if err != nil {
+		return gamecore.CommandOutcome{}, err
+	}
+	return gamecore.CommandOutcome{Version: g.version, Payload: payload}, nil
+}
+
+func (g *Game) applyPlaying(command gamecore.Command) (gamecore.CommandOutcome, error) {
+	if g.play == nil {
+		return gamecore.CommandOutcome{}, fmt.Errorf("%w: missing playing state", ErrUnsupportedCommand)
+	}
+	version, err := commandPayloadVersion(command.Payload)
+	if err != nil {
+		return gamecore.CommandOutcome{}, err
+	}
+	current := g.play.Snapshot()
+	if command.ActorPosition != current.CurrentSeat {
+		return gamecore.CommandOutcome{}, fmt.Errorf("%w: got %d want %d", playing.ErrWrongTurn, command.ActorPosition, current.CurrentSeat)
+	}
+
+	var snapshot playing.Snapshot
+	switch version {
+	case PlayCommandVersion:
+		_, cards, err := decodePlayCommand(command.Payload)
+		if err != nil {
+			return gamecore.CommandOutcome{}, err
+		}
+		remaining, err := removeHeldCards(g.current[command.ActorPosition-1], cards)
+		if err != nil {
+			return gamecore.CommandOutcome{}, err
+		}
+		snapshot, err = g.play.Play(command.ActorPosition, cards, len(remaining) == 0)
+		if err != nil {
+			return gamecore.CommandOutcome{}, err
+		}
+		g.current[command.ActorPosition-1] = remaining
+	case PassCommandVersion:
+		if _, err := decodePassCommand(command.Payload); err != nil {
+			return gamecore.CommandOutcome{}, err
+		}
+		snapshot, err = g.play.Pass(command.ActorPosition)
+		if err != nil {
+			return gamecore.CommandOutcome{}, err
+		}
+	case BidCommandVersion:
+		return gamecore.CommandOutcome{}, fmt.Errorf("%w: bidding already completed", ErrUnsupportedCommand)
+	default:
+		return gamecore.CommandOutcome{}, fmt.Errorf("%w: playing command %q", gamecore.ErrUnsupportedVersion, version)
+	}
+
+	g.version++
+	g.playingSeat = snapshot.CurrentSeat
+	if snapshot.Complete {
+		g.phase = PhaseGameplayComplete
+		g.winnerSeat = snapshot.WinnerSeat
+	}
+	payload, err := json.Marshal(PlayResult{
+		Version:      PlayResultVersion,
+		HandID:       string(g.id),
+		StateVersion: g.version,
+		Phase:        g.phase,
+		Playing:      snapshot,
+		WinnerSeat:   g.winnerSeat,
 	})
 	if err != nil {
 		return gamecore.CommandOutcome{}, err
@@ -324,12 +427,17 @@ func (g *Game) publicView() (PublicView, error) {
 		seats[index] = SeatView{Position: uint8(seat.Seat), AccountID: seat.AccountID, RemainingCards: len(g.current[index])}
 	}
 	var landlordCards []string
+	var playSnapshot *playing.Snapshot
 	var err error
 	if g.landlordSeat != 0 {
 		landlordCards, err = cardCodes(g.setup.LandlordCards[:])
 		if err != nil {
 			return PublicView{}, err
 		}
+	}
+	if g.play != nil {
+		snapshot := g.play.Snapshot()
+		playSnapshot = &snapshot
 	}
 	return PublicView{
 		Version:       PublicViewVersion,
@@ -346,7 +454,94 @@ func (g *Game) publicView() (PublicView, error) {
 		WinningScore:  g.winningScore,
 		PlayingSeat:   g.playingSeat,
 		LandlordCards: landlordCards,
+		Playing:       playSnapshot,
+		WinnerSeat:    g.winnerSeat,
 	}, nil
+}
+
+func commandPayloadVersion(payload []byte) (string, error) {
+	if len(payload) == 0 {
+		return "", fmt.Errorf("%w: empty payload", ErrMalformedCommand)
+	}
+	var header struct {
+		Version string `json:"v"`
+	}
+	if err := decodeStrictJSON(payload, &header, false); err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(header.Version) == "" {
+		return "", fmt.Errorf("%w: missing command version", ErrMalformedCommand)
+	}
+	return header.Version, nil
+}
+
+func decodePlayCommand(payload []byte) (PlayCommand, []carddeck.Card, error) {
+	var command PlayCommand
+	if err := decodeStrictJSON(payload, &command, true); err != nil {
+		return PlayCommand{}, nil, err
+	}
+	if command.Version != PlayCommandVersion {
+		return PlayCommand{}, nil, fmt.Errorf("%w: play command %q", gamecore.ErrUnsupportedVersion, command.Version)
+	}
+	if len(command.Cards) == 0 || len(command.Cards) > 20 {
+		return PlayCommand{}, nil, fmt.Errorf("%w: play card count %d", ErrMalformedCommand, len(command.Cards))
+	}
+	cards := make([]carddeck.Card, len(command.Cards))
+	for index, code := range command.Cards {
+		card, err := carddeck.ParseCard(code)
+		if err != nil {
+			return PlayCommand{}, nil, fmt.Errorf("%w: card[%d]: %v", ErrMalformedCommand, index, err)
+		}
+		cards[index] = card
+	}
+	return command, cards, nil
+}
+
+func decodePassCommand(payload []byte) (PassCommand, error) {
+	var command PassCommand
+	if err := decodeStrictJSON(payload, &command, true); err != nil {
+		return PassCommand{}, err
+	}
+	if command.Version != PassCommandVersion {
+		return PassCommand{}, fmt.Errorf("%w: pass command %q", gamecore.ErrUnsupportedVersion, command.Version)
+	}
+	return command, nil
+}
+
+func decodeStrictJSON(payload []byte, target any, disallowUnknown bool) error {
+	if len(payload) == 0 {
+		return fmt.Errorf("%w: empty payload", ErrMalformedCommand)
+	}
+	decoder := json.NewDecoder(bytes.NewReader(payload))
+	if disallowUnknown {
+		decoder.DisallowUnknownFields()
+	}
+	if err := decoder.Decode(target); err != nil {
+		return fmt.Errorf("%w: %v", ErrMalformedCommand, err)
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		return fmt.Errorf("%w: trailing JSON", ErrMalformedCommand)
+	}
+	return nil
+}
+
+func removeHeldCards(hand, played []carddeck.Card) ([]carddeck.Card, error) {
+	remaining := append([]carddeck.Card(nil), hand...)
+	for _, card := range played {
+		found := -1
+		for index, held := range remaining {
+			if held == card {
+				found = index
+				break
+			}
+		}
+		if found == -1 {
+			code, _ := card.Code()
+			return nil, fmt.Errorf("%w: %s", ErrCardNotHeld, code)
+		}
+		remaining = append(remaining[:found], remaining[found+1:]...)
+	}
+	return remaining, nil
 }
 
 func decodeBidCommand(payload []byte) (BidCommand, error) {

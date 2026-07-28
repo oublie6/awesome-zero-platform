@@ -45,24 +45,24 @@ func TestLivePlayRemovesHeldCardAndAdvancesTurn(t *testing.T) {
 func TestLivePlayRejectsWrongTurnAndCardsNotHeldWithoutMutation(t *testing.T) {
 	game := newDirectPlayingGame(t)
 	tests := []struct {
-		name string
+		name    string
 		command gamecore.Command
-		want error
+		want    error
 	}{
 		{
-			name: "wrong turn",
+			name:    "wrong turn",
 			command: livePlayCommand(t, 2, 2, game.current[1][0]),
-			want: playing.ErrWrongTurn,
+			want:    playing.ErrWrongTurn,
 		},
 		{
-			name: "card not held",
+			name:    "card not held",
 			command: livePlayCommand(t, 1, 2, game.current[1][0]),
-			want: ErrCardNotHeld,
+			want:    ErrCardNotHeld,
 		},
 		{
-			name: "stale version",
+			name:    "stale version",
 			command: livePlayCommand(t, 1, 1, game.current[0][0]),
-			want: ErrVersionConflict,
+			want:    ErrVersionConflict,
 		},
 	}
 	for _, test := range tests {
@@ -144,9 +144,9 @@ func TestLiveWinningPlayCompletesGameplay(t *testing.T) {
 func TestLivePlayingCommandsRejectMalformedPayloadsWithoutMutation(t *testing.T) {
 	game := newDirectPlayingGame(t)
 	tests := []struct {
-		name string
+		name    string
 		payload []byte
-		want error
+		want    error
 	}{
 		{name: "empty", want: ErrMalformedCommand},
 		{name: "unknown play field", payload: []byte(`{"v":"doudizhu-live-play-command-v1","cards":["C3"],"seat":1}`), want: ErrMalformedCommand},
@@ -186,36 +186,36 @@ func livePlayCommand(t *testing.T, seat uint8, version uint64, cards ...carddeck
 		t.Fatal(err)
 	}
 	return gamecore.Command{
-		ActorPosition: seat,
+		ActorPosition:   seat,
 		ExpectedVersion: version,
-		Payload: mustJSON(t, PlayCommand{Version: PlayCommandVersion, Cards: codes}),
+		Payload:         mustJSON(t, PlayCommand{Version: PlayCommandVersion, Cards: codes}),
 	}
 }
 
 func livePassCommand(t *testing.T, seat uint8, version uint64) gamecore.Command {
 	t.Helper()
 	return gamecore.Command{
-		ActorPosition: seat,
+		ActorPosition:   seat,
 		ExpectedVersion: version,
-		Payload: mustJSON(t, PassCommand{Version: PassCommandVersion}),
+		Payload:         mustJSON(t, PassCommand{Version: PassCommandVersion}),
 	}
 }
 
 type capturedPlayingGame struct {
-	Phase string
-	Version uint64
+	Phase       string
+	Version     uint64
 	PlayingSeat uint8
-	WinnerSeat uint8
-	Cards [3][]carddeck.Card
-	Playing playing.Snapshot
+	WinnerSeat  uint8
+	Cards       [3][]carddeck.Card
+	Playing     playing.Snapshot
 }
 
 func capturePlayingGame(game *Game) capturedPlayingGame {
 	result := capturedPlayingGame{
-		Phase: game.phase,
-		Version: game.version,
+		Phase:       game.phase,
+		Version:     game.version,
 		PlayingSeat: game.playingSeat,
-		WinnerSeat: game.winnerSeat,
+		WinnerSeat:  game.winnerSeat,
 	}
 	for index := range game.current {
 		result.Cards[index] = append([]carddeck.Card(nil), game.current[index]...)
