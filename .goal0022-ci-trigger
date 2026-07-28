@@ -1,2 +1,2 @@
 Temporary pull-request event trigger for Goal 0022. No implementation is carried on this branch.
-Fix verification: enable MySQL native password and run the full integration suite.
+Final clean verification after the MySQL 5.7 compatibility fix.
