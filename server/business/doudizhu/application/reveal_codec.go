@@ -103,7 +103,11 @@ func decodeRevealPlaintext(raw []byte, expectedHand domain.HandID, expectedSeat 
 	}
 	phraseHash := sha256.Sum256([]byte(normalized))
 	digest := computeContributionDigest(expectedHand, expectedSeat, secureRandom, phraseHash)
-	return decodedReveal{SecureRandom: secureRandom, PhraseHash: phraseHash, Digest: digest}, nil
+	return decodedReveal{
+		SecureRandom: secureRandom,
+		PhraseHash:   phraseHash,
+		Digest:       digest,
+	}, nil
 }
 
 func computeContributionDigest(handID domain.HandID, seat domain.Seat, secureRandom [32]byte, phraseHash [32]byte) domain.ContributionDigest {
@@ -127,10 +131,40 @@ func ensureJSONEOF(decoder *json.Decoder) error {
 	return nil
 }
 
-func writeCanonicalString(buffer *bytes.Buffer, value string) { writeCanonicalBytes(buffer, []byte(value)) }
-func writeCanonicalBytes(buffer *bytes.Buffer, value []byte) { var size [4]byte; binary.BigEndian.PutUint32(size[:], uint32(len(value))); buffer.Write(size[:]); buffer.Write(value) }
-func writeCanonicalUint64(buffer *bytes.Buffer, value uint64) { var encoded [8]byte; binary.BigEndian.PutUint64(encoded[:], value); buffer.Write(encoded[:]) }
-func writeCanonicalInt64(buffer *bytes.Buffer, value int64) { writeCanonicalUint64(buffer, uint64(value)) }
-func writeHashLengthPrefixed(writer interface{ Write([]byte) (int, error) }, value []byte) { var size [4]byte; binary.BigEndian.PutUint32(size[:], uint32(len(value))); _, _ = writer.Write(size[:]); _, _ = writer.Write(value) }
-func clearBytes(value []byte) { for index := range value { value[index] = 0 } }
-func validMillisecondPrecision(value time.Time) bool { return value.Nanosecond()%int(time.Millisecond) == 0 }
+func writeCanonicalString(buffer *bytes.Buffer, value string) {
+	writeCanonicalBytes(buffer, []byte(value))
+}
+
+func writeCanonicalBytes(buffer *bytes.Buffer, value []byte) {
+	var size [4]byte
+	binary.BigEndian.PutUint32(size[:], uint32(len(value)))
+	buffer.Write(size[:])
+	buffer.Write(value)
+}
+
+func writeCanonicalUint64(buffer *bytes.Buffer, value uint64) {
+	var encoded [8]byte
+	binary.BigEndian.PutUint64(encoded[:], value)
+	buffer.Write(encoded[:])
+}
+
+func writeCanonicalInt64(buffer *bytes.Buffer, value int64) {
+	writeCanonicalUint64(buffer, uint64(value))
+}
+
+func writeHashLengthPrefixed(writer interface{ Write([]byte) (int, error) }, value []byte) {
+	var size [4]byte
+	binary.BigEndian.PutUint32(size[:], uint32(len(value)))
+	_, _ = writer.Write(size[:])
+	_, _ = writer.Write(value)
+}
+
+func clearBytes(value []byte) {
+	for index := range value {
+		value[index] = 0
+	}
+}
+
+func validMillisecondPrecision(value time.Time) bool {
+	return value.Nanosecond()%int(time.Millisecond) == 0
+}
