@@ -104,6 +104,14 @@ func (a *Archive) Load(ctx context.Context, id gamecore.InstanceID) (StoredRecor
 	return StoredRecord{Record: record, ArchivedAt: stored.archivedAt.UTC()}, nil
 }
 
+func (a *Archive) LoadFinalRecord(ctx context.Context, id gamecore.InstanceID) (gamecore.FinalRecord, time.Time, error) {
+	stored, err := a.Load(ctx, id)
+	if err != nil {
+		return gamecore.FinalRecord{}, time.Time{}, err
+	}
+	return stored.Record, stored.ArchivedAt, nil
+}
+
 func (a *Archive) queryRow(ctx context.Context, id gamecore.InstanceID) (storedRow, error) {
 	var stored storedRow
 	err := a.db.QueryRowContext(ctx, `
