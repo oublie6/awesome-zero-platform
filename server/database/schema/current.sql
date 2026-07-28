@@ -111,6 +111,99 @@ CREATE TABLE IF NOT EXISTS platform_audit_events (
         ON DELETE SET NULL
 ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS doudizhu_rooms (
+    room_id VARCHAR(128) NOT NULL,
+    owner_account_id VARCHAR(128) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    active_hand_id VARCHAR(128) NULL,
+    aggregate_version BIGINT UNSIGNED NOT NULL,
+    snapshot_json JSON NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (room_id),
+    KEY idx_doudizhu_rooms_owner (owner_account_id),
+    KEY idx_doudizhu_rooms_status_updated (status, updated_at),
+    UNIQUE KEY uq_doudizhu_rooms_active_hand (active_hand_id)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS doudizhu_hands (
+    hand_id VARCHAR(128) NOT NULL,
+    room_id VARCHAR(128) NOT NULL,
+    phase VARCHAR(40) NOT NULL,
+    reveal_key_id VARCHAR(128) NOT NULL,
+    aggregate_version BIGINT UNSIGNED NOT NULL,
+    snapshot_json JSON NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (hand_id),
+    KEY idx_doudizhu_hands_room_created (room_id, created_at),
+    KEY idx_doudizhu_hands_phase_updated (phase, updated_at)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS doudizhu_command_results (
+    actor_account_id VARCHAR(128) NOT NULL,
+    command_id VARCHAR(128) NOT NULL,
+    aggregate_type VARCHAR(16) NOT NULL,
+    aggregate_id VARCHAR(128) NOT NULL,
+    client_sequence BIGINT UNSIGNED NOT NULL,
+    payload_digest BINARY(32) NOT NULL,
+    command_json JSON NOT NULL,
+    result_json JSON NULL,
+    accepted BOOLEAN NULL,
+    created_at DATETIME(6) NOT NULL,
+    completed_at DATETIME(6) NULL,
+    PRIMARY KEY (actor_account_id, command_id),
+    KEY idx_doudizhu_commands_aggregate_created (aggregate_type, aggregate_id, created_at),
+    KEY idx_doudizhu_commands_actor_created (actor_account_id, created_at),
+    KEY idx_doudizhu_commands_incomplete (completed_at, created_at)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS doudizhu_client_sequences (
+    aggregate_type VARCHAR(16) NOT NULL,
+    aggregate_id VARCHAR(128) NOT NULL,
+    actor_account_id VARCHAR(128) NOT NULL,
+    last_sequence BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    updated_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (aggregate_type, aggregate_id, actor_account_id)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS doudizhu_contribution_records (
+    record_id VARCHAR(128) NOT NULL,
+    hand_id VARCHAR(128) NOT NULL,
+    seat_number TINYINT UNSIGNED NOT NULL,
+    actor_account_id VARCHAR(128) NOT NULL,
+    command_id VARCHAR(128) NOT NULL,
+    contribution_digest BINARY(32) NOT NULL,
+    protection_key_id VARCHAR(128) NOT NULL,
+    nonce VARBINARY(32) NOT NULL,
+    ciphertext LONGBLOB NOT NULL,
+    aad_digest BINARY(32) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (record_id),
+    UNIQUE KEY uq_doudizhu_contribution_hand_seat (hand_id, seat_number),
+    UNIQUE KEY uq_doudizhu_contribution_command (actor_account_id, command_id),
+    KEY idx_doudizhu_contribution_hand_created (hand_id, created_at)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS doudizhu_outbox_events (
+    event_id VARCHAR(128) NOT NULL,
+    event_protocol VARCHAR(64) NOT NULL,
+    event_name VARCHAR(128) NOT NULL,
+    aggregate_type VARCHAR(16) NOT NULL,
+    aggregate_id VARCHAR(128) NOT NULL,
+    aggregate_version BIGINT UNSIGNED NOT NULL,
+    occurred_at DATETIME(6) NOT NULL,
+    causation_command_id VARCHAR(128) NOT NULL,
+    actor_account_id VARCHAR(128) NOT NULL,
+    payload_json JSON NOT NULL,
+    published_at DATETIME(6) NULL,
+    delivery_attempts INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (event_id),
+    UNIQUE KEY uq_doudizhu_outbox_aggregate_version (aggregate_type, aggregate_id, aggregate_version),
+    KEY idx_doudizhu_outbox_pending (published_at, occurred_at),
+    KEY idx_doudizhu_outbox_causation (causation_command_id)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO authorization_roles (role_code, display_name, description, is_system)
 VALUES
     ('platform_super_admin', '超级管理员', '拥有平台管理端全部权限。', TRUE),
@@ -151,7 +244,7 @@ INSERT IGNORE INTO authorization_policy_state (policy_key, version)
 VALUES ('global', 1);
 
 INSERT INTO foundation_schema_meta (meta_key, meta_value)
-VALUES ('schema_version', '0008')
+VALUES ('schema_version', '0009')
 ON DUPLICATE KEY UPDATE
     meta_value = VALUES(meta_value),
     updated_at = CURRENT_TIMESTAMP(6);
