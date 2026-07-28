@@ -427,7 +427,7 @@ func writeIntegrationLength(dst hash.Hash, value []byte) {
 
 func openIntegrationDB(t *testing.T) *sql.DB {
 	t.Helper()
-	config := mysql.Config{User: envOr("APP_MYSQL_USER", "app_local"), Passwd: envOr("APP_MYSQL_PASSWORD", "local-dev-only-mysql-password"), Net: "tcp", Addr: envOr("APP_MYSQL_ADDR", "127.0.0.1:3306"), DBName: envOr("APP_MYSQL_DATABASE", "awesome_zero_platform"), ParseTime: true, Loc: time.UTC, Params: map[string]string{"charset": "utf8mb4", "time_zone": "'+00:00'"}}
+	config := mysql.Config{User: envOr("APP_MYSQL_USER", "app_local"), Passwd: envOr("APP_MYSQL_PASSWORD", "local-dev-only-mysql-password"), Net: "tcp", Addr: envOr("APP_MYSQL_ADDR", "127.0.0.1:3306"), DBName: envOr("APP_MYSQL_DATABASE", "awesome_zero_platform"), ParseTime: true, Loc: time.UTC, AllowNativePasswords: true, Params: map[string]string{"charset": "utf8mb4", "time_zone": "'+00:00'"}}
 	db, err := sql.Open("mysql", config.FormatDSN())
 	if err != nil {
 		t.Fatal(err)
