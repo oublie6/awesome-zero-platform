@@ -1,73 +1,120 @@
-# Goal 0022: Reveal Key Lifecycle and Signed Manifests
+# Goal 0023: Deterministic Card, Shuffle, Deal, and Fairness Transcript
 
 ## Status
 
-- State: completed
-- Started: 2026-07-28
-- Completed: 2026-07-28
+- State: ready
+- Started: Not yet.
+- Completed: Not yet.
 - Blockers: None.
 
 ## Goal
 
-Implement the production-oriented trust and lifecycle boundary for Fair Doudizhu HPKE reveal keys before card and shuffle rules: versioned X25519 key records, signed Ed25519 public-key manifests, public lookup APIs, client verification and rollback protection, and immutable per-hand reveal-key context.
+Define and implement the versioned, engine-independent Fair Doudizhu card/deck foundation as pure Go modules: canonical 54-card encoding, a deterministic cryptographic random stream, unbiased Fisher–Yates shuffle, immutable three-player dealing results, and a reconstruction-oriented fairness transcript that can independently verify the server commitment, accepted client contributions, beacon context, final deck, and deal.
 
 ## Scope
 
-ChatGPT owned architecture, implementation, tests, failure diagnosis and fixes, schema/API/client integration, repository verification, commits, and pushes directly to `main`.
+ChatGPT owns architecture, implementation, tests, failure diagnosis and fixes, documentation, repository verification, commits, and pushes directly to `main`.
 
-Delivered:
+Deliver:
 
-1. A reusable reveal-key registry model with `active`, `retiring`, `retired`, and `revoked` states, validity windows, retirement grace, current-key selection, and exact `keyId` lookup.
-2. Canonical versioned public-key manifests containing protocol and suite identifiers, `manifestVersion`, `keyId`, raw X25519 public key, `publicKeySha256`, validity times, `signatureKeyId`, and an Ed25519 signature.
-3. Server-side manifest signing and verification primitives with deterministic canonical encoding and no production private keys committed to the repository.
-4. TypeScript client verification with an explicit embedded-root/configuration boundary, Ed25519 signature verification, fixed-suite enforcement, time validation, key/hash validation, and monotonic `manifestVersion` rollback protection.
-5. Public HTTP contracts for `GET /api/v1/crypto/reveal-keys/current` and `GET /api/v1/crypto/reveal-keys/{keyId}`, including ETag and bounded rotation-aware caching.
-6. Fair Doudizhu hand metadata that locks both reveal `keyId` and `publicKeySha256` at hand creation and preserves them through snapshots and persistence.
-7. Reveal execution that rejects unknown, expired, retired, revoked, or hash-mismatched key contexts while allowing an already-started hand to continue on a valid `retiring` key during its grace window.
-8. Explicit emergency-revocation behavior for unfinished hands.
-9. Configuration and bootstrap boundaries for X25519 private material, Ed25519 signing material, root public keys, and future Secret/KMS/HSM providers.
-10. Unit, race, TypeScript, interoperability, HTTP contract, MySQL 5.7/Redis integration, and full-repository verification.
+1. A stable Card/Deck v1 representation for the 54-card Doudizhu deck, including 52 suited cards, small joker, big joker, canonical IDs, rank/suit accessors, stable text codes, parsing, validation, and the canonical unshuffled deck order.
+2. Explicit algorithm-version constants for card encoding, seed derivation, deterministic random stream, shuffle, deal, and fairness transcript.
+3. A canonical binary encoding for shuffle inputs that binds the hand ID, server seed, three accepted client contribution digests in seat order, and the locked public-beacon provider, round, and digest.
+4. A versioned server-seed commitment function that binds the server seed to the hand ID and can be independently checked after disclosure.
+5. A deterministic HMAC-SHA256 counter random stream derived from the canonical shuffle input.
+6. Unbiased bounded-integer sampling using rejection sampling; modulo-only sampling is forbidden.
+7. An in-place and copy-returning Fisher–Yates shuffle over the canonical deck, using the deterministic stream and exactly one unbiased bounded choice for each position from `53` down to `1`.
+8. A deterministic deal contract: 17 rounds in seat order `1 -> 2 -> 3`, followed by the final three cards as landlord cards. The deal preserves dealing order and does not assign a landlord or sort a player's cards.
+9. Immutable-by-copy deal accessors, deck/deal validation, reconstruction helpers, and deterministic SHA-256 digests for the final deck and deal.
+10. A versioned fairness transcript containing only post-hand verification material: hand and algorithm versions, server seed and commitment, three contribution digests and commitments, beacon context and proof reference, reveal-key audit metadata, derived shuffle-seed digest, final-deck digest, deal digest, and transcript digest.
+11. A transcript verifier that recomputes commitments, seed derivation, shuffled deck, deal, and all digests; any modified signed input, version, commitment, card, order, or digest must fail verification.
+12. Golden test vectors suitable for future TypeScript/Cocos and third-party verifiers.
+13. Architecture and verification documentation describing exact byte encodings, deck order, shuffle/deal algorithms, privacy boundaries, and deferred gameplay rules.
+14. Focused unit, property-style deterministic, race, vet, and available full-repository CI verification.
 
-The following remain intentionally deferred:
+The following remain outside this goal:
 
-- production KMS/HSM network adapters and automated operational rotation jobs;
-- certificate pinning or replacement of HTTPS/WSS transport security;
-- card/deck representation, deterministic shuffle, dealing, gameplay rules, fairness transcript publication, and Cocos gameplay UI;
-- public matchmaking, robots, spectators, voice, payments, withdrawals, or tradable assets.
+- fetching or cryptographically validating a public-beacon provider proof; this goal consumes a beacon value already verified by an adapter;
+- changing the existing Commit-Reveal command flow, encrypted contribution storage, reveal-key lifecycle, HTTP/WSS transport, MySQL schema, or application command persistence;
+- landlord selection, bidding, doubling, legal play-pattern recognition, turn comparison, gameplay state, scoring, spring rules, settlement, replay UI, and Cocos gameplay screens;
+- publishing an active hand's deck, private cards, server seed, raw phrase, or client random bytes;
+- TypeScript/Cocos implementation of the verifier, which will use the committed golden vectors in a later client-focused goal.
 
-## Acceptance Results
+## References
 
-- Registry validation rejects malformed identifiers, invalid key sizes, duplicate keys, contradictory lifecycle data, non-monotonic manifest versions, and invalid current-key configurations.
-- Active keys are selectable only inside their validity interval. Retiring keys are unavailable for new hands but remain usable by already-bound hands until their grace deadline. Retired and revoked keys are rejected.
-- Manifests use deterministic canonical encoding, Ed25519 signatures, the fixed Secure Envelope v1 suite, and SHA-256 over the raw X25519 public key.
-- TypeScript verification rejects unknown signing roots, invalid signatures, malformed Base64URL, wrong protocols or suites, invalid times, key/hash mismatches, and manifest-version rollback.
-- Public endpoints expose signed manifests only and support current and exact-key lookup with stable errors, ETag, and bounded caching.
-- Every new hand locks `revealKeyId`, `revealPublicKeySha256`, and binding time. Domain restoration and MySQL snapshots preserve and validate the binding.
-- Reveal orchestration fails closed for unknown, expired, retired, revoked, or mismatched key contexts. Retiring-key grace and emergency revocation are covered by tests.
-- Production configuration contains references and environment boundaries only; no production X25519, Ed25519, database-protection, KMS, or HSM private key is committed.
-- The permanent Fair Doudizhu workflow now verifies reveal-key Go tests, race tests, vet, TypeScript signed-manifest tests, Go-to-TypeScript interoperability, and real MySQL 5.7 integration.
+- `AGENTS.md`
+- `docs/requirements/fair-doudizhu-v1.md`
+- `docs/architecture/fair-doudizhu-domain.md`
+- `docs/architecture/fair-doudizhu-application-persistence.md`
+- `docs/architecture/reveal-key-lifecycle-v1.md`
+- `docs/api/fair-doudizhu-protocol-v1.md`
+- `server/business/doudizhu/domain`
+- `server/business/doudizhu/application`
+- `.github/workflows/doudizhu.yml`
+- `docs/architecture/fair-doudizhu-card-shuffle-v1.md` (to be created)
 
-## Verification Evidence
+## Constraints
 
-- Baseline main before Goal definition: `7030ba87d30ab5dc45969561e6c829afcbb071b2`.
-- Goal definition commit: `1bdfd4a219d8bbd0476027d1880a16423a2df40e`.
-- Goal start commit: `850feb52d72980aa780efc35753fb340e2b41fb9`.
-- Verified implementation commit: `814767aeab3298be9141dca1b9c7f45bb750aeea`.
-- Permanent Fair Doudizhu CI update: `00d860eda1966659d04a979d7a96b05d7883754d`.
-- Real MySQL 5.7 compatibility correction: `7d7147bfe783fd1c5d6a12d239248fb95fa4e634`.
-- Targeted implementation runs exposed and corrected three concrete defects:
-  - a test fixture violated the registry manifest-version high-water invariant;
-  - TypeScript implementation and tests referenced the nonexistent `SUITE_V1` export instead of `SECURE_ENVELOPE_SUITE`;
-  - an integration-test `mysql.Config` constructed from its zero value did not enable MySQL native-password authentication.
-- Final clean verification succeeded:
-  - main CI run `30335660784`;
-  - Fair Doudizhu run `30335660790`;
-  - production Compose runtime acceptance run `30335660783`.
-- Those runs passed module cleanliness, generated-code repeatability, formatting, all Go unit tests, race tests, vet, Go builds, TypeScript tests, HPKE interoperability, signed-manifest interoperability, Admin Web build, real MySQL 5.7 and Redis integration, Compose validation, HTTP/WS, HTTPS/WSS, administrator bootstrap and login, and production runtime acceptance.
-- Cleanup run `30335996685` closed temporary PR `#7` and deleted the temporary trigger branch. Temporary apply, MySQL-fix, runtime-verification, and cleanup workflows were removed from `main` after use.
+- Follow `AGENTS.md` and keep all changes directly on `main`.
+- The card/shuffle/deal/transcript implementation must be pure Go and use only the standard library.
+- Keep the new rules under the Fair Doudizhu domain boundary; do not create a generic randomness, card-game, or transcript framework.
+- Use explicit domain-separation strings, big-endian fixed-width integers, and length-prefixed UTF-8 fields in canonical encodings.
+- All IDs, versions, provider names, rounds, proof references, card values, and fixed-size digests must be validated before computation.
+- Use cryptographic hashes and HMAC only for determinism and integrity; no call to `math/rand`, global mutable entropy, wall-clock time, map iteration order, floating-point arithmetic, platform endianness, or implementation-dependent serialization may affect a result.
+- Rejection sampling must be testable independently and prove that out-of-range samples are discarded without bias.
+- The transcript must not contain raw phrases or the clients' original 32-byte random values. It may contain only their already-accepted contribution digests and commitments.
+- The full deck, server seed, and transcript are post-hand verification evidence and must not be added to active-hand events, logs, or public transport in this goal.
+- Do not modify the current MySQL schema or add migration files.
+- Do not add HTTP, WSS, Cocos, or TypeScript production code.
+- Run memory-intensive verification sequentially and use low-concurrency Go commands such as `go test -p 1 -parallel 1`.
+
+## Acceptance Criteria
+
+- The canonical deck contains exactly 54 unique valid cards and has a documented stable order.
+- Every valid card round-trips through ID, rank/suit or joker classification, stable code, and parser; malformed or non-canonical values are rejected.
+- The server commitment changes when the hand ID or server seed changes and is independently verifiable.
+- Canonical shuffle-input bytes are deterministic and change when any hand ID, server seed, seat contribution, beacon provider, beacon round, or beacon digest changes.
+- The deterministic random stream has committed golden vectors and yields identical bytes and integers across repeated runs.
+- `Uniform(bound)` rejects zero bounds, returns only values below the bound, uses rejection sampling, and has a deterministic test proving that at least one scripted out-of-range sample is discarded.
+- Fisher–Yates always produces a 54-card permutation with no missing or duplicate cards and has a committed golden final deck and digest for at least one complete transcript input.
+- Repeating shuffle and deal with identical versioned inputs produces byte-for-byte identical results; modifying any input changes the verified transcript or causes verification failure.
+- Deal v1 gives each of seats 1, 2, and 3 exactly 17 cards, leaves exactly three landlord cards, follows the documented round-robin order, and reconstructs the exact shuffled deck.
+- Returned deck, hands, landlord cards, and transcript data cannot be mutated through shared backing storage.
+- Deck and deal digests bind card order, not only card membership.
+- Transcript construction rejects inconsistent contribution commitments, malformed cards, mismatched digests, unsupported versions, and missing required audit context.
+- Transcript verification recomputes server commitment, client commitments, shuffle seed, shuffled deck, deal, deck digest, deal digest, canonical transcript bytes, and transcript digest.
+- Tampering tests cover the server seed, hand ID, every seat contribution, client commitment, beacon context, algorithm version, reveal-key metadata, deck order, deal order, and stored digests.
+- Cross-package tests prove the transcript's client-commitment calculation remains byte-for-byte compatible with the existing Doudizhu domain commitment contract.
+- The module imports only the Go standard library and remains independent of HTTP, WSS, Cocos, database, Redis, go-zero, and beacon-provider adapters.
+- Architecture documentation fixes every algorithm and canonical byte encoding sufficiently for an independent implementation.
+- `go test -count=1 -p 1 -parallel 1 ./business/doudizhu/domain/...` succeeds.
+- `go test -race -count=1 -p 1 -parallel 1 ./business/doudizhu/domain/...` succeeds.
+- `go vet ./business/doudizhu/domain/...` succeeds.
+- Existing generated-code, formatting, full Go unit, Secure Envelope, Admin Web, real MySQL 5.7/Redis integration, Compose, HTTP/WS, HTTPS/WSS, and production runtime verification remain green.
+- Final evidence records exact commits, actual failures and fixes, CI run IDs, unavailable checks, and intentionally deferred work.
+
+## Working State
+
+### Completed
+
+- Goal 0022 reveal-key lifecycle and signed manifests was completed, fully verified, archived, and cleaned up.
+- Repository inspection found no existing Card/Deck v1 package, deterministic shuffle implementation, deal result, or fairness transcript implementation.
+- The existing hand lifecycle, contribution commitment contract, beacon plan, application/persistence boundaries, and focused Fair Doudizhu CI were reviewed.
+
+### In progress
+
+- None.
+
+### Remaining
+
+- Implement the card model, canonical deck, deterministic stream, rejection sampling, shuffle, deal, transcript, golden vectors, tests, documentation, and full verification.
+
+### Verification status
+
+- Baseline main before Goal 0023 definition: `34ca67357b56db6d15d04214f1430534a73f895d` plus Goal 0022 cleanup commits through `8f53b446480ec910b3fda3a2bf2b8a3d418817d7`.
+- Goal 0022 final main CI `30335660784`, Fair Doudizhu `30335660790`, and runtime acceptance `30335660783` succeeded.
+- Goal 0023 implementation verification pending.
 
 ## Completion Report
 
-Goal 0022 is complete. Fair Doudizhu now has a production-oriented reveal-key trust boundary: short-lived X25519 transport keys can rotate independently of long-lived Ed25519 signing roots; clients verify signed manifests and prevent rollback; every hand binds the exact reveal key and public-key hash; and the server enforces key lifecycle state, time windows, hash integrity, retirement grace, and emergency revocation before opening reveal ciphertext.
-
-The next goal should implement the versioned 54-card Doudizhu card/deck model, deterministic random stream and unbiased shuffle, immutable dealing result, and a reconstruction-oriented fairness transcript as pure Go modules. HTTP/WSS transport, Cocos UI, bidding, play-pattern validation, turns, scoring, and settlement should remain separate.
+Pending.
