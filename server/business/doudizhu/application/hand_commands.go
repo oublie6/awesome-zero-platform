@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"time"
 
@@ -96,15 +97,62 @@ func (s *Service) SubmitHandReveal(ctx context.Context, actor domain.AccountID, 
 }
 
 func (s *Service) LockHandBeacon(ctx context.Context, actor domain.AccountID, command Command, input LockBeaconInput) (CommandResult, error) {
-	return s.mutateHand(ctx, actor, command, CommandHandBeaconLock, input, func(hand *domain.Hand) ([]domain.Event, error) {
-		return hand.LockPublicBeacon(input.Value, command.ExpectedVersion)
-	})
+	return s.execute(ctx, actor, command, CommandHandBeaconLock, domain.AggregateHand, false, input,
+		func(txCtx context.Context, tx Transaction, now time.Time) (mutationOutcome, error) {
+			snapshot, err := tx.LoadHandForUpdate(txCtx, domain.HandID(command.AggregateID))
+			if err != nil {
+				return mutationOutcome{}, err
+			}
+			hand, err := domain.RestoreHand(snapshot)
+			if err != nil {
+				return mutationOutcome{}, wrapInfrastructure("restore hand snapshot", err)
+			}
+			verified, err := s.beacons.Verify(txCtx, snapshot.BeaconPlan, input.Value)
+			if err != nil {
+				return mutationOutcome{}, &aggregateMutationError{cause: err, currentVersion: snapshot.Version}
+			}
+			events, err := hand.LockPublicBeacon(verified, command.ExpectedVersion)
+			if err != nil {
+				return mutationOutcome{}, &aggregateMutationError{cause: err, currentVersion: snapshot.Version}
+			}
+			updated := hand.Snapshot()
+			if err := tx.UpdateHand(txCtx, updated, snapshot.Version, now); err != nil {
+				return mutationOutcome{}, err
+			}
+			return mutationOutcome{aggregateVersion: updated.Version, events: events}, nil
+		})
 }
 
 func (s *Service) MarkHandDealt(ctx context.Context, actor domain.AccountID, command Command) (CommandResult, error) {
-	return s.mutateHand(ctx, actor, command, CommandHandDealt, struct{}{}, func(hand *domain.Hand) ([]domain.Event, error) {
-		return hand.MarkDealt(command.ExpectedVersion)
-	})
+	return s.execute(ctx, actor, command, CommandHandDealt, domain.AggregateHand, false, struct{}{},
+		func(txCtx context.Context, tx Transaction, now time.Time) (mutationOutcome, error) {
+			snapshot, err := tx.LoadHandForUpdate(txCtx, domain.HandID(command.AggregateID))
+			if err != nil {
+				return mutationOutcome{}, err
+			}
+			hand, err := domain.RestoreHand(snapshot)
+			if err != nil {
+				return mutationOutcome{}, wrapInfrastructure("restore hand snapshot", err)
+			}
+			events, err := hand.MarkDealt(command.ExpectedVersion)
+			if err != nil {
+				return mutationOutcome{}, &aggregateMutationError{cause: err, currentVersion: snapshot.Version}
+			}
+			if err := s.liveHands.Start(txCtx, snapshot); err != nil {
+				return mutationOutcome{}, wrapInfrastructure("start deterministic live hand", err)
+			}
+			rollback := func() error {
+				return s.liveHands.RollbackStart(context.Background(), snapshot.ID)
+			}
+			updated := hand.Snapshot()
+			if err := tx.UpdateHand(txCtx, updated, snapshot.Version, now); err != nil {
+				if rollbackErr := rollback(); rollbackErr != nil {
+					err = errors.Join(err, wrapInfrastructure("rollback deterministic live hand", rollbackErr))
+				}
+				return mutationOutcome{}, err
+			}
+			return mutationOutcome{aggregateVersion: updated.Version, events: events, rollback: rollback}, nil
+		})
 }
 
 func (s *Service) StartHandPlaying(ctx context.Context, actor domain.AccountID, command Command) (CommandResult, error) {
@@ -126,21 +174,40 @@ func (s *Service) CompleteHand(ctx context.Context, actor domain.AccountID, comm
 }
 
 func (s *Service) CancelHand(ctx context.Context, actor domain.AccountID, command Command, input TerminateHandInput) (CommandResult, error) {
-	return s.terminateHand(ctx, actor, command, CommandHandCancel, input, func(hand *domain.Hand) ([]domain.Event, error) {
+	result, err := s.terminateHand(ctx, actor, command, CommandHandCancel, input, func(hand *domain.Hand) ([]domain.Event, error) {
 		return hand.Cancel(input.ReasonCode, command.ExpectedVersion)
 	})
+	return s.finalizeTerminatedRuntime(ctx, domain.HandID(command.AggregateID), input.ReasonCode, result, err)
 }
 
 func (s *Service) AbortHand(ctx context.Context, actor domain.AccountID, command Command, input TerminateHandInput) (CommandResult, error) {
-	return s.terminateHand(ctx, actor, command, CommandHandAbort, input, func(hand *domain.Hand) ([]domain.Event, error) {
+	result, err := s.terminateHand(ctx, actor, command, CommandHandAbort, input, func(hand *domain.Hand) ([]domain.Event, error) {
 		return hand.Abort(input.ReasonCode, command.ExpectedVersion)
 	})
+	return s.finalizeTerminatedRuntime(ctx, domain.HandID(command.AggregateID), input.ReasonCode, result, err)
 }
 
 func (s *Service) ExpireHand(ctx context.Context, actor domain.AccountID, command Command, input TerminateHandInput) (CommandResult, error) {
-	return s.terminateHand(ctx, actor, command, CommandHandExpire, input, func(hand *domain.Hand) ([]domain.Event, error) {
+	result, err := s.terminateHand(ctx, actor, command, CommandHandExpire, input, func(hand *domain.Hand) ([]domain.Event, error) {
 		return hand.Expire(input.ReasonCode, command.ExpectedVersion)
 	})
+	return s.finalizeTerminatedRuntime(ctx, domain.HandID(command.AggregateID), input.ReasonCode, result, err)
+}
+
+func (s *Service) finalizeTerminatedRuntime(ctx context.Context, handID domain.HandID, reason string, result CommandResult, commandErr error) (CommandResult, error) {
+	if commandErr != nil || !result.Accepted {
+		return result, commandErr
+	}
+	if s.liveHands.Contains(handID) {
+		if _, err := s.liveHands.Abort(ctx, handID, reason); err != nil {
+			return result, wrapInfrastructure("archive terminal live hand", err)
+		}
+		return result, nil
+	}
+	if err := s.liveHands.ReleasePrepared(ctx, handID); err != nil {
+		return result, wrapInfrastructure("release terminal prepared hand", err)
+	}
+	return result, nil
 }
 
 func (s *Service) mutateHand(ctx context.Context, actor domain.AccountID, command Command, name string, payload any, mutation func(*domain.Hand) ([]domain.Event, error)) (CommandResult, error) {
