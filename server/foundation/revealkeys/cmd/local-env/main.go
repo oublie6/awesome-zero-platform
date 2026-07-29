@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -15,14 +16,36 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/revealkeys"
 )
 
+type variable struct {
+	name  string
+	value string
+}
+
 func main() {
-	now := time.Now().UTC()
-	revealPrivate, err := ecdh.X25519().GenerateKey(rand.Reader)
+	variables, err := generate(time.Now().UTC(), rand.Reader)
 	must(err)
-	_, signingPrivate, err := ed25519.GenerateKey(rand.Reader)
-	must(err)
-	beaconProofSecret := randomBytes(32)
-	contributionKey := randomBytes(32)
+	for _, current := range variables {
+		writeExport(current.name, current.value)
+	}
+}
+
+func generate(now time.Time, random io.Reader) ([]variable, error) {
+	revealPrivate, err := ecdh.X25519().GenerateKey(random)
+	if err != nil {
+		return nil, err
+	}
+	_, signingPrivate, err := ed25519.GenerateKey(random)
+	if err != nil {
+		return nil, err
+	}
+	beaconProofSecret, err := randomBytes(random, 32)
+	if err != nil {
+		return nil, err
+	}
+	contributionKey, err := randomBytes(random, 32)
+	if err != nil {
+		return nil, err
+	}
 
 	config := revealkeys.StaticConfig{
 		CurrentKeyID:      "local-reveal-v1",
@@ -39,23 +62,28 @@ func main() {
 		}},
 	}
 	encoded, err := json.Marshal(config)
-	must(err)
+	if err != nil {
+		return nil, err
+	}
 
-	writeExport("APP_REVEAL_KEYS_ENABLED", "true")
-	writeExport("APP_REVEAL_KEYS_STATIC_JSON", string(encoded))
-	writeExport("APP_DOUDIZHU_ENABLED", "true")
-	writeExport("APP_DOUDIZHU_BEACON_PROVIDER", "local-hmac")
-	writeExport("APP_DOUDIZHU_BEACON_ROUND", "local-round-1")
-	writeExport("APP_DOUDIZHU_BEACON_PROOF_SECRET", base64.RawURLEncoding.EncodeToString(beaconProofSecret))
-	writeExport("APP_DOUDIZHU_CONTRIBUTION_KEY_ID", "local-contribution-v1")
-	writeExport("APP_DOUDIZHU_CONTRIBUTION_KEY_HEX", hex.EncodeToString(contributionKey))
+	return []variable{
+		{name: "APP_REVEAL_KEYS_ENABLED", value: "true"},
+		{name: "APP_REVEAL_KEYS_STATIC_JSON", value: string(encoded)},
+		{name: "APP_DOUDIZHU_ENABLED", value: "true"},
+		{name: "APP_DOUDIZHU_BEACON_PROVIDER", value: "local-hmac"},
+		{name: "APP_DOUDIZHU_BEACON_ROUND", value: "local-round-1"},
+		{name: "APP_DOUDIZHU_BEACON_PROOF_SECRET", value: base64.RawURLEncoding.EncodeToString(beaconProofSecret)},
+		{name: "APP_DOUDIZHU_CONTRIBUTION_KEY_ID", value: "local-contribution-v1"},
+		{name: "APP_DOUDIZHU_CONTRIBUTION_KEY_HEX", value: hex.EncodeToString(contributionKey)},
+	}, nil
 }
 
-func randomBytes(size int) []byte {
+func randomBytes(random io.Reader, size int) ([]byte, error) {
 	value := make([]byte, size)
-	_, err := rand.Read(value)
-	must(err)
-	return value
+	if _, err := io.ReadFull(random, value); err != nil {
+		return nil, err
+	}
+	return value, nil
 }
 
 func writeExport(name, value string) {
