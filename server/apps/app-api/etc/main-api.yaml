@@ -99,6 +99,8 @@ Realtime:
 Admin:
   Enabled: true
   BootstrapToken: local-dev-only-admin-bootstrap-token-change-me-0001
+Doudizhu:
+  Enabled: false
 Observability:
   Metrics:
     Enabled: true
