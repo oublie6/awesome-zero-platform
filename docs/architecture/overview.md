@@ -42,7 +42,8 @@ Detailed contracts:
 - `docs/architecture/doudizhu-score-bidding-v1.md` — deterministic first bidder, memory-only score bidding, landlord transition, and no-landlord policy;
 - `docs/architecture/doudizhu-play-rules-v1.md` — versioned card-pattern recognition, comparison, memory-only play/pass turns, and gameplay winner detection;
 - `docs/architecture/doudizhu-settlement-v1.md` — non-monetary multipliers, zero-sum points, atomic normal completion, and retry-safe completed archive ordering;
-- `docs/architecture/doudizhu-final-evidence-v1.md` — immutable archive retrieval, participant authorization, complete-hand replay, and fail-closed post-hand verification.
+- `docs/architecture/doudizhu-final-evidence-v1.md` — immutable archive retrieval, participant authorization, complete-hand replay, and fail-closed post-hand verification;
+- `docs/architecture/doudizhu-lifecycle-supervision-v1.md` — all-pass, cancellation, timeout leases, and exact terminal-command retry without persisting active cards.
 
 ## Evolution strategy
 
