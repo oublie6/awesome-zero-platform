@@ -1,62 +1,85 @@
 # Production Deployment Baseline
 
-The repository provides deployment baselines rather than prescribing a specific cloud, managed database, ingress controller, certificate issuer, or secret manager.
+The repository provides deployment baselines rather than prescribing a cloud, managed database, ingress controller, certificate issuer, backup product, or secret manager.
 
-## Required secrets
+## Required platform secrets
 
-Production examples require these values to be supplied outside Git:
+Every production deployment requires values supplied outside Git:
 
-- `APP_MYSQL_PASSWORD`
-- `APP_MYSQL_ROOT_PASSWORD` for the bundled production Compose MySQL only
-- `APP_REDIS_PASSWORD`
-- `APP_AUTH_ACCESS_TOKEN_SECRET`
+```text
+APP_MYSQL_PASSWORD
+APP_REDIS_PASSWORD
+APP_AUTH_ACCESS_TOKEN_SECRET
+```
 
-`APP_ADMIN_BOOTSTRAP_TOKEN` is required only for the first-administrator bootstrap. Remove it and recreate the API containers after bootstrap succeeds.
+The bundled production Compose MySQL additionally requires:
 
-The access-token secret must contain at least 32 characters and should be generated from cryptographically secure random bytes. Rotating it invalidates all existing signed access tokens; Redis sessions remain but cannot be used without a newly issued access token.
+```text
+APP_MYSQL_ROOT_PASSWORD
+```
 
-TLS deployments additionally require certificate and private-key paths supplied outside Git:
+`APP_ADMIN_BOOTSTRAP_TOKEN` is required only while creating the first administrator. It must contain at least 32 characters. Remove it and recreate the API containers after bootstrap succeeds.
 
-- `APP_TLS_CERT_FILE`
-- `APP_TLS_KEY_FILE`
+The access-token secret must contain at least 32 characters and should be generated from cryptographically secure random bytes. Rotating it invalidates existing signed access tokens.
 
-They are required only when `APP_HTTPS_ENABLED=true` selects the TLS edge Compose override.
+Never put production credentials in committed YAML, Compose files, Kubernetes manifests, Docker build arguments, image layers, source code, CI logs, or ordinary configuration diagnostics.
 
-Never commit a TLS private key. Prefer a managed certificate, ingress secret, gateway secret store, or a tightly controlled group-readable file for the unprivileged TLS container.
+## Optional Fair Doudizhu enablement
+
+Fair Doudizhu is disabled by default. A production environment that enables it must provide all of the following:
+
+```text
+APP_REVEAL_KEYS_ENABLED=true
+APP_REVEAL_KEYS_STATIC_JSON=<strict reveal-key registry JSON>
+APP_DOUDIZHU_ENABLED=true
+APP_DOUDIZHU_BEACON_PROVIDER=<provider identifier>
+APP_DOUDIZHU_BEACON_ROUND=<configured round identifier>
+APP_DOUDIZHU_BEACON_PROOF_SECRET=<at least 32 characters>
+APP_DOUDIZHU_CONTRIBUTION_KEY_ID=<key identifier>
+APP_DOUDIZHU_CONTRIBUTION_KEY_HEX=<exactly 64 lowercase hex characters>
+```
+
+`APP_REVEAL_KEYS_STATIC_JSON` contains an Ed25519 manifest-signing private key and one or more X25519 reveal private keys. Treat the whole value as high-sensitivity private-key material. The beacon-proof secret and contribution key are also secrets.
+
+The production Compose baseline passes these variables to `app-api`, but leaves reveal keys and Doudizhu disabled unless the operator supplies them. The local `revealkeys/cmd/local-env` generator is development-only and must not be used as a production key-management process.
+
+The provider and round are locked into hand metadata. Changing them does not rewrite or migrate existing hands. Key rotation, retiring-key grace periods, retention, backup, and emergency revocation must be handled as an explicit operational procedure.
 
 ## Production Compose
 
-The supported production entrypoint is:
+The supported entrypoint is:
 
 ```text
 scripts/production-compose.sh
 ```
 
-It always loads `deploy/production/docker-compose.yml`. It conditionally adds `deploy/production/docker-compose.tls.yml` according to `APP_HTTPS_ENABLED`.
+The Makefile delegates to it:
+
+```bash
+make production-config
+make production-up
+make production-down
+```
+
+The wrapper always loads `deploy/production/docker-compose.yml`. It conditionally adds `deploy/production/docker-compose.tls.yml` according to `APP_HTTPS_ENABLED`.
 
 Accepted enabled values are `true`, `1`, `yes`, and `on`. Accepted disabled values are `false`, `0`, `no`, and `off`. Matching is case-insensitive. The default is `false`, and invalid values fail before Docker Compose starts.
 
-From the repository root, create an uncommitted environment file or export the required variables. For loopback-only HTTP and WS:
+Example loopback-only HTTP/WS deployment:
 
 ```bash
 export APP_MYSQL_PASSWORD='replace-me'
 export APP_MYSQL_ROOT_PASSWORD='replace-me'
 export APP_REDIS_PASSWORD='replace-me'
 export APP_AUTH_ACCESS_TOKEN_SECRET='replace-with-a-long-random-secret'
-export APP_ADMIN_BOOTSTRAP_TOKEN='replace-with-a-temporary-long-random-token'
+export APP_ADMIN_BOOTSTRAP_TOKEN='temporary-bootstrap-token-at-least-32-characters'
 export APP_HTTPS_ENABLED=false
 
 make production-config
 make production-up
 ```
 
-The matching shutdown command is:
-
-```bash
-make production-down
-```
-
-The Makefile targets delegate to the same wrapper. Docker Compose arguments can also be supplied directly, including an external environment file:
+An external environment file may be used:
 
 ```bash
 APP_HTTPS_ENABLED=false \
@@ -65,26 +88,40 @@ APP_HTTPS_ENABLED=false \
   up -d --build --wait
 ```
 
-`APP_HTTPS_ENABLED` controls which Compose files the wrapper selects, so set it in the shell environment before invoking the script. Other deployment values and secrets may be supplied through `--env-file`.
+`APP_HTTPS_ENABLED` controls which Compose files the wrapper selects, so set it in the shell before invoking the script. Other values may come from `--env-file`.
 
-### Compose project name and data continuity
+The baseline:
 
-The wrapper defaults the Compose project name to:
+- uses pinned MySQL and Redis images;
+- starts persistent MySQL and Redis services;
+- waits for dependency health checks;
+- applies the complete current schema through a one-shot schema container;
+- starts a non-root, read-only API container;
+- starts a non-root, read-only Admin Web container;
+- enables authentication, authorization synchronization, realtime `/ws`, and metrics;
+- proxies API and WebSocket requests through Admin Web Nginx;
+- binds base plaintext ports to loopback only.
+
+This is a low-memory single-host baseline, not a recommendation to run bundled databases instead of managed production services.
+
+## Compose project name and data continuity
+
+The wrapper defaults the project name to:
 
 ```text
 production
 ```
 
-This is deliberate. Docker Compose prefixes ordinary named volumes with the project name, so the default production data volumes are:
+Default volumes are therefore:
 
 ```text
 production_mysql-data
 production_redis-data
 ```
 
-Keeping the same project name while enabling or disabling HTTPS preserves the existing MySQL and Redis data. The HTTPS switch changes only whether the `tls-edge` service is included; it does not require a new database or Redis volume.
+Keeping the same project name while enabling or disabling HTTPS preserves the existing data. The HTTPS switch changes only whether the TLS edge is included.
 
-Use the supported environment override only when an intentionally isolated stack is required:
+Use an alternate project name only for an intentionally isolated stack:
 
 ```bash
 APP_COMPOSE_PROJECT_NAME=isolated-test \
@@ -92,62 +129,31 @@ APP_HTTPS_ENABLED=true \
 make production-up
 ```
 
-That command selects different volumes such as `isolated-test_mysql-data` and `isolated-test_redis-data`. It does not migrate or copy data from `production_*` volumes.
+That creates different volumes; it does not copy data from the default production stack.
 
-An explicit Docker Compose `--project-name` or `-p` argument is also forwarded unchanged and has normal Docker Compose precedence:
-
-```bash
-APP_HTTPS_ENABLED=true \
-  bash scripts/production-compose.sh \
-  --project-name isolated-test \
-  up -d --build --wait
-```
-
-Before changing a project name on a host that already contains data, inspect the existing projects and volumes:
+Before changing project names or volume policy on a host with data:
 
 ```bash
 docker compose ls
 docker volume ls | grep -E '(^|_)mysql-data$|(^|_)redis-data$'
 ```
 
-Do not delete or rename production volumes without a verified backup and an explicit migration plan.
+Do not delete, rename, or replace production volumes without a verified backup and an explicit migration plan.
 
-The Compose baseline:
-
-- uses `mysql:5.7.44` with a 64 MiB InnoDB buffer pool, disabled Performance Schema, reduced connections, and disabled binary logging so it can run on a small development machine;
-- starts persistent MySQL and Redis services;
-- waits for dependency health checks;
-- applies the complete current schema through a one-shot schema container;
-- starts the non-root, read-only application container;
-- performs a real HTTP liveness check through the application's `-healthcheck` command;
-- enables go-zero Redis caching for ordinary entity detail reads;
-- enables clustered Casbin synchronization even though the baseline Compose file starts one API instance by default;
-- enables the authenticated `/ws` realtime endpoint;
-- proxies WebSocket Upgrade requests through Admin Web Nginx;
-- binds the base HTTP ports to `127.0.0.1` rather than exposing plaintext ports on every host interface.
-
-MySQL data directories are not downgrade-compatible across major versions. If an existing Compose volume was initialized by MySQL 8.x, remove or migrate that volume before starting the 5.7 baseline:
-
-```bash
-APP_HTTPS_ENABLED=false bash scripts/production-compose.sh down --volumes --remove-orphans
-```
-
-Do not run that command against data that has not been backed up. The bundled database is a low-memory deployment baseline, not a recommendation to downgrade a managed production database.
-
-This is a baseline for a single-host deployment. Backups, firewall policy, log shipping, monitoring retention, and disaster recovery must be chosen for the actual environment.
+MySQL data directories are not downgrade-compatible across major versions. Never remove a volume merely to make an image start unless its data is backed up or intentionally disposable.
 
 ## HTTPS and WSS
 
 Local development may use HTTP and WS. Public production traffic must use HTTPS and WSS through a TLS-terminating edge, ingress, gateway, or load balancer.
 
-The optional single-host edge is defined by:
+The optional single-host edge requires paths supplied outside Git:
 
 ```text
-deploy/production/docker-compose.tls.yml
-deploy/production/tls/nginx.conf.template
+APP_TLS_CERT_FILE
+APP_TLS_KEY_FILE
 ```
 
-Enable it with the same production entrypoint:
+Enable it with:
 
 ```bash
 export APP_HTTPS_ENABLED=true
@@ -160,113 +166,29 @@ make production-config
 make production-up
 ```
 
-With the switch enabled, the wrapper loads both the base stack and TLS override. The edge redirects HTTP to the exact externally configured `APP_HTTPS_PORT`, accepts TLS 1.2 and TLS 1.3, adds HSTS, proxies the Admin Web, and preserves WebSocket Upgrade headers for `wss://<host>/ws`.
+The edge:
 
-For example, the default development-style edge ports behave as follows:
+- redirects HTTP to the configured HTTPS port;
+- accepts TLS 1.2 and TLS 1.3;
+- adds HSTS;
+- proxies Admin Web and API traffic;
+- preserves WebSocket Upgrade headers for `/ws`.
 
-```text
-http://example.test:8081/path
-  -> 308 https://example.test:8443/path
-```
+The certificate SAN must contain the deployed domain, and the full chain must be supplied. The Compose edge consumes existing certificate files; it does not request or renew certificates. Prefer a managed certificate service, ingress controller, or ACME process.
 
-Standard production ports behave as follows:
+Never commit a TLS private key. The key must be readable by the unprivileged edge container through a controlled permission or secret-mount mechanism.
 
-```text
-http://example.com:80/path
-  -> 308 https://example.com:443/path
-```
+## Authentication bootstrap
 
-To return to the loopback-only HTTP/WS mode, stop the active stack and restart with the switch disabled while retaining the same default `production` project name:
+After the stack becomes healthy:
 
-```bash
-APP_HTTPS_ENABLED=true make production-down
-APP_HTTPS_ENABLED=false make production-up
-```
+1. open the Admin Web bootstrap route;
+2. create the first `platform_super_admin` account using `APP_ADMIN_BOOTSTRAP_TOKEN`;
+3. verify administrator login and `/admin/me`;
+4. remove `APP_ADMIN_BOOTSTRAP_TOKEN` from the deployment environment;
+5. recreate the API container so bootstrap is no longer configured.
 
-### Trusted production certificates
-
-A self-signed certificate is suitable only for local verification. Browsers and public clients will not trust it automatically.
-
-A trusted public deployment requires all of the following:
-
-1. a domain name whose DNS records point to the deployment edge;
-2. a certificate whose SAN list contains that exact domain;
-3. the complete certificate chain, usually `fullchain.pem`;
-4. the matching private key, usually `privkey.pem`;
-5. certificate renewal handled by the operator, a certificate manager, an ingress controller, or a managed load balancer.
-
-The single-host Compose edge consumes existing certificate files; it does not request or renew certificates itself. Obtain them through an operator-controlled issuer such as a managed certificate service or an ACME client, then provide absolute paths:
-
-```bash
-APP_HTTPS_ENABLED=true \
-APP_TLS_CERT_FILE=/etc/letsencrypt/live/example.com/fullchain.pem \
-APP_TLS_KEY_FILE=/etc/letsencrypt/live/example.com/privkey.pem \
-APP_HTTP_PORT=80 \
-APP_HTTPS_PORT=443 \
-make production-up
-```
-
-The certificate and private key must be readable by the unprivileged Nginx container UID or group. Do not solve this by placing private keys in the image or source repository. After certificate renewal, recreate or reload only the TLS edge according to the certificate-management method in use.
-
-The complete realtime protocol, authentication model, client examples, limits, metrics, and multi-instance boundary are documented in `docs/operations/realtime-websocket.md`.
-
-## Data cache behavior
-
-Ordinary entity detail reads use the shared Redis cache through the persistence adapter. Account, role, and authorization-resource models provide:
-
-- cached primary or unique-key reads;
-- explicit fresh reads that bypass Redis;
-- transaction and `FOR UPDATE` reads that bypass Redis;
-- one write path that modifies MySQL first and then invalidates all affected primary and old/new unique-index keys.
-
-Passwords, sessions, audit logs, lists, searches, aggregates, and Casbin policy rows do not use ordinary row caching. Authentication status checks use fresh account reads.
-
-## Clustered authorization
-
-MySQL remains the durable Casbin policy source. Each API replica keeps a `SyncedEnforcer` in memory, so normal `Enforce` calls do not query MySQL or Redis.
-
-Policy writes:
-
-1. lock the global row in `authorization_policy_state`;
-2. read and validate the latest policy, including protected active-super-administrator invariants;
-3. commit the policy and increment its version in one MySQL transaction;
-4. reload the local Enforcer;
-5. publish the committed version through Redis Pub/Sub.
-
-Other replicas reload when they observe a newer version. Periodic MySQL version polling repairs missed Pub/Sub messages. A stale or failed policy reload makes `/health/ready` fail while the previous in-memory policy remains intact.
-
-## Realtime multi-instance boundary
-
-Each API replica owns its local WebSocket connections. The generic Hub can send to local account connections and local topic subscribers, but it does not silently pretend to provide distributed room routing.
-
-A multi-Pod game must explicitly choose an authoritative room/game node and a cross-Pod dispatcher. Durable or recoverable game state must not live only in one WebSocket connection or one Pod's memory.
-
-## Kubernetes
-
-`deploy/kubernetes/base.yaml` and `deploy/kubernetes/admin-web.yaml` contain:
-
-- the shared `awesome-zero-platform` namespace;
-- two-replica API and Admin Web Deployments;
-- readiness and liveness probes;
-- non-root and read-only filesystem security settings;
-- CPU and memory requests and limits;
-- Prometheus scrape annotations;
-- ClusterIP Services;
-- an API PodDisruptionBudget;
-- Pod-name injection through `APP_INSTANCE_ID` for authorization synchronization diagnostics.
-
-The Admin Web Nginx container proxies `/api/` and `/ws` to `app-api:8888`; the Kubernetes API Service exposes the matching port and balances requests across API replicas. Authentication does not require sticky sessions because sessions are stored in Redis. A real game deployment still needs explicit room ownership and cross-Pod event routing as described above.
-
-Before applying the manifests:
-
-1. Replace the example image references with immutable version tags or digests.
-2. Create `awesome-zero-platform-secrets` in the target namespace with `mysql-user`, `mysql-password`, `redis-password`, and `access-token-secret` keys.
-3. Provide reachable MySQL and Redis Services or change `APP_MYSQL_ADDR` and `APP_REDIS_ADDR`.
-4. Apply `server/database/schema/current.sql` through a deployment Job or CI/CD database stage before rolling out a version that requires it. API Pods must not modify schema during startup.
-5. Add the environment-specific ingress, TLS, network policies, backup policy, and monitoring stack.
-6. Configure ingress WebSocket timeouts and Upgrade forwarding for `/ws`.
-
-The committed manifests deliberately do not contain a Secret object or plaintext production credentials.
+Authentication does not require sticky sessions because sessions are stored in Redis.
 
 ## Probes and metrics
 
@@ -275,11 +197,47 @@ The committed manifests deliberately do not contain a Secret object or plaintext
 - Metrics: `GET /metrics`
 - Authenticated realtime probe: `app-api -realtime-healthcheck`
 
-Readiness depends on MySQL, Redis, and current Casbin policy synchronization. Metrics expose process, Go runtime, HTTP request, and realtime WebSocket series. The metrics endpoint should normally be restricted to the monitoring network rather than exposed publicly.
+Readiness depends on MySQL, Redis, and current authorization policy synchronization. Metrics expose process, Go runtime, HTTP request, and realtime WebSocket series. Restrict `/metrics` to the monitoring network.
 
-## Configuration overrides
+The runtime acceptance script verifies production HTTP, HTTPS, authenticated WS/WSS, bootstrap/login, and cleanup behavior.
 
-The production YAML and wrapper provide non-secret defaults. These environment variables override deployment-specific values:
+## Cache and authorization behavior
+
+Ordinary entity detail reads use the shared Redis model cache. Transactions, `FOR UPDATE` reads, authentication account-state checks, lists, searches, password data, sessions, audit events, Doudizhu aggregates, and Casbin policy rows bypass ordinary row caching.
+
+MySQL remains the durable Casbin policy source. Each API process keeps a synchronized in-memory enforcer. Policy writes commit a version in MySQL, reload the local enforcer, and publish the version through Redis Pub/Sub. Periodic MySQL polling repairs missed notifications. A failed or stale reload makes readiness fail while the previous in-memory policy remains intact.
+
+## Fair Doudizhu process boundary
+
+Active cards, bids, turns, passes, and live versions are authoritative in one API process. MySQL stores durable room/fairness data, command results, events, protected contribution references, and immutable terminal archives. Redis does not store active game snapshots.
+
+Consequences:
+
+- participant reconnect is supported while the authoritative process is alive;
+- terminal evidence remains available after normal live-hand removal;
+- a process crash does not restore an active hand;
+- multiple interchangeable API replicas do not provide transparent active-game migration or cross-Pod delivery.
+
+A multi-instance game deployment must add explicit authoritative room ownership, cross-node command/event routing, and recoverable active state. Do not assume the generic local WebSocket hub provides distributed game routing.
+
+## Kubernetes baseline
+
+`deploy/kubernetes/base.yaml` and `deploy/kubernetes/admin-web.yaml` provide namespace, API/Admin Deployments, Services, probes, resource requests/limits, security contexts, Prometheus annotations, and an API PodDisruptionBudget.
+
+Before applying them:
+
+1. replace example image references with immutable tags or digests;
+2. create the required Secret outside Git;
+3. provide reachable MySQL and Redis endpoints;
+4. apply `server/database/schema/current.sql` through a deployment Job or CI/CD database stage;
+5. configure ingress, TLS, WebSocket timeouts, network policies, backups, logs, and monitoring;
+6. keep Doudizhu disabled across interchangeable replicas unless the later distributed-game boundary has been implemented.
+
+API Pods must not modify schema during startup.
+
+## Environment overrides
+
+Supported production overrides include:
 
 ```text
 APP_HOST
@@ -294,6 +252,14 @@ APP_REDIS_USERNAME
 APP_REDIS_PASSWORD
 APP_AUTH_ACCESS_TOKEN_SECRET
 APP_ADMIN_BOOTSTRAP_TOKEN
+APP_REVEAL_KEYS_ENABLED
+APP_REVEAL_KEYS_STATIC_JSON
+APP_DOUDIZHU_ENABLED
+APP_DOUDIZHU_BEACON_PROVIDER
+APP_DOUDIZHU_BEACON_ROUND
+APP_DOUDIZHU_BEACON_PROOF_SECRET
+APP_DOUDIZHU_CONTRIBUTION_KEY_ID
+APP_DOUDIZHU_CONTRIBUTION_KEY_HEX
 APP_COMPOSE_PROJECT_NAME
 APP_HTTPS_ENABLED
 APP_TLS_CERT_FILE
@@ -302,4 +268,4 @@ APP_HTTP_PORT
 APP_HTTPS_PORT
 ```
 
-No production credential should be added to `production.yaml`, Compose files, Kubernetes manifests, Docker build arguments, source code, or CI logs.
+See `docs/operations/server-v1-release.md` for the local three-player integration path and exact server-v1 feature boundary.
