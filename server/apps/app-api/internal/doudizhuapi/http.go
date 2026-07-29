@@ -59,8 +59,12 @@ func commandHandler(dispatcher *Dispatcher) http.HandlerFunc {
 	}
 }
 
-func publicViewHandler(dispatcher *Dispatcher) http.HandlerFunc { return viewHandler(dispatcher, false) }
-func privateViewHandler(dispatcher *Dispatcher) http.HandlerFunc { return viewHandler(dispatcher, true) }
+func publicViewHandler(dispatcher *Dispatcher) http.HandlerFunc {
+	return viewHandler(dispatcher, false)
+}
+func privateViewHandler(dispatcher *Dispatcher) http.HandlerFunc {
+	return viewHandler(dispatcher, true)
+}
 func viewHandler(dispatcher *Dispatcher, private bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		actor, ok := authenticatedActor(r)
