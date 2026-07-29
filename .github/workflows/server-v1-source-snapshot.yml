@@ -1,0 +1,32 @@
+name: Server V1 Source Snapshot
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-v1-source-snapshot
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    if: github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Capture source
+        run: |
+          tar --exclude=.git --exclude=node_modules --exclude='*.log' -czf /tmp/awesome-zero-platform-main.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: awesome-zero-platform-main-source
+          path: /tmp/awesome-zero-platform-main.tar.gz
+          if-no-files-found: error
+          retention-days: 1
