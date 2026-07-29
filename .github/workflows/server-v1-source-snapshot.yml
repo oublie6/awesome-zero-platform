@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: server-v1-source-snapshot
@@ -21,6 +22,16 @@ jobs:
         with:
           ref: main
           fetch-depth: 1
+      - name: Publish pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          gh api repos/${{ github.repository }}/statuses/$sha \
+            -f state=pending \
+            -f context=server-v1/source-snapshot \
+            -f description='Capturing latest main source snapshot' \
+            -f target_url='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       - name: Capture source
         run: |
           tar --exclude=.git --exclude=node_modules --exclude='*.log' -czf /tmp/awesome-zero-platform-main.tar.gz .
@@ -30,3 +41,13 @@ jobs:
           path: /tmp/awesome-zero-platform-main.tar.gz
           if-no-files-found: error
           retention-days: 1
+      - name: Publish success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          gh api repos/${{ github.repository }}/statuses/$sha \
+            -f state=success \
+            -f context=server-v1/source-snapshot \
+            -f description='Latest main source snapshot captured' \
+            -f target_url='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
