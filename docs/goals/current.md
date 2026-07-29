@@ -49,15 +49,23 @@ Outside this goal:
 ### Completed
 
 - Goals 0029 and 0030.
+- Shared dispatcher, authenticated HTTP handlers, configuration, production composition, and focused tests.
+- Goal 0031 focused ordinary tests, race tests, integration-tag compilation, and vet passed in GitHub Actions.
 
 ### In progress
 
-- Shared dispatcher, HTTP handlers, configuration, production composition, and tests.
+- Full repository CI and production runtime verification against the latest formatted `main` commit.
 
 ### Remaining
 
-- Focused and final verification, completion report, and archive.
+- Final verification result, completion report, and archive.
+
+### Verification status
+
+- `goal0031/focused`: passed on commit `ce39f5535b06f3e0f724346065a8baa644a483dd`.
+- Local source review found one `gofmt` difference in `server/apps/app-api/internal/doudizhuapi/http.go`; the focused workflow formatted it and committed the fix as `ce39f5535b06f3e0f724346065a8baa644a483dd`.
+- Full CI is being retriggered from the latest `main` state by this status update.
 
 ## Completion Report
 
-Pending.
+Pending final full-CI and runtime acceptance results.
