@@ -1,4 +1,4 @@
-name: Goal 0031 Apply and Verification
+name: Goal 0031 Focused Verification
 
 on:
   workflow_run:
@@ -10,11 +10,11 @@ permissions:
   statuses: write
 
 concurrency:
-  group: goal0031-apply-main
+  group: goal0031-focused-main
   cancel-in-progress: true
 
 jobs:
-  apply:
+  verify:
     if: github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.id == 30409676485
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -27,11 +27,8 @@ jobs:
         with:
           go-version: 1.25.8
           cache-dependency-path: server/go.sum
-      - name: Extract staged source
+      - name: Format plaintext implementation
         run: |
-          base64 -d .github/server-v1/goal0031-files.tar.gz.b64 > "$RUNNER_TEMP/goal0031-files.tar.gz"
-          echo '3c3f5dc7d8321e73dd5518dadc376d4dc8da50a8335abc44f7de96431cf8d9b2  '"$RUNNER_TEMP/goal0031-files.tar.gz" | sha256sum -c -
-          tar -xzf "$RUNNER_TEMP/goal0031-files.tar.gz" -C .
           gofmt -w \
             server/apps/app-api/internal/doudizhuapi/*.go \
             server/apps/app-api/internal/bootstrap/bootstrap.go \
@@ -67,14 +64,14 @@ jobs:
           ./apps/app-api/internal/config/...
           ./apps/app-api/internal/bootstrap/...
           ./business/doudizhu/infrastructure/runtime/...
-      - name: Commit verified implementation
+      - name: Commit formatting and staging cleanup
         run: |
-          rm -f .github/server-v1/goal0031-files.tar.gz.b64 .github/workflows/goal0031-apply-verify.yml
-          rmdir .github/server-v1 2>/dev/null || true
+          rm -rf .github/server-v1
+          rm -f .github/workflows/goal0031-apply-verify.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
-          git commit -m 'feat: expose authenticated Doudizhu HTTP API'
+          git commit -m 'style: verify authenticated Doudizhu HTTP API'
           git push origin HEAD:main
       - name: Publish success
         env:
