@@ -1,0 +1,99 @@
+name: Goal 0031 Apply and Verification
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: goal0031-apply-main
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.id == 30409676485
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+          cache-dependency-path: server/go.sum
+      - name: Extract staged source
+        run: |
+          base64 -d .github/server-v1/goal0031-files.tar.gz.b64 > "$RUNNER_TEMP/goal0031-files.tar.gz"
+          echo '3c3f5dc7d8321e73dd5518dadc376d4dc8da50a8335abc44f7de96431cf8d9b2  '"$RUNNER_TEMP/goal0031-files.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/goal0031-files.tar.gz" -C .
+          gofmt -w \
+            server/apps/app-api/internal/doudizhuapi/*.go \
+            server/apps/app-api/internal/bootstrap/bootstrap.go \
+            server/apps/app-api/internal/bootstrap/doudizhu.go \
+            server/apps/app-api/internal/config/*.go \
+            server/business/doudizhu/infrastructure/runtime/hmac_beacon_proof*.go
+      - name: Focused ordinary tests
+        working-directory: server
+        run: >-
+          go test -count=1 -p 1 -parallel 1
+          ./apps/app-api/internal/doudizhuapi/...
+          ./apps/app-api/internal/config/...
+          ./apps/app-api/internal/bootstrap/...
+          ./business/doudizhu/infrastructure/runtime/...
+      - name: Focused race tests
+        working-directory: server
+        run: >-
+          go test -race -count=1 -p 1 -parallel 1
+          ./apps/app-api/internal/doudizhuapi/...
+          ./business/doudizhu/infrastructure/runtime/...
+      - name: Integration-tag compile
+        working-directory: server
+        run: >-
+          go test -tags=integration -run '^$'
+          ./apps/app-api/internal/bootstrap/...
+          ./business/doudizhu/infrastructure/mysqlstore/...
+          ./business/gamecore/infrastructure/mysqlarchive/...
+      - name: Vet
+        working-directory: server
+        run: >-
+          go vet
+          ./apps/app-api/internal/doudizhuapi/...
+          ./apps/app-api/internal/config/...
+          ./apps/app-api/internal/bootstrap/...
+          ./business/doudizhu/infrastructure/runtime/...
+      - name: Commit verified implementation
+        run: |
+          rm -f .github/server-v1/goal0031-files.tar.gz.b64 .github/workflows/goal0031-apply-verify.yml
+          rmdir .github/server-v1 2>/dev/null || true
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'feat: expose authenticated Doudizhu HTTP API'
+          git push origin HEAD:main
+      - name: Publish success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          gh api repos/${{ github.repository }}/statuses/$sha \
+            -f state=success \
+            -f context=goal0031/focused \
+            -f description='Goal 0031 focused verification passed' \
+            -f target_url='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+      - name: Publish failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          gh api repos/${{ github.repository }}/statuses/$sha \
+            -f state=failure \
+            -f context=goal0031/focused \
+            -f description='Goal 0031 focused verification failed' \
+            -f target_url='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
