@@ -58,7 +58,7 @@ func VerifyFinalRecord(record gamecore.FinalRecord) (FinalVerificationReport, er
 
 func verifyCompletedRecord(record gamecore.FinalRecord) (FinalVerificationReport, error) {
 	var payload CompletedPayload
-	if err := decodeStrictJSON(record.Payload(), &payload); err != nil {
+	if err := decodeFinalEvidenceJSON(record.Payload(), &payload); err != nil {
 		return FinalVerificationReport{}, invalidEvidence("completed payload", err)
 	}
 	if payload.Version != CompletedPayloadV1 || payload.Status != string(gamecore.FinalStatusCompleted) ||
@@ -124,7 +124,7 @@ func verifyCompletedRecord(record gamecore.FinalRecord) (FinalVerificationReport
 
 func verifyAbortedRecord(record gamecore.FinalRecord) (FinalVerificationReport, error) {
 	var payload TerminalPayload
-	if err := decodeStrictJSON(record.Payload(), &payload); err != nil {
+	if err := decodeFinalEvidenceJSON(record.Payload(), &payload); err != nil {
 		return FinalVerificationReport{}, invalidEvidence("aborted payload", err)
 	}
 	if payload.Version != TerminalPayloadV1 || payload.Status != string(gamecore.FinalStatusAborted) ||
@@ -339,7 +339,7 @@ func containsPhysicalCard(cards []carddeck.Card, wanted carddeck.Card) bool {
 	return false
 }
 
-func decodeStrictJSON(payload []byte, destination any) error {
+func decodeFinalEvidenceJSON(payload []byte, destination any) error {
 	if len(payload) == 0 {
 		return gamecore.ErrVerificationFailed
 	}

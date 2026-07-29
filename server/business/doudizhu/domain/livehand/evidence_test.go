@@ -295,7 +295,9 @@ func finalEvidenceFixture(t *testing.T, handID string) (gamecore.FairnessMateria
 	return material, artifact, setup, transcript
 }
 
-func digestFromText(value string) gamecore.Digest { return gamecore.Digest(sha256.Sum256([]byte(value))) }
+func digestFromText(value string) gamecore.Digest {
+	return gamecore.Digest(sha256.Sum256([]byte(value)))
+}
 
 func clonePlayingHistory(source []playing.Action) []playing.Action {
 	result := make([]playing.Action, len(source))
