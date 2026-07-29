@@ -32,6 +32,9 @@ func TestFinalEvidenceReadAuthorizationAndCorruptionWithRealMySQL(t *testing.T) 
 	participant := domain.AccountID(prefix + "-seat-1")
 	cleanupIntegrationRows(t, db, prefix)
 	defer cleanupIntegrationRows(t, db, prefix)
+	defer func() {
+		_, _ = db.Exec("DELETE FROM game_final_records WHERE instance_id = ?", handID)
+	}()
 
 	seats := [3]domain.HandSeat{
 		{Seat: domain.SeatOne, AccountID: participant},
