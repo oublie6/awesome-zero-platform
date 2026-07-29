@@ -26,18 +26,8 @@ jobs:
         with:
           go-version: 1.25.8
           cache-dependency-path: server/go.sum
-      - name: Repair private helper name and format
+      - name: Format
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path("server/business/doudizhu/domain/livehand/evidence.go")
-          text = path.read_text(encoding="utf-8")
-          expected = 3
-          actual = text.count("decodeStrictJSON")
-          if actual != expected:
-              raise SystemExit(f"decodeStrictJSON count {actual}, want {expected}")
-          path.write_text(text.replace("decodeStrictJSON", "decodeFinalEvidenceJSON"), encoding="utf-8")
-          PY
           gofmt -w \
             server/business/doudizhu/domain/livehand/evidence.go \
             server/business/doudizhu/domain/livehand/evidence_test.go \
@@ -64,7 +54,7 @@ jobs:
       - name: Vet
         working-directory: server
         run: go vet ./business/doudizhu/domain/livehand/... ./business/doudizhu/application/... ./business/gamecore/infrastructure/mysqlarchive/...
-      - name: Commit verified repair and formatting
+      - name: Commit formatting
         run: |
           if ! git diff --quiet; then
             git config user.name github-actions[bot]
@@ -75,7 +65,7 @@ jobs:
               server/business/doudizhu/application/final_evidence.go \
               server/business/doudizhu/application/final_evidence_test.go \
               server/business/gamecore/infrastructure/mysqlarchive/archive.go
-            git commit -m "fix: verify Goal 0029 final evidence"
+            git commit -m "style: format Goal 0029 final evidence"
             git push origin HEAD:main
           fi
       - name: Publish success
