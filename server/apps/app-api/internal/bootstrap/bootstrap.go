@@ -10,6 +10,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/adminhttp"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/config"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/cryptohttp"
+	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/doudizhuapi"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/handler"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/securityhttp"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/svc"
@@ -41,13 +42,14 @@ var (
 )
 
 type App struct {
-	Config   config.Config
-	server   *rest.Server
-	mysql    database.Handle
-	redis    cache.Handle
-	authz    *casbinmysql.Engine
-	realtime *realtime.Hub
-	stopOnce sync.Once
+	Config         config.Config
+	server         *rest.Server
+	mysql          database.Handle
+	redis          cache.Handle
+	authz          *casbinmysql.Engine
+	realtime       *realtime.Hub
+	doudizhuCancel context.CancelFunc
+	stopOnce       sync.Once
 }
 
 func New(configFile string) (*App, error) {
@@ -121,7 +123,11 @@ func New(configFile string) (*App, error) {
 
 	var authorizationEngine *casbinmysql.Engine
 	var realtimeHub *realtime.Hub
+	var doudizhuCancel context.CancelFunc
 	closeResources := func() {
+		if doudizhuCancel != nil {
+			doudizhuCancel()
+		}
 		if realtimeHub != nil {
 			_ = realtimeHub.Close(context.Background())
 		}
@@ -268,10 +274,20 @@ func New(configFile string) (*App, error) {
 		svcCtx.Admin = adminService
 	}
 
+	doudizhu, err := initializeDoudizhu(cfg, mysqlResource, svcCtx.RevealKeys)
+	if err != nil {
+		closeResources()
+		return nil, fmt.Errorf("initialize Doudizhu service: %w", err)
+	}
+	doudizhuCancel = doudizhu.cancel
+
 	handler.RegisterHandlers(server, svcCtx)
 	cryptohttp.Register(server, svcCtx)
 	securityhttp.Register(server, svcCtx)
 	adminhttp.Register(server, svcCtx)
+	if doudizhu.dispatcher != nil {
+		doudizhuapi.Register(server, svcCtx.Authn, doudizhu.dispatcher)
+	}
 	if realtimeHub != nil {
 		server.AddRoutes([]rest.Route{{Method: http.MethodGet, Path: cfg.Realtime.Path, Handler: realtimeHub.Handler().ServeHTTP}})
 	}
@@ -280,12 +296,13 @@ func New(configFile string) (*App, error) {
 	}
 
 	return &App{
-		Config:   cfg,
-		server:   server,
-		mysql:    mysqlResource,
-		redis:    redisClient,
-		authz:    authorizationEngine,
-		realtime: realtimeHub,
+		Config:         cfg,
+		server:         server,
+		mysql:          mysqlResource,
+		redis:          redisClient,
+		authz:          authorizationEngine,
+		realtime:       realtimeHub,
+		doudizhuCancel: doudizhuCancel,
 	}, nil
 }
 
@@ -299,6 +316,9 @@ func (a *App) Stop() {
 		return
 	}
 	a.stopOnce.Do(func() {
+		if a.doudizhuCancel != nil {
+			a.doudizhuCancel()
+		}
 		if a.realtime != nil {
 			_ = a.realtime.Close(context.Background())
 		}
