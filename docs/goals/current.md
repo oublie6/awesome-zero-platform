@@ -2,9 +2,9 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-07-29
-- Completed: Not yet.
+- Completed: 2026-07-29
 - Blockers: None.
 
 ## Goal
@@ -13,7 +13,7 @@ Expose the completed Doudizhu application, live runtime, lifecycle supervisor, a
 
 ## Scope
 
-Deliver:
+Delivered:
 
 1. A shared versioned command dispatcher usable by HTTP and later WSS.
 2. Durable room/fairness commands backed by the existing MySQL command protocol.
@@ -48,24 +48,33 @@ Outside this goal:
 
 ### Completed
 
-- Goals 0029 and 0030.
-- Shared dispatcher, authenticated HTTP handlers, configuration, production composition, and focused tests.
-- Goal 0031 focused ordinary tests, race tests, integration-tag compilation, and vet passed in GitHub Actions.
+- Shared dispatcher and authenticated HTTP transport.
+- Durable and live command routing with database and bounded in-memory idempotency.
+- Authenticated public/private views and participant-only final evidence.
+- Strict request validation and raw structured JSON payloads with copy isolation.
+- Production composition, validated configuration, lifecycle shutdown ordering, and default-disabled feature switch.
+- Focused, race, vet, full repository, client interoperability, real MySQL/Redis integration, build, Compose, and production runtime verification.
 
 ### In progress
 
-- Full repository CI and production runtime verification against the latest formatted `main` commit.
+- None.
 
 ### Remaining
 
-- Final verification result, completion report, and archive.
+- None within Goal 0031.
 
 ### Verification status
 
-- `goal0031/focused`: passed on commit `ce39f5535b06f3e0f724346065a8baa644a483dd`.
-- Local source review found one `gofmt` difference in `server/apps/app-api/internal/doudizhuapi/http.go`; the focused workflow formatted it and committed the fix as `ce39f5535b06f3e0f724346065a8baa644a483dd`.
-- Full CI is being retriggered from the latest `main` state by this status update.
+- Focused Goal 0031 verification passed on commit `ce39f5535b06f3e0f724346065a8baa644a483dd`.
+- Final full verification passed for source commit `dc0492cb8f32dbde4f3e3a5608fc76eac49b805b` in GitHub Actions run `30442521770`.
+- Module tidiness, generated-code cleanliness, formatting, focused ordinary tests, Goal 0031 race tests, and `go vet` passed.
+- All Go tests and the security, Admin, and realtime race suites passed.
+- Secure Envelope TypeScript/Go interoperability, Cocos client policy, and Admin Web build passed.
+- The complete MySQL/Redis integration suite passed.
+- Server build, local and production Compose validation, and production runtime acceptance passed.
 
 ## Completion Report
 
-Pending final full-CI and runtime acceptance results.
+Goal 0031 is complete. The Fair Doudizhu application is now exposed through an authenticated versioned HTTP contract without moving product rules into transport code. Actors are derived exclusively from authenticated principals; durable commands retain database idempotency; live commands use bounded replay protection; public/private views and command results remain structured JSON; and final evidence stays participant-only and side-effect free.
+
+The production composition root wires persistence, live runtime, secure contribution handling, reveal-key opening, beacon-proof verification, lifecycle supervision, and ordered shutdown. Configuration is validated and the feature remains disabled by default until explicitly enabled. All focused and repository-wide acceptance checks passed. Deferred WSS transport, client gameplay UI, crash restoration, cross-instance migration, and value-bearing features remain outside this goal.
