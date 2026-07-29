@@ -25,6 +25,7 @@ import (
 
 type doudizhuComponents struct {
 	dispatcher *doudizhuapi.Dispatcher
+	audience   doudizhuapi.HandAudience
 	cancel     context.CancelFunc
 }
 
@@ -124,5 +125,5 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 			}
 		}
 	}()
-	return doudizhuComponents{dispatcher: dispatcher, cancel: cancel}, nil
+	return doudizhuComponents{dispatcher: dispatcher, audience: store, cancel: cancel}, nil
 }
