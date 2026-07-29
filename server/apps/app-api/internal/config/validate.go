@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/hex"
 	"fmt"
 	"slices"
 	"strings"
@@ -73,6 +74,26 @@ func (c *Config) Prepare() {
 		}
 		if c.Authorization.Cluster.ReloadTimeout == 0 {
 			c.Authorization.Cluster.ReloadTimeout = 5 * time.Second
+		}
+	}
+	if c.Doudizhu.Enabled {
+		if c.Doudizhu.BiddingTimeout == 0 {
+			c.Doudizhu.BiddingTimeout = 45 * time.Second
+		}
+		if c.Doudizhu.PlayingTimeout == 0 {
+			c.Doudizhu.PlayingTimeout = 60 * time.Second
+		}
+		if c.Doudizhu.SweepInterval == 0 {
+			c.Doudizhu.SweepInterval = time.Second
+		}
+		if c.Doudizhu.CommandTTL == 0 {
+			c.Doudizhu.CommandTTL = time.Minute
+		}
+		if c.Doudizhu.ReplayTTL == 0 {
+			c.Doudizhu.ReplayTTL = 2 * time.Minute
+		}
+		if c.Doudizhu.ReplayEntries == 0 {
+			c.Doudizhu.ReplayEntries = 4096
 		}
 	}
 	if c.Observability.Metrics.Enabled {
@@ -175,6 +196,27 @@ func (c Config) Validate() error {
 	}
 	if token := strings.TrimSpace(c.Admin.BootstrapToken); token != "" && len(token) < 32 {
 		return fmt.Errorf("admin.bootstrapToken must contain at least 32 characters when configured")
+	}
+	if c.Doudizhu.Enabled {
+		if !c.Authentication.Enabled || !c.RevealKeys.Enabled {
+			return fmt.Errorf("doudizhu requires authentication and reveal keys")
+		}
+		if strings.TrimSpace(c.Doudizhu.BeaconProvider) == "" || strings.TrimSpace(c.Doudizhu.BeaconRound) == "" {
+			return fmt.Errorf("doudizhu beacon provider and round are required")
+		}
+		if len(c.Doudizhu.BeaconProofSecret) < 32 {
+			return fmt.Errorf("doudizhu beacon proof secret must contain at least 32 characters")
+		}
+		if strings.TrimSpace(c.Doudizhu.ContributionKeyID) == "" {
+			return fmt.Errorf("doudizhu contribution key ID is required")
+		}
+		decoded, err := hex.DecodeString(c.Doudizhu.ContributionKeyHex)
+		if err != nil || len(decoded) != 32 || strings.ToLower(c.Doudizhu.ContributionKeyHex) != c.Doudizhu.ContributionKeyHex {
+			return fmt.Errorf("doudizhu contribution key must be 64 lowercase hex characters")
+		}
+		if c.Doudizhu.BiddingTimeout <= 0 || c.Doudizhu.PlayingTimeout <= 0 || c.Doudizhu.SweepInterval <= 0 || c.Doudizhu.CommandTTL <= 0 || c.Doudizhu.ReplayTTL <= 0 || c.Doudizhu.ReplayEntries <= 0 {
+			return fmt.Errorf("doudizhu timeout and replay configuration is invalid")
+		}
 	}
 	if c.RevealKeys.Enabled && strings.TrimSpace(c.RevealKeys.StaticJSON) == "" {
 		return fmt.Errorf("revealKeys.staticJSON must not be empty when reveal key publication is enabled")
