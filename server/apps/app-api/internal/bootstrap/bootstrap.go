@@ -287,6 +287,12 @@ func New(configFile string) (*App, error) {
 	adminhttp.Register(server, svcCtx)
 	if doudizhu.dispatcher != nil {
 		doudizhuapi.Register(server, svcCtx.Authn, doudizhu.dispatcher)
+		if realtimeHub != nil {
+			if _, err := doudizhuapi.RegisterRealtime(realtimeHub, doudizhu.dispatcher, doudizhu.audience); err != nil {
+				closeResources()
+				return nil, fmt.Errorf("register Doudizhu realtime handlers: %w", err)
+			}
+		}
 	}
 	if realtimeHub != nil {
 		server.AddRoutes([]rest.Route{{Method: http.MethodGet, Path: cfg.Realtime.Path, Handler: realtimeHub.Handler().ServeHTTP}})
