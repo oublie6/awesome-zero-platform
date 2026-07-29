@@ -1,4 +1,4 @@
-# Goal 0030: Doudizhu Unified Termination and Timeout Supervision
+# Goal 0031: Authenticated Doudizhu HTTP API
 
 ## Status
 
@@ -9,50 +9,50 @@
 
 ## Goal
 
-Unify all non-winning Doudizhu terminal paths around the existing database-first and immutable-final-archive ordering. Automatically terminate all-pass bidding, authorize participant cancellation, expire bidding and playing leases, and retry archive failures with the same terminal command while keeping active hands and deadlines in process memory.
+Expose the completed Doudizhu application, live runtime, lifecycle supervisor, and final-evidence verifier through a strict authenticated HTTP contract. Keep transport concerns separate from game rules, derive the actor from the access token, preserve durable and live-command idempotency, and return live payloads as structured JSON rather than Base64.
 
 ## Scope
 
 Deliver:
 
-1. Stable reason codes for all-pass, participant cancellation, bidding timeout, and playing timeout.
-2. A transport-independent lifecycle supervisor with injected clock, ID generator, Hand reader, and terminal service.
-3. Automatic `NO_LANDLORD` abort after the final bid result.
-4. Participant-only cancellation that uses an internal lifecycle actor after authorization.
-5. Memory-only bidding and playing deadlines refreshed after successful live commands.
-6. Deterministic due-hand sweep and an optional production ticker loop.
-7. Retry with the exact same terminal command when database completion succeeded but final archive failed.
-8. No per-bid, per-play, per-pass, current-card, or deadline persistence.
-9. Focused ordinary, race, vet, full repository, real integration, build, Compose, and production runtime verification.
+1. A shared versioned command dispatcher usable by HTTP and later WSS.
+2. Durable room/fairness commands backed by the existing MySQL command protocol.
+3. Live bid/play/pass/cancel commands with short-lived in-memory request replay protection.
+4. Authenticated public view, private view, and final evidence endpoints.
+5. Strict JSON decoding, trim-clean identifiers, supported command whitelist, and bounded replay configuration.
+6. Raw JSON live payload transport and copy isolation.
+7. A production Doudizhu composition root with MySQL store/archive, live directory, seed vault, reveal-key opener, contribution protection, HMAC beacon proof verification, lifecycle supervisor, and shutdown cancellation.
+8. Configuration and environment validation with the feature disabled by default.
+9. Focused, real integration, full repository, Compose, and production runtime verification.
 
 Outside this goal:
 
-- public HTTP routes;
-- WSS commands or broadcasts;
-- active-hand crash restoration or cross-instance migration;
+- WSS commands, broadcasts, and reconnect snapshots;
 - client UI;
+- active-hand persistence, process-crash restoration, or cross-instance migration;
 - rankings, balances, prizes, or money-like value.
 
 ## Acceptance Criteria
 
-- Three passes produce one automatic `no_landlord` terminal command.
-- A terminal archive failure keeps one pending command and retry reuses every command field.
-- Only seated participants can request cancellation.
-- Bidding and playing use different configurable deadlines.
-- Successful live commands replace the appropriate deadline; completed play removes it.
-- Due hands expire through the existing `ExpireHand` transaction and final archive path.
-- Concurrent access is race-free and no external call occurs while the supervisor mutex is held.
+- Every endpoint requires a valid authenticated account and never accepts a caller-supplied seat or actor.
+- Unknown fields, trailing JSON, unsupported versions/types, whitespace-padded IDs, stale live versions, and replay conflicts fail closed.
+- Durable duplicate command IDs use existing database idempotency.
+- Concurrent duplicate live requests execute once and return copy-isolated identical results.
+- Public/private views and live results encode their payload as JSON objects, not Base64 strings.
+- All-pass and cancellation continue through Goal 0030 lifecycle supervision.
+- Final evidence remains participant-only and side-effect free.
+- The production composition root shuts down the lifecycle goroutine before database resources.
 - Full verification remains green.
 
 ## Working State
 
 ### Completed
 
-- Goal 0029 terminal evidence verification and read side.
+- Goals 0029 and 0030.
 
 ### In progress
 
-- Lifecycle supervisor implementation and tests.
+- Shared dispatcher, HTTP handlers, configuration, production composition, and tests.
 
 ### Remaining
 
