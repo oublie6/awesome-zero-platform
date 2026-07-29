@@ -1,0 +1,58 @@
+name: Goal 0030 Focused Verification
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: goal0030-focused-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.id == 30430063180
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.8
+          cache-dependency-path: server/go.sum
+      - name: Format
+        run: gofmt -w server/business/doudizhu/application/lifecycle/*.go
+      - name: Ordinary tests
+        working-directory: server
+        run: go test -count=1 -p 1 -parallel 1 ./business/doudizhu/application/lifecycle/...
+      - name: Race tests
+        working-directory: server
+        run: go test -race -count=1 -p 1 -parallel 1 ./business/doudizhu/application/lifecycle/...
+      - name: Vet
+        working-directory: server
+        run: go vet ./business/doudizhu/application/lifecycle/...
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add server/business/doudizhu/application/lifecycle
+            git commit -m "style: format Goal 0030 lifecycle supervision"
+            git push origin HEAD:main
+          fi
+      - name: Publish success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          gh api repos/${{ github.repository }}/statuses/$sha \
+            -f state=success \
+            -f context=goal0030/focused \
+            -f description='Goal 0030 focused verification passed' \
+            -f target_url='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
