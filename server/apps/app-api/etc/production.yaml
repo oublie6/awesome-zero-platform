@@ -78,6 +78,8 @@ Realtime:
 Admin:
   Enabled: true
   BootstrapToken: ""
+Doudizhu:
+  Enabled: false
 Observability:
   Metrics:
     Enabled: true
