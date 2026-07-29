@@ -25,6 +25,7 @@ type Config struct {
 	Admin          AdminConfig          `json:",optional"`
 	Observability  ObservabilityConfig  `json:",optional"`
 	RevealKeys     RevealKeysConfig     `json:",optional"`
+	Doudizhu       DoudizhuConfig       `json:",optional"`
 }
 
 type HTTPConfig struct {
@@ -103,4 +104,19 @@ type MetricsConfig struct {
 	Enabled   bool
 	Path      string `json:",default=/metrics"`
 	Namespace string `json:",default=awesome_zero_platform"`
+}
+
+type DoudizhuConfig struct {
+	Enabled            bool
+	BeaconProvider     string        `json:",optional"`
+	BeaconRound        string        `json:",optional"`
+	BeaconProofSecret  string        `json:",optional,env=APP_DOUDIZHU_BEACON_PROOF_SECRET"`
+	ContributionKeyID  string        `json:",optional"`
+	ContributionKeyHex string        `json:",optional,env=APP_DOUDIZHU_CONTRIBUTION_KEY_HEX"`
+	BiddingTimeout     time.Duration `json:",default=45s"`
+	PlayingTimeout     time.Duration `json:",default=60s"`
+	SweepInterval      time.Duration `json:",default=1s"`
+	CommandTTL         time.Duration `json:",default=1m"`
+	ReplayTTL          time.Duration `json:",default=2m"`
+	ReplayEntries      int           `json:",default=4096"`
 }
