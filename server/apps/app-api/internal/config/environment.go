@@ -20,7 +20,10 @@ func (c *Config) ApplyEnvironment() error {
 	applyString("APP_ADMIN_BOOTSTRAP_TOKEN", &c.Admin.BootstrapToken)
 	applyString("APP_INSTANCE_ID", &c.Authorization.Cluster.InstanceID)
 	applyString("APP_REVEAL_KEYS_STATIC_JSON", &c.RevealKeys.StaticJSON)
+	applyString("APP_DOUDIZHU_BEACON_PROVIDER", &c.Doudizhu.BeaconProvider)
+	applyString("APP_DOUDIZHU_BEACON_ROUND", &c.Doudizhu.BeaconRound)
 	applyString("APP_DOUDIZHU_BEACON_PROOF_SECRET", &c.Doudizhu.BeaconProofSecret)
+	applyString("APP_DOUDIZHU_CONTRIBUTION_KEY_ID", &c.Doudizhu.ContributionKeyID)
 	applyString("APP_DOUDIZHU_CONTRIBUTION_KEY_HEX", &c.Doudizhu.ContributionKeyHex)
 	if raw := strings.TrimSpace(os.Getenv("APP_DOUDIZHU_ENABLED")); raw != "" {
 		enabled, err := strconv.ParseBool(raw)
