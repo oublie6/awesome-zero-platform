@@ -62,13 +62,16 @@ func TestDoudizhuConfiguration(t *testing.T) {
 
 func TestApplyEnvironmentDoudizhu(t *testing.T) {
 	t.Setenv("APP_DOUDIZHU_ENABLED", "true")
+	t.Setenv("APP_DOUDIZHU_BEACON_PROVIDER", "local-hmac")
+	t.Setenv("APP_DOUDIZHU_BEACON_ROUND", "local-round-1")
 	t.Setenv("APP_DOUDIZHU_BEACON_PROOF_SECRET", "0123456789abcdef0123456789abcdef")
+	t.Setenv("APP_DOUDIZHU_CONTRIBUTION_KEY_ID", "local-contribution-v1")
 	t.Setenv("APP_DOUDIZHU_CONTRIBUTION_KEY_HEX", "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f")
 	var cfg Config
 	if err := cfg.ApplyEnvironment(); err != nil {
 		t.Fatal(err)
 	}
-	if !cfg.Doudizhu.Enabled || cfg.Doudizhu.BeaconProofSecret == "" || cfg.Doudizhu.ContributionKeyHex == "" {
+	if !cfg.Doudizhu.Enabled || cfg.Doudizhu.BeaconProvider != "local-hmac" || cfg.Doudizhu.BeaconRound != "local-round-1" || cfg.Doudizhu.BeaconProofSecret == "" || cfg.Doudizhu.ContributionKeyID != "local-contribution-v1" || cfg.Doudizhu.ContributionKeyHex == "" {
 		t.Fatalf("environment config=%#v", cfg.Doudizhu)
 	}
 }
