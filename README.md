@@ -2,47 +2,49 @@
 
 A modular Go application platform built on go-zero, designed for reusable server foundations and multiple client applications.
 
-## Current foundation
+## Server v1 status
 
-The platform currently provides:
+The maintainable server v1 baseline is complete. It provides a deployable platform backend and a private-room Fair Doudizhu backend with authenticated HTTP/WSS commands, participant-only realtime synchronization, reconnect, lifecycle supervision, settlement, and independently verifiable terminal evidence.
+
+The platform currently includes:
 
 - a runnable go-zero REST application with consistent HTTP errors, envelopes, request IDs, recovery, logging, CORS, security headers, and body limits;
-- MySQL and Redis lifecycle, readiness, deterministic schema, and integration tests;
-- internal identity accounts with UUIDv7 identifiers and Argon2id password hashing;
-- pluggable authentication with HMAC JWT access tokens and rotating Redis sessions;
-- pluggable authorization with Casbin/MySQL as the first adapter;
-- a complete Admin backend for accounts, roles, resources, sessions, audit, one-time bootstrap, standard permissions, and expert authorization tooling;
-- a Vue 3 Admin control plane with standard and backend-engineer views over the same APIs;
-- an authenticated realtime WebSocket foundation with bounded queues and graceful shutdown;
-- a reusable RFC 9180 HPKE secure-envelope opener for Go and matching engine-independent TypeScript sealer;
-- a code-first Cocos Creator 3.8 LTS client skeleton for the Fair Doudizhu product;
-- a Fair Doudizhu product/domain core with three-player rooms and the full fairness-to-terminal hand lifecycle;
-- a transactional Fair Doudizhu application and MySQL persistence layer with command-row idempotency, monotonic client sequences, optimistic snapshots, encrypted contribution records, and an event outbox;
-- Prometheus-compatible HTTP and process metrics;
-- local and production Compose, non-root API and Admin web images, Kubernetes baselines, and GitHub Actions CI.
+- MySQL and Redis lifecycle, readiness, deterministic schema, cache behavior, and real integration tests;
+- UUIDv7 identity accounts with Argon2id password hashing;
+- HMAC JWT access tokens with rotating Redis sessions, refresh, logout, and account-disable enforcement;
+- Casbin/MySQL authorization with clustered policy synchronization;
+- a complete Admin backend and Vue 3 control plane for accounts, roles, resources, sessions, audit, bootstrap, standard permissions, and expert authorization tooling;
+- an authenticated realtime WebSocket foundation with bounded queues, slow-consumer handling, multiple connections per account, and graceful shutdown;
+- an RFC 9180 HPKE secure-envelope implementation for Go and TypeScript, signed reveal-key manifests, and key lifecycle support;
+- a Fair Doudizhu domain and application stack covering private rooms, fixed seats, ready/start, commit-reveal fairness, deterministic shuffle and deal, bidding, play, settlement, timeout/cancellation, and terminal evidence;
+- transactional MySQL persistence with command-row idempotency, monotonic client sequences, optimistic aggregate versions, encrypted contribution records, events, and immutable final archives;
+- authenticated Doudizhu HTTP endpoints and WSS handlers sharing one dispatcher and replay policy;
+- participant-only private snapshots, account-targeted change delivery, latest-state reconnect, and terminal evidence recovery;
+- Prometheus-compatible HTTP, process, and realtime metrics;
+- local and production Compose, non-root API and Admin Web images, Kubernetes baselines, and GitHub Actions CI.
 
-Fair Doudizhu transport endpoints, public key publication, outbox delivery, card/deck rules, deterministic shuffle, bidding, play, scoring, fairness transcript publication, and gameplay UI remain deliberately deferred.
+Doudizhu is disabled by default and must be enabled with reveal-key, beacon-proof, and contribution-encryption configuration. The Cocos gameplay UI remains a client-stage deliverable.
 
-## Project layout
+## Quick start
 
-- `server/apps/` — runnable processes and transport composition
-- `server/foundation/` — reusable technical infrastructure without product semantics
-- `server/platform/` — reusable identity, authentication, authorization, Admin, and realtime capabilities
-- `server/business/doudizhu/domain/` — pure Fair Doudizhu aggregates and state machines
-- `server/business/doudizhu/application/` — commands, idempotency, sequence policy, reveal orchestration, and persistence ports
-- `server/business/doudizhu/infrastructure/` — MySQL, secure transport, protected contribution, normalization, and runtime adapters
-- `clients/admin-web/` — Vue 3 platform administration client
-- `clients/packages/` — engine-independent reusable client packages
-- `clients/fair-doudizhu-cocos/` — code-first Cocos Creator client composition root
-- `deploy/` — local, container, production Compose, and Kubernetes assets
-- `docs/` — architecture, API, operations, requirements, and goal documentation
-- `scripts/` — project automation scripts
+Install the required Go tool once:
 
-The project starts as a modular monolith and keeps module boundaries explicit so capabilities can be replaced or extracted when real scaling or ownership needs appear.
+```bash
+go install github.com/zeromicro/go-zero/tools/goctl@v1.10.1
+```
 
-## Start the Admin platform
+Start local dependencies, generate temporary development-only Doudizhu keys, and run the server:
 
-Start dependencies and API using the server instructions, then run:
+```bash
+make deps-reset
+make schema-apply
+make seed-apply
+
+eval "$(cd server && go run ./foundation/revealkeys/cmd/local-env)"
+make run
+```
+
+In another terminal, start Admin Web:
 
 ```bash
 cd clients/admin-web
@@ -50,20 +52,46 @@ npm install
 npm run dev
 ```
 
-For the first administrator, configure a random `APP_ADMIN_BOOTSTRAP_TOKEN` of at least 32 characters, open `/bootstrap`, create the account, and remove the token from the environment.
+Open `http://localhost:5173/bootstrap`, create the first administrator, and create three player accounts for integration.
 
-See:
+The complete startup, login, HTTP/WSS, reconnect, production enablement, and verification procedure is in [Server v1 release baseline](docs/operations/server-v1-release.md).
+
+## Project layout
+
+- `server/apps/` — runnable processes and transport composition
+- `server/foundation/` — reusable technical infrastructure without product semantics
+- `server/platform/` — reusable identity, authentication, authorization, Admin, and realtime capabilities
+- `server/business/doudizhu/domain/` — pure Fair Doudizhu aggregates and state machines
+- `server/business/doudizhu/application/` — commands, idempotency, sequence policy, reveal orchestration, lifecycle, and persistence ports
+- `server/business/doudizhu/infrastructure/` — MySQL, secure transport, protected contribution, shuffle/game runtime, final archive, and adapters
+- `clients/admin-web/` — Vue 3 platform administration client
+- `clients/packages/` — engine-independent reusable client packages
+- `clients/fair-doudizhu-cocos/` — code-first Cocos Creator client composition root
+- `deploy/` — local, container, production Compose, and Kubernetes assets
+- `docs/` — architecture, API, operations, requirements, and goal documentation
+- `scripts/` — project automation scripts
+
+The project starts as a modular monolith and keeps module boundaries explicit so capabilities can be replaced or extracted only when real scaling or ownership needs appear.
+
+## Server v1 boundary
+
+Active cards, bids, turns, passes, and live versions are authoritative in one running API process. MySQL stores durable setup state and immutable terminal archives; Redis does not store active hands. Process-crash restoration, cross-instance active-game migration, and distributed room ownership are intentionally deferred to a future server version.
+
+The first release also excludes public matchmaking, tournaments, bots, spectators, rankings, balances, prizes, recharge, cash-out, and any transfer of value.
+
+## Documentation
 
 - [Server usage](server/README.md)
+- [Server v1 release baseline](docs/operations/server-v1-release.md)
+- [Production deployment](docs/operations/production-deployment.md)
+- [Realtime WebSocket transport](docs/operations/realtime-websocket.md)
 - [Fair Doudizhu requirements](docs/requirements/fair-doudizhu-v1.md)
-- [Fair Doudizhu domain architecture](docs/architecture/fair-doudizhu-domain.md)
-- [Fair Doudizhu application persistence](docs/architecture/fair-doudizhu-application-persistence.md)
 - [Fair Doudizhu command protocol](docs/api/fair-doudizhu-protocol-v1.md)
+- [Doudizhu realtime protocol](docs/architecture/doudizhu-realtime-v1.md)
 - [Fair Doudizhu application contract](docs/api/fair-doudizhu-application-v1.md)
 - [Secure-envelope architecture](docs/architecture/secure-envelope-v1.md)
-- [Admin architecture](docs/architecture/admin-platform.md)
-- [Admin API](docs/api/admin.md)
-- [Admin web operations](docs/operations/admin-web.md)
-- [Security architecture](docs/architecture/security-platform.md)
 - [Authentication API](docs/api/authentication.md)
-- [Production deployment](docs/operations/production-deployment.md)
+- [Admin API](docs/api/admin.md)
+- [Admin architecture](docs/architecture/admin-platform.md)
+- [Admin Web operations](docs/operations/admin-web.md)
+- [Security architecture](docs/architecture/security-platform.md)
