@@ -106,3 +106,18 @@ The intended default flow is:
 - Every database structure change must update `server/database/schema`.
 - Add tests for reusable foundation capabilities and module-level business rules.
 - Prefer small, reviewable changes over broad speculative abstractions.
+
+## Mandatory self-review for primary-agent changes
+
+When the same agent owns both design and implementation, it must perform a distinct second-pass review before declaring the goal complete. This is required even when all automated tests pass.
+
+Self-review rules:
+
+- Treat the implementation as untrusted during review. Re-read the active goal, referenced requirements, decisions, architecture rules, and public contracts, then look for ways the change could be wrong rather than arguments that justify the current design.
+- Passing tests is necessary but not sufficient. Review requirement coverage, explicit exclusions, invariants, module ownership boundaries, and whether the implementation changed any behavior that the goal did not authorize.
+- Review at least these risk classes when relevant: empty and boundary inputs; duplicate, stale, retry, timeout, cancellation, and partial-success paths; concurrency, ordering, idempotency, transaction, and lifecycle races; error propagation, cleanup, rollback, restart, and recovery; backward compatibility of APIs, configuration, database schema, generated contracts, persisted data, and frontend behavior; security, authorization, credentials, sensitive payloads, and path validation; observability accuracy; resource usage and performance regressions.
+- Trace at least one successful flow and representative failure/recovery flows end to end across transport, application, module, persistence, and frontend layers affected by the change. For stateful or concurrent code, explicitly inspect state transitions and operation ordering rather than relying only on happy-path tests.
+- Inspect the final diff line by line, challenge every new assumption, and check that tests would fail for the defect the change is intended to prevent. Tests written by the implementing agent must also be reviewed for false positives, missing assertions, and overfitting to the implementation.
+- If self-review finds a defect or material gap, fix it, add or strengthen deterministic regression coverage, rerun focused and full verification, and repeat the self-review on the corrected diff.
+- An independent subagent or Codex review may strengthen confidence but does not replace this mandatory self-review. When the same agent performed design, implementation, and review, the completion report must call it self-review and must not describe it as independent review.
+- The completion report must summarize the self-review scope, important risks checked, findings and fixes, remaining uncertainties, and any frontend, dependency, integration, runtime, or environment checks that were not actually run.
