@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SESSION_NAME="awesome-zero-platform-codex"
-CODEX_CMD="env TERM=screen-256color COLORTERM=truecolor codex --dangerously-bypass-approvals-and-sandbox"
+CODEX_CMD="env TERM=screen-256color COLORTERM=truecolor codex --no-alt-screen --dangerously-bypass-approvals-and-sandbox"
 NO_ATTACH=0
 TMUX_CONF="${HOME}/.tmux.conf"
 TMUX_COLOR_BLOCK_BEGIN="# >>> start-codex-tmux color config >>>"
@@ -60,21 +60,32 @@ install_tmux() {
 }
 
 ensure_tmux_config() {
+  local temp_conf
+
   if [[ ! -f "${TMUX_CONF}" ]]; then
     touch "${TMUX_CONF}"
   fi
 
-  if grep -Fqx "${TMUX_COLOR_BLOCK_BEGIN}" "${TMUX_CONF}"; then
-    return 0
-  fi
+  temp_conf=$(mktemp "${TMUX_CONF}.tmp.XXXXXX")
+  awk -v begin="${TMUX_COLOR_BLOCK_BEGIN}" -v end="${TMUX_COLOR_BLOCK_END}" '
+    $0 == begin { in_managed_block = 1; next }
+    $0 == end { in_managed_block = 0; next }
+    !in_managed_block { print }
+  ' "${TMUX_CONF}" >"${temp_conf}"
 
   {
-    printf '\n%s\n' "${TMUX_COLOR_BLOCK_BEGIN}"
+    printf '%s\n' "${TMUX_COLOR_BLOCK_BEGIN}"
     printf '%s\n' 'set -g default-terminal "screen-256color"'
-    printf '%s\n' "set -as terminal-overrides ',*:RGB'"
-    printf '%s\n' 'set -g history-limit 100000'
+    printf '%s\n' "set -g terminal-overrides '*:RGB,xterm*:smcup@:rmcup@'"
+    printf '%s\n' 'set -g history-limit 500000'
+    printf '%s\n' 'set -g mouse on'
+    printf '%s\n' 'bind-key u copy-mode -e'
     printf '%s\n' "${TMUX_COLOR_BLOCK_END}"
-  } >>"${TMUX_CONF}"
+  } >>"${temp_conf}"
+
+  chmod --reference="${TMUX_CONF}" "${temp_conf}" 2>/dev/null || true
+  mv "${temp_conf}" "${TMUX_CONF}"
+  tmux source-file "${TMUX_CONF}" 2>/dev/null || true
 }
 
 usage() {
@@ -119,8 +130,6 @@ if ! command -v tmux >/dev/null 2>&1; then
 fi
 
 ensure_tmux_config
-export TERM=screen-256color
-export COLORTERM=truecolor
 
 if ! command -v codex >/dev/null 2>&1; then
   err "找不到 codex 命令。请先安装 Codex CLI，并确保 codex 在 PATH 中。"
