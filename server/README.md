@@ -6,7 +6,7 @@ The server is a modular-monolith Go application built on go-zero. The runnable p
 
 The server is not a game-specific application framework: `foundation` supplies technical capabilities, `platform` supplies reusable identity/security/realtime/Admin services, and `business` contains separately owned domain modules. The application bootstrap explicitly composes enabled business adapters; it does not dynamically load plugins. For data ownership, architecture regression tests, adding new modules and future microservice extraction, see [Module boundaries](../docs/architecture/module-boundaries.md). External system integrations require separate versioned contracts as documented in [External integrations](../docs/architecture/external-integrations.md).
 
-See [Observability](../docs/operations/logging-observability.md) for the opt-in Filebeat, Elasticsearch, Kibana, Prometheus, Grafana and Jaeger development overlay. The default server requires none of these services.
+See [Kubernetes observability](../docs/operations/logging-observability.md) for the opt-in Filebeat sidecar, Elasticsearch/Kibana, Pod-aware Prometheus, Grafana and Jaeger Kustomize overlay. The default server requires none of these services.
 
 ## Server v1
 
