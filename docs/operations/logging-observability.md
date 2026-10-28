@@ -1,78 +1,124 @@
-# Logs, Metrics, and Traces (Goal 0035)
+# Kubernetes logs, metrics and tracing
 
-This repository exposes three **opt-in developer observability pipelines** without replacing go-zero's standard logger or introducing Kafka/go-stash:
+**Primary deployment:** Kubernetes Kustomize. This guide is for an isolated, private **development / integration** cluster. No Docker Compose deployment is required for this observability stack.
 
-| Signal | Path | UI |
+## Architecture
+
+| Signal | Kubernetes flow | UI (via localhost port-forward) |
 | --- | --- | --- |
-| JSON logs | go-zero `logx` file output -> shared app-only volume -> Filebeat -> Elasticsearch | Kibana at `http://127.0.0.1:15601` |
-| Metrics | existing `/metrics` (HTTP, WebSocket, process/Go) -> Prometheus | Grafana at `http://127.0.0.1:13000` |
-| Traces | go-zero OpenTelemetry -> OTLP/gRPC -> Jaeger v2 | Jaeger at `http://127.0.0.1:16686` |
+| Logs | `app-api` JSON file logs -> **per-Pod Filebeat sidecar** (shared `emptyDir`) -> Elasticsearch -> Kibana | `127.0.0.1:15601` |
+| Metrics | existing go-zero HTTP/WS `/metrics` -> **Prometheus Kubernetes Pod discovery** -> Grafana | `127.0.0.1:13000` |
+| Traces | go-zero OTLP/gRPC -> internal `jaeger:4317` -> Jaeger v2 | `127.0.0.1:16686` |
 
-Prometheus can also be inspected directly at `http://127.0.0.1:19090` and a **development-only, unauthenticated** Elasticsearch API at `http://127.0.0.1:19200`. All published ports are loopback only. There is no externally exposed OTLP receiver; `app-api` sends traces internally to `jaeger:4317`.
+Kustomize base: `deploy/kubernetes/` (existing app, **without observability**). Optional overlay: `deploy/kubernetes-overlays/observability/`. Running `kubectl apply -k deploy/kubernetes-overlays/observability` adds the collectors and the `app-api` sidecar/configuration; it does not change application APIs or business rules.
 
-## Start locally on a dedicated development machine
+The `app-api` Deployment currently requests **two replicas**. A Filebeat sidecar is attached to **each Pod**, and Prometheus discovers **each Pod individually** with a namespaced read-only Role (get/list/watch Pods). Scraping a load-balanced Service directly would mix separate counters and is deliberately avoided.
 
-Allocate **at least ~8 GB of available memory** and sufficient disk space. This combined stack is unsuitable for the existing 1–2 GB primary development environment. It includes Elasticsearch 9.1, Kibana 9.1, Filebeat 9.1, Prometheus, Grafana and Jaeger v2.20. Java heap is limited to 512 MB, but the total Elasticsearch and Kibana processes consume more than their heap sizes.
+## Prerequisites — important
 
-Set the same application database/Redis/auth secrets required by [production deployment](production-deployment.md), and a separate Grafana password:
+- A working Kubernetes cluster and `kubectl` access to the **intended context**, with permission to create namespaced objects, Role/RoleBinding, PVC, Secret and a Job.
+- The existing `app-api` image from `deploy/kubernetes/base.yaml` must be available to cluster nodes. The manifests do **not** build or publish container images.
+- Working `mysql:3306` and `redis:6379` Services, existing schema, and an `awesome-zero-platform-secrets` Secret with the keys already referenced by `base.yaml`. This overlay does **not** install/replace MySQL or Redis.
+- A default dynamic StorageClass that can provision ReadWriteOnce PVCs (Elasticsearch **8 GiB**, Prometheus **3 GiB**) and appropriate persistent-volume backup procedures. The Filebeat registry and app logs are ephemeral per Pod. Grafana's preprovisioned dashboards survive restarts, but unprovisioned UI state uses an ephemeral local directory.
+- For Elasticsearch the Kubernetes node(s) must meet `vm.max_map_count >= 262144`; configure at the **node** according to your Kubernetes distribution and security policy. Do not add a privileged init container simply to change a host sysctl.
+- A comfortably sized **dedicated test cluster** (plan for roughly 8–12 GiB available RAM plus Kubernetes and existing DB/Redis/app overhead; check actual requests/limits and disk/CPU). This stack is **not suitable for a 1–2 GiB server**.
+- Never enable multi-replica Doudizhu's current in-memory active game runtime without addressing its existing single-process state and routing constraints; this overlay does not make live hands distributed.
 
-```bash
-export APP_MYSQL_PASSWORD="$(openssl rand -hex 24)"
-export APP_MYSQL_ROOT_PASSWORD="$(openssl rand -hex 24)"
-export APP_REDIS_PASSWORD="$(openssl rand -hex 24)"
-export APP_AUTH_ACCESS_TOKEN_SECRET="$(openssl rand -hex 32)"
-export OBS_GRAFANA_ADMIN_PASSWORD="$(openssl rand -hex 24)"
-export APP_OBSERVABILITY_ENABLED=true
-export APP_HTTPS_ENABLED=false
-make production-config
-make production-up
-bash scripts/observability-smoke.sh
-```
+## Render, deploy and verify
 
-**Existing persistent deployments:** the example generates **new passwords** and is **only safe on a fresh isolated stack**. For an existing populated Compose deployment, reuse its established application/database secrets and project name, then add the new observability flag and Grafana secret. Do not switch Compose project name or reset volumes. You can use `--env-file` as documented in the production deployment guide.
-
-Log in to Grafana with username `admin` and your `OBS_GRAFANA_ADMIN_PASSWORD`. The preprovisioned `Platform / Awesome Zero Platform Overview` dashboard visualizes HTTP request rate, HTTP 5xx, p95 latency, active WebSockets, process resident memory and realtime message rate. Grafana reads Prometheus directly; no duplicate go-zero Prometheus server is started.
-
-Kibana data view `awesome-logs-*` is created by the smoke script. Use Discover and filter `requestId`, `module`, `eventAction`, `statusCode` and time. For a single request:
+First inspect the selected cluster:
 
 ```bash
-curl -H 'X-Request-Id: diagnostic-123' http://127.0.0.1:8888/health/live
-curl -fsS -XPOST http://127.0.0.1:19200/awesome-logs-*/_search \
-  -H 'Content-Type: application/json' \
-  -d '{"query":{"term":{"requestId.keyword":"diagnostic-123"}}}'
+kubectl config current-context
+kubectl get storageclass
+kubectl -n awesome-zero-platform get svc mysql redis
+kubectl -n awesome-zero-platform get secret awesome-zero-platform-secrets
 ```
 
-For tracing, open Jaeger, select `app-api`, and search for recent spans. go-zero v1.10+ uses `Batcher: otlpgrpc`, **not** the removed `jaeger` batcher. Go HTTP, zrpc and instrumented SQL/Redis calls may produce spans when their respective tracing paths are enabled. Jaeger all-in-one uses **in-memory storage**, so spans do **not** survive Jaeger restarts. Trace IDs can be correlated with log context where the go-zero tracer records them. Do not assume business domain spans automatically exist without explicit domain instrumentation.
-
-## Disable / separate the dependency
-
-`APP_OBSERVABILITY_ENABLED=false` (the default) uses the original Compose deployment without any observability containers, log volume, or OTLP configuration. `APP_LOG_MODE` and `APP_TELEMETRY_ENDPOINT` are absent by default. The API can run whether or not Elastic, Prometheus, Grafana or Jaeger is reachable.
+Supply a **new secret** for the Grafana admin; do not commit it:
 
 ```bash
-APP_OBSERVABILITY_ENABLED=false make production-config
-# To stop the full optional Compose stack, include the flag so it selects its services:
-APP_OBSERVABILITY_ENABLED=true make production-down
+read -rsp 'Grafana development password: ' OBS_GRAFANA_ADMIN_PASSWORD
+echo
+export OBS_GRAFANA_ADMIN_PASSWORD
+
+# No cluster mutation: inspect fully resolved YAML, including the app-api patch.
+bash scripts/k8s-observability.sh render > /tmp/awesome-observability.yaml
+
+# Installs/updates namespaced observability resources and applies the app overlay.
+bash scripts/k8s-observability.sh apply
+bash scripts/k8s-observability.sh status
+
+# Runs a real end-to-end probe with temporary localhost-only port-forwards.
+bash scripts/k8s-observability.sh smoke
 ```
 
-`make production-down` does **not** delete named volumes. If you disable observability in an existing running environment, execute a full `down` with the flag enabled first to avoid orphaned observability services; then start the default stack.
+The `apply` command first verifies that the platform application Secret exists, then creates/updates a separate namespaced `observability-secrets` Secret from stdin (not from a tracked YAML file), and applies the Kustomize overlay. It may trigger an `app-api` rolling restart because an app container environment/volume and Filebeat sidecar are added. Plan this as a normal application rollout; active **in-memory** games may be interrupted. It does not change MySQL volumes or schemas.
 
-## Retention, redaction and limits
+The smoke checks the actual indexed request ID, Kibana data view, Prometheus healthy `app-api` target, Grafana datasource and Jaeger OTLP-reported service. A static YAML check alone does not establish runtime success.
 
-- Application log volume `app-logs` is writable to the non-root app UID after an isolated one-shot volume ownership setup; Filebeat receives **read-only** access. It does not mount the Docker daemon socket or host-wide log directories.
-- Files are rotated/retained according to go-zero logx's file policy; ES has an explicit **7-day index lifecycle delete policy** for `awesome-logs-*`. Filebeat's registry lives on its own named volume to resume tailing after restart. Verify real ingest and log-file rotation in a live environment.
-- Prometheus stores at most seven days / 1 GB in its TSDB. Grafana dashboards are provisioned declaratively. Jaeger traces are ephemeral.
-- Access logs include `requestId`, `module`, `eventAction=http.access`, `durationMs`, method, path and status, **not** full query strings, request bodies or Authorization headers. Do not log passwords, JWTs, refresh tokens, encryption/reveal private keys, sensitive random materials, personal data or private card hands. Restrict access and retention even for development logs.
-- Metrics route labels are bounded to well-known routes or grouped categories to avoid attacker-controlled high-cardinality metric labels.
-- There is **no authentication/TLS for the development Elasticsearch and Kibana endpoints**. Loopback binding is only a local safeguard; anyone with access to the host or a compromised browser may be able to access the data. **Never expose or reuse this Compose overlay as a public/production observability deployment.** Production should use authentication, TLS, restricted network ingress, index permissions, audited retention and capacity planning.
-- `OBS_GRAFANA_ADMIN_PASSWORD` is a required environment variable for enabling this overlay; it must not be committed.
+In another terminal, for dashboards:
 
-## Verification evidence and limitations
+```bash
+bash scripts/k8s-observability.sh forward
+```
 
-- `bash scripts/test-observability-compose.sh` checks flag and file-overlay selection.
-- `make production-config` with the flag disabled and enabled validates Compose configuration.
-- `bash scripts/observability-smoke.sh` tests the **live** developer stack: API readiness, ES indexing by `requestId`, Kibana data-view registration, Prometheus target health, Grafana datasource and Jaeger service trace arrival. A script being present is **not** evidence it has passed; use its actual exit code.
-- GitHub CI checks code, deployment configuration and runtime acceptance separately. Only mark an observability-stack runtime integration verified if a CI job or local smoke actually ran all the containers and reported success.
+Then visit these **localhost-only** addresses on the machine running `kubectl`:
 
-## Future extensions
+| Tool | Address |
+| --- | --- |
+| Kibana Discover | `http://127.0.0.1:15601` |
+| Grafana (user `admin`) | `http://127.0.0.1:13000` |
+| Jaeger | `http://127.0.0.1:16686` |
+| Prometheus targets | `http://127.0.0.1:19090/targets` |
+| Elasticsearch API | `http://127.0.0.1:19200` |
 
-Add a durable OTLP collector for multi-backend delivery, production-grade secured Elastic, business-span instrumentation, dashboards and alert rules based on actual operational requirements. Kafka/go-stash remains intentionally deferred; avoid introducing a broker solely for a single application logger.
+The Kibana `awesome-logs-*` data view is set up by the smoke script, not by clicking buttons. Check `module`, `requestId`, `eventAction` and `statusCode`. The Grafana `Platform / Awesome Zero Platform Overview` dashboard includes HTTP requests, error rate, latency, process memory and WebSocket activity. In Jaeger, select service `app-api`.
+
+### Diagnostics
+
+```bash
+kubectl -n awesome-zero-platform get pods,svc,pvc
+kubectl -n awesome-zero-platform rollout status deployment/app-api
+kubectl -n awesome-zero-platform logs deployment/app-api -c filebeat --tail=100
+kubectl -n awesome-zero-platform logs job/elastic-bootstrap --tail=100
+kubectl -n awesome-zero-platform logs deployment/jaeger --tail=100
+kubectl -n awesome-zero-platform get pod -l app.kubernetes.io/name=elasticsearch
+```
+
+If Elasticsearch remains Pending, inspect PVC provisioning/StorageClass and node memory / `vm.max_map_count`. If Grafana is not Ready, confirm `observability-secrets` contains key `grafana-admin-password`. If no log is indexed, inspect Filebeat sidecar and `app-api` file path. Do not solve permissions problems by mounting the Docker socket or the node's entire log directory.
+
+## Retention, risk and production boundaries
+
+- Elasticsearch **single node**, security deliberately disabled for development, exposed only by a `ClusterIP` Service. Kibana is also unauthenticated. No Ingress, LoadBalancer or NodePort is created; `kubectl port-forward` is restricted to 127.0.0.1. **Other workloads inside the cluster may reach these Services**, so this is **not production-secure**. For production use dedicated authentication/TLS, network isolation/NetworkPolicy where supported, appropriate RBAC and storage/snapshot lifecycle.
+- Elasticsearch uses a seven-day index lifecycle for `awesome-logs-*`. Prometheus retains seven days or 1 GB, whichever limit is reached first. Jaeger all-in-one uses **in-memory trace storage**, so restart loses spans. Other stack indexes may have independent retention.
+- Per-Pod `emptyDir` holds bounded log files and Filebeat state. Both are **lost when the Pod is replaced**, and logging and collection occur independently; logs not yet shipped before termination can be lost. This is acceptable for a development stack, **not a durability guarantee**.
+- The application still has bounded-route Prometheus labels; logs should not include request query strings, passwords, refresh/access tokens, private keys, sensitive game cards or random secret contributions. Keep trace sampling and data retention proportional to load.
+- No Kafka/go-stash has been introduced, and none of these three systems is required to start the default Kubernetes base (without this overlay).
+
+## Disable without deleting business state
+
+**Never run `kubectl delete -k deploy/kubernetes-overlays/observability`**: that built configuration also contains the base application's Namespace/Deployment/Service and would delete the platform namespace.
+
+For removal, first review any customizations to the `app-api` Deployment (the base file includes its own image/replicas/resources), then reapply the unmodified base and remove only the observability resources:
+
+```bash
+kubectl apply -k deploy/kubernetes
+NS=awesome-zero-platform
+kubectl -n "$NS" delete deployment kibana grafana jaeger --ignore-not-found
+kubectl -n "$NS" delete statefulset elasticsearch prometheus --ignore-not-found
+kubectl -n "$NS" delete job elastic-bootstrap --ignore-not-found
+kubectl -n "$NS" delete service kibana grafana jaeger elasticsearch prometheus --ignore-not-found
+kubectl -n "$NS" delete configmap obs-filebeat obs-prometheus obs-grafana-datasources obs-grafana-providers obs-grafana-dashboard --ignore-not-found
+kubectl -n "$NS" delete rolebinding observability-prometheus-pods --ignore-not-found
+kubectl -n "$NS" delete role observability-prometheus-pods --ignore-not-found
+kubectl -n "$NS" delete serviceaccount observability-prometheus --ignore-not-found
+```
+
+StatefulSet PVCs and observability Secret are **intentionally retained**; review and delete them separately only after checking data-retention/backup requirements. The default base does not configure Filebeat, Jaeger, Prometheus, Grafana or ELK.
+
+## Validation evidence
+
+`Kubernetes Observability Manifests` GitHub Actions executes `kubectl kustomize`, checks the base remains unchanged, parses 23 K8s resources, validates the security/Pod discovery boundaries, dashboard JSON and script syntax **without a live cluster**. Follow the linked CI run for the exact evidence. This **does not prove** images can be pulled, PVCs bound or collectors run on your particular Kubernetes cluster; the `smoke` command above is the live acceptance test.
+
+The previously tested Compose implementation is kept only for backward compatibility in the repository; this guide and new deployment implementation are Kubernetes-native. Earlier Docker Compose success is not a claim that the Kubernetes deployment has been exercised on a real cluster.
