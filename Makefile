@@ -5,7 +5,7 @@ APP_API_SPEC := $(APP_API_DIR)/app.api
 LOCAL_COMPOSE := docker compose -f deploy/local/docker-compose.yml
 PRODUCTION_COMPOSE := bash scripts/production-compose.sh
 
-.PHONY: generate run build test fmt fmt-check deps-up deps-down deps-reset schema-apply seed-apply integration-test production-config production-up production-down
+.PHONY: generate run build test fmt fmt-check deps-up deps-down deps-reset schema-apply seed-apply integration-test production-config production-up production-down observability-config observability-up observability-down observability-smoke
 
 generate:
 	cd $(SERVER_DIR) && $(GOCTL) api go --api apps/app-api/app.api --dir apps/app-api --style gozero
@@ -53,3 +53,17 @@ production-up:
 
 production-down:
 	$(PRODUCTION_COMPOSE) down --remove-orphans
+
+# Uses the same Compose project and persistent database volumes.
+# Requires the existing production APP_* secrets and OBS_GRAFANA_ADMIN_PASSWORD.
+observability-config:
+	APP_OBSERVABILITY_ENABLED=true $(PRODUCTION_COMPOSE) config
+
+observability-up:
+	APP_OBSERVABILITY_ENABLED=true $(PRODUCTION_COMPOSE) up -d --build --wait
+
+observability-down:
+	APP_OBSERVABILITY_ENABLED=true $(PRODUCTION_COMPOSE) down --remove-orphans
+
+observability-smoke:
+	bash scripts/observability-smoke.sh
