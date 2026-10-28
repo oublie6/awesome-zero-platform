@@ -44,11 +44,11 @@ spec:
             - name: http
               containerPort: 9200
           env:
-            - name: discovery.type
+            - name: ES_SETTING_DISCOVERY_TYPE
               value: single-node
-            - name: xpack.security.enabled
+            - name: ES_SETTING_XPACK_SECURITY_ENABLED
               value: "false"
-            - name: xpack.ml.enabled
+            - name: ES_SETTING_XPACK_ML_ENABLED
               value: "false"
             - name: ES_JAVA_OPTS
               value: "-Xms512m -Xmx512m"
