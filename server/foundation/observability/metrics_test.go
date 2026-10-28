@@ -37,3 +37,18 @@ func TestMetricsRecordsRequestsAndExposesPrometheusFormat(t *testing.T) {
 		}
 	}
 }
+
+func TestBoundedMetricPath(t *testing.T) {
+	for _, item := range []struct{ path, want string }{
+		{"/auth/login", "/auth/login"},
+		{"/admin/accounts/one-user", "/admin/:resource"},
+		{"/admin/accounts/another-user", "/admin/:resource"},
+		{"/doudizhu/hands/hand-123", "/doudizhu/:resource"},
+		{"/v1/doudizhu/hands/id-123", "/doudizhu/:resource"},
+		{"/random/sensitive-identifier", "/other"},
+	} {
+		if got := boundedMetricPath(item.path); got != item.want {
+			t.Errorf("boundedMetricPath(%q)=%q, want %q", item.path, got, item.want)
+		}
+	}
+}
