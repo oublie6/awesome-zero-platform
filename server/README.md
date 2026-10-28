@@ -2,6 +2,10 @@
 
 The server is a modular-monolith Go application built on go-zero. The runnable process is `server/apps/app-api`; reusable platform capabilities live under `server/platform`, technical infrastructure under `server/foundation`, and Fair Doudizhu product code under `server/business/doudizhu`.
 
+## General-purpose platform boundary
+
+The server is not a game-specific application framework: `foundation` supplies technical capabilities, `platform` supplies reusable identity/security/realtime/Admin services, and `business` contains separately owned domain modules. The application bootstrap explicitly composes enabled business adapters; it does not dynamically load plugins. For data ownership, architecture regression tests, adding new modules and future microservice extraction, see [Module boundaries](../docs/architecture/module-boundaries.md). External system integrations require separate versioned contracts as documented in [External integrations](../docs/architecture/external-integrations.md).
+
 ## Server v1
 
 The completed server v1 provides:
