@@ -1,0 +1,43 @@
+name: Kubernetes Observability Manifests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/kubernetes-observability.yml"
+      - "deploy/kubernetes/**"
+      - "scripts/k8s-observability*.sh"
+  pull_request:
+    paths:
+      - ".github/workflows/kubernetes-observability.yml"
+      - "deploy/kubernetes/**"
+      - "scripts/k8s-observability*.sh"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: k8s-observability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.33.4
+      - name: Validate bash syntax
+        run: |
+          bash -n scripts/k8s-observability.sh
+          bash -n scripts/k8s-observability-smoke.sh
+      - name: Verify Kustomize output
+        run: |
+          kubectl kustomize deploy/kubernetes/observability > /tmp/observability.yaml
+          python3 -m pip install --user PyYAML==6.0.2
+          python3 scripts/test-k8s-observability-render.py /tmp/observability.yaml
+      - name: Verify base remains independently valid
+        run: kubectl create --dry-run=client --validate=false -f deploy/kubernetes/base.yaml -o name
