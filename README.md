@@ -1,6 +1,6 @@
 # Awesome Zero Platform
 
-A modular Go application platform built on go-zero, designed for reusable server foundations and multiple client applications.
+A general-purpose, extensible Go/go-zero backend platform. Its reusable identity, security, administration, realtime and infrastructure capabilities support independent business modules and external-system integrations. Fair Doudizhu is the first concrete business, not the platform's product boundary.
 
 ## Server v1 status
 
@@ -71,7 +71,7 @@ The complete startup, login, HTTP/WSS, reconnect, production enablement, and ver
 - `docs/` — architecture, API, operations, requirements, and goal documentation
 - `scripts/` — project automation scripts
 
-The project starts as a modular monolith and keeps module boundaries explicit so capabilities can be replaced or extracted only when real scaling or ownership needs appear.
+The project stays a **modular monolith** until independent scaling, deployment, reliability or ownership requirements justify extracting a service. Business modules own their data and contracts; external systems use explicit network adapters rather than internal tables. See [Module boundaries](docs/architecture/module-boundaries.md) and [External integrations](docs/architecture/external-integrations.md).
 
 ## Server v1 boundary
 
@@ -81,6 +81,9 @@ The first release also excludes public matchmaking, tournaments, bots, spectator
 
 ## Documentation
 
+- [General platform module boundaries and module startup](docs/architecture/module-boundaries.md)
+- [External system integration contract](docs/architecture/external-integrations.md)
+- [Database evolution and safe MySQL upgrades](docs/operations/database-evolution.md)
 - [Server usage](server/README.md)
 - [Server v1 release baseline](docs/operations/server-v1-release.md)
 - [Production deployment](docs/operations/production-deployment.md)
