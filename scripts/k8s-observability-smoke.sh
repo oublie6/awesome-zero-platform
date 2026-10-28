@@ -76,11 +76,18 @@ if [[ "$seen" != true ]]; then
   exit 1
 fi
 
+# Verify every Ready replica is individually discovered; a Service-level scrape
+# could return a misleading single healthy target even with two API replicas.
+expected="$(kubectl -n "$NS" get deployment app-api -o jsonpath='{.status.readyReplicas}')"
+test -n "$expected"
 curl -fsS http://127.0.0.1:19090/api/v1/targets |
-  python3 -c 'import sys,json; d=json.load(sys.stdin); targets=[t for t in d["data"]["activeTargets"] if t.get("labels",{}).get("job")=="app-api" and t.get("health")=="up"]; assert targets, "no healthy app-api Pod target"'
+  python3 -c 'import sys,json; d=json.load(sys.stdin); targets=[t for t in d["data"]["activeTargets"] if t.get("labels",{}).get("job")=="app-api" and t.get("health")=="up"]; want=int(sys.argv[1]); assert len(targets)>=want, f"healthy Pod targets {len(targets)} < {want}"' "$expected"
 curl -fsS -u "admin:$OBS_GRAFANA_ADMIN_PASSWORD" \
   http://127.0.0.1:13000/api/datasources/uid/prometheus |
   python3 -c 'import sys,json; assert json.load(sys.stdin)["uid"]=="prometheus"'
+curl -fsS -u "admin:$OBS_GRAFANA_ADMIN_PASSWORD" \
+  http://127.0.0.1:13000/api/dashboards/uid/awesome-zero-platform |
+  python3 -c 'import sys,json; assert json.load(sys.stdin)["dashboard"]["uid"]=="awesome-zero-platform"'
 
 traces=false
 for _ in $(seq 1 60); do
