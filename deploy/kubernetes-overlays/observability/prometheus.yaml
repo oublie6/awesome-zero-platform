@@ -5,6 +5,7 @@ metadata:
   namespace: awesome-zero-platform
 spec:
   type: ClusterIP
+  clusterIP: None
   selector:
     app.kubernetes.io/name: prometheus
   ports:
