@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -59,7 +60,7 @@ func (m *Metrics) Middleware(next http.Handler) http.Handler {
 		started := time.Now()
 		recorder := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(recorder, r)
-		path := r.URL.Path
+		path := boundedMetricPath(r.URL.Path)
 		m.requests.WithLabelValues(r.Method, path, strconv.Itoa(recorder.status)).Inc()
 		m.duration.WithLabelValues(r.Method, path).Observe(time.Since(started).Seconds())
 	})
@@ -94,5 +95,23 @@ func (w *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func (w *statusRecorder) Flush() {
 	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
+	}
+}
+
+// boundedMetricPath limits Prometheus label cardinality. Arbitrary user-provided
+// URLs must never produce unbounded time-series labels.
+func boundedMetricPath(path string) string {
+	switch path {
+	case "/auth/login", "/auth/logout", "/auth/refresh", "/auth/session",
+		"/health/live", "/health/ready", "/metrics", "/ws":
+		return path
+	}
+	switch {
+	case strings.HasPrefix(path, "/admin/"):
+		return "/admin/:resource"
+	case strings.HasPrefix(path, "/doudizhu/") || strings.HasPrefix(path, "/v1/doudizhu/"):
+		return "/doudizhu/:resource"
+	default:
+		return "/other"
 	}
 }
