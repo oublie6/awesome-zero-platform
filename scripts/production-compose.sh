@@ -22,6 +22,20 @@ case "$https_value" in
     ;;
 esac
 
+# Observability is a strictly opt-in developer stack. It is never needed for
+# the default application deployment.
+observability_value="${APP_OBSERVABILITY_ENABLED:-false}"
+observability_value="${observability_value,,}"
+case "$observability_value" in
+  true|1|yes|on) observability_enabled=true ;;
+  false|0|no|off|'') observability_enabled=false ;;
+  *)
+    printf 'invalid APP_OBSERVABILITY_ENABLED value %q; use true/false, 1/0, yes/no, or on/off\n' \
+      "${APP_OBSERVABILITY_ENABLED}" >&2
+    exit 2
+    ;;
+esac
+
 # Keep the historical production Compose namespace stable so normal production
 # commands continue to select production_mysql-data and production_redis-data.
 # Docker Compose's explicit --project-name/-p option still has higher precedence.
@@ -30,6 +44,9 @@ export COMPOSE_PROJECT_NAME="${APP_COMPOSE_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:
 compose_args=(-f "$BASE_COMPOSE_FILE")
 if [[ "$https_enabled" == true ]]; then
   compose_args+=(-f "$TLS_COMPOSE_FILE")
+fi
+if [[ "$observability_enabled" == true ]]; then
+  compose_args+=(-f "$ROOT_DIR/deploy/observability/docker-compose.yml")
 fi
 
 exec docker compose "${compose_args[@]}" "$@"
