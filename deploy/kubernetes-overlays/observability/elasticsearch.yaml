@@ -1,5 +1,5 @@
 # Single-node, unauthenticated Elasticsearch for a private DEVELOPMENT cluster only.
-# Never expose Elasticsearch outside the cluster. Requires vm.max_map_count >= 262144.
+# Never expose Elasticsearch outside the cluster. Requires vm.max_map_count >= 1048576.
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,6 +7,7 @@ metadata:
   namespace: awesome-zero-platform
 spec:
   type: ClusterIP
+  clusterIP: None
   selector:
     app.kubernetes.io/name: elasticsearch
   ports:
