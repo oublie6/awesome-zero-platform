@@ -27,7 +27,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v4
@@ -53,3 +53,12 @@ jobs:
           names = [c["name"] for c in deployments[0]["spec"]["template"]["spec"]["containers"]]
           assert names == ["app-api"], names
           PY
+      - name: Start disposable Kind API server for schema admission checks
+        uses: helm/kind-action@v1.14.0
+        with:
+          wait: 120s
+      - name: Server-side dry-run admission of complete Kubernetes overlay
+        run: |
+          kubectl create namespace awesome-zero-platform
+          kubectl apply --dry-run=server -k deploy/kubernetes-overlays/observability
+
