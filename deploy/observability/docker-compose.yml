@@ -1,4 +1,6 @@
-# Optional developer-only overlay. Use scripts/production-compose.sh with
+# Optional developer-only overlay. Bind paths are relative to the first
+# Compose file (deploy/production), not this file's directory.
+# Use scripts/production-compose.sh with
 # APP_OBSERVABILITY_ENABLED=true; never expose this unsecured stack publicly.
 services:
   log-permissions:
@@ -69,7 +71,7 @@ services:
     volumes:
       - app-logs:/var/log/awesome:ro
       - filebeat-data:/usr/share/filebeat/data
-      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ../observability/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
     security_opt:
       - no-new-privileges:true
 
@@ -104,7 +106,7 @@ services:
       - --storage.tsdb.retention.time=7d
       - --storage.tsdb.retention.size=1GB
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     ports:
       - "127.0.0.1:19090:9090"
@@ -121,8 +123,8 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
       - "127.0.0.1:13000:3000"
 
