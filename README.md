@@ -81,6 +81,7 @@ The first release also excludes public matchmaking, tournaments, bots, spectator
 
 ## Documentation
 
+- [Logs, metrics, tracing: optional ELK, Grafana, Prometheus and Jaeger](docs/operations/logging-observability.md)
 - [General platform module boundaries and module startup](docs/architecture/module-boundaries.md)
 - [External system integration contract](docs/architecture/external-integrations.md)
 - [Database evolution and safe MySQL upgrades](docs/operations/database-evolution.md)
