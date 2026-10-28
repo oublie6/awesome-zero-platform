@@ -67,3 +67,7 @@ Module-owned tables may share one database but must not be queried directly by a
 ## Client policy
 
 Clients share API contracts and error conventions, not complete UI or runtime implementations. Vue 3, WeChat Mini Program, H5, and app clients are created incrementally as real product needs appear.
+
+## Observability delivery
+
+The default go-zero server continues to run without an external observability stack. For development-only integration testing, `APP_OBSERVABILITY_ENABLED=true` adds a dedicated file-log volume plus Filebeat/Elasticsearch/Kibana, Prometheus/Grafana for the existing bounded HTTP/WebSocket `/metrics`, and go-zero OTLP/gRPC tracing to Jaeger. This is an optional application composition adapter, not a new business-module dependency. See [Logging and observability](../operations/logging-observability.md).
