@@ -1,4 +1,4 @@
-# Goal 0035: Optional JSON Log Search and Kibana Visibility
+# Goal 0035: Unified Logs, Metrics and Tracing
 
 ## Status
 
@@ -9,7 +9,7 @@
 
 ## Goal
 
-Provide opt-in centralized search and visualization for the modular monolith's existing go-zero structured logs using Filebeat -> Elasticsearch -> Kibana, without Kafka/go-stash or making logs a business availability dependency.
+Deliver an opt-in, single-host developer observability stack: JSON logs via Filebeat -> Elasticsearch -> Kibana, existing Prometheus HTTP/WS metrics via Prometheus -> Grafana, and go-zero OpenTelemetry traces via OTLP -> Jaeger. None of these services may become a core business availability dependency.
 
 ## References
 
@@ -21,9 +21,9 @@ Provide opt-in centralized search and visualization for the modular monolith's e
 ## Deliverables
 
 1. Keep default console JSON logging and add an explicit, validated file logging opt-in to support a narrowly scoped shared log volume.
-2. Improve platform HTTP access logs with stable event/module/duration fields and add unit verification without recording request bodies, tokens or credentials.
-3. Provide optional Compose overlay for one developer-only Elastic/Filebeat/Kibana stack with non-root API filesystem policy preserved, dedicated log volume, localhost-bound dashboards and bounded retention.
-4. Provide Kibana data-view bootstrap, diagnostic/search commands, automated compose validation, an end-to-end smoke script, and updated docs.
+2. Improve platform HTTP access logs with stable event/module/duration fields and bounded metric route labels; add unit verification without recording request bodies, tokens or credentials.
+3. Provide optional Compose overlay for Elastic/Filebeat/Kibana, Prometheus/Grafana and Jaeger with non-root API filesystem policy preserved, dedicated log volume, localhost-bound dashboards, safe development defaults and bounded retention where appropriate.
+4. Configure go-zero OTLP tracing and a Grafana datasource/dashboard without replacing existing application metrics; provide Kibana data-view bootstrap, diagnostic/search commands, automated compose validation, smoke scripts, and updated docs.
 
 ## Constraints
 
@@ -38,8 +38,8 @@ Provide opt-in centralized search and visualization for the modular monolith's e
 
 - `make test`, `make fmt-check`, `make build`, and existing CI/runtime tests succeed.
 - Both normal Compose and observability opt-in Compose render successfully and preserve existing project namespace and TLS configuration.
-- Collector accepts JSON records from dedicated app volume, and configuration includes bounded retention; documented smoke proves indexed request logs can be found by requestId and Kibana data view is configured.
-- Disable observability and verify service startup does not require it.
+- Collector accepts JSON records from a dedicated app volume; Prometheus scrapes the existing custom metrics endpoint; Jaeger receives OTLP spans; retention settings and Grafana/Kibana provisioning are documented and tested where available.
+- Disable observability and verify service startup does not require it. CI must verify both compose modes and must not claim live Elastic/Jaeger visibility unless observed.
 - Documentation explicitly distinguishes CI-verified configuration from a full live Elastic stack acceptance when the latter cannot run.
 
 ## Agent Strategy
