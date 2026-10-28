@@ -21,7 +21,7 @@ The platform currently includes:
 - authenticated Doudizhu HTTP endpoints and WSS handlers sharing one dispatcher and replay policy;
 - participant-only private snapshots, account-targeted change delivery, latest-state reconnect, and terminal evidence recovery;
 - Prometheus-compatible HTTP, process, and realtime metrics;
-- local and production Compose, non-root API and Admin Web images, Kubernetes baselines, and GitHub Actions CI.
+- local and production Compose baselines (legacy application deployment), non-root API/Admin images, native Kubernetes observability overlay, and GitHub Actions CI.
 
 Doudizhu is disabled by default and must be enabled with reveal-key, beacon-proof, and contribution-encryption configuration. The Cocos gameplay UI remains a client-stage deliverable.
 
@@ -67,7 +67,7 @@ The complete startup, login, HTTP/WSS, reconnect, production enablement, and ver
 - `clients/admin-web/` — Vue 3 platform administration client
 - `clients/packages/` — engine-independent reusable client packages
 - `clients/fair-doudizhu-cocos/` — code-first Cocos Creator client composition root
-- `deploy/` — local, container, production Compose, and Kubernetes assets
+- `deploy/` — application Compose compatibility, Kubernetes base and optional observability Kustomize overlay
 - `docs/` — architecture, API, operations, requirements, and goal documentation
 - `scripts/` — project automation scripts
 
