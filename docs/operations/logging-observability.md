@@ -20,7 +20,7 @@ The `app-api` Deployment currently requests **two replicas**. A Filebeat sidecar
 - The existing `app-api` image from `deploy/kubernetes/base.yaml` must be available to cluster nodes. The manifests do **not** build or publish container images.
 - Working `mysql:3306` and `redis:6379` Services, existing schema, and an `awesome-zero-platform-secrets` Secret with the keys already referenced by `base.yaml`. This overlay does **not** install/replace MySQL or Redis.
 - A default dynamic StorageClass that can provision ReadWriteOnce PVCs (Elasticsearch **8 GiB**, Prometheus **3 GiB**) and appropriate persistent-volume backup procedures. The Filebeat registry and app logs are ephemeral per Pod. Grafana's preprovisioned dashboards survive restarts, but unprovisioned UI state uses an ephemeral local directory.
-- For Elasticsearch the Kubernetes node(s) must meet `vm.max_map_count >= 262144`; configure at the **node** according to your Kubernetes distribution and security policy. Do not add a privileged init container simply to change a host sysctl.
+- For Elasticsearch 9.1 the Kubernetes node(s) must meet `vm.max_map_count >= 1048576`; configure at the **node** according to your Kubernetes distribution and security policy. Do not add a privileged init container simply to change a host sysctl.
 - A comfortably sized **dedicated test cluster** (plan for roughly 8–12 GiB available RAM plus Kubernetes and existing DB/Redis/app overhead; check actual requests/limits and disk/CPU). This stack is **not suitable for a 1–2 GiB server**.
 - Never enable multi-replica Doudizhu's current in-memory active game runtime without addressing its existing single-process state and routing constraints; this overlay does not make live hands distributed.
 
