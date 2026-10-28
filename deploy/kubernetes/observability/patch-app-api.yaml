@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-api
+  namespace: awesome-zero-platform
+spec:
+  template:
+    spec:
+      securityContext:
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: app-api
+          env:
+            - name: APP_LOG_MODE
+              value: file
+            - name: APP_LOG_PATH
+              value: /app/logs
+            - name: APP_TELEMETRY_ENDPOINT
+              value: jaeger:4317
+          volumeMounts:
+            - name: app-logs
+              mountPath: /app/logs
+        - name: filebeat
+          image: docker.elastic.co/beats/filebeat:9.1.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - filebeat
+            - -e
+            - --strict.perms=false
+            - -c
+            - /usr/share/filebeat/filebeat.yml
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: app-logs
+              mountPath: /var/log/awesome
+              readOnly: true
+            - name: filebeat-state
+              mountPath: /usr/share/filebeat/data
+            - name: filebeat-tmp
+              mountPath: /tmp
+            - name: filebeat-config
+              mountPath: /usr/share/filebeat/filebeat.yml
+              subPath: filebeat.yml
+              readOnly: true
+      volumes:
+        - name: app-logs
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: filebeat-state
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: filebeat-tmp
+          emptyDir:
+            sizeLimit: 32Mi
+        - name: filebeat-config
+          configMap:
+            name: obs-filebeat
