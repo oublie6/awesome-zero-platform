@@ -16,6 +16,7 @@ Build a maintainable **modular monolith first**. Preserve clear ownership and co
 - Platform and business modules must not access another module's database tables or repository implementation directly.
 - Cross-module calls must use explicit public interfaces or events.
 - Keep transport, application logic, and persistence concerns separated.
+- Prefer the existing Kubernetes base and explicit Kustomize observability overlay for new platform observability deployments. Do not require Docker Compose or a publicly exposed log dashboard for Kubernetes environments; preserve existing application deployment baselines unless a goal explicitly changes them.
 - Do not create generic dumping grounds such as `common`, `utils`, or `helpers`.
 - The repository stores the current complete database schema, not incremental migration history during the early development phase.
 - Temporary database upgrade SQL must not be committed.
