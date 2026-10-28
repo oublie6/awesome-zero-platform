@@ -1,0 +1,134 @@
+# Optional developer-only overlay. Use scripts/production-compose.sh with
+# APP_OBSERVABILITY_ENABLED=true; never expose this unsecured stack publicly.
+services:
+  log-permissions:
+    image: busybox:1.37
+    restart: "no"
+    command: ["sh", "-ec", "mkdir -p /app-logs && chown 65532:65532 /app-logs && chmod 0750 /app-logs"]
+    volumes:
+      - app-logs:/app-logs
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+  app-api:
+    depends_on:
+      log-permissions:
+        condition: service_completed_successfully
+    environment:
+      APP_LOG_MODE: file
+      APP_LOG_PATH: /app/logs
+      APP_TELEMETRY_ENDPOINT: jaeger:4317
+    volumes:
+      - app-logs:/app/logs
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.0
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.ml.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    mem_limit: 1536m
+    ports:
+      - "127.0.0.1:19200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null"]
+      interval: 15s
+      timeout: 8s
+      retries: 30
+      start_period: 60s
+
+  elastic-bootstrap:
+    image: curlimages/curl:8.11.1
+    restart: "no"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        curl -fsS -XPUT http://elasticsearch:9200/_ilm/policy/awesome-logs-seven-days
+          -H 'Content-Type: application/json'
+          -d '{"policy":{"phases":{"delete":{"min_age":"7d","actions":{"delete":{}}}}}}'
+        curl -fsS -XPUT http://elasticsearch:9200/_index_template/awesome-logs
+          -H 'Content-Type: application/json'
+          -d '{"index_patterns":["awesome-logs-*"],"template":{"settings":{"index.lifecycle.name":"awesome-logs-seven-days","number_of_shards":1,"number_of_replicas":0}},"priority":300}'
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:9.1.0
+    restart: unless-stopped
+    user: root
+    command: ["filebeat", "-e", "-strict.perms=false", "-c", "/usr/share/filebeat/filebeat.yml"]
+    depends_on:
+      elastic-bootstrap:
+        condition: service_completed_successfully
+    volumes:
+      - app-logs:/var/log/awesome:ro
+      - filebeat-data:/usr/share/filebeat/data
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+    security_opt:
+      - no-new-privileges:true
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.1.0
+    restart: unless-stopped
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+      SERVER_HOST: "0.0.0.0"
+      TELEMETRY_ENABLED: "false"
+    ports:
+      - "127.0.0.1:15601:5601"
+    mem_limit: 1024m
+
+  jaeger:
+    image: jaegertracing/jaeger:2.20.0
+    restart: unless-stopped
+    command:
+      - "--set=receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317"
+      - "--set=receivers.otlp.protocols.http.endpoint=0.0.0.0:4318"
+    ports:
+      - "127.0.0.1:16686:16686"
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=1GB
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:19090:9090"
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${OBS_GRAFANA_ADMIN_PASSWORD:?set OBS_GRAFANA_ADMIN_PASSWORD}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:13000:3000"
+
+volumes:
+  app-logs:
+  elasticsearch-data:
+  filebeat-data:
+  prometheus-data:
+  grafana-data:
