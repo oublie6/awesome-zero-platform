@@ -8,6 +8,7 @@ resources:
   - elastic-bootstrap.yaml
   - kibana.yaml
   - prometheus.yaml
+  - prometheus-rbac.yaml
   - grafana.yaml
   - jaeger.yaml
 
