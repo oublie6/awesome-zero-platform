@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-10-29
-- Completed:
-- Blockers:
+- Completed: 2026-10-29
+- Blockers: None.
 
 ## Goal
 
@@ -50,20 +50,31 @@ ChatGPT implements and verifies through GitHub CI; additional heavy Elastic-stac
 
 ### Completed
 
-- Requirements and architecture identified; verified existing JSON logx and Prometheus integration.
+- Existing go-zero JSON logger and custom Prometheus metrics reused; opt-in file logging, contextual access log fields and bounded metric route labels implemented.
+- Optional development-only Compose overlay built with Filebeat/Elasticsearch/Kibana, Prometheus/Grafana and Jaeger OTLP/gRPC; non-root writable application log volume, localhost-bound UIs and ILM/TSDB retention included.
+- Grafana provisioning and sample dashboard; Kibana data-view registration; live index/metrics/trace acceptance scripts; unit/integration tests and repository documentation.
+- Fixed Docker Compose multi-file bind path resolution and Filebeat 9 long-form strict permissions argument based on real CI errors.
 
 ### In progress
 
-- Code, optional deployment overlay, tests, docs, CI and runtime smoke artifacts.
+- None.
 
 ### Remaining
 
-- CI review, runtime validation where feasible, and final completion report.
+- None.
 
 ### Verification status
 
-- Not started.
+- PASS: Main CI, Go format/generation, all unit tests, race checks, MySQL integration, frontend and crypto checks, binary build, production Compose acceptance: https://github.com/oublie6/awesome-zero-platform/actions/runs/40732503270
+- PASS: Fair Doudizhu application, MySQL integration, manifest tests: https://github.com/oublie6/awesome-zero-platform/actions/runs/40732503123
+- PASS: Dedicated observability runtime: https://github.com/oublie6/awesome-zero-platform/actions/runs/40732502950; observed live Filebeat/Elasticsearch indexing by requestId, Kibana data view, Prometheus target, Grafana datasource, Jaeger OTLP service traces.
+- Docker and Go 1.25 runtime checks were performed by GitHub Actions; the local container lacks Docker and runs Go 1.23.
 
 ## Completion Report
 
-Pending.
+The required Goal 0035 implementation and all three workflow acceptances completed successfully at commit ccd8dcf7a39dc5c5555bf5085621ba1b1e7d9366.
+
+Scope remains intentionally limited: this is a **developer-only opt-in** observability overlay, with unauthenticated loopback-bound ES/Kibana, transient Jaeger in-memory storage, one API process and existing metrics. It is not a secured public production deployment; no Kafka/go-stash, tracing collector cluster, external gateway or microservice has been introduced. Existing HTTP/WSS game routes and persistent databases were not altered.
+
+Self-review verified logging avoids bodies/query-string/tokens, no Docker socket is mounted, source log volume is readable by Filebeat while writable to non-root API, metrics series labels are bounded, optional enablement preserves default production Compose, and the smoke validates actual traces and indexed request logs. Follow-up production needs TLS/auth, capacity planning, stable retention/storage, failure alerts and service-specific spans. The heavy observability workflow has been scoped to relevant source/deployment edits to avoid unnecessary redeploys on Goal/documentation-only changes.
+
