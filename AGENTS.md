@@ -2,7 +2,9 @@
 
 ## Project intent
 
-Awesome Zero Platform is a modular application platform built on go-zero. It provides reusable server capabilities and supports multiple clients without coupling business modules to a specific frontend.
+Awesome Zero Platform is a general-purpose, highly extensible Go/go-zero application backend platform, not a Doudizhu-only backend or a game-only framework. Its primary product is reusable platform capabilities that can host independently evolving business modules and integrate external systems. Fair Doudizhu is the first real business implementation and an end-to-end validation case, not a reason to place game-specific semantics in shared platform APIs or infrastructure.
+
+Build a maintainable **modular monolith first**. Preserve clear ownership and contracts so a module can be extracted into a separately deployed service when measurable scale, reliability, team ownership, or release independence justifies it. Microservices, dynamic plugins, and distributed infrastructure are evolution options rather than default architecture.
 
 ## Architecture rules
 
@@ -17,6 +19,35 @@ Awesome Zero Platform is a modular application platform built on go-zero. It pro
 - Do not create generic dumping grounds such as `common`, `utils`, or `helpers`.
 - The repository stores the current complete database schema, not incremental migration history during the early development phase.
 - Temporary database upgrade SQL must not be committed.
+
+## General-purpose platform and extensibility principles
+
+- **Platform first; business modules second.** `foundation` owns technical primitives; `platform` owns product-neutral, reusable application capabilities (identity, authentication, authorization, administration, realtime transport, and other features justified by real consumers); `business/<module>` owns its domain, use cases, persistence adapters, and business-specific integration. Neither `foundation` nor `platform` may depend on a concrete business module. `server/apps` is a composition root, not a home for business rules.
+- **No game-centric platform assumptions.** Doudizhu, `gamecore`, and Cocos belong to the game business/client context. `gamecore` may contain reusable *game* semantics, but must not become a mandatory platform foundation for unrelated domains. Adding a non-game business must not require importing game packages or modifying Doudizhu logic.
+- **Strong module boundaries.** Modules expose intentionally small, documented public interfaces, commands, queries, and/or versioned events. No module imports another module's internal implementation, persistence adapter, table, or private state. Prefer Go compile-time boundaries, package `internal` restrictions where appropriate, and dependency-boundary tests over folder naming alone.
+- **Module-owned data.** Modules can share a MySQL instance in the monolith, but each owns its schema objects, repositories, invariants, and writes. A consumer must not query or join another module's tables directly; obtain data through the owner's public contract or an explicitly designed read model. Avoid assuming a cross-module database transaction is portable to a future service split. Keep the present single-schema deployment mechanism until a real upgrade requirement justifies changing it, but record ownership and plan versioned migrations before production deployments need in-place upgrades.
+- **Simple in-process composition now.** Register and wire real modules explicitly at startup, support controlled enable/disable and lifecycle shutdown where required, and keep dependencies visible. Do not introduce reflection-driven discovery, Go binary plugins, dynamic code loading, a universal module SDK, or a framework-scale registry on speculation. If a second business exposes repeated wiring problems, extract the smallest necessary registration/lifecycle contract.
+- **Separate two extension paths.** A business module running *inside* this backend is different from an external system integrating *with* it. In-process modules use typed interfaces; external integrations use explicit, versioned HTTP/API, WebSocket, webhook, messaging, or identity-federation adapters as real use cases demand. Do not require external systems to share Go code, database schema, or the platform's internal account model.
+- **Design public integration contracts deliberately.** For each external API or event, specify versioning, authenticated identity and authorization scope, tenant/resource isolation when actually required, pagination and errors where applicable, idempotency/retry semantics, timeouts, correlation IDs, security boundaries, and backward-compatibility/deprecation policy. Never expose internal database records or business implementation types as accidental public contracts.
+- **Asynchronous integration is demand-driven.** Begin with direct in-process calls for synchronous module coordination. Add domain events, transactional outbox relays, queues, or RPC only when a concrete reliability, fan-out, ownership, or independent-scaling requirement exists. Persisting an outbox row alone is not proof that delivery, retries, consumer idempotency, or dead-letter handling works.
+- **Keep clients independent.** The server exposes stable application contracts rather than depending on Vue, Cocos, WeChat, Douyin, Android, or iOS. Different client shells share appropriate protocol and security packages while platform SDK differences stay behind client-side adapters.
+- **Do not confuse extensibility with feature breadth.** Do not prebuild multi-tenancy, workflow engines, plugin marketplaces, generic low-code systems, service meshes, or universal data models without a specific supported use case and acceptance test. Prefer the smallest abstraction validated by a second genuinely different business module.
+
+## Monolith-to-microservice evolution criteria
+
+- Prefer modularization, profiling, capacity tuning, bounded resource use, and ordinary process scaling before introducing service boundaries.
+- Consider extracting a module when independent scaling, failure isolation, security boundary, operational ownership, deployment cadence, or technology requirements provide a demonstrated benefit. User count alone does not mandate microservices.
+- Before extraction, confirm an explicit contract, data ownership, independent startup and health lifecycle, authentication/authorization propagation, timeout/retry/idempotency semantics, observability, compatible versioning, and a safe migration/rollback path.
+- Replacing a local interface call with RPC does not automatically solve distributed state, cross-node routing, sagas, or active-instance recovery. Preserve each business module's explicit consistency and state-authority model.
+- Never split deployment units merely to claim microservice readiness; keep `apps` as the only composition/deployment boundary until the new service has an actual owner and operational benefit.
+
+## Architecture checks for every goal
+
+- State whether the change is reusable technical infrastructure, reusable platform capability, concrete business behavior, client integration, or external-system adapter; place it in the corresponding module.
+- Check that a new business can use platform capabilities without changing an unrelated business module or introducing business-specific symbols into `foundation`/`platform`.
+- Check import direction, module-owned data access, exposed contract compatibility, access-control scoping, failure isolation, startup/shutdown behavior, and whether a future service extraction would require hidden cross-module database access.
+- Add or update narrow architecture/dependency tests when introducing a new cross-module boundary. Treat `gamecore` import tests as game-specific, not a substitute for platform-wide dependency checks.
+- Preserve backwards compatibility and real verification evidence; do not refactor a working subsystem or introduce distributed components solely for theoretical extensibility.
 
 ## Main branch workflow
 
