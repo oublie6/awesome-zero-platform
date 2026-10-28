@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OVERLAY="$ROOT/deploy/kubernetes/observability"
+OVERLAY="$ROOT/deploy/kubernetes-overlays/observability"
 NAMESPACE=awesome-zero-platform
 
 usage() {
