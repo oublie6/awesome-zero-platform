@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: awesome-zero-platform
 
 resources:
-  - ../base.yaml
+  - ..
   - elasticsearch.yaml
   - elastic-bootstrap.yaml
   - kibana.yaml
