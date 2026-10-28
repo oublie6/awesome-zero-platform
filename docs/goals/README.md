@@ -1,6 +1,6 @@
-# Codex Goal Workflow
+# Engineering Goal Workflow
 
-This directory controls short-lived Codex execution goals without turning conversation history into the source of truth.
+This directory controls short-lived execution goals for the primary implementation agent and optional supplementary test agents without turning conversation history into the source of truth.
 
 ## Files
 
@@ -24,15 +24,15 @@ Only `ready` and `in_progress` goals may be started by `scripts/run-current-goal
 1. Discuss and refine a feature or engineering task.
 2. Update the long-lived architecture, requirement, and decision documents.
 3. Replace `current.md` with a focused `ready` goal that references only the documents required for this execution.
-4. Start a fresh Codex session with `scripts/run-current-goal.sh`.
-5. Codex changes the state to `in_progress`, implements the goal, runs acceptance checks, and updates only the permitted status and completion sections.
-6. After every acceptance criterion passes, Codex changes the state to `completed`, commits the verified work, and pushes the current branch.
+4. The primary implementation agent changes the state to `in_progress`, edits code, runs all available tests, and verifies every acceptance criterion.
+5. GitHub Actions verifies the integrated commit. Codex is used only for a specific supplementary test that the primary agent cannot run and must not duplicate implementation.
+6. After every acceptance criterion passes, the primary agent changes the state to `completed`, commits the verified work directly to `main`, and pushes. Preserve evidence and the required self-review.
 7. Archive the goal with `scripts/archive-goal.sh <goal-name>`.
 8. Create the next `current.md` from `template.md`.
 
 ## Context policy
 
-Codex should read:
+The active implementation agent should read:
 
 1. `AGENTS.md`
 2. `docs/goals/current.md`
