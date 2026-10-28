@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: in_progress
+- State: completed
 - Started: 2026-10-28
-- Completed:
-- Blockers: None known. Awaiting CI and integration evidence.
+- Completed: 2026-10-28
+- Blockers: None.
 
 ## Goal
 
@@ -56,17 +56,26 @@ ChatGPT owns implementation, review and available verification. CI supplies Go 1
 
 ### In progress
 
-- CI and end-to-end verification.
+- None.
 
 ### Remaining
 
-- Fix any CI or runtime regressions; perform final self-review; archive after completion.
+- None.
 
 ### Verification status
 
-- GitHub commit/CI pending.
-- Environment limitation: the current local container lacks the project modules/Docker and has Go 1.23; repository CI is the authoritative integration check.
+- Passed: main CI https://github.com/oublie6/awesome-zero-platform/actions/runs/40668262257 (unit, formatting, generated code, build, integration, race, secure envelope, Vue and production Compose runtime).
+- Passed: Fair Doudizhu CI https://github.com/oublie6/awesome-zero-platform/actions/runs/40668262278 (application, manifest client, MySQL integration).
+- Environment limitation: direct local compilation and Docker integration were unavailable (Go 1.23 and no Docker); GitHub Actions used Go 1.25 with containers.
 
 ## Completion Report
 
-Pending CI evidence and final self-review.
+- Refactored the application composition root to register enabled business modules through a narrow compile-time adapter and reverse-order shutdown.
+- Encapsulated Doudizhu wiring and HTTP/WSS handler registration without changing published routes or protocol semantics.
+- Added Go architecture tests for import direction, registered schema-table ownership and business SQL access to known foreign tables, plus startup-failure/disabled-module tests.
+- Updated server/repository/architecture/operations docs and recorded external integration and database evolution requirements.
+- Verified only the 14 intended source/doc files changed since the previous `main` baseline; no databases, production secrets, or persistent volumes were altered.
+- Self-review: examined initialization/error cleanup, disabled-module behavior, duplicate registration, cross-module data access, existing single-process gameplay authority, documentation claims and scope limits. No known defect found; indirect/dynamic SQL and new external providers remain subject to future review.
+- Deferred intentionally: production MySQL major upgrade and versioned migration implementation, generic external gateway/credential provider, message publishing workers, distributed room ownership, and service extraction. These require their own evidence-driven goals.
+- Verified implementation head: `6fda524d45e3c5e0c362497e65e3c98f17fe6d62`; all required CI suites succeeded.
+
