@@ -1,18 +1,8 @@
-name: Optional Observability Runtime
+name: Legacy Compose Observability (Manual)
 
+# Kept to reproduce the previously verified Compose baseline only.
+# Kubernetes is now the primary observability deployment and CI path.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/observability.yml"
-      - "server/**"
-      - "deploy/observability/**"
-      - "deploy/production/**"
-      - "scripts/production-compose.sh"
-      - "scripts/test-observability-compose.sh"
-      - "scripts/observability-smoke.sh"
-      - "scripts/ci-observability-acceptance.sh"
-      - "Makefile"
   workflow_dispatch:
 
 permissions:
