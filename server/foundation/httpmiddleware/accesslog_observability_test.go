@@ -39,11 +39,11 @@ func TestAccessLogEmitsSafeStructuredFields(t *testing.T) {
 		t.Fatalf("log json: %v; data=%s", err, lines.String())
 	}
 	for name, want := range map[string]any{
-		"content": "http access",
+		"content":     "http access",
 		"eventAction": "http.access",
-		"module": "doudizhu",
-		"requestId": "log-observability-test",
-		"statusCode": float64(201),
+		"module":      "doudizhu",
+		"requestId":   "log-observability-test",
+		"statusCode":  float64(201),
 	} {
 		if got[name] != want {
 			t.Fatalf("%s = %#v, want %#v", name, got[name], want)
