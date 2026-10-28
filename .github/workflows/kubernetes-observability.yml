@@ -43,4 +43,13 @@ jobs:
           python3 -m pip install --user PyYAML==6.0.2
           python3 scripts/test-k8s-observability-render.py /tmp/observability.yaml
       - name: Verify base remains independently valid
-        run: kubectl create --dry-run=client --validate=false -f deploy/kubernetes/base.yaml -o name
+        run: |
+          kubectl kustomize deploy/kubernetes > /tmp/base.yaml
+          python3 - <<'PY'
+          import yaml
+          docs = [x for x in yaml.safe_load_all(open("/tmp/base.yaml")) if x]
+          deployments = [x for x in docs if x["kind"] == "Deployment"]
+          assert len(deployments) == 1 and deployments[0]["metadata"]["name"] == "app-api"
+          names = [c["name"] for c in deployments[0]["spec"]["template"]["spec"]["containers"]]
+          assert names == ["app-api"], names
+          PY
