@@ -2,6 +2,8 @@
 
 The repository provides deployment baselines rather than prescribing a cloud, managed database, ingress controller, certificate issuer, backup product, or secret manager.
 
+**Database upgrade warning:** The current Compose stack uses MySQL 5.7. Do not change its major version in place for a populated data volume. Follow the isolated backup/restore, compatibility and migration verification procedure in [Database evolution](database-evolution.md) before upgrading. The complete `current.sql` bootstrap file is not a safe in-place production migration.
+
 ## Required platform secrets
 
 Every production deployment requires values supplied outside Git:
