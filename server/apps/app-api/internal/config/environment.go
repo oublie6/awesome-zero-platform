@@ -25,6 +25,28 @@ func (c *Config) ApplyEnvironment() error {
 	applyString("APP_DOUDIZHU_BEACON_PROOF_SECRET", &c.Doudizhu.BeaconProofSecret)
 	applyString("APP_DOUDIZHU_CONTRIBUTION_KEY_ID", &c.Doudizhu.ContributionKeyID)
 	applyString("APP_DOUDIZHU_CONTRIBUTION_KEY_HEX", &c.Doudizhu.ContributionKeyHex)
+	// Log file output and OTLP tracing are explicit opt-ins. Normal deployments
+	// preserve the default console logger and do not depend on observability.
+	if mode := strings.TrimSpace(os.Getenv("APP_LOG_MODE")); mode != "" {
+		if mode != "console" && mode != "file" {
+			return fmt.Errorf("APP_LOG_MODE must be console or file")
+		}
+		c.Log.Mode = mode
+		c.Log.Encoding = "json"
+		if mode == "file" {
+			path := strings.TrimSpace(os.Getenv("APP_LOG_PATH"))
+			if path == "" {
+				return fmt.Errorf("APP_LOG_PATH required when APP_LOG_MODE=file")
+			}
+			c.Log.Path = path
+		}
+	}
+	if endpoint := strings.TrimSpace(os.Getenv("APP_TELEMETRY_ENDPOINT")); endpoint != "" {
+		c.Telemetry.Name = "app-api"
+		c.Telemetry.Endpoint = endpoint
+		c.Telemetry.Batcher = "otlpgrpc"
+		c.Telemetry.Sampler = 1.0
+	}
 	if raw := strings.TrimSpace(os.Getenv("APP_DOUDIZHU_ENABLED")); raw != "" {
 		enabled, err := strconv.ParseBool(raw)
 		if err != nil {
