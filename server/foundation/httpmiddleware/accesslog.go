@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/foundation/requestid"
@@ -16,6 +17,8 @@ type AccessLogRecord struct {
 	Path          string        `json:"path"`
 	StatusCode    int           `json:"statusCode"`
 	Elapsed       time.Duration `json:"elapsed"`
+	DurationMs    int64         `json:"durationMs"`
+	Module        string        `json:"module"`
 	ClientAddress string        `json:"clientAddress"`
 }
 
@@ -71,16 +74,22 @@ func AccessLog() func(http.Handler) http.Handler {
 				writer.statusCode = http.StatusOK
 			}
 
+			elapsed := time.Since(started)
 			record := AccessLogRecord{
 				RequestID:     requestid.FromContext(r.Context()),
 				Method:        r.Method,
 				Path:          r.URL.Path,
 				StatusCode:    writer.statusCode,
-				Elapsed:       time.Since(started),
+				Elapsed:       elapsed,
+				DurationMs:    elapsed.Milliseconds(),
+				Module:        accessLogModule(r.URL.Path),
 				ClientAddress: clientAddress(r),
 			}
 
 			logx.WithContext(r.Context()).Infow("http access",
+				logx.Field("eventAction", "http.access"),
+				logx.Field("module", record.Module),
+				logx.Field("durationMs", record.DurationMs),
 				logx.Field("requestId", record.RequestID),
 				logx.Field("method", record.Method),
 				logx.Field("path", record.Path),
@@ -99,4 +108,12 @@ func clientAddress(r *http.Request) string {
 	}
 
 	return host
+}
+
+func accessLogModule(path string) string {
+	if path == "/doudizhu" || strings.HasPrefix(path, "/doudizhu/") ||
+		path == "/v1/doudizhu" || strings.HasPrefix(path, "/v1/doudizhu/") {
+		return "doudizhu"
+	}
+	return "platform"
 }
