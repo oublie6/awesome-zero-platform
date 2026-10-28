@@ -50,6 +50,7 @@ def main() -> None:
     for name in ("elasticsearch", "prometheus"):
         sts = get("StatefulSet", name)
         assert sts["spec"]["volumeClaimTemplates"], f"{name} needs a PVC template"
+        assert get("Service", name)["spec"]["clusterIP"] == "None", f"{name} StatefulSet requires a Headless Service"
     for name in ("grafana", "kibana", "jaeger", "elasticsearch", "prometheus"):
         get("Service", name)
     for name in ("grafana", "kibana", "jaeger"):
