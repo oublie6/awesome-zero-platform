@@ -11,6 +11,8 @@ awesome-zero-platform/
 └── scripts/  repeatable engineering commands
 ```
 
+The primary product is a reusable backend for different business domains and external consumers. Fair Doudizhu validates the first implementation; it does not define the boundaries of `foundation` or `platform`.
+
 ## Server architecture
 
 The server begins as a modular monolith:
@@ -27,6 +29,8 @@ server/
 Initial platform capabilities are expected to include identity, user, authorization, file, notification, audit, and system configuration. They should be added only when implementation begins.
 
 Business modules belong in `server/business` and must remain separate from reusable platform capabilities. The `business` directory should not be created until the first real product module is implemented.
+
+The composition root selects concrete business module adapters at compile time; enabled modules initialize their own adapters and register their HTTP/WSS endpoints with an explicit shutdown function. No universal plugin runtime is required. See [Module boundaries](module-boundaries.md) for dependency rules, schema ownership, and service-extraction criteria, and [External integrations](external-integrations.md) for independent systems.
 
 ## Game runtime policy
 
@@ -52,6 +56,8 @@ A platform or business module can remain in-process while exposing a stable inte
 Code is organized for possible extraction, but the project does not create microservices before a real need exists.
 
 ## Database policy
+
+Module-owned tables may share one database but must not be queried directly by another business module. See [database evolution](../operations/database-evolution.md) before migrating a populated environment; the initial bootstrap schema is not an in-place migration mechanism.
 
 - The repository stores the current complete schema.
 - Development databases may be rebuilt from the current schema.
