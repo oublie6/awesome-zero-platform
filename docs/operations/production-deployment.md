@@ -224,7 +224,7 @@ A multi-instance game deployment must add explicit authoritative room ownership,
 
 ## Kubernetes baseline
 
-`deploy/kubernetes/base.yaml` and `deploy/kubernetes/admin-web.yaml` provide namespace, API/Admin Deployments, Services, probes, resource requests/limits, security contexts, Prometheus annotations, and an API PodDisruptionBudget.
+`deploy/kubernetes/base.yaml` and `deploy/kubernetes/admin-web.yaml` provide namespace, API/Admin Deployments, Services, probes, resource requests/limits, security contexts, Prometheus annotations, and an API PodDisruptionBudget. The default Kustomize application base is `deploy/kubernetes/`. The opt-in K8s observability overlay is `deploy/kubernetes-overlays/observability/`; it uses per-Pod Filebeat sidecars, Pod-aware Prometheus/Grafana and Jaeger OTLP, with Elasticsearch/Kibana. See [Kubernetes observability](logging-observability.md) for prerequisites and port-forward access. It is a private development stack, not production-secure.
 
 Before applying them:
 
