@@ -28,6 +28,7 @@ spec:
       labels:
         app.kubernetes.io/name: prometheus
     spec:
+      serviceAccountName: observability-prometheus
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
