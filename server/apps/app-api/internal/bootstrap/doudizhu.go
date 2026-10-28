@@ -21,7 +21,41 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/revealkeys"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/secureenvelope"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
+	"github.com/oublie6/awesome-zero-platform/server/platform/realtime"
+	"github.com/zeromicro/go-zero/rest"
 )
+
+func doudizhuModule(
+	cfg config.Config,
+	mysql database.Handle,
+	keys *revealkeys.Registry,
+	server *rest.Server,
+	authentication *authn.Service,
+	hub *realtime.Hub,
+) moduleSpec {
+	return moduleSpec{
+		name:    "doudizhu",
+		enabled: cfg.Doudizhu.Enabled,
+		start: func() (context.CancelFunc, error) {
+			components, err := initializeDoudizhu(cfg, mysql, keys)
+			if err != nil {
+				return nil, err
+			}
+			if components.dispatcher == nil || components.cancel == nil {
+				return nil, fmt.Errorf("enabled Doudizhu module is incomplete")
+			}
+			doudizhuapi.Register(server, authentication, components.dispatcher)
+			if hub != nil {
+				if _, err := doudizhuapi.RegisterRealtime(hub, components.dispatcher, components.audience); err != nil {
+					components.cancel()
+					return nil, fmt.Errorf("register Doudizhu realtime handlers: %w", err)
+				}
+			}
+			return components.cancel, nil
+		},
+	}
+}
 
 type doudizhuComponents struct {
 	dispatcher *doudizhuapi.Dispatcher
