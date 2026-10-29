@@ -51,15 +51,27 @@ wait_http http://127.0.0.1:16686/
 rid="k8s-observability-$(date +%s)"
 curl -fsS -H "X-Request-Id: $rid" http://127.0.0.1:8888/health/live > /dev/null
 
-code="$(curl -sS -o "$tmp/kibana-data-view.json" -w '%{http_code}' \
-  -X POST http://127.0.0.1:15601/api/data_views/data_view \
-  -H "kbn-xsrf: awesome-zero-platform" -H "Content-Type: application/json" \
-  -d '{"data_view":{"id":"awesome-logs","name":"Awesome Logs","title":"awesome-logs-*","timeFieldName":"@timestamp"}}')"
-if [[ "$code" != 200 && "$code" != 201 && "$code" != 409 ]]; then
-  echo "Kibana data view creation error: HTTP $code" >&2
-  cat "$tmp/kibana-data-view.json" >&2
+# Repeated smoke runs must reuse the exact expected data view. Kibana 9 can
+# return HTTP 400 for duplicate creation, so never treat arbitrary 400s as OK.
+view_code="$(curl -sS -o "$tmp/kibana-existing-view.json" -w '%{http_code}' \
+  http://127.0.0.1:15601/api/data_views/data_view/awesome-logs)"
+if [[ "$view_code" == 404 ]]; then
+  code="$(curl -sS -o "$tmp/kibana-data-view.json" -w '%{http_code}' \
+    -X POST http://127.0.0.1:15601/api/data_views/data_view \
+    -H "kbn-xsrf: awesome-zero-platform" -H "Content-Type: application/json" \
+    -d '{"data_view":{"id":"awesome-logs","name":"Awesome Logs","title":"awesome-logs-*","timeFieldName":"@timestamp"}}')"
+  if [[ "$code" != 200 && "$code" != 201 && "$code" != 409 ]]; then
+    echo "Kibana data view creation error: HTTP $code" >&2
+    cat "$tmp/kibana-data-view.json" >&2
+    exit 1
+  fi
+elif [[ "$view_code" != 200 ]]; then
+  echo "Kibana data view lookup error: HTTP $view_code" >&2
+  cat "$tmp/kibana-existing-view.json" >&2
   exit 1
 fi
+curl -fsS http://127.0.0.1:15601/api/data_views/data_view/awesome-logs |
+  python3 -c 'import json,sys; d=json.load(sys.stdin)["data_view"]; assert d["id"]=="awesome-logs" and d["title"]=="awesome-logs-*" and d["timeFieldName"]=="@timestamp", "unexpected Kibana data view contract"'
 
 seen=false
 for _ in $(seq 1 120); do
