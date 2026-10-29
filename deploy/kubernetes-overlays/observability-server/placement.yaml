@@ -21,6 +21,15 @@ spec:
         securityContext:
           runAsUser: 65532
           runAsGroup: 65532
+        volumeMounts:
+        - name: server-app-config
+          mountPath: /app/etc/production.yaml
+          subPath: production.yaml
+          readOnly: true
+      volumes:
+      - name: server-app-config
+        configMap:
+          name: obs-server-app-config
   replicas: 1
   strategy:
     type: Recreate

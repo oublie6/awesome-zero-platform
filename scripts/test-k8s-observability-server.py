@@ -16,6 +16,13 @@ assert app['strategy']['type'] == 'Recreate', 'rollout must not overlap API proc
 assert not app['strategy'].get('rollingUpdate')
 api = next(c for c in app['template']['spec']['containers'] if c['name'] == 'app-api')
 assert api['securityContext']['runAsUser'] == 65532, 'non-numeric image USER requires an explicit UID'
+# A server timeout override must not silently change auth/security or other defaults.
+volume = next(v for v in app['template']['spec']['volumes'] if v['name'] == 'server-app-config')
+config = yaml.safe_load(resources['ConfigMap', volume['configMap']['name']]['data']['production.yaml'])
+shipped = yaml.safe_load((pathlib.Path(__file__).resolve().parents[1] / 'server/apps/app-api/etc/production.yaml').read_text())
+assert config.pop('Timeout') == 10000
+assert config == shipped, 'server config drifted beyond the authorized request timeout'
+assert any(m['mountPath'] == '/app/etc/production.yaml' and m.get('readOnly') for m in api['volumeMounts'])
 sc = resources['StorageClass', 'awesome-zero-local']
 assert sc['provisioner'] == 'kubernetes.io/no-provisioner'
 assert sc['reclaimPolicy'] == 'Retain'

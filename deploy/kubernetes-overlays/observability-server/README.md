@@ -56,3 +56,19 @@ business data and are not automatically purged. Jaeger traces remain in memory.
 These policies are not filesystem quotas; query actual ILM/TSDB settings and
 monitor `df -h /data` and per-directory use. No backup destination has been
 provided, so off-node backups remain an operational requirement.
+
+
+The shared-vCPU server uses a **10 second HTTP request deadline** (the shipped
+application default remains 3 seconds). During the controlled backend outage,
+the original deadline expired during login at about 3.1 seconds; password
+verification finished after that deadline. `app-api-production.yaml` is mounted
+read-only through a generated ConfigMap and differs from the shipped production
+configuration only in `Timeout: 10000` (milliseconds). The profile validation
+checks the complete parsed configuration against the shipped file, preventing
+accidental auth/security/default drift. Argon2 parameters and all application
+code remain unchanged. See [go-zero's timeout field](https://github.com/zeromicro/go-zero/blob/v1.10.2/rest/config.go).
+
+Changing this ConfigMap reference recreates the single API Pod. Schedule a
+maintenance window if in-memory games are enabled. Rollback means restoring
+the reviewed previous API Deployment without the `server-app-config` mount;
+keep its image and one replica. Do not apply the default two-replica base.

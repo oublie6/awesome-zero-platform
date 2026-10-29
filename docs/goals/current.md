@@ -67,7 +67,7 @@
 
 - 2026-10-29 06:40 UTC 起恢复：main 干净且 pull --ff-only 已同步；主机已重启，API/两节点恢复，旧暂停容器已被替换。
 - 已顺序恢复Grafana/Jaeger，应用Prometheus 5秒readiness补丁；实际smoke退出0。补充验收通过唯一requestId在ES/Kibana命中、指定Trace ID及时间匹配、6个Grafana面板实际数据、Pod target身份、认证与WS。正在完成真实Discover浏览器及安全停机/恢复验收。
-- 前次连接断开已无法在Pod直连和新port-forward中复现，登录约1秒且全流程200；未修改业务代码。
+- 正常运行下Pod直连/新port-forward认证全流程200。首次五后端停机测试实际复现约3.1秒HTTP500，日志显示deadline先到、随后session创建失败；所有后端已恢复。仅服务器profile增加10秒HTTP deadline配置，并以完整配置一致性检查保护认证参数不漂移；正在按原断言复测，未改业务代码。
 
 ### Remaining
 
