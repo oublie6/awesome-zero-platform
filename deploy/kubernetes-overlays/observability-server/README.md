@@ -41,8 +41,8 @@ make observability-smoke
 make observability-forward
 ```
 
-The forward command binds only localhost. See the Goal 0037 deployment report
-in `docs/goals/current.md` for evidence, credential file location (no values),
+The forward command binds only localhost. See the [Goal 0037 deployment report](../../../docs/goals/archive/0037-kubernetes-observability-deployment.md)
+for evidence, credential file location (no values),
 SSH forwarding, retention, operational limits and safe removal procedures.
 Do not run `kubectl delete -k` on this profile or reapply the two-replica base.
 

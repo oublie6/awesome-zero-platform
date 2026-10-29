@@ -145,4 +145,10 @@ StatefulSet PVCs and observability Secret are **intentionally retained**; review
 
 `Kubernetes Observability Manifests` GitHub Actions executes `kubectl kustomize`, checks the base remains unchanged, parses 23 K8s resources, validates the security/Pod discovery boundaries, dashboard JSON and script syntax, then starts a disposable Kind cluster and performs **Kubernetes API server-side dry-run admission** of the complete overlay. See [the passing CI run](https://github.com/oublie6/awesome-zero-platform/actions/runs/40739186344). Kind's dry-run checks Kubernetes API acceptance but **does not start the workload containers**. It does not prove images can be pulled, PVCs bound or collectors run on your actual cluster; the `smoke` command above is the live acceptance test.
 
+Goal 0037 subsequently deployed this stack on the confirmed two-node cluster
+and passed actual request-ID indexing/Discover, per-Pod metrics/Grafana panels,
+request-correlated traces and controlled all-backend outage/recovery tests.
+See the [deployment acceptance report](../goals/archive/0037-kubernetes-observability-deployment.md)
+for image/resource inventory, retention, evidence, CI and remaining host risks.
+
 The previously tested Compose implementation is kept only for backward compatibility in the repository; this guide and new deployment implementation are Kubernetes-native. Earlier Docker Compose success is not a claim that the Kubernetes deployment has been exercised on a real cluster.
