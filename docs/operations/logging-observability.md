@@ -117,10 +117,17 @@ The default development overlay's seven-day policy remains unchanged.
 
 **Never run `kubectl delete -k deploy/kubernetes-overlays/observability`**: that built configuration also contains the base application's Namespace/Deployment/Service and would delete the platform namespace.
 
-For removal, first review any customizations to the `app-api` Deployment (the base file includes its own image/replicas/resources), then reapply the unmodified base and remove only the observability resources:
+For removal, first prepare a reviewed application manifest from the live
+`app-api` Deployment. Preserve its exact image, replica count, business settings
+and any server-specific configuration mount. Remove only the Filebeat sidecar,
+observability environment and their unused volumes/mounts. Apply that reviewed
+manifest during a maintenance window: recreating a Pod can interrupt in-memory
+games. **Do not use a generic base reapply as rollback**; the base's image and
+two replicas may differ from the running installation.
+
+After checking resource ownership, remove only the named observability objects:
 
 ```bash
-kubectl apply -k deploy/kubernetes
 NS=awesome-zero-platform
 kubectl -n "$NS" delete deployment kibana grafana jaeger --ignore-not-found
 kubectl -n "$NS" delete statefulset elasticsearch prometheus --ignore-not-found

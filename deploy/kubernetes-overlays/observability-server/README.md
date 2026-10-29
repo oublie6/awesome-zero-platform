@@ -1,10 +1,10 @@
 # Goal 0037 server deployment
 
-The host/control plane recovered after a reboot outside this execution.
-All backends are now Ready, and the repository smoke plus extended API/data
-checks pass. Goal 0037 is completing its browser and outage/recovery checks;
-see the current goal report for the latest evidence. The previous kernel
-soft lockups and shared-vCPU steal remain operational risks to monitor.
+The stack has passed real log/metric/trace, browser Discover, authentication,
+WebSocket, Grafana panel and controlled backend-outage/recovery checks. The
+confirmed host recovered after a reboot outside this execution. Shared-vCPU
+steal and the earlier kernel soft lockups remain operational risks to monitor.
+See the Goal 0037 report for point-in-time evidence and deployment limits.
 
 This is an explicit installation profile for the confirmed two-node
 `network-learning` integration cluster. It does not change the default base.
@@ -60,8 +60,8 @@ provided, so off-node backups remain an operational requirement.
 
 The shared-vCPU server uses a **10 second HTTP request deadline** (the shipped
 application default remains 3 seconds). During the controlled backend outage,
-the original deadline expired during login at about 3.1 seconds; password
-verification finished after that deadline. `app-api-production.yaml` is mounted
+the original deadline expired during login at about 3.1 seconds, followed by
+a session-creation context deadline error. `app-api-production.yaml` is mounted
 read-only through a generated ConfigMap and differs from the shipped production
 configuration only in `Timeout: 10000` (milliseconds). The profile validation
 checks the complete parsed configuration against the shipped file, preventing
