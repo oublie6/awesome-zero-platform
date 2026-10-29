@@ -1,10 +1,10 @@
 # Goal 0037 server deployment
 
-**BLOCKED:** the confirmed host developed kernel soft lockups and an unavailable
-Kubernetes API during deployment. Some backend scale-down requests did not
-complete; Elasticsearch is runtime-paused. Do not run the full profile until
-the host/control plane is healthy and the runtime state has been reconciled.
-See the current goal report for precise partial state and recovery ordering.
+The host/control plane recovered after a reboot outside this execution.
+All backends are now Ready, and the repository smoke plus extended API/data
+checks pass. Goal 0037 is completing its browser and outage/recovery checks;
+see the current goal report for the latest evidence. The previous kernel
+soft lockups and shared-vCPU steal remain operational risks to monitor.
 
 This is an explicit installation profile for the confirmed two-node
 `network-learning` integration cluster. It does not change the default base.

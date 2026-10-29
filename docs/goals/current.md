@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: blocked
+- State: in_progress
 - Started: 2026-10-28
 - Completed:
-- Blockers: 宿主机多 CPU soft lockup（最长超过 1000 秒）、CPU steal 最高实测 83%、磁盘/调度长停顿，Kubernetes API 6443 无监听并拒绝连接；安全减载未能全部经 API 完成。完整 smoke 失败，登录回归出现会话创建超时 500，禁止标记 completed。
+- Blockers: 2026-10-29 用户明确要求继续；主机重启后API/两节点恢复，重新排查登录与运行验收。以下 Completion Report 暂保留上一轮历史记录，完成本轮后更新。
 
 ## Goal
 
@@ -65,7 +65,9 @@
 
 ### In progress
 
-- 无。因主机级故障停止部署推进，不继续启动或恢复完整 ELK。
+- 2026-10-29 06:40 UTC 起恢复：main 干净且 pull --ff-only 已同步；主机已重启，API/两节点恢复，旧暂停容器已被替换。
+- 已顺序恢复Grafana/Jaeger，应用Prometheus 5秒readiness补丁；实际smoke退出0。补充验收通过唯一requestId在ES/Kibana命中、指定Trace ID及时间匹配、6个Grafana面板实际数据、Pod target身份、认证与WS。正在完成真实Discover浏览器及安全停机/恢复验收。
+- 前次连接断开已无法在Pod直连和新port-forward中复现，登录约1秒且全流程200；未修改业务代码。
 
 ### Remaining
 
