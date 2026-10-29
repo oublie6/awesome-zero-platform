@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-api
+  namespace: awesome-zero-platform
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ser730417996259
+      containers:
+      - name: app-api
+        image: awesome-zero-platform/app-api:goal0037-74d2c01
+        imagePullPolicy: Never
+        env:
+        - name: APP_ADMIN_BOOTSTRAP_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: awesome-zero-platform-secrets
+              key: admin-bootstrap-token
+        securityContext:
+          runAsUser: 65532
+          runAsGroup: 65532
+  replicas: 1
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: awesome-zero-platform
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ser730417996259
+      containers:
+      - name: elasticsearch
+        env:
+        - name: ES_SETTING_CLUSTER_ROUTING_ALLOCATION_DISK_WATERMARK_LOW
+          value: 12gb
+        - name: ES_SETTING_CLUSTER_ROUTING_ALLOCATION_DISK_WATERMARK_HIGH
+          value: 8gb
+        - name: ES_SETTING_CLUSTER_ROUTING_ALLOCATION_DISK_WATERMARK_FLOOD__STAGE
+          value: 5gb
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: awesome-zero-local
+      volumeName: awesome-zero-elasticsearch
+      resources:
+        requests:
+          storage: 8Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+  namespace: awesome-zero-platform
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ser730417996259
+      containers:
+      - name: prometheus
+        args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=3d
+        - --storage.tsdb.retention.size=512MB
+        readinessProbe:
+          timeoutSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: awesome-zero-local
+      volumeName: awesome-zero-prometheus
+      resources:
+        requests:
+          storage: 3Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: awesome-zero-platform
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: hk-worker
+  progressDeadlineSeconds: 1200
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: awesome-zero-platform
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: hk-worker
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: awesome-zero-platform
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: hk-worker
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: elastic-bootstrap
+  namespace: awesome-zero-platform
+spec:
+  template:
+    spec:
+      containers:
+      - name: setup
+        args:
+        - |
+          until curl -fsS http://elasticsearch:9200/_cluster/health >/dev/null; do sleep 3; done
+          curl -fsS -XPUT http://elasticsearch:9200/_ilm/policy/awesome-logs-three-days \
+            -H 'Content-Type: application/json' \
+            -d '{"policy":{"phases":{"delete":{"min_age":"3d","actions":{"delete":{}}}}}}'
+          curl -fsS -XPUT http://elasticsearch:9200/_index_template/awesome-logs \
+            -H 'Content-Type: application/json' \
+            -d '{"index_patterns":["awesome-logs-*"],"template":{"settings":{"index.lifecycle.name":"awesome-logs-three-days","number_of_shards":1,"number_of_replicas":0}},"priority":300}'
+
+          # Filebeat may create the first daily index before the template exists.
+          curl -fsS -XPUT "http://elasticsearch:9200/awesome-logs-*/_settings?allow_no_indices=true&ignore_unavailable=true" \
+            -H 'Content-Type: application/json' \
+            -d '{"index.lifecycle.name":"awesome-logs-three-days","number_of_replicas":0}'

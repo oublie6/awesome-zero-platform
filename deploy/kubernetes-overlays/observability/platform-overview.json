@@ -50,21 +50,21 @@
         "y": 0
       },
       "type": "timeseries",
-      "title": "HTTP 5xx / sec",
+      "title": "HTTP 5xx error rate (%)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
       "targets": [
         {
-          "expr": "sum(rate(awesome_zero_platform_http_requests_total{status=~\"5..\"}[5m]))",
+          "expr": "100 * (sum(rate(awesome_zero_platform_http_requests_total{status=~\"5..\"}[5m])) or vector(0)) / clamp_min(sum(rate(awesome_zero_platform_http_requests_total[5m])), 1e-9)",
           "refId": "A",
           "legendFormat": "{{instance}}"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "unit": "percent"
         },
         "overrides": []
       },

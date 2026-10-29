@@ -2,13 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OVERLAY="$ROOT/deploy/kubernetes-overlays/observability"
+OVERLAY="${OBS_KUSTOMIZE_OVERLAY:-$ROOT/deploy/kubernetes-overlays/observability}"
 NAMESPACE=awesome-zero-platform
 
 usage() {
   cat <<'EOF'
 Usage: bash scripts/k8s-observability.sh <render|apply|status|smoke|forward>
 Requires kubectl configured for the intended cluster.
+OBS_KUSTOMIZE_OVERLAY optionally selects a reviewed server-specific profile.
   render   Build opt-in Kustomize manifest without altering the cluster.
   apply    Install/update the Kubernetes development observability overlay.
            Requires preexisting application MySQL/Redis and platform Secret.

@@ -96,6 +96,23 @@ If Elasticsearch remains Pending, inspect PVC provisioning/StorageClass and node
 - The application still has bounded-route Prometheus labels; logs should not include request query strings, passwords, refresh/access tokens, private keys, sensitive game cards or random secret contributions. Keep trace sampling and data retention proportional to load.
 - No Kafka/go-stash has been introduced, and none of these three systems is required to start the default Kubernetes base (without this overlay).
 
+## Confirmed server installation profile
+
+Goal 0037 uses `deploy/kubernetes-overlays/observability-server/` for its confirmed
+shared two-node cluster. Set `OBS_KUSTOMIZE_OVERLAY` to its absolute path before
+`make observability-config` or `make observability-up`. This profile pins one
+API replica with Recreate and a local image, places workloads explicitly, and
+uses dedicated prebound Retain local PVs with a non-default StorageClass. **Do
+not reapply the default overlay/base to that installation:** it would restore
+the default two API replicas and image. See the [server profile](../../deploy/kubernetes-overlays/observability-server/README.md).
+
+On that 40 GiB data disk the server profile shortens log ILM to **3 days**, adds
+12/8/5 GB free-space Elasticsearch watermarks, retains Prometheus data for
+**3 days or 512 MiB**, and retains MySQL binlogs for **3 days**. Local PV capacity
+is not a filesystem quota. Durable database/Redis business data is never
+purged by these policies. Monitor actual disk use and arrange off-node backups.
+The default development overlay's seven-day policy remains unchanged.
+
 ## Disable without deleting business state
 
 **Never run `kubectl delete -k deploy/kubernetes-overlays/observability`**: that built configuration also contains the base application's Namespace/Deployment/Service and would delete the platform namespace.

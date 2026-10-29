@@ -1,0 +1,270 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: awesome-zero-local
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: awesome-zero-mysql
+spec:
+  capacity:
+    storage: 4Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: awesome-zero-local
+  claimRef:
+    namespace: awesome-zero-platform
+    name: data-mysql-0
+  local:
+    path: /data/awesome-zero-platform/mysql
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ser730417996259
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: awesome-zero-redis
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: awesome-zero-local
+  claimRef:
+    namespace: awesome-zero-platform
+    name: data-redis-0
+  local:
+    path: /data/awesome-zero-platform/redis
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ser730417996259
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: awesome-zero-elasticsearch
+spec:
+  capacity:
+    storage: 8Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: awesome-zero-local
+  claimRef:
+    namespace: awesome-zero-platform
+    name: data-elasticsearch-0
+  local:
+    path: /data/awesome-zero-platform/elasticsearch
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ser730417996259
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: awesome-zero-prometheus
+spec:
+  capacity:
+    storage: 3Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: awesome-zero-local
+  claimRef:
+    namespace: awesome-zero-platform
+    name: data-prometheus-0
+  local:
+    path: /data/awesome-zero-platform/prometheus
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - ser730417996259
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: awesome-zero-platform
+spec:
+  selector:
+    app.kubernetes.io/name: mysql
+  ports:
+  - name: mysql
+    port: 3306
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: awesome-zero-platform
+spec:
+  serviceName: mysql
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mysql
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mysql
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ser730417996259
+      containers:
+      - name: mysql
+        image: mysql:8.4.6
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+        readinessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        env:
+        - name: MYSQL_DATABASE
+          value: awesome_zero_platform
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: awesome-zero-platform-secrets
+              key: mysql-user
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: awesome-zero-platform-secrets
+              key: mysql-password
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: awesome-zero-platform-secrets
+              key: mysql-root-password
+        args:
+        - --innodb-buffer-pool-size=128M
+        - --max-connections=50
+        - --performance-schema=OFF
+        - --binlog-expire-logs-seconds=259200
+        - --max-binlog-size=104857600
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: awesome-zero-local
+      volumeName: awesome-zero-mysql
+      resources:
+        requests:
+          storage: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: awesome-zero-platform
+spec:
+  selector:
+    app.kubernetes.io/name: redis
+  ports:
+  - name: redis
+    port: 6379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: awesome-zero-platform
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ser730417996259
+      containers:
+      - name: redis
+        image: redis:7.4.5-alpine
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: '1'
+            memory: 256Mi
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: awesome-zero-platform-secrets
+              key: redis-password
+        command:
+        - /bin/sh
+        - -ec
+        - exec redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy
+          noeviction --requirepass "$REDIS_PASSWORD"
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: awesome-zero-local
+      volumeName: awesome-zero-redis
+      resources:
+        requests:
+          storage: 1Gi

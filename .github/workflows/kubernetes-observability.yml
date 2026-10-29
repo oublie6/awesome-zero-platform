@@ -9,12 +9,14 @@ on:
       - "deploy/kubernetes-overlays/**"
       - "scripts/k8s-observability*.sh"
       - "scripts/test-k8s-observability-render.py"
+      - "scripts/test-k8s-observability-server.py"
   pull_request:
     paths:
       - ".github/workflows/kubernetes-observability.yml"
       - "deploy/kubernetes/**"
       - "scripts/k8s-observability*.sh"
       - "scripts/test-k8s-observability-render.py"
+      - "scripts/test-k8s-observability-server.py"
   workflow_dispatch:
 
 permissions:
@@ -42,6 +44,10 @@ jobs:
           kubectl kustomize deploy/kubernetes-overlays/observability > /tmp/observability.yaml
           python3 -m pip install --user PyYAML==6.0.2
           python3 scripts/test-k8s-observability-render.py /tmp/observability.yaml
+      - name: Verify server profile safety
+        run: |
+          kubectl kustomize deploy/kubernetes-overlays/observability-server > /tmp/server-observability.yaml
+          python3 scripts/test-k8s-observability-server.py /tmp/server-observability.yaml
       - name: Verify base remains independently valid
         run: |
           kubectl kustomize deploy/kubernetes > /tmp/base.yaml
