@@ -57,6 +57,9 @@ type StartupError struct {
 
 func init() {
 	_ = mysql.SetLogger(&mysql.NopLogger{})
+	// go-zero sqlx otherwise logs bound SQL arguments, including password hashes
+	// and private business payloads. Keep OpenTelemetry spans, not statement text.
+	sqlx.DisableLog()
 }
 
 func (e *StartupError) Error() string {
