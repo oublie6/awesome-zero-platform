@@ -138,7 +138,11 @@ func (c *client) readPump() {
 			continue
 		}
 		c.hub.metrics.MessageReceived()
-		c.hub.handle(c.ctx, c, envelope)
+		// Do not tie long-lived WebSocket messages to the finished handshake span.
+		// Give each accepted application message an independent, short-lived span.
+		withMessageTrace(c.ctx, func(ctx context.Context) {
+			c.hub.handle(ctx, c, envelope)
+		})
 	}
 }
 
