@@ -75,6 +75,70 @@ Then visit these **localhost-only** addresses on the machine running `kubectl`:
 
 The Kibana `awesome-logs-*` data view is set up by the smoke script, not by clicking buttons. Check `module`, `requestId`, `eventAction` and `statusCode`. The Grafana `Platform / Awesome Zero Platform Overview` dashboard includes HTTP requests, error rate, latency, process memory and WebSocket activity. In Jaeger, select service `app-api`.
 
+### Cloud server access through an SSH tunnel
+
+For the confirmed server installation, keep the existing ClusterIP Services and
+use two forwarding steps: Kubernetes Service to the server's loopback address,
+then SSH to your own computer. No dashboard needs a public listener.
+
+**Security group:** allow inbound TCP **22** (or the existing custom SSH port)
+from your computer's current public IPv4 address with a `/32` source mask. For
+IPv6, restrict access to your address with `/128`. Reuse an existing trusted SSH
+connection if it already works. Dashboard access does not require public rules
+for 3000, 5601, 9090, 9200, 16686, OTLP 4317/4318, MySQL 3306, Redis 6379 or the
+Kubernetes API 6443. These are browser-access instructions, not a replacement
+for the cluster's existing internal networking rules.
+
+On the **server with the configured kubectl context**, run:
+
+```bash
+cd /root/awesome-zero-platform
+kubectl config current-context
+make observability-forward
+```
+
+For the confirmed deployment the context is
+`kubernetes-admin@network-learning`. Keep this terminal running. The command
+only forwards Services to `127.0.0.1`; it does not apply manifests, change
+replicas or need the Grafana password.
+
+In another terminal on **your own computer**, run:
+
+```bash
+ssh -N -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:15601:127.0.0.1:15601 \
+  -L 127.0.0.1:13000:127.0.0.1:13000 \
+  -L 127.0.0.1:16686:127.0.0.1:16686 \
+  -L 127.0.0.1:19090:127.0.0.1:19090 \
+  -L 127.0.0.1:19200:127.0.0.1:19200 \
+  trusted-ssh-host
+```
+
+Replace `trusted-ssh-host` with your existing SSH configuration alias or
+`username@server-address`; use your existing key and host verification. Add
+`-p YOUR_SSH_PORT` before the host argument if your connection uses a custom port. Keep this terminal
+running too. All local listeners are explicitly bound to `127.0.0.1`.
+
+Open the localhost addresses in the table above in **your computer's browser**:
+
+- Kibana: open Discover and select the `Awesome Logs` data view.
+- Grafana: log in as `admin` with the existing securely stored deployment
+  password, then open `Platform / Awesome Zero Platform Overview`.
+- Jaeger: select service `app-api` and search for traces.
+- Prometheus: use `/targets` to check collection or the query page for PromQL.
+- Elasticsearch: the URL is a REST API returning JSON, not a separate dashboard.
+
+Kibana, Elasticsearch, Prometheus and Jaeger in this development installation
+have no separate login protection; keep their access behind the SSH tunnel.
+Do not bind the Kubernetes forwards to `0.0.0.0`. Close both forwarding commands
+with `Ctrl+C` when finished; this does not stop the Kubernetes workloads.
+
+If SSH reports a local port is already in use, stop the conflicting local
+forward or choose another local port. For example,
+`-L 127.0.0.1:23000:127.0.0.1:13000` makes Grafana available at
+`http://127.0.0.1:23000`. After an app/backend Pod replacement or a disconnected
+SSH session, restart the affected forwarding command if access stops working.
+
 ### Diagnostics
 
 ```bash

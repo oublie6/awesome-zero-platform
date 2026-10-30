@@ -41,6 +41,8 @@ make observability-smoke
 make observability-forward
 ```
 
+For browser access from your own computer, follow the [security group and SSH tunnel steps](../../../docs/operations/logging-observability.md#cloud-server-access-through-an-ssh-tunnel). Only your existing SSH port needs a public access rule restricted to your IP.
+
 The forward command binds only localhost. See the [Goal 0037 deployment report](../../../docs/goals/archive/0037-kubernetes-observability-deployment.md)
 for evidence, credential file location (no values),
 SSH forwarding, retention, operational limits and safe removal procedures.
