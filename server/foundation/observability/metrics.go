@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redis/go-redis/v9"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Metrics struct {
+	namespace string
 	registry *prometheus.Registry
 	requests *prometheus.CounterVec
 	duration *prometheus.HistogramVec
@@ -38,7 +40,32 @@ func NewMetrics(namespace string) *Metrics {
 		requests,
 		duration,
 	)
-	return &Metrics{registry: registry, requests: requests, duration: duration}
+	return &Metrics{namespace: namespace, registry: registry, requests: requests, duration: duration}
+}
+
+// RegisterRedisPool exports native-client pool health without sensitive Redis
+// command arguments or keys. The managed go-zero client has its own internal
+// pool and this metric MUST NOT be interpreted as its total connection count.
+func (m *Metrics) RegisterRedisPool(client *redis.Client) error {
+	if m == nil || client == nil {
+		return nil
+	}
+	for _, gauge := range []struct {
+		name string
+		help string
+		value func() float64
+	}{
+		{name: "redis_native_pool_total_connections", help: "Connections in the native Redis pool (excludes go-zero managed Redis).", value: func() float64 { return float64(client.PoolStats().TotalConns) }},
+		{name: "redis_native_pool_idle_connections", help: "Idle native Redis pool connections.", value: func() float64 { return float64(client.PoolStats().IdleConns) }},
+		{name: "redis_native_pool_stale_connections", help: "Stale connections removed from the native Redis pool.", value: func() float64 { return float64(client.PoolStats().StaleConns) }},
+	} {
+		if err := m.registry.Register(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+			Namespace: m.namespace, Name: gauge.name, Help: gauge.help,
+		}, gauge.value)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *Metrics) Handler() http.Handler {

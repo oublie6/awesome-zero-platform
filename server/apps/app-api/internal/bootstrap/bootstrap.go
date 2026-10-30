@@ -119,6 +119,13 @@ func New(configFile string) (*App, error) {
 		_ = mysqlResource.Close()
 		return nil, err
 	}
+	if metrics != nil {
+		if err := metrics.RegisterRedisPool(redisClient.Client()); err != nil {
+			_ = redisClient.Close()
+			_ = mysqlResource.Close()
+			return nil, fmt.Errorf("register Redis pool metrics: %w", err)
+		}
+	}
 
 	var authorizationEngine *casbinmysql.Engine
 	var realtimeHub *realtime.Hub
