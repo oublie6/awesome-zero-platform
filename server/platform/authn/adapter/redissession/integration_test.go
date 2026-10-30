@@ -59,9 +59,11 @@ func TestGoZeroClientSessionRoundTrip(t *testing.T) {
 		ID: "session-a", AccountID: "user-a", RefreshDigest: "digest-before",
 		CreatedAt: now, ExpiresAt: now.Add(35*time.Second + 750*time.Millisecond),
 	}
-	t.Cleanup(func() {
+	// Run cleanup before the deferred resource.Close; otherwise the Redis
+	// client is already closed when the test tries to remove its session.
+	defer func() {
 		_ = resource.Client().Del(context.Background(), prefix+session.ID).Err()
-	})
+	}()
 	if err := store.Create(ctx, session); err != nil {
 		t.Fatalf("go-zero create session: %v", err)
 	}
