@@ -70,22 +70,22 @@ Single primary executor, sequential verification and mandatory self-review.
 
 ### In progress
 
-- Acceptance evidence and detailed report are complete. Archive this goal, reset the template, commit/push on main, and confirm CI for the archival commit.
+- None. Goal archived on 2026-10-30 after all runtime acceptance criteria passed.
 
 ### Remaining
 
-- Final CI for the archival commit; report its result to the user. No code, rollout, data, or runtime acceptance item remains open.
+- None. No code, rollout, data, or runtime acceptance item remains open.
 
 ### Verification status
 
 - All source, runtime and deployment acceptance criteria passed. Full unit and required focused/full Race checks, API validation/generation, gofmt/tidy, frontend/client, integration, strict module-boundary checks, Kubernetes rendering, isolated restore/recovery, live REST/WS, Prometheus/Grafana, Jaeger and Filebeat/Elasticsearch/Kibana checks are recorded in the detailed report.
 - Runtime rollout used the immutable 3fd4cb6 image. One API replica/Recreate, runtime configuration, Secrets, PVCs and business disabled state were preserved. No live database/Redis outage or data-volume reset was performed.
-- Source CI before rollout: 3fd4cb6 CI 41053084557 and Fair Doudizhu 41053084529 succeeded. Manifest checkpoint 4b36269 CI 41056434697, Fair Doudizhu 41056434701 and Kubernetes manifests 41056434663 all succeeded. The archival commit is the only pending CI confirmation.
+- Source CI before rollout: 3fd4cb6 CI 41053084557 and Fair Doudizhu 41053084529 succeeded. Manifest checkpoint 4b36269 CI 41056434697, Fair Doudizhu 41056434701 and Kubernetes manifests 41056434663 all succeeded. The archival checkpoint CI 41086722938 and Fair Doudizhu CI 41086723113 both succeeded; a report-only follow-up commit is checked separately.
 - Evidence is under `/root/.local/state/awesome-zero-platform/goal0042` (directory 0700; sensitive snapshots 0600; excluded from Git). No credentials or secret payloads are included in repository documentation.
 
 ## Completion Report
 
-Acceptance complete; goal archived. The archival commit CI is pending confirmation after push. See the [detailed deployment and runtime report](../../operations/goal0042-kubernetes-acceptance.md).
+Acceptance complete; goal archived. Archive checkpoint `90e82fd` CI 41086722938 and Fair Doudizhu CI 41086723113 both succeeded. See the [detailed deployment and runtime report](../../operations/goal0042-kubernetes-acceptance.md).
 
 ### Changes and self-review
 

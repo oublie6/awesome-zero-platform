@@ -1,6 +1,6 @@
 # Goal 0042：最终部署与运行验收记录
 
-代码、部署与真实运行验收已通过；归档提交的最终 GitHub Actions 结果在推送后确认。本记录区分本机执行、真实集群证据与 CI 结果。
+代码、部署与真实运行验收已通过。归档提交 `90e82fd` 的 GitHub Actions CI `41086722938` 与 Fair Doudizhu `41086723113` 均成功。本记录区分本机执行、真实集群证据与 CI 结果。
 
 ## 版本与执行范围
 
@@ -154,7 +154,7 @@ REST 继续使用 go-zero `rest.Server`/router/route middleware；外层 CORS、
 
 - 通过：API DSL/goctl format 与生成无 diff、gofmt、idempotent `go mod tidy`、完整 unit、platform/foundation/architecture Race、native transaction/HTTP context focused Race、模块 SQL ownership、frontend typecheck/build、客户端 9/9、TS→Go envelope interop、实际版本 MySQL 8.4.6/Redis 7.4.5 `make integration-test`、两套 Kubernetes render 28/23、隔离数据库 restore/recovery、镜像 build/import、部署后 observability smoke 和现场 REST/WS/telemetry/UI。
 - 代码自审第三次检查还发现并修复 native Doudizhu transaction bypass、早期 request Context 被 go-zero response trace 覆盖时的日志关联、事务失败 Span 可能记录调用方私密错误文本。新增测试按预期拒绝旧实现；自审覆盖事务顺序/隔离级别/rollback/panic/error identity、锁和 post-commit 路径、查询游标关闭、Context/parent、隐私、标签边界、资源清理及模块所有权。属于同一执行者 self-review，不是独立审核。
-- 新源码 commit `3fd4cb6fcb4983d3d548804f3964dc541c90cb54` GitHub CI 41053084557 / Fair Doudizhu 41053084529 success；部署 manifest commit `4b36269378bf0b8e0d17ea32c693e99f8068f059` CI 41056434697 / Fair Doudizhu 41056434701 / K8s manifests 41056434663 均 success。归档 commit 的最终 CI 待其 push 后确认。
+- 新源码 commit `3fd4cb6fcb4983d3d548804f3964dc541c90cb54` GitHub CI 41053084557 / Fair Doudizhu 41053084529 success；部署 manifest commit `4b36269378bf0b8e0d17ea32c693e99f8068f059` CI 41056434697 / Fair Doudizhu 41056434701 / K8s manifests 41056434663 均 success。归档 commit `90e82fd` 的 CI `41086722938` 和 Fair Doudizhu `41086723113` 均成功。
 - 曾有探针遗漏 API DTO 必填字段、把完整 DTO PATCH 当成部分 PATCH、以及把资料更新错误要求为事务；均为验收脚本假设错误。按已声明契约修正探针，并保留失败记录；没有更改 production validation 或降低断言。一次 Prometheus 补充读取复用了旧 port-forward 日志误判启动，按实际本地监听重试后通过。无测试 assertion 因失败被跳过。
 
 ### 精确改动文件
