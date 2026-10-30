@@ -1,0 +1,202 @@
+syntax = "v1"
+
+info (
+    title:   "Awesome Zero Platform application API inventory"
+    desc:    "Stable route inventory for modular API adapters; HTTP implementations remain in handwritten adapters."
+    version: "v1"
+)
+
+// Every declared route is checked against actual rest.Route registrations.
+// Do not run goctl api go on this inventory: the generated health-only
+// apps/app-api/app.api remains the code-generation input until the endpoint
+// handlers and response envelopes can be migrated without breaking clients.
+service main-api {
+    @doc "GET /admin/bootstrap/status"
+    @handler route_get_admin_bootstrap_status
+    get /admin/bootstrap/status
+
+    @doc "POST /admin/bootstrap"
+    @handler route_post_admin_bootstrap
+    post /admin/bootstrap
+
+    @doc "GET /admin/me"
+    @handler route_get_admin_me
+    get /admin/me
+
+    @doc "GET /admin/accounts"
+    @handler route_get_admin_accounts
+    get /admin/accounts
+
+    @doc "POST /admin/accounts"
+    @handler route_post_admin_accounts
+    post /admin/accounts
+
+    @doc "GET /admin/accounts/:id"
+    @handler route_get_admin_accounts_id
+    get /admin/accounts/:id
+
+    @doc "PATCH /admin/accounts/:id"
+    @handler route_patch_admin_accounts_id
+    patch /admin/accounts/:id
+
+    @doc "POST /admin/accounts/:id/enable"
+    @handler route_post_admin_accounts_id_enable
+    post /admin/accounts/:id/enable
+
+    @doc "POST /admin/accounts/:id/disable"
+    @handler route_post_admin_accounts_id_disable
+    post /admin/accounts/:id/disable
+
+    @doc "POST /admin/accounts/:id/reset-password"
+    @handler route_post_admin_accounts_id_reset_password
+    post /admin/accounts/:id/reset-password
+
+    @doc "GET /admin/accounts/:id/sessions"
+    @handler route_get_admin_accounts_id_sessions
+    get /admin/accounts/:id/sessions
+
+    @doc "POST /admin/accounts/:id/revoke-sessions"
+    @handler route_post_admin_accounts_id_revoke_sessions
+    post /admin/accounts/:id/revoke-sessions
+
+    @doc "GET /admin/accounts/:id/roles"
+    @handler route_get_admin_accounts_id_roles
+    get /admin/accounts/:id/roles
+
+    @doc "PUT /admin/accounts/:id/roles"
+    @handler route_put_admin_accounts_id_roles
+    put /admin/accounts/:id/roles
+
+    @doc "GET /admin/roles"
+    @handler route_get_admin_roles
+    get /admin/roles
+
+    @doc "POST /admin/roles"
+    @handler route_post_admin_roles
+    post /admin/roles
+
+    @doc "GET /admin/roles/:code"
+    @handler route_get_admin_roles_code
+    get /admin/roles/:code
+
+    @doc "PATCH /admin/roles/:code"
+    @handler route_patch_admin_roles_code
+    patch /admin/roles/:code
+
+    @doc "DELETE /admin/roles/:code"
+    @handler route_delete_admin_roles_code
+    delete /admin/roles/:code
+
+    @doc "GET /admin/roles/:code/permissions"
+    @handler route_get_admin_roles_code_permissions
+    get /admin/roles/:code/permissions
+
+    @doc "PUT /admin/roles/:code/permissions"
+    @handler route_put_admin_roles_code_permissions
+    put /admin/roles/:code/permissions
+
+    @doc "GET /admin/authorization/resources"
+    @handler route_get_admin_authorization_resources
+    get /admin/authorization/resources
+
+    @doc "POST /admin/authorization/resources"
+    @handler route_post_admin_authorization_resources
+    post /admin/authorization/resources
+
+    @doc "GET /admin/authorization/resources/:code"
+    @handler route_get_admin_authorization_resources_code
+    get /admin/authorization/resources/:code
+
+    @doc "PATCH /admin/authorization/resources/:code"
+    @handler route_patch_admin_authorization_resources_code
+    patch /admin/authorization/resources/:code
+
+    @doc "DELETE /admin/authorization/resources/:code"
+    @handler route_delete_admin_authorization_resources_code
+    delete /admin/authorization/resources/:code
+
+    @doc "GET /admin/authorization/engine"
+    @handler route_get_admin_authorization_engine
+    get /admin/authorization/engine
+
+    @doc "GET /admin/authorization/engine/model"
+    @handler route_get_admin_authorization_engine_model
+    get /admin/authorization/engine/model
+
+    @doc "GET /admin/authorization/engine/policies"
+    @handler route_get_admin_authorization_engine_policies
+    get /admin/authorization/engine/policies
+
+    @doc "POST /admin/authorization/engine/policies/validate"
+    @handler route_post_admin_authorization_engine_policies_validate
+    post /admin/authorization/engine/policies/validate
+
+    @doc "PUT /admin/authorization/engine/policies"
+    @handler route_put_admin_authorization_engine_policies
+    put /admin/authorization/engine/policies
+
+    @doc "POST /admin/authorization/engine/explain"
+    @handler route_post_admin_authorization_engine_explain
+    post /admin/authorization/engine/explain
+
+    @doc "GET /admin/audit/events"
+    @handler route_get_admin_audit_events
+    get /admin/audit/events
+
+    @doc "GET /admin/system/overview"
+    @handler route_get_admin_system_overview
+    get /admin/system/overview
+
+    @doc "GET /admin/system/configuration"
+    @handler route_get_admin_system_configuration
+    get /admin/system/configuration
+
+    @doc "POST /auth/login"
+    @handler route_post_auth_login
+    post /auth/login
+
+    @doc "POST /auth/refresh"
+    @handler route_post_auth_refresh
+    post /auth/refresh
+
+    @doc "POST /auth/logout"
+    @handler route_post_auth_logout
+    post /auth/logout
+
+    @doc "GET /auth/session"
+    @handler route_get_auth_session
+    get /auth/session
+
+    @doc "GET /api/v1/crypto/reveal-keys/current"
+    @handler route_get_api_v1_crypto_reveal_keys_current
+    get /api/v1/crypto/reveal-keys/current
+
+    @doc "GET /api/v1/crypto/reveal-keys/:keyId"
+    @handler route_get_api_v1_crypto_reveal_keys_keyId
+    get /api/v1/crypto/reveal-keys/:keyId
+
+    @doc "POST /v1/doudizhu/commands"
+    @handler route_post_v1_doudizhu_commands
+    post /v1/doudizhu/commands
+
+    @doc "GET /v1/doudizhu/hands/:handId/public"
+    @handler route_get_v1_doudizhu_hands_handId_public
+    get /v1/doudizhu/hands/:handId/public
+
+    @doc "GET /v1/doudizhu/hands/:handId/private"
+    @handler route_get_v1_doudizhu_hands_handId_private
+    get /v1/doudizhu/hands/:handId/private
+
+    @doc "GET /v1/doudizhu/hands/:handId/evidence"
+    @handler route_get_v1_doudizhu_hands_handId_evidence
+    get /v1/doudizhu/hands/:handId/evidence
+
+    @doc "GET /health/live"
+    @handler route_get_health_live
+    get /health/live
+
+    @doc "GET /health/ready"
+    @handler route_get_health_ready
+    get /health/ready
+
+}
