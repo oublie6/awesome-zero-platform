@@ -56,6 +56,10 @@ type StartupError struct {
 
 func init() {
 	logging.Disable()
+	// go-zero's default slow Redis logs include raw command arguments. Session
+	// refresh digests and cached private records must not enter application logs.
+	// Observe slow Redis operations using traces and duration metrics instead.
+	zeroredis.SetSlowThreshold(24 * time.Hour)
 }
 
 func (e *StartupError) Error() string {
