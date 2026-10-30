@@ -98,3 +98,13 @@ REST 继续使用 go-zero `rest.Server`/router/route middleware；外层 CORS、
 - 该二进制在隔离 fixture 的 MySQL/Redis 暂停约 14.17/9.46 秒后恢复；解除暂停后的健康/认证成功检查约 0.03/0.11 秒。不可用时 readiness 失败、liveness 正常、认证请求 fail closed。没有对生产数据库注入故障；所有 fixture 容器已移除，日志敏感信息扫描通过。
 - 资源短采样 goroutine 33～35，但堆内存从 66.46 增至 71.49 MiB。该样本仅说明短时有界，**不能证明内存稳定或无泄漏**；后续延长观察并记录 GC 次数。
 - 后续隐私自审发现新事务边界会将任意 callback error 文本复制到异常事件。现使用固定失败文本，保留调用方原错误及 panic/回滚语义。完整 unit、三个事务消费者 Race 通过；旧实现的 overlay 被新增私有错误回归断言拒绝。此改动仍需新检查点 CI 和最新镜像。
+
+## 待部署镜像与最后预检
+
+- 最终代码 `3fd4cb6fcb4983d3d548804f3964dc541c90cb54`：CI `41053084557`、Fair Doudizhu `41053084529` 均成功。
+- 延长到三分钟以上的隔离资源观察看到 GC 次数 3→7；堆从最高约 75.10 MiB 回收到约 3.15 MiB，最后 2.50 MiB，goroutine 约 33～34。先前短样本不能证明平台，现在已实际观察到回收；仍不是长期容量/无泄漏保证。隔离故障恢复和日志扫描通过，临时容器均移除。
+- 镜像 `awesome-zero-platform/app-api:goal0042-3fd4cb6fcb49`，config ID `sha256:81e0fd668b276c59d8790944ecac4358f5906ff45f45eec858a134d126736dd1`。使用仓库 Dockerfile、精确 Git archive 上下文和 1.5 GiB/2 CPU builder 限额构建；没有打包工作区未跟踪凭据或客户端 node_modules。
+- source revision label、linux/amd64、nonroot、entrypoint、内置 Go 1.25.8/go-zero 1.10.2 及原 production 配置模板均核对。镜像二进制 SHA256：`ccf2fca67b191e6354156581def60b0b32620102869fe8aeeacce1435cdd68d6`。
+- 已导入目标节点 containerd，crictl image ID 一致；旧镜像与备份仍在。server overlay 仅改该 image tag，28 资源验证通过；实际 diff 仅 API 镜像及 generation。窄镜像补丁 server-side dry-run 没有其他 spec 变化。
+- 预检八个组件 Ready、PVC Bound、两节点无 pressure、/data 约 24 GiB 空闲、WS 活跃数为 0、业务仍 disabled；单副本/Recreate/10 秒配置与所有 Secret/卷引用保持原状。主数据备份校验与隔离恢复已复核。
+- **尚未滚动部署。** 待 manifest 检查点 CI 后，仅应用审查过的 API 镜像补丁。真实 REST/WS/Jaeger/Prometheus/Grafana/ELK 与部署后资源检查仍待执行。
