@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: awesome-zero-platform
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: jaeger
+          args:
+            - --config=/etc/jaeger/config.yaml
+          volumeMounts:
+            - name: jaeger-config
+              mountPath: /etc/jaeger/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: jaeger-data
+              mountPath: /badger
+      volumes:
+        - name: jaeger-config
+          configMap:
+            name: obs-jaeger-config
+        - name: jaeger-data
+          persistentVolumeClaim:
+            claimName: jaeger-badger
