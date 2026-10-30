@@ -25,3 +25,7 @@ ChatGPT verified code and integration tests in GitHub Actions but has no SSH cre
 `app-api` uses one replica and `Recreate` because active in-memory game state cannot be safely shared between two pods. An update briefly interrupts HTTP and WebSocket sessions. Existing server profile has a 10-second request deadline and may differ from the default app-api production file. The original version from Goal 0037 was `awesome-zero-platform/app-api:goal0037-74d2c01`. Preserve the configuration while updating only application source/image.
 
 If the target cluster is unavailable, old image cannot be backed up, new image cannot be loaded, a `kubectl diff` reveals unrelated changes, or a live service would be disrupted without consent, stop and report exactly what is blocked. Do not guess credentials.
+
+## Supplementary execution result
+
+The authorized server rollout and runtime acceptance passed on 2026-10-30. See the [supplementary deployment acceptance report](goal0038-kubernetes-acceptance.md) for the deployed image digest, ready Pod, real HTTP/SQL/Redis Trace IDs, regression evidence, preserved resources and rollback readiness. The original source-level Goal archive remains unchanged.
