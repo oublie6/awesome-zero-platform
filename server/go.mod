@@ -13,8 +13,8 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.21.0
 	github.com/zeromicro/go-zero v1.10.2
-	go.opentelemetry.io/otel/trace v1.40.0
 	go.opentelemetry.io/otel/sdk v1.40.0
+	go.opentelemetry.io/otel/trace v1.40.0
 	golang.org/x/crypto v0.54.0
 	golang.org/x/text v0.40.0
 )

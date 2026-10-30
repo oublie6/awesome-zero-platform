@@ -13,6 +13,7 @@ func TestRedisNativePoolMetricsPreservePrometheusHandler(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379"})
 	defer client.Close()
 	m := NewMetrics("example")
+	m.requests.WithLabelValues("GET", "/health/live", "200").Inc()
 	if err := m.RegisterRedisPool(client); err != nil {
 		t.Fatalf("register Redis pool: %v", err)
 	}
