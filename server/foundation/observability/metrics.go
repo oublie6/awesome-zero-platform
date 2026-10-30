@@ -9,15 +9,15 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redis/go-redis/v9"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/redis/go-redis/v9"
 )
 
 type Metrics struct {
 	namespace string
-	registry *prometheus.Registry
-	requests *prometheus.CounterVec
-	duration *prometheus.HistogramVec
+	registry  *prometheus.Registry
+	requests  *prometheus.CounterVec
+	duration  *prometheus.HistogramVec
 }
 
 func NewMetrics(namespace string) *Metrics {
@@ -51,8 +51,8 @@ func (m *Metrics) RegisterRedisPool(client *redis.Client) error {
 		return nil
 	}
 	for _, gauge := range []struct {
-		name string
-		help string
+		name  string
+		help  string
 		value func() float64
 	}{
 		{name: "redis_native_pool_total_connections", help: "Connections in the native Redis pool (excludes go-zero managed Redis).", value: func() float64 { return float64(client.PoolStats().TotalConns) }},
