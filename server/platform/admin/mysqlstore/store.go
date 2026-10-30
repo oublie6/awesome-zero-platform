@@ -3,11 +3,11 @@ package mysqlstore
 import (
 	"context"
 	"database/sql"
-	"time"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	mysql "github.com/go-sql-driver/mysql"
 	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
@@ -33,81 +33,84 @@ func NewCached(db *sql.DB, modelCache *foundationcache.ModelCache) (*Store, erro
 	return &Store{db: db, conn: foundationdb.WrapSqlConn(db), cache: modelCache}, nil
 }
 
-
 type roleRow struct {
-    Code string `db:"role_code"`
-    DisplayName string `db:"display_name"`
-    Description string `db:"description"`
-    System bool `db:"is_system"`
-    CreatedAt time.Time `db:"created_at"`
-    UpdatedAt time.Time `db:"updated_at"`
+	Code        string    `db:"role_code"`
+	DisplayName string    `db:"display_name"`
+	Description string    `db:"description"`
+	System      bool      `db:"is_system"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
 }
 
 func (row roleRow) role() admin.Role {
-    return admin.Role{
-        Code: row.Code, DisplayName: row.DisplayName, Description: row.Description,
-        System: row.System, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
-    }
+	return admin.Role{
+		Code: row.Code, DisplayName: row.DisplayName, Description: row.Description,
+		System: row.System, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+	}
 }
 
 type resourceRow struct {
-    Code string `db:"resource_code"`
-    DisplayName string `db:"display_name"`
-    Module string `db:"module_name"`
-    Pattern string `db:"resource_pattern"`
-    Actions []byte `db:"actions_json"`
-    Description string `db:"description"`
-    System bool `db:"is_system"`
-    CreatedAt time.Time `db:"created_at"`
-    UpdatedAt time.Time `db:"updated_at"`
+	Code        string    `db:"resource_code"`
+	DisplayName string    `db:"display_name"`
+	Module      string    `db:"module_name"`
+	Pattern     string    `db:"resource_pattern"`
+	Actions     []byte    `db:"actions_json"`
+	Description string    `db:"description"`
+	System      bool      `db:"is_system"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
 }
 
 func (row resourceRow) resource() (admin.Resource, error) {
-    var actions []string
-    if err := json.Unmarshal(row.Actions, &actions); err != nil {
-        return admin.Resource{}, err
-    }
-    return admin.Resource{
-        Code: row.Code, DisplayName: row.DisplayName, Module: row.Module,
-        Pattern: row.Pattern, Actions: actions, Description: row.Description,
-        System: row.System, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
-    }, nil
+	var actions []string
+	if err := json.Unmarshal(row.Actions, &actions); err != nil {
+		return admin.Resource{}, err
+	}
+	return admin.Resource{
+		Code: row.Code, DisplayName: row.DisplayName, Module: row.Module,
+		Pattern: row.Pattern, Actions: actions, Description: row.Description,
+		System: row.System, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+	}, nil
 }
 
 type auditRow struct {
-    ID string `db:"event_id"`
-    ActorID string `db:"actor_account_id"`
-    Action string `db:"action_name"`
-    ResourceType string `db:"resource_type"`
-    ResourceID string `db:"resource_id"`
-    Outcome string `db:"outcome"`
-    RequestID string `db:"request_id"`
-    ClientIP string `db:"client_ip"`
-    UserAgent string `db:"user_agent"`
-    Details []byte `db:"details_json"`
-    CreatedAt time.Time `db:"created_at"`
+	ID           string    `db:"event_id"`
+	ActorID      string    `db:"actor_account_id"`
+	Action       string    `db:"action_name"`
+	ResourceType string    `db:"resource_type"`
+	ResourceID   string    `db:"resource_id"`
+	Outcome      string    `db:"outcome"`
+	RequestID    string    `db:"request_id"`
+	ClientIP     string    `db:"client_ip"`
+	UserAgent    string    `db:"user_agent"`
+	Details      []byte    `db:"details_json"`
+	CreatedAt    time.Time `db:"created_at"`
 }
 
 func (row auditRow) event() admin.AuditEvent {
-    event := admin.AuditEvent{
-        ID: row.ID, ActorID: row.ActorID, Action: row.Action,
-        ResourceType: row.ResourceType, ResourceID: row.ResourceID,
-        Outcome: row.Outcome, RequestID: row.RequestID,
-        ClientIP: row.ClientIP, UserAgent: row.UserAgent, CreatedAt: row.CreatedAt,
-    }
-    if len(row.Details) > 0 { _ = json.Unmarshal(row.Details, &event.Details) }
-    return event
+	event := admin.AuditEvent{
+		ID: row.ID, ActorID: row.ActorID, Action: row.Action,
+		ResourceType: row.ResourceType, ResourceID: row.ResourceID,
+		Outcome: row.Outcome, RequestID: row.RequestID,
+		ClientIP: row.ClientIP, UserAgent: row.UserAgent, CreatedAt: row.CreatedAt,
+	}
+	if len(row.Details) > 0 {
+		_ = json.Unmarshal(row.Details, &event.Details)
+	}
+	return event
 }
 
 func (s *Store) ListRoles(ctx context.Context) ([]admin.Role, error) {
-    var records []roleRow
-    if err := s.conn.QueryRowsCtx(ctx, &records, `SELECT role_code, display_name, description, is_system, created_at, updated_at
+	var records []roleRow
+	if err := s.conn.QueryRowsCtx(ctx, &records, `SELECT role_code, display_name, description, is_system, created_at, updated_at
         FROM authorization_roles ORDER BY is_system DESC, role_code`); err != nil {
-        return nil, err
-    }
-    roles := make([]admin.Role, 0, len(records))
-    for _, record := range records { roles = append(roles, record.role()) }
-    return roles, nil
+		return nil, err
+	}
+	roles := make([]admin.Role, 0, len(records))
+	for _, record := range records {
+		roles = append(roles, record.role())
+	}
+	return roles, nil
 }
 
 func (s *Store) GetRole(ctx context.Context, code string) (admin.Role, error) {
@@ -128,12 +131,16 @@ func (s *Store) GetRole(ctx context.Context, code string) (admin.Role, error) {
 }
 
 func (s *Store) GetRoleFresh(ctx context.Context, code string) (admin.Role, error) {
-    var record roleRow
-    err := s.conn.QueryRowCtx(ctx, &record, `SELECT role_code, display_name, description, is_system, created_at, updated_at
+	var record roleRow
+	err := s.conn.QueryRowCtx(ctx, &record, `SELECT role_code, display_name, description, is_system, created_at, updated_at
         FROM authorization_roles WHERE role_code = ?`, strings.TrimSpace(code))
-    if errors.Is(err, sql.ErrNoRows) { return admin.Role{}, admin.ErrNotFound }
-    if err != nil { return admin.Role{}, err }
-    return record.role(), nil
+	if errors.Is(err, sql.ErrNoRows) {
+		return admin.Role{}, admin.ErrNotFound
+	}
+	if err != nil {
+		return admin.Role{}, err
+	}
+	return record.role(), nil
 }
 
 func (s *Store) CreateRole(ctx context.Context, role admin.Role) (admin.Role, error) {
@@ -191,19 +198,21 @@ func (s *Store) DeleteRole(ctx context.Context, code string) error {
 }
 
 func (s *Store) ListResources(ctx context.Context) ([]admin.Resource, error) {
-    var records []resourceRow
-    if err := s.conn.QueryRowsCtx(ctx, &records, `SELECT resource_code, display_name, module_name, resource_pattern,
+	var records []resourceRow
+	if err := s.conn.QueryRowsCtx(ctx, &records, `SELECT resource_code, display_name, module_name, resource_pattern,
         actions_json, description, is_system, created_at, updated_at
         FROM authorization_resources ORDER BY module_name, resource_code`); err != nil {
-        return nil, err
-    }
-    resources := make([]admin.Resource, 0, len(records))
-    for _, record := range records {
-        resource, err := record.resource()
-        if err != nil { return nil, err }
-        resources = append(resources, resource)
-    }
-    return resources, nil
+		return nil, err
+	}
+	resources := make([]admin.Resource, 0, len(records))
+	for _, record := range records {
+		resource, err := record.resource()
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, resource)
+	}
+	return resources, nil
 }
 
 func (s *Store) GetResource(ctx context.Context, code string) (admin.Resource, error) {
@@ -224,13 +233,17 @@ func (s *Store) GetResource(ctx context.Context, code string) (admin.Resource, e
 }
 
 func (s *Store) GetResourceFresh(ctx context.Context, code string) (admin.Resource, error) {
-    var record resourceRow
-    err := s.conn.QueryRowCtx(ctx, &record, `SELECT resource_code, display_name, module_name, resource_pattern,
+	var record resourceRow
+	err := s.conn.QueryRowCtx(ctx, &record, `SELECT resource_code, display_name, module_name, resource_pattern,
         actions_json, description, is_system, created_at, updated_at
         FROM authorization_resources WHERE resource_code = ?`, strings.TrimSpace(code))
-    if errors.Is(err, sql.ErrNoRows) { return admin.Resource{}, admin.ErrNotFound }
-    if err != nil { return admin.Resource{}, err }
-    return record.resource()
+	if errors.Is(err, sql.ErrNoRows) {
+		return admin.Resource{}, admin.ErrNotFound
+	}
+	if err != nil {
+		return admin.Resource{}, err
+	}
+	return record.resource()
 }
 
 func (s *Store) CreateResource(ctx context.Context, resource admin.Resource) (admin.Resource, error) {
@@ -326,17 +339,19 @@ func (s *Store) ListAudit(ctx context.Context, query admin.AuditQuery) (admin.Au
 		return admin.AuditPage{}, err
 	}
 	listArgs := append([]any(nil), args...)
-    listArgs = append(listArgs, query.PageSize, (query.Page-1)*query.PageSize)
-    var records []auditRow
-    if err := s.conn.QueryRowsCtx(ctx, &records, `SELECT event_id, COALESCE(actor_account_id, ''), action_name,
+	listArgs = append(listArgs, query.PageSize, (query.Page-1)*query.PageSize)
+	var records []auditRow
+	if err := s.conn.QueryRowsCtx(ctx, &records, `SELECT event_id, COALESCE(actor_account_id, ''), action_name,
         resource_type, COALESCE(resource_id, ''), outcome, COALESCE(request_id, ''),
         COALESCE(client_ip, ''), COALESCE(user_agent, ''), details_json, created_at
         FROM platform_audit_events`+whereSQL+`
         ORDER BY created_at DESC, event_id DESC LIMIT ? OFFSET ?`, listArgs...); err != nil {
-        return admin.AuditPage{}, err
-    }
-    items := make([]admin.AuditEvent, 0, len(records))
-    for _, record := range records { items = append(items, record.event()) }
+		return admin.AuditPage{}, err
+	}
+	items := make([]admin.AuditEvent, 0, len(records))
+	for _, record := range records {
+		items = append(items, record.event())
+	}
 	return admin.AuditPage{Items: items, Total: total, Page: query.Page, PageSize: query.PageSize}, nil
 }
 

@@ -19,7 +19,7 @@ type Database interface {
 
 type Store struct {
 	database Database
-	goZero sqlx.SqlConn
+	goZero   sqlx.SqlConn
 }
 
 func New(database Database) (*Store, error) {

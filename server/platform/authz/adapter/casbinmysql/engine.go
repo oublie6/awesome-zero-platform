@@ -14,11 +14,11 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
-	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	foundationdb "github.com/oublie6/awesome-zero-platform/server/foundation/database"
-	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	"github.com/redis/go-redis/v9"
 	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 const modelText = `[request_definition]
@@ -157,36 +157,36 @@ func (e *Engine) DeleteRole(ctx context.Context, role string) (bool, error) {
 }
 
 type mysqlAdapter struct {
-    db *sql.DB
-    conn sqlx.SqlConn
+	db   *sql.DB
+	conn sqlx.SqlConn
 }
 
 type casbinPolicyRow struct {
-    PType string `db:"ptype"`
-    V0 string `db:"v0"`
-    V1 string `db:"v1"`
-    V2 string `db:"v2"`
-    V3 string `db:"v3"`
-    V4 string `db:"v4"`
-    V5 string `db:"v5"`
+	PType string `db:"ptype"`
+	V0    string `db:"v0"`
+	V1    string `db:"v1"`
+	V2    string `db:"v2"`
+	V3    string `db:"v3"`
+	V4    string `db:"v4"`
+	V5    string `db:"v5"`
 }
 
 func (a *mysqlAdapter) LoadPolicy(m model.Model) error {
-    var rows []casbinPolicyRow
-    if err := a.conn.QueryRowsCtx(context.Background(), &rows, `SELECT ptype, v0, v1, v2, v3, v4, v5
+	var rows []casbinPolicyRow
+	if err := a.conn.QueryRowsCtx(context.Background(), &rows, `SELECT ptype, v0, v1, v2, v3, v4, v5
         FROM authorization_casbin_rules ORDER BY rule_id`); err != nil {
-        return err
-    }
-    for _, row := range rows {
-        values := []string{row.V0, row.V1, row.V2, row.V3, row.V4, row.V5}
-        for len(values) > 0 && values[len(values)-1] == "" {
-            values = values[:len(values)-1]
-        }
-        if err := persist.LoadPolicyLine(row.PType+", "+strings.Join(values, ", "), m); err != nil {
-            return fmt.Errorf("load casbin policy: %w", err)
-        }
-    }
-    return nil
+		return err
+	}
+	for _, row := range rows {
+		values := []string{row.V0, row.V1, row.V2, row.V3, row.V4, row.V5}
+		for len(values) > 0 && values[len(values)-1] == "" {
+			values = values[:len(values)-1]
+		}
+		if err := persist.LoadPolicyLine(row.PType+", "+strings.Join(values, ", "), m); err != nil {
+			return fmt.Errorf("load casbin policy: %w", err)
+		}
+	}
+	return nil
 }
 
 func (a *mysqlAdapter) SavePolicy(m model.Model) error {
