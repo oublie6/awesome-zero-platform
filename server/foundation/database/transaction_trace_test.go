@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"testing"
 
 	"go.opentelemetry.io/otel/codes"
@@ -19,7 +20,8 @@ func TestTransactionSpanReportsOutcomeAfterCleanup(t *testing.T) {
 			defer provider.Shutdown(context.Background())
 			ctx, parent := provider.Tracer("test").Start(context.Background(), "request")
 			defer parent.End()
-			failure := errors.New("transaction test failure")
+			const privateFailure = "private-transaction-callback-payload"
+			failure := errors.New(privateFailure)
 			db, mock := newMockDB(t)
 			begin := mock.ExpectBegin()
 			switch outcome {
@@ -79,6 +81,13 @@ func TestTransactionSpanReportsOutcomeAfterCleanup(t *testing.T) {
 			}
 			if !span.EndTime().After(span.StartTime()) {
 				t.Fatal("invalid transaction timing")
+			}
+			for _, event := range span.Events() {
+				for _, attribute := range event.Attributes {
+					if strings.Contains(attribute.Value.AsString(), privateFailure) {
+						t.Fatal("transaction span leaked private callback error text")
+					}
+				}
 			}
 			assertMock(t, db, mock)
 		})

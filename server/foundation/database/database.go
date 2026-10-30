@@ -327,7 +327,10 @@ func TraceTransaction(ctx context.Context, fn func(context.Context) error) (err 
 		}
 		if err != nil {
 			span.SetStatus(codes.Error, "transaction failed")
-			span.RecordError(err)
+			// Adapter callbacks can return errors containing private business
+			// payloads. Preserve the original error for callers, but keep the
+			// generic infrastructure span free of arbitrary error text.
+			span.RecordError(errors.New("transaction failed"))
 		}
 		span.End()
 	}()

@@ -91,3 +91,10 @@ REST 继续使用 go-zero `rest.Server`/router/route middleware；外层 CORS、
 - 在仅 loopback、临时存储的隔离 MySQL 8.4.6 / Redis 7.4.5 上执行原 `make integration-test`，全部通过（117 秒）。这些版本匹配目标集群；既有 5.7/8.8 验证由新提交 CI 另行确认。集成容器已删除。
 - 六个新增 observability regression tests 以 Go overlay 对修复前源码执行，均按预期失败，且无编译失败；严格 SQL 所有权测试拒绝临时跨模块读表探针，探针随后移除。反向验证不是新的失败项。
 - 最终运行门禁仍待执行；没有将源码/隔离结果替代真实新镜像的 Jaeger、Prometheus、Grafana 或 ELK 证据。
+
+## 源码检查点 45707c4 与隐私自审
+
+- `45707c4fbe40017f90e61d41a5195aee02959e90`：CI `41050979330`、Fair Doudizhu `41050979382` 均成功。静态二进制构建成功，记录的 Go/go-zero 版本为 1.25.8/1.10.2，VCS dirty=false。
+- 该二进制在隔离 fixture 的 MySQL/Redis 暂停约 14.17/9.46 秒后恢复；解除暂停后的健康/认证成功检查约 0.03/0.11 秒。不可用时 readiness 失败、liveness 正常、认证请求 fail closed。没有对生产数据库注入故障；所有 fixture 容器已移除，日志敏感信息扫描通过。
+- 资源短采样 goroutine 33～35，但堆内存从 66.46 增至 71.49 MiB。该样本仅说明短时有界，**不能证明内存稳定或无泄漏**；后续延长观察并记录 GC 次数。
+- 后续隐私自审发现新事务边界会将任意 callback error 文本复制到异常事件。现使用固定失败文本，保留调用方原错误及 panic/回滚语义。完整 unit、三个事务消费者 Race 通过；旧实现的 overlay 被新增私有错误回归断言拒绝。此改动仍需新检查点 CI 和最新镜像。
