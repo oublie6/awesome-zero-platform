@@ -1,0 +1,42 @@
+# Dedicated local trace storage on hk-worker; pre-create the directory with
+# verified filesystem capacity and permissions BEFORE applying this manifest.
+# Local PV capacity is NOT a filesystem quota.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: awesome-zero-jaeger
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: awesome-zero-local
+  claimRef:
+    namespace: awesome-zero-platform
+    name: jaeger-badger
+  local:
+    path: /data/awesome-zero-platform/jaeger
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - hk-worker
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jaeger-badger
+  namespace: awesome-zero-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: awesome-zero-local
+  volumeName: awesome-zero-jaeger
+  resources:
+    requests:
+      storage: 2Gi
