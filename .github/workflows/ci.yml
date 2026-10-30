@@ -45,6 +45,8 @@ jobs:
         run: |
           make generate
           git diff --exit-code -- server/apps/app-api
+      - name: Verify go-zero route inventory syntax
+        run: make api-contract-check
       - name: Verify formatting
         id: formatting
         run: make fmt-check

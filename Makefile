@@ -5,10 +5,16 @@ APP_API_SPEC := $(APP_API_DIR)/app.api
 LOCAL_COMPOSE := docker compose -f deploy/local/docker-compose.yml
 PRODUCTION_COMPOSE := bash scripts/production-compose.sh
 
-.PHONY: generate run build test fmt fmt-check deps-up deps-down deps-reset schema-apply seed-apply integration-test production-config production-up production-down observability-config observability-up observability-status observability-forward observability-smoke
+.PHONY: generate api-contract-check run build test fmt fmt-check deps-up deps-down deps-reset schema-apply seed-apply integration-test production-config production-up production-down observability-config observability-up observability-status observability-forward observability-smoke
 
 generate:
 	cd $(SERVER_DIR) && $(GOCTL) api go --api apps/app-api/app.api --dir apps/app-api --style gozero
+
+# Validate the separately versioned API route inventory. goctl does not
+# generate implementation handlers from this inventory until response and
+# authentication compatibility has been proven.
+api-contract-check:
+	cd $(SERVER_DIR) && $(GOCTL) api validate --api apps/app-api/contracts/routes.api
 
 run:
 	cd $(SERVER_DIR) && go run ./apps/app-api -f apps/app-api/etc/main-api.yaml

@@ -68,8 +68,10 @@ func TestPlatformModuleImportBoundaries(t *testing.T) {
 				tree == "platform" && dep[0] == "business" {
 				t.Errorf("%s: %s must not depend on %s", rel, tree, importPath)
 			}
+			// gamecore is a game-specific shared kernel, not a dependency for
+			// unrelated future business modules.
 			if tree == "business" && dep[0] == "business" && len(parts) >= 2 && len(dep) >= 2 &&
-				parts[1] != dep[1] && dep[1] != "gamecore" {
+				parts[1] != dep[1] && !(parts[1] == "doudizhu" && dep[1] == "gamecore") {
 				t.Errorf("%s: business module %s imports another business module %s", rel, parts[1], dep[1])
 			}
 			if tree == "business" && dep[0] == "platform" && strings.Contains(importPath, "/adapter/") {
@@ -146,6 +148,40 @@ func TestBusinessSQLDoesNotReadOtherModulesTables(t *testing.T) {
 				owner := tableOwner(strings.ToLower(match[1]))
 				if owner != "" && owner != module {
 					t.Errorf("%s: module %s directly accesses %s owned by %s", rel, module, match[1], owner)
+				}
+			}
+			return true
+		})
+	}
+}
+
+func TestPlatformPackagesCannotQueryBusinessTables(t *testing.T) {
+	for _, path := range productionGoFiles(t) {
+		rel, err := filepath.Rel("..", path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		parts := strings.Split(filepath.ToSlash(rel), "/")
+		if len(parts) < 2 || parts[0] != "platform" {
+			continue
+		}
+		src, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			t.Fatalf("parse %s: %v", path, err)
+		}
+		ast.Inspect(src, func(node ast.Node) bool {
+			literal, ok := node.(*ast.BasicLit)
+			if !ok || literal.Kind != token.STRING {
+				return true
+			}
+			value, err := strconv.Unquote(literal.Value)
+			if err != nil {
+				return true
+			}
+			for _, match := range sqlReference.FindAllStringSubmatch(value, -1) {
+				owner := tableOwner(strings.ToLower(match[1]))
+				if owner == "doudizhu" || owner == "gamecore" {
+					t.Errorf("%s: platform must not query %s-owned table %s", rel, owner, match[1])
 				}
 			}
 			return true
