@@ -8,6 +8,7 @@ import (
 
 	mysql "github.com/go-sql-driver/mysql"
 	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type accountStore interface {
@@ -71,15 +72,16 @@ type storedCredential struct {
 
 type MySQLStore struct {
 	db    *sql.DB
+	conn  sqlx.SqlConn
 	cache *foundationcache.ModelCache
 }
 
 func NewMySQLStore(db *sql.DB) *MySQLStore {
-	return &MySQLStore{db: db}
+	return &MySQLStore{db: db, conn: sqlx.NewSqlConnFromDB(db)}
 }
 
 func NewCachedMySQLStore(db *sql.DB, modelCache *foundationcache.ModelCache) *MySQLStore {
-	return &MySQLStore{db: db, cache: modelCache}
+	return &MySQLStore{db: db, conn: sqlx.NewSqlConnFromDB(db), cache: modelCache}
 }
 
 func (s *MySQLStore) InsertAccountTx(ctx context.Context, tx *sql.Tx, record accountRecord) error {
@@ -195,7 +197,7 @@ func (s *MySQLStore) UpdateAccountProfile(ctx context.Context, record accountRec
 	if err != nil {
 		return err
 	}
-	result, err := s.db.ExecContext(ctx, `
+	result, err := s.conn.ExecCtx(ctx, `
 		UPDATE identity_accounts
 		SET username = ?,
 		    username_key = ?,
@@ -232,7 +234,7 @@ func (s *MySQLStore) UpdateAccountStatus(ctx context.Context, accountID string, 
 	if err != nil {
 		return err
 	}
-	result, err := s.db.ExecContext(ctx, `
+	result, err := s.conn.ExecCtx(ctx, `
 		UPDATE identity_accounts
 		SET status = ?, updated_at = ?
 		WHERE account_id = ?

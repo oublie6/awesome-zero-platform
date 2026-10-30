@@ -19,6 +19,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
@@ -480,6 +481,7 @@ type fakeMySQL struct {
 }
 
 func (f *fakeMySQL) DB() *sql.DB                { return nil }
+func (f *fakeMySQL) SqlConn() sqlx.SqlConn      { return nil }
 func (f *fakeMySQL) Ping(context.Context) error { return f.pingErr }
 func (f *fakeMySQL) Close() error {
 	f.closed = true

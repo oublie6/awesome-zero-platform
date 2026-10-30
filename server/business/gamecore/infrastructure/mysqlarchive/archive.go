@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 var (
@@ -23,6 +24,7 @@ type Clock interface {
 
 type Archive struct {
 	db    *sql.DB
+	conn  sqlx.SqlConn
 	clock Clock
 }
 
@@ -43,7 +45,7 @@ func New(db *sql.DB, clock Clock) (*Archive, error) {
 	if db == nil || clock == nil {
 		return nil, fmt.Errorf("mysql game archive configuration is invalid")
 	}
-	return &Archive{db: db, clock: clock}, nil
+	return &Archive{db: db, conn: sqlx.NewSqlConnFromDB(db), clock: clock}, nil
 }
 
 func (a *Archive) Archive(record gamecore.FinalRecord) error {
@@ -58,7 +60,7 @@ func (a *Archive) Archive(record gamecore.FinalRecord) error {
 	digest := record.Digest()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err := a.db.ExecContext(ctx, `
+	_, err := a.conn.ExecCtx(ctx, `
 INSERT INTO game_final_records (
     instance_id, game_id, ruleset_version, module_version, fairness_suite_id,
     participant_count, final_status, final_version, payload, record_digest, archived_at

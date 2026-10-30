@@ -10,11 +10,13 @@ import (
 
 	mysql "github.com/go-sql-driver/mysql"
 	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"github.com/oublie6/awesome-zero-platform/server/platform/admin"
 )
 
 type Store struct {
 	db    *sql.DB
+	conn  sqlx.SqlConn
 	cache *foundationcache.ModelCache
 }
 
@@ -26,7 +28,7 @@ func NewCached(db *sql.DB, modelCache *foundationcache.ModelCache) (*Store, erro
 	if db == nil {
 		return nil, fmt.Errorf("mysql database is required")
 	}
-	return &Store{db: db, cache: modelCache}, nil
+	return &Store{db: db, conn: sqlx.NewSqlConnFromDB(db), cache: modelCache}, nil
 }
 
 func (s *Store) ListRoles(ctx context.Context) ([]admin.Role, error) {
@@ -80,7 +82,7 @@ func (s *Store) CreateRole(ctx context.Context, role admin.Role) (admin.Role, er
 	if role.Code == "" || role.DisplayName == "" {
 		return admin.Role{}, fmt.Errorf("role code and display name are required")
 	}
-	_, err := s.db.ExecContext(ctx, `INSERT INTO authorization_roles
+	_, err := s.conn.ExecCtx(ctx, `INSERT INTO authorization_roles
 		(role_code, display_name, description, is_system) VALUES (?, ?, ?, ?)`,
 		role.Code, role.DisplayName, role.Description, role.System,
 	)
@@ -100,7 +102,7 @@ func (s *Store) UpdateRole(ctx context.Context, role admin.Role) (admin.Role, er
 	if role.Code == "" || role.DisplayName == "" {
 		return admin.Role{}, fmt.Errorf("role code and display name are required")
 	}
-	result, err := s.db.ExecContext(ctx, `UPDATE authorization_roles
+	result, err := s.conn.ExecCtx(ctx, `UPDATE authorization_roles
 		SET display_name = ?, description = ?, updated_at = CURRENT_TIMESTAMP(6)
 		WHERE role_code = ?`, role.DisplayName, role.Description, role.Code)
 	if err != nil {
@@ -117,7 +119,7 @@ func (s *Store) UpdateRole(ctx context.Context, role admin.Role) (admin.Role, er
 
 func (s *Store) DeleteRole(ctx context.Context, code string) error {
 	code = strings.TrimSpace(code)
-	result, err := s.db.ExecContext(ctx, `DELETE FROM authorization_roles WHERE role_code = ? AND is_system = 0`, code)
+	result, err := s.conn.ExecCtx(ctx, `DELETE FROM authorization_roles WHERE role_code = ? AND is_system = 0`, code)
 	if err != nil {
 		return err
 	}
@@ -179,7 +181,7 @@ func (s *Store) CreateResource(ctx context.Context, resource admin.Resource) (ad
 		return admin.Resource{}, err
 	}
 	actions, _ := json.Marshal(resource.Actions)
-	_, err := s.db.ExecContext(ctx, `INSERT INTO authorization_resources
+	_, err := s.conn.ExecCtx(ctx, `INSERT INTO authorization_resources
 		(resource_code, display_name, module_name, resource_pattern, actions_json, description, is_system)
 		VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		resource.Code, resource.DisplayName, resource.Module, resource.Pattern, actions, resource.Description, resource.System,
@@ -198,7 +200,7 @@ func (s *Store) UpdateResource(ctx context.Context, resource admin.Resource) (ad
 		return admin.Resource{}, err
 	}
 	actions, _ := json.Marshal(resource.Actions)
-	result, err := s.db.ExecContext(ctx, `UPDATE authorization_resources
+	result, err := s.conn.ExecCtx(ctx, `UPDATE authorization_resources
 		SET display_name = ?, module_name = ?, resource_pattern = ?, actions_json = ?, description = ?, updated_at = CURRENT_TIMESTAMP(6)
 		WHERE resource_code = ?`,
 		resource.DisplayName, resource.Module, resource.Pattern, actions, resource.Description, resource.Code,
@@ -217,7 +219,7 @@ func (s *Store) UpdateResource(ctx context.Context, resource admin.Resource) (ad
 
 func (s *Store) DeleteResource(ctx context.Context, code string) error {
 	code = strings.TrimSpace(code)
-	result, err := s.db.ExecContext(ctx, `DELETE FROM authorization_resources WHERE resource_code = ? AND is_system = 0`, code)
+	result, err := s.conn.ExecCtx(ctx, `DELETE FROM authorization_resources WHERE resource_code = ? AND is_system = 0`, code)
 	if err != nil {
 		return err
 	}
@@ -232,7 +234,7 @@ func (s *Store) AppendAudit(ctx context.Context, event admin.AuditEvent) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO platform_audit_events
+	_, err = s.conn.ExecCtx(ctx, `INSERT INTO platform_audit_events
 		(event_id, actor_account_id, action_name, resource_type, resource_id, outcome,
 		 request_id, client_ip, user_agent, details_json, created_at)
 		VALUES (?, NULLIF(?, ''), ?, ?, NULLIF(?, ''), ?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), ?, ?)`,
@@ -263,7 +265,7 @@ func (s *Store) ListAudit(ctx context.Context, query admin.AuditQuery) (admin.Au
 		whereSQL = " WHERE " + strings.Join(where, " AND ")
 	}
 	var total int64
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM platform_audit_events`+whereSQL, args...).Scan(&total); err != nil {
+	if err := s.conn.QueryRowCtx(ctx, &total, `SELECT COUNT(*) FROM platform_audit_events`+whereSQL, args...); err != nil {
 		return admin.AuditPage{}, err
 	}
 	listArgs := append([]any(nil), args...)

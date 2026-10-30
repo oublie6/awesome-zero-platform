@@ -11,10 +11,12 @@ import (
 	"time"
 
 	mysql "github.com/go-sql-driver/mysql"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type Handle interface {
 	DB() *sql.DB
+	SqlConn() sqlx.SqlConn
 	Ping(context.Context) error
 	Close() error
 	WithinTransaction(context.Context, func(context.Context, *sql.Tx) error) error
@@ -39,6 +41,7 @@ type Config struct {
 
 type Resource struct {
 	db        *sql.DB
+	sqlConn   sqlx.SqlConn
 	closeFn   func() error
 	pingFn    func(context.Context) error
 	beginTxFn func(context.Context, *sql.TxOptions) (*sql.Tx, error)
@@ -188,6 +191,7 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 
 	resource := &Resource{
 		db:      db,
+		sqlConn: sqlx.NewSqlConnFromDB(db),
 		closeFn: db.Close,
 		pingFn: func(ctx context.Context) error {
 			return db.PingContext(ctx)
@@ -206,6 +210,13 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 	}
 
 	return resource, nil
+}
+
+// SqlConn returns the go-zero SQL access path over the same configured pool.
+// Do not close the underlying RawDB through the sqlx wrapper.
+func (r *Resource) SqlConn() sqlx.SqlConn {
+	if r == nil { return nil }
+	return r.sqlConn
 }
 
 func (r *Resource) DB() *sql.DB {
