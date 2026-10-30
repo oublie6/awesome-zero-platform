@@ -6,6 +6,16 @@ Awesome Zero Platform is a general-purpose, highly extensible Go/go-zero applica
 
 Build a maintainable **modular monolith first**. Preserve clear ownership and contracts so a module can be extracted into a separately deployed service when measurable scale, reliability, team ownership, or release independence justifies it. Microservices, dynamic plugins, and distributed infrastructure are evolution options rather than default architecture.
 
+## go-zero first infrastructure standard
+
+- **go-zero First:** go-zero is the primary application infrastructure framework. Prefer its maintained, public, version-compatible components over directly invoking parallel native clients or implementing duplicate infrastructure when go-zero already provides an equivalent capability. This includes SQL access (sqlx), Redis/cache, HTTP routing and middleware, configuration, logging, telemetry, and other applicable capabilities.
+- **Use go-zero in application call paths, not just during initialization.** When an operation has an equivalent go-zero API, make that API the default in adapters, repositories, and services; do not keep normal business calls on a native client merely because both clients are initialized.
+- **Native clients may coexist** for operations with no equivalent go-zero API, where exact semantics matter (e.g. Redis WATCH and long-lived Pub/Sub, MySQL driver or complex cursor/transaction operations). Constrain these exceptions to infrastructure adapters, explain the reason, and use the same configuration, tracing, lifecycle, and error-handling conventions where feasible.
+- **Extend rather than replace:** If a requirement exceeds go-zero's supported API, first compose or extend the go-zero component behind a narrowly scoped adapter; avoid building a second competing framework or large generic abstraction.
+- **Compatibility means verified behavior, not only matching package names.** Preserve timeouts, connection pools, Redis DB selection, transaction isolation and atomicity, lock ordering, TTL precision, error identity, cancellation, shutdown, observability, security, and existing business contracts. Never silently weaken correctness just to eliminate native APIs.
+- **Tracing:** propagate request context to go-zero clients and verify SQL/Redis child spans appear in actual traces. Do not assume that Prometheus metrics or a go-zero wrapper automatically instruments raw driver calls, WebSocket messages, background tasks, or bypass paths.
+- **For each new component or upgrade,** check the selected go-zero release's source/API and document where native integration remains necessary. Default future modules to these standard components without requiring business modules to configure their own pools or tracing.
+
 ## Architecture rules
 
 - Start as a modular monolith; extract services only when real scaling or ownership needs appear.
