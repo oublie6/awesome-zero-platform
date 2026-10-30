@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 	"time"
 )
 
@@ -49,18 +49,18 @@ func TestCloseIdempotent(t *testing.T) {
 
 func TestModelCacheRejectsNonZeroRedisDB(t *testing.T) {
 	cfg := Config{
-		Addr: "127.0.0.1:6379",
-		DB: 1,
-		PoolSize: 4,
-		DialTimeout: time.Second,
-		ReadTimeout: time.Second,
-		WriteTimeout: time.Second,
-		StartupTimeout: time.Second,
+		Addr:             "127.0.0.1:6379",
+		DB:               1,
+		PoolSize:         4,
+		DialTimeout:      time.Second,
+		ReadTimeout:      time.Second,
+		WriteTimeout:     time.Second,
+		StartupTimeout:   time.Second,
 		ReadinessTimeout: time.Second,
 		Model: ModelConfig{
-			Enabled: true,
-			KeyPrefix: "test:model",
-			TTL: time.Minute,
+			Enabled:     true,
+			KeyPrefix:   "test:model",
+			TTL:         time.Minute,
 			NotFoundTTL: time.Second,
 		},
 	}
