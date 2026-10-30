@@ -24,14 +24,14 @@ func TestGoZeroClientSessionRoundTrip(t *testing.T) {
 	defer cancel()
 
 	cfg := cache.Config{
-		Addr: os.Getenv("APP_REDIS_ADDR"),
+		Addr:     os.Getenv("APP_REDIS_ADDR"),
 		Username: os.Getenv("APP_REDIS_USERNAME"),
 		Password: os.Getenv("APP_REDIS_PASSWORD"),
-		DB: 0, PoolSize: 5,
-		DialTimeout: 2 * time.Second,
-		ReadTimeout: 2 * time.Second,
-		WriteTimeout: 2 * time.Second,
-		StartupTimeout: 3 * time.Second,
+		DB:       0, PoolSize: 5,
+		DialTimeout:      2 * time.Second,
+		ReadTimeout:      2 * time.Second,
+		WriteTimeout:     2 * time.Second,
+		StartupTimeout:   3 * time.Second,
 		ReadinessTimeout: 2 * time.Second,
 	}
 	if cfg.Addr == "" {
