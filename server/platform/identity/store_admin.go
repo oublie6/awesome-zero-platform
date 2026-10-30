@@ -35,9 +35,11 @@ func (s *MySQLStore) ListAccounts(ctx context.Context, query AccountQuery) (Acco
         FROM identity_accounts`+whereSQL+`
         ORDER BY created_at DESC, account_id DESC
         LIMIT ? OFFSET ?`, listArgs...); err != nil {
-        return AccountPage{}, wrapIdentityError(ErrPersistence, err)
-    }
-    items := make([]Account, 0, len(records))
-    for _, row := range records { items = append(items, row.account()) }
+		return AccountPage{}, wrapIdentityError(ErrPersistence, err)
+	}
+	items := make([]Account, 0, len(records))
+	for _, row := range records {
+		items = append(items, row.account())
+	}
 	return AccountPage{Items: items, Total: total, Page: query.Page, PageSize: query.PageSize}, nil
 }

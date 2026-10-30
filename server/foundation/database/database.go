@@ -218,21 +218,25 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 // treating expected MySQL constraint conflicts as business errors rather than
 // outages that should trip the shared sqlx circuit breaker.
 func WrapSqlConn(db *sql.DB) sqlx.SqlConn {
-    if db == nil { return nil }
-    return sqlx.NewSqlConnFromDB(db, sqlx.WithAcceptable(func(err error) bool {
-        var driverErr *mysql.MySQLError
-        if errors.As(err, &driverErr) {
-            switch driverErr.Number {
-            case 1062, 1451, 1452:
-                return true
-            }
-        }
-        return false
-    }))
+	if db == nil {
+		return nil
+	}
+	return sqlx.NewSqlConnFromDB(db, sqlx.WithAcceptable(func(err error) bool {
+		var driverErr *mysql.MySQLError
+		if errors.As(err, &driverErr) {
+			switch driverErr.Number {
+			case 1062, 1451, 1452:
+				return true
+			}
+		}
+		return false
+	}))
 }
 
 func (r *Resource) SqlConn() sqlx.SqlConn {
-	if r == nil { return nil }
+	if r == nil {
+		return nil
+	}
 	return r.sqlConn
 }
 

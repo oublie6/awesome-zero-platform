@@ -11,8 +11,8 @@ import (
 	mysql "github.com/go-sql-driver/mysql"
 	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	foundationdb "github.com/oublie6/awesome-zero-platform/server/foundation/database"
-	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"github.com/oublie6/awesome-zero-platform/server/platform/admin"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type Store struct {

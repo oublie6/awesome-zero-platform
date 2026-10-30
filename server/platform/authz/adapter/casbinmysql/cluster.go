@@ -14,8 +14,8 @@ import (
 
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	"github.com/redis/go-redis/v9"
-	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/logx"
+	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 )
 
 const globalPolicyKey = "global"
@@ -55,7 +55,9 @@ func NewClustered(db *sql.DB, redisClient *redis.Client, cfg ClusterConfig, mana
 	engine.clusterEnabled = true
 	engine.cluster = cfg
 	engine.redis = redisClient
-	if len(managed) > 0 { engine.redisManaged = managed[0] }
+	if len(managed) > 0 {
+		engine.redisManaged = managed[0]
+	}
 	return engine, nil
 }
 

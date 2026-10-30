@@ -117,22 +117,22 @@ func (a *Archive) LoadFinalRecord(ctx context.Context, id gamecore.InstanceID) (
 
 // archiveQueryRow maps database columns through go-zero's sqlx scanner.
 type archiveQueryRow struct {
-    InstanceID string `db:"instance_id"`
-    GameID string `db:"game_id"`
-    Ruleset string `db:"ruleset_version"`
-    Module string `db:"module_version"`
-    Fairness string `db:"fairness_suite_id"`
-    Participant uint8 `db:"participant_count"`
-    Status string `db:"final_status"`
-    Version uint64 `db:"final_version"`
-    Payload []byte `db:"payload"`
-    Digest []byte `db:"record_digest"`
-    ArchivedAt time.Time `db:"archived_at"`
+	InstanceID  string    `db:"instance_id"`
+	GameID      string    `db:"game_id"`
+	Ruleset     string    `db:"ruleset_version"`
+	Module      string    `db:"module_version"`
+	Fairness    string    `db:"fairness_suite_id"`
+	Participant uint8     `db:"participant_count"`
+	Status      string    `db:"final_status"`
+	Version     uint64    `db:"final_version"`
+	Payload     []byte    `db:"payload"`
+	Digest      []byte    `db:"record_digest"`
+	ArchivedAt  time.Time `db:"archived_at"`
 }
 
 func (a *Archive) queryRow(ctx context.Context, id gamecore.InstanceID) (storedRow, error) {
-    var row archiveQueryRow
-    err := a.conn.QueryRowCtx(ctx, &row, `
+	var row archiveQueryRow
+	err := a.conn.QueryRowCtx(ctx, &row, `
 SELECT instance_id, game_id, ruleset_version, module_version, fairness_suite_id,
        participant_count, final_status, final_version, payload, record_digest, archived_at
 FROM game_final_records
@@ -144,11 +144,11 @@ WHERE instance_id = ?`, string(id))
 		return storedRow{}, fmt.Errorf("read game final record: %w", err)
 	}
 	return storedRow{
-        instanceID: row.InstanceID, gameID: row.GameID, ruleset: row.Ruleset,
-        module: row.Module, fairness: row.Fairness, participant: row.Participant,
-        status: row.Status, version: row.Version, payload: row.Payload,
-        digest: row.Digest, archivedAt: row.ArchivedAt,
-    }, nil
+		instanceID: row.InstanceID, gameID: row.GameID, ruleset: row.Ruleset,
+		module: row.Module, fairness: row.Fairness, participant: row.Participant,
+		status: row.Status, version: row.Version, payload: row.Payload,
+		digest: row.Digest, archivedAt: row.ArchivedAt,
+	}, nil
 }
 
 func restoreRecord(stored storedRow) (gamecore.FinalRecord, error) {

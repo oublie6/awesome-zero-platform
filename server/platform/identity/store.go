@@ -374,52 +374,54 @@ func (s *MySQLStore) phoneKey(value string) string {
 // accountQueryRow uses SQL column tags so go-zero sqlx can scan into a
 // struct while preserving the nullable identity fields and existing API types.
 type accountQueryRow struct {
-    ID string `db:"account_id"`
-    Username sql.NullString `db:"username"`
-    Email sql.NullString `db:"email"`
-    Phone sql.NullString `db:"phone"`
-    DisplayName string `db:"display_name"`
-    Status AccountStatus `db:"status"`
-    CreatedAt time.Time `db:"created_at"`
-    UpdatedAt time.Time `db:"updated_at"`
+	ID          string         `db:"account_id"`
+	Username    sql.NullString `db:"username"`
+	Email       sql.NullString `db:"email"`
+	Phone       sql.NullString `db:"phone"`
+	DisplayName string         `db:"display_name"`
+	Status      AccountStatus  `db:"status"`
+	CreatedAt   time.Time      `db:"created_at"`
+	UpdatedAt   time.Time      `db:"updated_at"`
 }
 
 func (row accountQueryRow) account() Account {
-    return Account{
-        ID: row.ID, Username: nullStringValue(row.Username),
-        Email: nullStringValue(row.Email), Phone: nullStringValue(row.Phone),
-        DisplayName: row.DisplayName, Status: row.Status,
-        CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
-    }
+	return Account{
+		ID: row.ID, Username: nullStringValue(row.Username),
+		Email: nullStringValue(row.Email), Phone: nullStringValue(row.Phone),
+		DisplayName: row.DisplayName, Status: row.Status,
+		CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+	}
 }
 
 func (s *MySQLStore) getAccountGoZero(ctx context.Context, query string, args ...any) (Account, error) {
-    var row accountQueryRow
-    if err := s.conn.QueryRowCtx(ctx, &row, query, args...); err != nil {
-        if errors.Is(err, sql.ErrNoRows) { return Account{}, ErrAccountNotFound }
-        return Account{}, wrapIdentityError(ErrPersistence, err)
-    }
-    return row.account(), nil
+	var row accountQueryRow
+	if err := s.conn.QueryRowCtx(ctx, &row, query, args...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Account{}, ErrAccountNotFound
+		}
+		return Account{}, wrapIdentityError(ErrPersistence, err)
+	}
+	return row.account(), nil
 }
 
 type credentialQueryRow struct {
-    AccountID string `db:"account_id"`
-    Hash string `db:"password_hash"`
-    PasswordChangedAt time.Time `db:"password_changed_at"`
-    CreatedAt time.Time `db:"created_at"`
-    UpdatedAt time.Time `db:"updated_at"`
+	AccountID         string    `db:"account_id"`
+	Hash              string    `db:"password_hash"`
+	PasswordChangedAt time.Time `db:"password_changed_at"`
+	CreatedAt         time.Time `db:"created_at"`
+	UpdatedAt         time.Time `db:"updated_at"`
 }
 
 func (s *MySQLStore) getPasswordCredentialGoZero(ctx context.Context, query string, args ...any) (storedCredential, error) {
-    var row credentialQueryRow
-    if err := s.conn.QueryRowCtx(ctx, &row, query, args...); err != nil {
-        return storedCredential{}, wrapIdentityError(ErrPersistence, err)
-    }
-    return storedCredential{
-        AccountID: row.AccountID, Hash: row.Hash,
-        PasswordChangedAt: row.PasswordChangedAt,
-        CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
-    }, nil
+	var row credentialQueryRow
+	if err := s.conn.QueryRowCtx(ctx, &row, query, args...); err != nil {
+		return storedCredential{}, wrapIdentityError(ErrPersistence, err)
+	}
+	return storedCredential{
+		AccountID: row.AccountID, Hash: row.Hash,
+		PasswordChangedAt: row.PasswordChangedAt,
+		CreatedAt:         row.CreatedAt, UpdatedAt: row.UpdatedAt,
+	}, nil
 }
 
 func (s *MySQLStore) getAccount(ctx context.Context, rower queryRower, query string, args ...any) (Account, error) {

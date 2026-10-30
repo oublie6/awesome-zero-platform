@@ -172,7 +172,7 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 
 	resource := &Resource{
 		client:  client,
-		goZero: managed,
+		goZero:  managed,
 		closeFn: client.Close,
 		pingFn: func(ctx context.Context) error {
 			return client.Ping(ctx).Err()
@@ -193,7 +193,9 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 }
 
 func (r *Resource) GoZero() *zeroredis.Redis {
-	if r == nil { return nil }
+	if r == nil {
+		return nil
+	}
 	return r.goZero
 }
 

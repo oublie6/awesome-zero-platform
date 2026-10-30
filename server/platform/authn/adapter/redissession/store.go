@@ -14,10 +14,10 @@ import (
 )
 
 type Store struct {
-	client *redis.Client
+	client  *redis.Client
 	managed *zeroredis.Redis
-	prefix string
-	now    func() time.Time
+	prefix  string
+	now     func() time.Time
 }
 
 // New accepts the go-zero client for normal commands while retaining the
@@ -32,7 +32,9 @@ func New(client *redis.Client, prefix string, goZero ...*zeroredis.Redis) (*Stor
 		prefix = "authn:session:"
 	}
 	var managed *zeroredis.Redis
-	if len(goZero) > 0 { managed = goZero[0] }
+	if len(goZero) > 0 {
+		managed = goZero[0]
+	}
 	return &Store{client: client, managed: managed, prefix: prefix, now: time.Now}, nil
 }
 
@@ -50,7 +52,9 @@ func (s *Store) Create(ctx context.Context, session authn.Session) error {
 			cmd = pipe.SetNX(ctx, s.key(session.ID), payload, ttl)
 			return nil
 		})
-		if err == nil { created, err = cmd.Result() }
+		if err == nil {
+			created, err = cmd.Result()
+		}
 	} else {
 		created, err = s.client.SetNX(ctx, s.key(session.ID), payload, ttl).Result()
 	}
