@@ -11,6 +11,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
 	"github.com/redis/go-redis/v9"
 	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
+	zerotrace "github.com/zeromicro/go-zero/core/trace"
 )
 
 type Store struct {
@@ -100,6 +101,10 @@ func (s *Store) Get(ctx context.Context, sessionID string) (authn.Session, error
 }
 
 func (s *Store) Rotate(ctx context.Context, sessionID, currentDigest, nextDigest string, nextExpiresAt time.Time) (authn.Session, error) {
+	// WATCH is intentionally native. Add the missing span around its entire
+	// atomic rotation, without recording session keys or token digests.
+	ctx, span := zerotrace.TracerFromContext(ctx).Start(ctx, "redis.watch.rotate")
+	defer span.End()
 	key := s.key(sessionID)
 	var updated authn.Session
 
@@ -137,6 +142,9 @@ func (s *Store) Rotate(ctx context.Context, sessionID, currentDigest, nextDigest
 		updated = session
 		return nil
 	}, key)
+	if err != nil {
+		span.RecordError(err)
+	}
 	if errors.Is(err, redis.TxFailedErr) {
 		return authn.Session{}, authn.ErrSessionConflict
 	}

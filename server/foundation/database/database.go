@@ -12,6 +12,7 @@ import (
 
 	mysql "github.com/go-sql-driver/mysql"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	zerotrace "github.com/zeromicro/go-zero/core/trace"
 )
 
 type Handle interface {
@@ -277,6 +278,17 @@ func (r *Resource) WithinTransaction(ctx context.Context, fn func(context.Contex
 	if r == nil || r.beginTxFn == nil {
 		return errors.New("mysql resource is not initialized")
 	}
+
+	// Native sql.Tx is retained for exact transaction semantics. This span
+	// covers begin, user operations, commit/rollback and is closed only after
+	// deferred transaction cleanup; individual raw SQL methods remain untraced.
+	ctx, span := zerotrace.TracerFromContext(ctx).Start(ctx, "sql.transaction")
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+		}
+		span.End()
+	}()
 
 	tx, err := r.beginTxFn(ctx, nil)
 	if err != nil {
