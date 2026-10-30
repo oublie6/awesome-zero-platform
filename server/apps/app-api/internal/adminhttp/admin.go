@@ -255,7 +255,11 @@ func getAccountHandler(serverCtx *svc.ServiceContext) http.HandlerFunc {
 			writeError(r, w, mapError(err))
 			return
 		}
-		roles, _ := serverCtx.Admin.RolesForAccount(r.Context(), account.ID)
+		roles, err := serverCtx.Admin.RolesForAccount(r.Context(), account.ID)
+		if err != nil {
+			writeError(r, w, mapError(err))
+			return
+		}
 		write(r, w, http.StatusOK, map[string]any{"account": accountDTO(account), "roles": roles})
 	}
 }
@@ -612,7 +616,11 @@ func systemOverviewHandler(serverCtx *svc.ServiceContext) http.HandlerFunc {
 		if err := serverCtx.Redis.Ping(r.Context()); err != nil {
 			redisStatus = "unavailable"
 		}
-		bootstrapAvailable, _ := serverCtx.Admin.BootstrapAvailable(r.Context())
+		bootstrapAvailable, err := serverCtx.Admin.BootstrapAvailable(r.Context())
+		if err != nil {
+			writeError(r, w, mapError(err))
+			return
+		}
 		write(r, w, http.StatusOK, map[string]any{
 			"service":            serverCtx.Config.Name,
 			"mysql":              mysqlStatus,

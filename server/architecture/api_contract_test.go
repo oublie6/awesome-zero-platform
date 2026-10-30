@@ -15,7 +15,7 @@ func TestRegisteredRoutesMatchGoZeroAPIInventory(t *testing.T) {
     const prefix = "../apps/app-api/"
     contract, err := os.ReadFile(filepath.Join(prefix, "contracts", "routes.api"))
     if err != nil { t.Fatal(err) }
-    apiRx := regexp.MustCompile(`(?m)^\\s*(get|post|put|patch|delete)\\s+(/[^\\s]+)`)
+    apiRx := regexp.MustCompile(`(?m)^\s*(get|post|put|patch|delete)\s+(/[^\s]+)`)
     declared := make(map[string]bool)
     for _, match := range apiRx.FindAllStringSubmatch(string(contract), -1) {
         key := strings.ToUpper(match[1]) + " " + match[2]
@@ -24,7 +24,7 @@ func TestRegisteredRoutesMatchGoZeroAPIInventory(t *testing.T) {
     }
     if len(declared) < 3 { t.Fatalf("incomplete route inventory: %d entries", len(declared)) }
     registered := make(map[string]bool)
-    routeRx := regexp.MustCompile(`Method:\\s*http\\.Method([A-Z][A-Za-z]+)\\s*,\\s*Path:\\s*(?:"([^"]+)"|keyPathPrefix\\s*\\+\\s*"([^"]+)")`)
+    routeRx := regexp.MustCompile(`Method:\s*http\.Method([A-Z][A-Za-z]+)\s*,\s*Path:\s*(?:"([^"]+)"|keyPathPrefix\s*\+\s*"([^"]+)")`)
     var sources = []string{
         "internal/handler/routes.go",
         "internal/securityhttp/security.go",
