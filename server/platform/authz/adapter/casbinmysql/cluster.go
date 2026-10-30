@@ -14,6 +14,7 @@ import (
 
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	"github.com/redis/go-redis/v9"
+	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -39,7 +40,7 @@ type policyQueryer interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }
 
-func NewClustered(db *sql.DB, redisClient *redis.Client, cfg ClusterConfig) (*Engine, error) {
+func NewClustered(db *sql.DB, redisClient *redis.Client, cfg ClusterConfig, managed ...*zeroredis.Redis) (*Engine, error) {
 	engine, err := New(db)
 	if err != nil {
 		return nil, err
@@ -54,6 +55,7 @@ func NewClustered(db *sql.DB, redisClient *redis.Client, cfg ClusterConfig) (*En
 	engine.clusterEnabled = true
 	engine.cluster = cfg
 	engine.redis = redisClient
+	if len(managed) > 0 { engine.redisManaged = managed[0] }
 	return engine, nil
 }
 
@@ -430,7 +432,13 @@ func (e *Engine) publishPolicyChange(version uint64) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), e.cluster.PublishTimeout)
 	defer cancel()
-	if err := e.redis.Publish(ctx, e.cluster.Channel, payload).Err(); err != nil {
+	var publishErr error
+	if e.redisManaged != nil {
+		_, publishErr = e.redisManaged.PublishCtx(ctx, e.cluster.Channel, payload)
+	} else {
+		publishErr = e.redis.Publish(ctx, e.cluster.Channel, payload).Err()
+	}
+	if err := publishErr; err != nil {
 		logx.Errorf("publish authorization policy notification: %v", err)
 	}
 }

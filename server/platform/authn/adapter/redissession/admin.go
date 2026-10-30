@@ -17,12 +17,27 @@ func (s *Store) ListByAccount(ctx context.Context, accountID string) ([]authn.Se
 	var cursor uint64
 	views := make([]authn.SessionView, 0)
 	for {
-		keys, next, err := s.client.Scan(ctx, cursor, s.prefix+"*", 100).Result()
+		var keys []string
+		var next uint64
+		var err error
+		if s.managed != nil {
+			keys, next, err = s.managed.ScanCtx(ctx, cursor, s.prefix+"*", 100)
+		} else {
+			keys, next, err = s.client.Scan(ctx, cursor, s.prefix+"*", 100).Result()
+		}
 		if err != nil {
 			return nil, err
 		}
 		for _, key := range keys {
-			raw, err := s.client.Get(ctx, key).Bytes()
+			var raw []byte
+			var err error
+			if s.managed != nil {
+				var value string
+				value, err = s.managed.GetCtx(ctx, key)
+				raw = []byte(value)
+			} else {
+				raw, err = s.client.Get(ctx, key).Bytes()
+			}
 			if err != nil {
 				continue
 			}
@@ -57,6 +72,10 @@ func (s *Store) RevokeByAccount(ctx context.Context, accountID string) (int64, e
 	keys := make([]string, 0, len(views))
 	for _, view := range views {
 		keys = append(keys, s.key(view.ID))
+	}
+	if s.managed != nil {
+		count, err := s.managed.DelCtx(ctx, keys...)
+		return int64(count), err
 	}
 	return s.client.Del(ctx, keys...).Result()
 }

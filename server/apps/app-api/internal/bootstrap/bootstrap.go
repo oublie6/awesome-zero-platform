@@ -174,7 +174,7 @@ func New(configFile string) (*App, error) {
 			closeResources()
 			return nil, fmt.Errorf("initialize access token codec: %w", err)
 		}
-		sessionStore, err := redissession.New(redisClient.Client(), cfg.Authentication.SessionKeyPrefix)
+		sessionStore, err := redissession.New(redisClient.Client(), cfg.Authentication.SessionKeyPrefix, redisClient.GoZero())
 		if err != nil {
 			closeResources()
 			return nil, fmt.Errorf("initialize session store: %w", err)
@@ -223,7 +223,7 @@ func New(configFile string) (*App, error) {
 				PollInterval:   cfg.Authorization.Cluster.PollInterval,
 				PublishTimeout: cfg.Authorization.Cluster.PublishTimeout,
 				ReloadTimeout:  cfg.Authorization.Cluster.ReloadTimeout,
-			},
+			}, redisClient.GoZero(),
 		)
 		if err != nil {
 			closeResources()

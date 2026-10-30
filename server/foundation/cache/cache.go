@@ -9,10 +9,12 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/v9/logging"
+	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 )
 
 type Handle interface {
 	Client() *redis.Client
+	GoZero() *zeroredis.Redis
 	Ping(context.Context) error
 	Close() error
 }
@@ -40,6 +42,7 @@ type Config struct {
 
 type Resource struct {
 	client    *redis.Client
+	goZero    *zeroredis.Redis
 	closeFn   func() error
 	pingFn    func(context.Context) error
 	closeOnce sync.Once
@@ -152,8 +155,24 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 		WriteTimeout: cfg.WriteTimeout,
 	})
 
+	// go-zero Redis operates on DB 0. Keep the native client for non-zero DBs
+	// rather than silently routing a call to the wrong Redis database.
+	var managed *zeroredis.Redis
+	if cfg.DB == 0 {
+		var managedErr error
+		managed, managedErr = zeroredis.NewRedis(zeroredis.RedisConf{
+			Host: cfg.Addr, Type: zeroredis.NodeType,
+			User: cfg.Username, Pass: cfg.Password, NonBlock: true,
+		})
+		if managedErr != nil {
+			_ = client.Close()
+			return nil, fmt.Errorf("create go-zero redis client: %w", managedErr)
+		}
+	}
+
 	resource := &Resource{
 		client:  client,
+		goZero: managed,
 		closeFn: client.Close,
 		pingFn: func(ctx context.Context) error {
 			return client.Ping(ctx).Err()
@@ -171,6 +190,11 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 	}
 
 	return resource, nil
+}
+
+func (r *Resource) GoZero() *zeroredis.Redis {
+	if r == nil { return nil }
+	return r.goZero
 }
 
 func (r *Resource) Client() *redis.Client {

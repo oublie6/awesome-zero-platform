@@ -19,6 +19,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/cache"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/redis/go-redis/v9"
+	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/rest/httpx"
@@ -496,6 +497,7 @@ type fakeRedis struct {
 }
 
 func (f *fakeRedis) Client() *redis.Client      { return nil }
+func (f *fakeRedis) GoZero() *zeroredis.Redis  { return nil }
 func (f *fakeRedis) Ping(context.Context) error { return f.pingErr }
 func (f *fakeRedis) Close() error {
 	f.closed = true

@@ -16,6 +16,7 @@ import (
 	"github.com/casbin/casbin/v2/persist"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	"github.com/redis/go-redis/v9"
+	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 )
 
 const modelText = `[request_definition]
@@ -52,6 +53,7 @@ type Engine struct {
 	clusterEnabled bool
 	cluster        ClusterConfig
 	redis          *redis.Client
+	redisManaged   *zeroredis.Redis
 	lifecycleMu    sync.Mutex
 	cancel         context.CancelFunc
 	wg             sync.WaitGroup
