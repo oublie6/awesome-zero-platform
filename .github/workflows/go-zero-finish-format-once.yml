@@ -1,0 +1,31 @@
+name: One-shot final gofmt go-zero migration
+on:
+  push:
+    paths:
+      - .github/workflows/go-zero-finish-format-once.yml
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Format remaining Go changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          find server -type f -name '*.go' -print0 | xargs -0 gofmt -w
+          git diff --check
+          if git diff --quiet -- server; then
+            echo 'Formatted already'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- server
+          git commit -m 'style: gofmt final go-zero tracing and boundary tests'
+          git push origin HEAD:main
