@@ -13,6 +13,7 @@ import (
 	mysql "github.com/go-sql-driver/mysql"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	zerotrace "github.com/zeromicro/go-zero/core/trace"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type Handle interface {
@@ -284,7 +285,13 @@ func (r *Resource) WithinTransaction(ctx context.Context, fn func(context.Contex
 	// deferred transaction cleanup; individual raw SQL methods remain untraced.
 	ctx, span := zerotrace.TracerFromContext(ctx).Start(ctx, "sql.transaction")
 	defer func() {
+		if recovered := recover(); recovered != nil {
+			span.SetStatus(codes.Error, "transaction panicked")
+			span.End()
+			panic(recovered)
+		}
 		if err != nil {
+			span.SetStatus(codes.Error, "transaction failed")
 			span.RecordError(err)
 		}
 		span.End()

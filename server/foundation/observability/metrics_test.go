@@ -80,3 +80,28 @@ func TestBoundedMetricPath(t *testing.T) {
 		}
 	}
 }
+
+func TestClientExtensionMethodsHaveBoundedMetricCardinality(t *testing.T) {
+	metrics := NewMetrics("bounded")
+	handler := metrics.Middleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}))
+	for _, method := range []string{"CUSTOM_A", "CUSTOM_B", "CUSTOM_C", http.MethodGet} {
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(method, "/arbitrary", nil))
+	}
+	response := httptest.NewRecorder()
+	metrics.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	body := response.Body.String()
+	for _, want := range []string{
+		`bounded_http_requests_total{method="OTHER",path="/other",status="405"} 3`,
+		`bounded_http_request_duration_seconds_count{method="OTHER",path="/other"} 3`,
+		`bounded_http_requests_total{method="GET",path="/other",status="405"} 1`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing bounded metric %s", want)
+		}
+	}
+	if strings.Contains(body, "CUSTOM_") {
+		t.Fatal("client-controlled method entered metric labels")
+	}
+}

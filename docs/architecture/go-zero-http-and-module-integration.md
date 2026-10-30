@@ -43,3 +43,10 @@ This document records the migration decisions following Goal 0038. The source of
 - `make api-contract-check && make fmt-check && make test`.
 - Full MySQL/Redis integration and Fair Doudizhu CI, followed by the production Compose acceptance. Preserve existing K8s one-replica/Recreate baseline until a new rollout is explicitly authorized.
 - A successful `realtime.message` span in CI with a synthetic parent does not substitute for server-side Jaeger verification of real message processing. That is a separately scoped supplementary runtime check.
+
+## Goal 0042 observability corrections
+
+- Native `sql.transaction` and `redis.watch.rotate` failures set OpenTelemetry error status as well as recording returned errors. Transaction panic paths retain rollback and panic propagation while marking the ended span as failed. Raw transaction statements remain covered by the transaction boundary, without claiming individual SQL spans.
+- Accepted WebSocket messages that fail validation, topic handling, dispatch or a business handler mark their message span with a bounded protocol error code. Private handler errors are not copied to spans; wire responses are unchanged.
+- The outer access logger obtains the go-zero route's W3C trace context from the response headers injected by go-zero. This restores trace correlation without creating a duplicate request span or replacing the outer middleware's coverage of 404/405.
+- HTTP metrics preserve standard method labels and group client-defined extension methods into `OTHER`, bounding both request-counter and latency-series cardinality.

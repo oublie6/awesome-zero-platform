@@ -88,9 +88,22 @@ func (m *Metrics) Middleware(next http.Handler) http.Handler {
 		recorder := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(recorder, r)
 		path := boundedMetricPath(r.URL.Path)
-		m.requests.WithLabelValues(r.Method, path, strconv.Itoa(recorder.status)).Inc()
-		m.duration.WithLabelValues(r.Method, path).Observe(time.Since(started).Seconds())
+		method := boundedMetricMethod(r.Method)
+		m.requests.WithLabelValues(method, path, strconv.Itoa(recorder.status)).Inc()
+		m.duration.WithLabelValues(method, path).Observe(time.Since(started).Seconds())
 	})
+}
+
+// HTTP permits extension methods supplied by clients. Keep those from creating
+// unlimited time series even for requests rejected by the router.
+func boundedMetricMethod(method string) string {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut,
+		http.MethodPatch, http.MethodDelete, http.MethodConnect, http.MethodOptions, http.MethodTrace:
+		return method
+	default:
+		return "OTHER"
+	}
 }
 
 type statusRecorder struct {

@@ -12,6 +12,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 	zerotrace "github.com/zeromicro/go-zero/core/trace"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type Store struct {
@@ -143,6 +144,7 @@ func (s *Store) Rotate(ctx context.Context, sessionID, currentDigest, nextDigest
 		return nil
 	}, key)
 	if err != nil {
+		span.SetStatus(codes.Error, "session rotation failed")
 		span.RecordError(err)
 	}
 	if errors.Is(err, redis.TxFailedErr) {

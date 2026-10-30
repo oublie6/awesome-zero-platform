@@ -277,7 +277,7 @@ func (h *Hub) unsubscribe(connection *client, topic string) error {
 
 func (h *Hub) handle(ctx context.Context, connection *client, envelope Envelope) {
 	if err := validateEnvelope(envelope); err != nil {
-		connection.sendError(envelope.ID, "INVALID_ENVELOPE", "message envelope is invalid")
+		sendMessageError(ctx, connection, envelope.ID, "INVALID_ENVELOPE", "message envelope is invalid")
 		return
 	}
 
@@ -288,7 +288,7 @@ func (h *Hub) handle(ctx context.Context, connection *client, envelope Envelope)
 	case TypeTopicSubscribe, TypeTopicUnsubscribe:
 		var request TopicPayload
 		if err := json.Unmarshal(envelope.Payload, &request); err != nil {
-			connection.sendError(envelope.ID, "INVALID_TOPIC", "topic payload is invalid")
+			sendMessageError(ctx, connection, envelope.ID, "INVALID_TOPIC", "topic payload is invalid")
 			return
 		}
 		var err error
@@ -298,7 +298,7 @@ func (h *Hub) handle(ctx context.Context, connection *client, envelope Envelope)
 			err = h.unsubscribe(connection, request.Topic)
 		}
 		if err != nil {
-			connection.sendError(envelope.ID, "INVALID_TOPIC", "topic is invalid")
+			sendMessageError(ctx, connection, envelope.ID, "INVALID_TOPIC", "topic is invalid")
 			return
 		}
 		connection.sendEnvelope(Envelope{
@@ -317,13 +317,13 @@ func (h *Hub) handle(ctx context.Context, connection *client, envelope Envelope)
 	handler := h.handlers[envelope.Type]
 	h.mu.RUnlock()
 	if handler == nil {
-		connection.sendError(envelope.ID, "UNKNOWN_TYPE", ErrUnknownMessageType.Error())
+		sendMessageError(ctx, connection, envelope.ID, "UNKNOWN_TYPE", ErrUnknownMessageType.Error())
 		return
 	}
 
 	response, err := handler(ctx, connection.context(), envelope)
 	if err != nil {
-		connection.sendError(envelope.ID, "HANDLER_ERROR", "message handling failed")
+		sendMessageError(ctx, connection, envelope.ID, "HANDLER_ERROR", "message handling failed")
 		return
 	}
 	if response != nil {
