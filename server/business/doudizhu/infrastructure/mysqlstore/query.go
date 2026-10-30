@@ -13,10 +13,10 @@ func (s *Store) LoadHand(ctx context.Context, id domain.HandID) (domain.HandSnap
 		return domain.HandSnapshot{}, fmt.Errorf("mysql doudizhu store is not configured")
 	}
 	var encoded []byte
-	if err := s.database.DB().QueryRowContext(ctx, `
+	if err := s.goZero.QueryRowCtx(ctx, &encoded, `
 SELECT snapshot_json
 FROM doudizhu_hands
-WHERE hand_id = ?`, id).Scan(&encoded); err != nil {
+WHERE hand_id = ?`, id); err != nil {
 		return domain.HandSnapshot{}, translateNotFound(err)
 	}
 	var snapshot domain.HandSnapshot

@@ -250,8 +250,8 @@ func lockPolicyVersion(ctx context.Context, tx *sql.Tx) (uint64, error) {
 
 func (e *Engine) currentPolicyVersion(ctx context.Context) (uint64, error) {
 	var version uint64
-	if err := e.db.QueryRowContext(ctx, `SELECT version FROM authorization_policy_state
-		WHERE policy_key = ?`, globalPolicyKey).Scan(&version); err != nil {
+	if err := e.sqlConn.QueryRowCtx(ctx, &version, `SELECT version FROM authorization_policy_state
+		WHERE policy_key = ?`, globalPolicyKey); err != nil {
 		return 0, fmt.Errorf("read authorization policy version: %w", err)
 	}
 	return version, nil

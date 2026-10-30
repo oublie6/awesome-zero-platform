@@ -15,6 +15,8 @@ import (
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
+	foundationdb "github.com/oublie6/awesome-zero-platform/server/foundation/database"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"github.com/redis/go-redis/v9"
 	zeroredis "github.com/zeromicro/go-zero/core/stores/redis"
 )
@@ -38,6 +40,7 @@ m = g(r.sub, p.sub) && keyMatch2(r.obj, p.obj) && regexMatch(r.act, p.act)
 type Engine struct {
 	enforcer *casbin.SyncedEnforcer
 	db       *sql.DB
+	sqlConn  sqlx.SqlConn
 	adapter  *mysqlAdapter
 
 	adminMu sync.Mutex
@@ -63,7 +66,8 @@ func New(db *sql.DB) (*Engine, error) {
 	if db == nil {
 		return nil, fmt.Errorf("mysql database is required")
 	}
-	adapter := &mysqlAdapter{db: db}
+	conn := foundationdb.WrapSqlConn(db)
+	adapter := &mysqlAdapter{db: db, conn: conn}
 	m, err := model.NewModelFromString(modelText)
 	if err != nil {
 		return nil, fmt.Errorf("create casbin model: %w", err)
@@ -75,6 +79,7 @@ func New(db *sql.DB) (*Engine, error) {
 	return &Engine{
 		enforcer: enforcer,
 		db:       db,
+		sqlConn:  conn,
 		adapter:  adapter,
 		loadedAt: time.Now().UTC(),
 	}, nil
@@ -152,32 +157,36 @@ func (e *Engine) DeleteRole(ctx context.Context, role string) (bool, error) {
 }
 
 type mysqlAdapter struct {
-	db *sql.DB
+    db *sql.DB
+    conn sqlx.SqlConn
+}
+
+type casbinPolicyRow struct {
+    PType string `db:"ptype"`
+    V0 string `db:"v0"`
+    V1 string `db:"v1"`
+    V2 string `db:"v2"`
+    V3 string `db:"v3"`
+    V4 string `db:"v4"`
+    V5 string `db:"v5"`
 }
 
 func (a *mysqlAdapter) LoadPolicy(m model.Model) error {
-	rows, err := a.db.Query(`SELECT ptype, v0, v1, v2, v3, v4, v5
-		FROM authorization_casbin_rules
-		ORDER BY rule_id`)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		values := make([]string, 6)
-		var ptype string
-		if err := rows.Scan(&ptype, &values[0], &values[1], &values[2], &values[3], &values[4], &values[5]); err != nil {
-			return err
-		}
-		for len(values) > 0 && values[len(values)-1] == "" {
-			values = values[:len(values)-1]
-		}
-		if err := persist.LoadPolicyLine(ptype+", "+strings.Join(values, ", "), m); err != nil {
-			return fmt.Errorf("load casbin policy: %w", err)
-		}
-	}
-	return rows.Err()
+    var rows []casbinPolicyRow
+    if err := a.conn.QueryRowsCtx(context.Background(), &rows, `SELECT ptype, v0, v1, v2, v3, v4, v5
+        FROM authorization_casbin_rules ORDER BY rule_id`); err != nil {
+        return err
+    }
+    for _, row := range rows {
+        values := []string{row.V0, row.V1, row.V2, row.V3, row.V4, row.V5}
+        for len(values) > 0 && values[len(values)-1] == "" {
+            values = values[:len(values)-1]
+        }
+        if err := persist.LoadPolicyLine(row.PType+", "+strings.Join(values, ", "), m); err != nil {
+            return fmt.Errorf("load casbin policy: %w", err)
+        }
+    }
+    return nil
 }
 
 func (a *mysqlAdapter) SavePolicy(m model.Model) error {
@@ -203,12 +212,12 @@ func (a *mysqlAdapter) SavePolicy(m model.Model) error {
 }
 
 func (a *mysqlAdapter) AddPolicy(_ string, ptype string, rule []string) error {
-	return insertRule(a.db, ptype, rule)
+	return insertRule(a.conn, ptype, rule)
 }
 
 func (a *mysqlAdapter) RemovePolicy(_ string, ptype string, rule []string) error {
 	values := padded(rule)
-	_, err := a.db.Exec(`DELETE FROM authorization_casbin_rules
+	_, err := a.conn.Exec(`DELETE FROM authorization_casbin_rules
 		WHERE ptype = ? AND v0 = ? AND v1 = ? AND v2 = ? AND v3 = ? AND v4 = ? AND v5 = ?`,
 		ptype, values[0], values[1], values[2], values[3], values[4], values[5])
 	return err
@@ -231,7 +240,7 @@ func (a *mysqlAdapter) RemoveFilteredPolicy(_ string, ptype string, fieldIndex i
 		query += fmt.Sprintf(" AND v%d = ?", column)
 		args = append(args, value)
 	}
-	_, err := a.db.Exec(query, args...)
+	_, err := a.conn.Exec(query, args...)
 	return err
 }
 

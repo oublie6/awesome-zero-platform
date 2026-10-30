@@ -9,6 +9,8 @@ import (
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/application"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
+	foundationdb "github.com/oublie6/awesome-zero-platform/server/foundation/database"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type Database interface {
@@ -17,13 +19,14 @@ type Database interface {
 
 type Store struct {
 	database Database
+	goZero sqlx.SqlConn
 }
 
 func New(database Database) (*Store, error) {
 	if database == nil || database.DB() == nil {
 		return nil, fmt.Errorf("mysql doudizhu store configuration is invalid")
 	}
-	return &Store{database: database}, nil
+	return &Store{database: database, goZero: foundationdb.WrapSqlConn(database.DB())}, nil
 }
 
 // WithinCommand executes one command in a READ COMMITTED transaction. Command
