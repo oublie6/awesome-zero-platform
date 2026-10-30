@@ -12,15 +12,17 @@ func (s *Store) LoadHand(ctx context.Context, id domain.HandID) (domain.HandSnap
 	if s == nil || s.database == nil || s.database.DB() == nil {
 		return domain.HandSnapshot{}, fmt.Errorf("mysql doudizhu store is not configured")
 	}
-	var encoded []byte
-	if err := s.goZero.QueryRowCtx(ctx, &encoded, `
+	var row struct {
+		Snapshot []byte `db:"snapshot_json"`
+	}
+	if err := s.goZero.QueryRowCtx(ctx, &row, `
 SELECT snapshot_json
 FROM doudizhu_hands
 WHERE hand_id = ?`, id); err != nil {
 		return domain.HandSnapshot{}, translateNotFound(err)
 	}
 	var snapshot domain.HandSnapshot
-	if err := json.Unmarshal(encoded, &snapshot); err != nil {
+	if err := json.Unmarshal(row.Snapshot, &snapshot); err != nil {
 		return domain.HandSnapshot{}, fmt.Errorf("decode doudizhu hand snapshot: %w", err)
 	}
 	if _, err := domain.RestoreHand(snapshot); err != nil {
