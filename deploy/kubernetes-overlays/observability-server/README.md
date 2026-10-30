@@ -54,10 +54,17 @@ Elasticsearch watermarks reserve 12/8/5 GB free (low/high/flood stage), includin
 on the single data node. Flood stage blocks index writes to protect remaining
 disk; investigate growth instead of disabling protection. MySQL binlogs expire
 after 3 days and rotate at 100 MiB. Database tables and Redis AOF are durable
-business data and are not automatically purged. Jaeger traces remain in memory.
-These policies are not filesystem quotas; query actual ILM/TSDB settings and
-monitor `df -h /data` and per-directory use. No backup destination has been
-provided, so off-node backups remain an operational requirement.
+business data and are not automatically purged. These policies are not
+filesystem quotas; query actual ILM/TSDB settings and monitor `df -h /data` and
+per-directory use. No backup destination has been provided, so off-node backups
+remain an operational requirement.
+
+The default observability overlay keeps Jaeger traces in memory. This server
+profile uses Badger on `/data/awesome-zero-platform/jaeger`, backed by the
+2 GiB-requested Retain local PV on `hk-worker`, with a configured 72-hour span
+TTL. The PV request is not a filesystem quota. See the [Goal 0043 rollout and
+recovery procedure](../../../docs/operations/goal0043-jaeger-badger-persistence.md)
+and its [completed acceptance report](../../../docs/goals/archive/0043-jaeger-badger-persistence.md).
 
 
 The shared-vCPU server uses a **10 second HTTP request deadline** (the shipped
