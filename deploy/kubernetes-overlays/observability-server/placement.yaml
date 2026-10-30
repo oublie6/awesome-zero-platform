@@ -10,7 +10,7 @@ spec:
         kubernetes.io/hostname: ser730417996259
       containers:
       - name: app-api
-        image: awesome-zero-platform/app-api:goal0037-74d2c01
+        image: awesome-zero-platform/app-api:goal0038-gozero-first
         imagePullPolicy: Never
         env:
         - name: APP_ADMIN_BOOTSTRAP_TOKEN
