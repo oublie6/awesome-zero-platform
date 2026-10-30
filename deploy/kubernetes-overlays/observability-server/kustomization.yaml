@@ -3,10 +3,16 @@ kind: Kustomization
 resources:
 - ../observability
 - infrastructure.yaml
+- jaeger-storage.yaml
 patches:
 - path: placement.yaml
+- path: jaeger-persistence-patch.yaml
 configMapGenerator:
 - name: obs-server-app-config
   namespace: awesome-zero-platform
   files:
   - production.yaml=app-api-production.yaml
+- name: obs-jaeger-config
+  namespace: awesome-zero-platform
+  files:
+  - config.yaml=jaeger-badger.yaml
