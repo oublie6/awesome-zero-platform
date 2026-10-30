@@ -95,43 +95,49 @@ func Register(server *rest.Server, serverCtx *svc.ServiceContext) {
 	if serverCtx == nil || serverCtx.Admin == nil {
 		return
 	}
-	server.AddRoutes([]rest.Route{
+	routes := []rest.Route{
 		{Method: http.MethodGet, Path: "/admin/bootstrap/status", Handler: bootstrapStatusHandler(serverCtx)},
 		{Method: http.MethodPost, Path: "/admin/bootstrap", Handler: bootstrapHandler(serverCtx)},
-		{Method: http.MethodGet, Path: "/admin/me", Handler: protected(serverCtx, meHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/accounts", Handler: protected(serverCtx, listAccountsHandler(serverCtx))},
-		{Method: http.MethodPost, Path: "/admin/accounts", Handler: protected(serverCtx, createAccountHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/accounts/:id", Handler: protected(serverCtx, getAccountHandler(serverCtx))},
-		{Method: http.MethodPatch, Path: "/admin/accounts/:id", Handler: protected(serverCtx, updateAccountHandler(serverCtx))},
-		{Method: http.MethodPost, Path: "/admin/accounts/:id/enable", Handler: protected(serverCtx, accountStatusHandler(serverCtx, true))},
-		{Method: http.MethodPost, Path: "/admin/accounts/:id/disable", Handler: protected(serverCtx, accountStatusHandler(serverCtx, false))},
-		{Method: http.MethodPost, Path: "/admin/accounts/:id/reset-password", Handler: protected(serverCtx, resetPasswordHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/accounts/:id/sessions", Handler: protected(serverCtx, accountSessionsHandler(serverCtx))},
-		{Method: http.MethodPost, Path: "/admin/accounts/:id/revoke-sessions", Handler: protected(serverCtx, revokeSessionsHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/accounts/:id/roles", Handler: protected(serverCtx, accountRolesHandler(serverCtx))},
-		{Method: http.MethodPut, Path: "/admin/accounts/:id/roles", Handler: protected(serverCtx, replaceAccountRolesHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/roles", Handler: protected(serverCtx, listRolesHandler(serverCtx))},
-		{Method: http.MethodPost, Path: "/admin/roles", Handler: protected(serverCtx, createRoleHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/roles/:code", Handler: protected(serverCtx, getRoleHandler(serverCtx))},
-		{Method: http.MethodPatch, Path: "/admin/roles/:code", Handler: protected(serverCtx, updateRoleHandler(serverCtx))},
-		{Method: http.MethodDelete, Path: "/admin/roles/:code", Handler: protected(serverCtx, deleteRoleHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/roles/:code/permissions", Handler: protected(serverCtx, rolePermissionsHandler(serverCtx))},
-		{Method: http.MethodPut, Path: "/admin/roles/:code/permissions", Handler: protected(serverCtx, replaceRolePermissionsHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/authorization/resources", Handler: protected(serverCtx, listResourcesHandler(serverCtx))},
-		{Method: http.MethodPost, Path: "/admin/authorization/resources", Handler: protected(serverCtx, createResourceHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/authorization/resources/:code", Handler: protected(serverCtx, getResourceHandler(serverCtx))},
-		{Method: http.MethodPatch, Path: "/admin/authorization/resources/:code", Handler: protected(serverCtx, updateResourceHandler(serverCtx))},
-		{Method: http.MethodDelete, Path: "/admin/authorization/resources/:code", Handler: protected(serverCtx, deleteResourceHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/authorization/engine", Handler: protected(serverCtx, engineHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/authorization/engine/model", Handler: protected(serverCtx, modelHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/authorization/engine/policies", Handler: protected(serverCtx, policiesHandler(serverCtx))},
-		{Method: http.MethodPost, Path: "/admin/authorization/engine/policies/validate", Handler: protected(serverCtx, validatePoliciesHandler(serverCtx))},
-		{Method: http.MethodPut, Path: "/admin/authorization/engine/policies", Handler: protected(serverCtx, replacePoliciesHandler(serverCtx))},
-		{Method: http.MethodPost, Path: "/admin/authorization/engine/explain", Handler: protected(serverCtx, explainHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/audit/events", Handler: protected(serverCtx, auditHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/system/overview", Handler: protected(serverCtx, systemOverviewHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/admin/system/configuration", Handler: protected(serverCtx, systemConfigurationHandler(serverCtx))},
-	})
+		{Method: http.MethodGet, Path: "/admin/me", Handler: meHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/accounts", Handler: listAccountsHandler(serverCtx)},
+		{Method: http.MethodPost, Path: "/admin/accounts", Handler: createAccountHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/accounts/:id", Handler: getAccountHandler(serverCtx)},
+		{Method: http.MethodPatch, Path: "/admin/accounts/:id", Handler: updateAccountHandler(serverCtx)},
+		{Method: http.MethodPost, Path: "/admin/accounts/:id/enable", Handler: accountStatusHandler(serverCtx, true)},
+		{Method: http.MethodPost, Path: "/admin/accounts/:id/disable", Handler: accountStatusHandler(serverCtx, false)},
+		{Method: http.MethodPost, Path: "/admin/accounts/:id/reset-password", Handler: resetPasswordHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/accounts/:id/sessions", Handler: accountSessionsHandler(serverCtx)},
+		{Method: http.MethodPost, Path: "/admin/accounts/:id/revoke-sessions", Handler: revokeSessionsHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/accounts/:id/roles", Handler: accountRolesHandler(serverCtx)},
+		{Method: http.MethodPut, Path: "/admin/accounts/:id/roles", Handler: replaceAccountRolesHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/roles", Handler: listRolesHandler(serverCtx)},
+		{Method: http.MethodPost, Path: "/admin/roles", Handler: createRoleHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/roles/:code", Handler: getRoleHandler(serverCtx)},
+		{Method: http.MethodPatch, Path: "/admin/roles/:code", Handler: updateRoleHandler(serverCtx)},
+		{Method: http.MethodDelete, Path: "/admin/roles/:code", Handler: deleteRoleHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/roles/:code/permissions", Handler: rolePermissionsHandler(serverCtx)},
+		{Method: http.MethodPut, Path: "/admin/roles/:code/permissions", Handler: replaceRolePermissionsHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/authorization/resources", Handler: listResourcesHandler(serverCtx)},
+		{Method: http.MethodPost, Path: "/admin/authorization/resources", Handler: createResourceHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/authorization/resources/:code", Handler: getResourceHandler(serverCtx)},
+		{Method: http.MethodPatch, Path: "/admin/authorization/resources/:code", Handler: updateResourceHandler(serverCtx)},
+		{Method: http.MethodDelete, Path: "/admin/authorization/resources/:code", Handler: deleteResourceHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/authorization/engine", Handler: engineHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/authorization/engine/model", Handler: modelHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/authorization/engine/policies", Handler: policiesHandler(serverCtx)},
+		{Method: http.MethodPost, Path: "/admin/authorization/engine/policies/validate", Handler: validatePoliciesHandler(serverCtx)},
+		{Method: http.MethodPut, Path: "/admin/authorization/engine/policies", Handler: replacePoliciesHandler(serverCtx)},
+		{Method: http.MethodPost, Path: "/admin/authorization/engine/explain", Handler: explainHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/audit/events", Handler: auditHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/system/overview", Handler: systemOverviewHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/admin/system/configuration", Handler: systemConfigurationHandler(serverCtx)},
+	}
+	// Route group middleware is registered through go-zero. Keep the existing
+	// session-aware authentication + Casbin authorization checks intact.
+	server.AddRoutes(routes[:2])
+	server.AddRoutes(rest.WithMiddleware(rest.ToMiddleware(func(next http.Handler) http.Handler {
+		return protected(serverCtx, next.ServeHTTP)
+	}), routes[2:]...))
 }
 
 func protected(serverCtx *svc.ServiceContext, next http.HandlerFunc) http.HandlerFunc {

@@ -48,12 +48,14 @@ type sessionResponse struct {
 }
 
 func Register(server *rest.Server, serverCtx *svc.ServiceContext) {
-	server.AddRoutes([]rest.Route{
+	routes := []rest.Route{
 		{Method: http.MethodPost, Path: "/auth/login", Handler: loginHandler(serverCtx)},
 		{Method: http.MethodPost, Path: "/auth/refresh", Handler: refreshHandler(serverCtx)},
-		{Method: http.MethodPost, Path: "/auth/logout", Handler: RequireAuthentication(serverCtx.Authn, logoutHandler(serverCtx))},
-		{Method: http.MethodGet, Path: "/auth/session", Handler: RequireAuthentication(serverCtx.Authn, sessionHandler())},
-	})
+		{Method: http.MethodPost, Path: "/auth/logout", Handler: logoutHandler(serverCtx)},
+		{Method: http.MethodGet, Path: "/auth/session", Handler: sessionHandler()},
+	}
+	server.AddRoutes(routes[:2])
+	server.AddRoutes(rest.WithMiddleware(RequireAuthenticationMiddleware(serverCtx.Authn), routes[2:]...))
 }
 
 func loginHandler(serverCtx *svc.ServiceContext) http.HandlerFunc {
@@ -129,6 +131,15 @@ func sessionHandler() http.HandlerFunc {
 			Account:   accountResponse{ID: authentication.Principal.AccountID, DisplayName: authentication.Principal.DisplayName},
 		}))
 	}
+}
+
+// RequireAuthenticationMiddleware bridges the platform's revocable Session
+// semantics to go-zero's native route middleware registration. WithJwt is not
+// equivalent: a valid access JWT still requires an active Redis session.
+func RequireAuthenticationMiddleware(service *authn.Service) rest.Middleware {
+	return rest.ToMiddleware(func(next http.Handler) http.Handler {
+		return RequireAuthentication(service, next.ServeHTTP)
+	})
 }
 
 func RequireAuthentication(service *authn.Service, next http.HandlerFunc) http.HandlerFunc {

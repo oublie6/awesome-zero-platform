@@ -27,15 +27,12 @@ func Register(server *rest.Server, authService *authn.Service, dispatcher *Dispa
 	if server == nil || dispatcher == nil {
 		return
 	}
-	wrap := func(next http.HandlerFunc) http.HandlerFunc {
-		return securityhttp.RequireAuthentication(authService, next)
-	}
-	server.AddRoutes([]rest.Route{
-		{Method: http.MethodPost, Path: "/v1/doudizhu/commands", Handler: wrap(commandHandler(dispatcher))},
-		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/public", Handler: wrap(publicViewHandler(dispatcher))},
-		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/private", Handler: wrap(privateViewHandler(dispatcher))},
-		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/evidence", Handler: wrap(evidenceHandler(dispatcher))},
-	})
+	server.AddRoutes(rest.WithMiddleware(securityhttp.RequireAuthenticationMiddleware(authService), []rest.Route{
+		{Method: http.MethodPost, Path: "/v1/doudizhu/commands", Handler: commandHandler(dispatcher)},
+		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/public", Handler: publicViewHandler(dispatcher)},
+		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/private", Handler: privateViewHandler(dispatcher)},
+		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/evidence", Handler: evidenceHandler(dispatcher)},
+	}...))
 }
 
 func commandHandler(dispatcher *Dispatcher) http.HandlerFunc {
