@@ -341,9 +341,9 @@ func (s *Store) ListAudit(ctx context.Context, query admin.AuditQuery) (admin.Au
 	listArgs := append([]any(nil), args...)
 	listArgs = append(listArgs, query.PageSize, (query.Page-1)*query.PageSize)
 	var records []auditRow
-	if err := s.conn.QueryRowsCtx(ctx, &records, `SELECT event_id, COALESCE(actor_account_id, ''), action_name,
-        resource_type, COALESCE(resource_id, ''), outcome, COALESCE(request_id, ''),
-        COALESCE(client_ip, ''), COALESCE(user_agent, ''), details_json, created_at
+	if err := s.conn.QueryRowsCtx(ctx, &records, `SELECT event_id, COALESCE(actor_account_id, '') AS actor_account_id, action_name,
+        resource_type, COALESCE(resource_id, '') AS resource_id, outcome, COALESCE(request_id, '') AS request_id,
+        COALESCE(client_ip, '') AS client_ip, COALESCE(user_agent, '') AS user_agent, details_json, created_at
         FROM platform_audit_events`+whereSQL+`
         ORDER BY created_at DESC, event_id DESC LIMIT ? OFFSET ?`, listArgs...); err != nil {
 		return admin.AuditPage{}, err
