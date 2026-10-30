@@ -43,29 +43,32 @@ func (s *Store) WithinCommand(
 	if fn == nil || actor == "" || commandID == "" {
 		return fmt.Errorf("mysql doudizhu command transaction is invalid")
 	}
-	tx, err := s.database.DB().BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return translateTransactionError(fmt.Errorf("begin doudizhu transaction: %w", err))
-	}
-	defer func() {
-		if recovered := recover(); recovered != nil {
-			_ = tx.Rollback()
-			panic(recovered)
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
-				err = errors.Join(err, fmt.Errorf("rollback doudizhu transaction: %w", rollbackErr))
-			}
-			err = translateTransactionError(err)
-			return
-		}
-		if commitErr := tx.Commit(); commitErr != nil {
-			err = translateTransactionError(fmt.Errorf("commit doudizhu transaction: %w", commitErr))
-		}
-	}()
+	return foundationdb.TraceTransaction(ctx, func(ctx context.Context) (err error) {
 
-	err = fn(ctx, &transaction{tx: tx})
-	return err
+		tx, err := s.database.DB().BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+		if err != nil {
+			return translateTransactionError(fmt.Errorf("begin doudizhu transaction: %w", err))
+		}
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				_ = tx.Rollback()
+				panic(recovered)
+			}
+			if err != nil {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
+					err = errors.Join(err, fmt.Errorf("rollback doudizhu transaction: %w", rollbackErr))
+				}
+				err = translateTransactionError(err)
+				return
+			}
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = translateTransactionError(fmt.Errorf("commit doudizhu transaction: %w", commitErr))
+			}
+		}()
+
+		err = fn(ctx, &transaction{tx: tx})
+		return err
+	})
 }
 
 func translateTransactionError(err error) error {

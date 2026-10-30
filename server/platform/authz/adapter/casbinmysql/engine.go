@@ -190,25 +190,30 @@ func (a *mysqlAdapter) LoadPolicy(m model.Model) error {
 }
 
 func (a *mysqlAdapter) SavePolicy(m model.Model) error {
-	tx, err := a.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
+	// Casbin's persistence callback has no request context. Preserve that API
+	// while observing its native transaction as an explicitly independent root.
+	return foundationdb.TraceTransaction(context.Background(), func(context.Context) error {
 
-	if _, err := tx.Exec(`DELETE FROM authorization_casbin_rules`); err != nil {
-		return err
-	}
-	for _, section := range []string{"p", "g"} {
-		for ptype, assertion := range m[section] {
-			for _, rule := range assertion.Policy {
-				if err := insertRule(tx, ptype, rule); err != nil {
-					return err
+		tx, err := a.db.Begin()
+		if err != nil {
+			return err
+		}
+		defer func() { _ = tx.Rollback() }()
+
+		if _, err := tx.Exec(`DELETE FROM authorization_casbin_rules`); err != nil {
+			return err
+		}
+		for _, section := range []string{"p", "g"} {
+			for ptype, assertion := range m[section] {
+				for _, rule := range assertion.Policy {
+					if err := insertRule(tx, ptype, rule); err != nil {
+						return err
+					}
 				}
 			}
 		}
-	}
-	return tx.Commit()
+		return tx.Commit()
+	})
 }
 
 func (a *mysqlAdapter) AddPolicy(_ string, ptype string, rule []string) error {

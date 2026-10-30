@@ -10,7 +10,6 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/foundation/requestid"
 	"github.com/zeromicro/go-zero/core/logx"
 	"go.opentelemetry.io/otel/propagation"
-	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 type AccessLogRecord struct {
@@ -92,10 +91,7 @@ func AccessLog() func(http.Handler) http.Handler {
 			// span context does not reach this outer middleware. It injects
 			// that context into response headers; use it for log correlation
 			// without creating another span or changing routing/404 behavior.
-			logCtx := r.Context()
-			if !oteltrace.SpanContextFromContext(logCtx).IsValid() {
-				logCtx = (propagation.TraceContext{}).Extract(logCtx, propagation.HeaderCarrier(w.Header()))
-			}
+			logCtx := (propagation.TraceContext{}).Extract(r.Context(), propagation.HeaderCarrier(w.Header()))
 			logx.WithContext(logCtx).Infow("http access",
 				logx.Field("eventAction", "http.access"),
 				logx.Field("module", record.Module),

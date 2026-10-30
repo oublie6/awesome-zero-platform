@@ -86,6 +86,9 @@ var sqlReference = regexp.MustCompile("(?i)\\b(?:FROM|JOIN|INTO|UPDATE|TABLE)\\s
 
 func tableOwner(table string) string {
 	switch {
+	// Admin owns catalog metadata; authz owns executable Casbin policy/state.
+	case table == "authorization_roles" || table == "authorization_resources":
+		return "admin"
 	case strings.HasPrefix(table, "foundation_"):
 		return "foundation"
 	case strings.HasPrefix(table, "identity_"):
@@ -186,5 +189,51 @@ func TestPlatformPackagesCannotQueryBusinessTables(t *testing.T) {
 			}
 			return true
 		})
+	}
+}
+
+func TestPlatformModulesOnlyAccessOwnedTables(t *testing.T) {
+	for _, path := range productionGoFiles(t) {
+		rel, err := filepath.Rel("..", path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		parts := strings.Split(filepath.ToSlash(rel), "/")
+		if len(parts) < 3 || parts[0] != "platform" {
+			continue
+		}
+		module := parts[1]
+		src, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ast.Inspect(src, func(node ast.Node) bool {
+			literal, ok := node.(*ast.BasicLit)
+			if !ok || literal.Kind != token.STRING {
+				return true
+			}
+			value, err := strconv.Unquote(literal.Value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, match := range sqlReference.FindAllStringSubmatch(value, -1) {
+				owner := tableOwner(strings.ToLower(match[1]))
+				if owner != "" && owner != module {
+					t.Errorf("%s: module %s directly accesses table %s owned by %s; use an owner public contract", rel, module, match[1], owner)
+				}
+			}
+			return true
+		})
+	}
+}
+
+func TestAuthorizationCatalogOwnershipIsExplicit(t *testing.T) {
+	for table, owner := range map[string]string{
+		"authorization_roles": "admin", "authorization_resources": "admin",
+		"authorization_casbin_rules": "authz", "authorization_policy_state": "authz",
+	} {
+		if got := tableOwner(table); got != owner {
+			t.Errorf("%s owner=%s, want %s", table, got, owner)
+		}
 	}
 }

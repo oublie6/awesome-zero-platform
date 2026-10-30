@@ -56,40 +56,45 @@ Single primary executor, sequential verification and mandatory self-review.
 
 ### Completed
 
-- Read AGENTS/current goal and requested deployment/architecture references completely.
-- Clean main fast-forwarded from 890abc8 to 698d760; Goals 0039–0041 archived completed.
-- Live context kubernetes-admin@network-learning: both nodes Ready; API and observability/database Pods Ready; four PVCs Bound. API still uses goal0038-gozero-first and does not establish deployment of latest source.
-- Local /data: 26 GiB available; 4.8 GiB RAM available, no swap. gh/node/npm absent; Docker/containerd/crictl/Go available. CI must be checked through supported GitHub tools; frontend tooling needs resolution.
+- Read required instructions/references; clean main synchronized from 890abc8 to 698d760; Goals 0039–0041 archived completed; synchronized source CI verified.
+- Goal definition 399703c and observability checkpoint 0a9ae1c committed/pushed on main; both CI and Fair Doudizhu workflows passed on each checkpoint.
+- Reviewed go-zero routes/middleware, JWT/Session/Casbin compatibility, normal SQL/Redis paths, native transaction/WATCH/PubSub exceptions, context/tracing, metric registries and module/data ownership.
+- Corrected span failure statuses/panic handling, WebSocket failure status, HTTP extension-method cardinality, access-log trace correlation (including an earlier context overridden by incoming W3C context), framework Redis metrics exposure and platform SQL ownership. Added transaction tracing to native authorization and business-command paths while preserving READ COMMITTED, lock order, commit/rollback, retryable errors and partial-success behavior.
+- Identity now owns the account-state FOR UPDATE query through a documented public in-process transaction contract. Admin catalog ownership is explicit; stricter platform-to-platform SQL checks and owner-query/cursor/error tests added. No schema or business enablement changes.
+- API DSL validation, generated-code clean diff, gofmt and idempotent tidy passed using Go 1.25.8 / goctl 1.10.1. Fresh complete unit suite passed on the current patch. Full platform/foundation/architecture Race passed, plus focused Race after subsequent HTTP-context and native command-trace changes.
+- Admin Web typecheck/build passed (existing >500 kB chunk warning). Secure-envelope client 9/9 tests and TypeScript-to-Go interoperability passed using SHA256-verified Node 22.23.4. No frontend source/dependency-version changes.
+- Unchanged make integration-test passed with isolated MySQL 8.4.6 / Redis 7.4.5, matching the deployed backend versions; 117 seconds. Only loopback ports and temporary storage used; dependencies removed. Baseline MySQL 5.7 / Redis 8.8 checks still require new-checkpoint CI.
+- Negative tests: all six new observability regression tests reject pre-fix production code via Go overlay without worktree mutations. A temporary cross-module SQL probe is rejected by the strict ownership test and was removed.
+- Real cluster inventory/PVC/node/strategy/image and initial diff verified; API still runs goal0038-gozero-first, one replica/Recreate. Both nodes Ready; no pressure conditions. Kubelet stats obtained because Metrics API is absent. /data initially has 26 GiB available. Shared CPU steal remains a measured operational risk (~35% in a two-second compile-time sample).
+- Private backups: consistent MySQL dump (15 InnoDB tables), Redis RDB and old image/Deployment/rollback patch with SHA256 manifest. Isolated no-network restore passed: all MySQL table counts matched; Redis loaded 2 keys. Both restore containers and disposable restored-data copy removed; primary snapshots retained outside Git.
 
 ### In progress
 
-- Race verification of observability corrections; backup restore validation and remaining architecture/runtime gates.
+- Save the verified source/report checkpoint and obtain its CI. Prepare bounded isolated backend recovery checks and latest-source image rollout.
 
 ### Remaining
 
-- Resolve/verify module-data ownership findings; complete remaining checks and self-review; validate backups in isolation; build/import/roll out verified source; run full live acceptance, report and final CI.
+- Build/integration baseline CI on new source; isolated short backend outage/recovery and resource observations.
+- Build/import immutable image with Git/source provenance; final backup/rollback/diff/active-connection safety check; one-replica Recreate rollout only after gates pass.
+- Real latest-image REST/admin/auth/error/cache/transaction/WATCH/WS/heartbeat/reconnect/cleanup acceptance, six Jaeger trace categories with actual relationships/durations/status, Prometheus/Grafana/ELK/Kibana evidence, retention/watermarks and bounded leak/resource observations.
+- Final self-review and detailed report, all-criteria audit, completed/archive/reset, push main and final CI confirmation.
 
 ### Verification status
 
-- Initial read-only cluster inventory passed; no rollout, fault injection or live observability acceptance performed yet.
-- make fmt-check passed. Both Kubernetes render validators passed after correcting invocation to supply rendered YAML (28 server-profile resources, 23 default-observability resources). Initial invocation without the required file argument failed with IndexError; no repository defect inferred.
-- make test could not start with system Go 1.18.1 (go.mod requires 1.25.8); downloading isolated matching toolchain, then rerun. No test pass claimed.
-- GitHub REST Actions inventory confirms synchronized source 698d7608cbecfb7c690a035b7675e5edc9ec0e3e: CI 41022280151 success, Fair Doudizhu 41022280106 success. New definition checkpoint 399703c triggered live CI 41043134748 and Fair Doudizhu 41043134806, not complete at observation. Short SHA query returned no runs; use full SHA/inventory.
-- Goal definition committed and pushed directly to main: 399703c.
+- Current source unit and targeted/full Race checks above passed. API validation/generation/gofmt/tidy, frontend/interoperability, strict architecture, actual-version isolated integration and backup restore passed.
+- No production rollout, live new-image traces, production backend fault injection or production data-volume reset performed.
+- Source checkpoint 0a9ae1c: CI 41044799534 and Fair Doudizhu 41044799514 success. Subsequent patches need their own CI after push; do not reuse old CI as proof of them.
+- Evidence: /root/.local/state/awesome-zero-platform/goal0042 (0700), including copied unit/race/frontend logs, negative-regression results, isolated integration/restore results, raw cluster snapshots and backup manifest. Primary data snapshots 0600; no secrets committed or printed.
 
 ## Completion Report
 
-Not complete. This executor made narrowly scoped observability corrections with regression coverage; no Deployment, PVC, schema or production business state was reset. A dedicated acceptance login/session was created for upgrade compatibility testing. Backups require isolated restore validation before rollout.
+Not complete. See [the ongoing detailed acceptance record](../operations/goal0042-kubernetes-acceptance.md).
 
-### Review and progress checkpoint (2026-10-30)
+### Changes and self-review
 
-- Code findings/fixes: native SQL transaction and WATCH error events lacked error status; transaction panics lacked failure status; accepted WebSocket failures lacked status; outer access logs lost inner go-zero route trace context; arbitrary HTTP extension methods could grow Prometheus label cardinality. Fixed failure statuses/correlation and bounded extension methods without changing response envelopes, transaction ordering, panic/error identity, JWT/session semantics or standard metric labels.
-- Added deterministic regression coverage for transaction begin/callback/commit/rollback/panic outcomes, Redis WATCH dial failure, actual go-zero route middleware/access-log correlation, WebSocket failures and private handler-error redaction, and extension-method metric cardinality. Existing and new tests passed in the full sequential unit suite, including architecture/route-inventory tests. Related five-package focused run passed. Race suite is running (not yet passed).
-- Distinct self-review of this patch checked deferred rollback/commit-before-span-end, original panic and error identity, unchanged WebSocket response IDs/codes, no payload attributes, outer 404/405 coverage, no duplicate HTTP root spans, unchanged standard metric names/labels and absence of new module dependencies. Removed an unbounded receive from the new WebSocket test. This is self-review, not independent review; final review remains required after any further changes.
-- Go 1.25.8 and Node 22.23.4 downloaded into /opt/goal0042-toolchain and SHA256-verified against their official release indexes. Initial Python Node extraction rejected an npm symlink; extraction with tar succeeded. go mod tidy passed; it correctly promoted the already-selected OpenTelemetry v1.40.0 root module to a direct dependency, with no version change.
-- Initial full test invocation was stopped because imports were edited after dependency discovery, producing invalid import-scan results. Fresh focused and full runs subsequently passed; logs retained under /tmp/goal0042-*.log. No failure was bypassed by changing assertions.
-- Deployment diff before changes is empty. Both node architectures amd64. Metrics API is absent, so kubectl top fails; kubelet stats/summary succeeded for both nodes and raw evidence is saved. At observation API working set ~81 MB, MySQL ~247 MB, Redis ~10 MB, Elasticsearch ~1.12 GB, Prometheus ~37 MB; second-node observability ~778 MB combined. CPU samples during compilation are not steady-state load measurements.
-- Private evidence directory: /root/.local/state/awesome-zero-platform/goal0042 (0700). Created MySQL consistent single-transaction dump (all 15 tables InnoDB), Redis replication RDB snapshot, old image export, manifest SHA256 checksums and original Deployment. No restore/rollback execution claimed yet. Existing admin health/login/session/permission baseline passed; dedicated session retained for upgrade.
-- GitHub Actions on 399703c: CI 41043134748 and Fair Doudizhu 41043134806 completed success. New source fixes still need their own CI after checkpoint push.
-- Open architecture findings: casbinmysql/active_superadmin.go directly lock-reads identity_accounts for the last-active-super-admin invariant; admin/mysqlstore directly manages authorization catalog tables. Existing architecture tests only forbid platform-to-business SQL, so their green result does not prove platform-to-platform ownership isolation. Native authorization transactions and context-less Casbin callbacks also require explicit tracing review. These are NOT marked passed or silently removed to satisfy checks.
-- Frontend/generation/API-tool checks, isolated integration/backend recovery, full live metrics/traces/ELK/WS/reliability acceptance, production rollout and final CI remain outstanding.
+- Changes are reusable technical infrastructure/platform integration plus tracing of the existing native business persistence exception. Foundation/platform gained no game-specific semantics. No public HTTP, DB schema, persisted format, client contract, pool configuration or deployment replica/strategy changes.
+- Distinct second-pass self-review re-read the goal/architecture/public contracts and challenged defer ordering, rollback/commit/panic/error identity, READ COMMITTED, command deduplication, super-admin lock ordering and post-commit reload errors, cursor closure after active rows, context cancellation/parent propagation, secret redaction, label bounds and duplicate registries.
+- Self-review found and fixed another native business transaction bypass and the case where an earlier valid request context could hide go-zero's actual response trace. Added meaningful regression tests, including cleanup assertions at Span.End, full-result cursor errors, and the existing driver's mandatory isolation assertion. Fixed a potentially unbounded receive in a new WS test. New observability and ownership tests were shown to reject original defects. This is self-review, not independent review.
+- Explicit native limits remain documented: raw transaction statements do not each emit SQL spans; context-less Casbin callbacks use separate roots; WebSocket messages use short independent roots and propagate context to handlers; managed Redis has its own version-specific pool/timeouts, exposed separately from native gauges. Future service extraction must redesign the explicitly shared transaction invariant.
+- Earlier failed invocations are retained: system Go 1.18 could not parse go.mod; K8s validator initially lacked its input argument; an initial Go run was invalidated by imports edited after scanning; Python rejected the Node npm symlink. Matching tools/correct invocations/fresh tests resolved these; no assertions were removed or tests silently skipped.
+- No off-node backup destination has been provided. Existing shared-vCPU risk, private-only/unauthenticated observation stack, Jaeger in-memory storage, frontend chunk-size warning and limited-duration resource checks must remain explicit in the final report.

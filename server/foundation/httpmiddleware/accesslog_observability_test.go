@@ -79,18 +79,28 @@ func TestOuterAccessLogCorrelatesGoZeroRouteTrace(t *testing.T) {
 	wrapped := AccessLog()(handler.TraceHandler("test", "/health/live")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})))
-	response := httptest.NewRecorder()
-	wrapped.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/health/live", nil))
-	ctx := (propagation.TraceContext{}).Extract(context.Background(), propagation.HeaderCarrier(response.Header()))
-	traceID := oteltrace.SpanContextFromContext(ctx).TraceID()
-	if !traceID.IsValid() {
-		t.Fatal("go-zero did not produce response trace context")
-	}
-	var record map[string]any
-	if err := json.Unmarshal(bytes.TrimSpace(lines.Bytes()), &record); err != nil {
-		t.Fatal(err)
-	}
-	if record["trace"] != traceID.String() {
-		t.Fatalf("access log lost route trace: %v", record["trace"])
+	for _, preexisting := range []bool{false, true} {
+		lines.Reset()
+		response := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/health/live", nil)
+		if preexisting {
+			outerCtx, outerSpan := provider.Tracer("test-outer").Start(request.Context(), "outer")
+			defer outerSpan.End()
+			request = request.WithContext(outerCtx)
+			request.Header.Set("traceparent", "00-11111111111111111111111111111111-2222222222222222-01")
+		}
+		wrapped.ServeHTTP(response, request)
+		ctx := (propagation.TraceContext{}).Extract(context.Background(), propagation.HeaderCarrier(response.Header()))
+		traceID := oteltrace.SpanContextFromContext(ctx).TraceID()
+		if !traceID.IsValid() {
+			t.Fatal("go-zero did not produce response trace context")
+		}
+		var record map[string]any
+		if err := json.Unmarshal(bytes.TrimSpace(lines.Bytes()), &record); err != nil {
+			t.Fatal(err)
+		}
+		if record["trace"] != traceID.String() {
+			t.Fatalf("access log lost route trace (preexisting=%v): %v", preexisting, record["trace"])
+		}
 	}
 }

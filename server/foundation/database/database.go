@@ -280,9 +280,44 @@ func (r *Resource) WithinTransaction(ctx context.Context, fn func(context.Contex
 		return errors.New("mysql resource is not initialized")
 	}
 
-	// Native sql.Tx is retained for exact transaction semantics. This span
-	// covers begin, user operations, commit/rollback and is closed only after
-	// deferred transaction cleanup; individual raw SQL methods remain untraced.
+	return TraceTransaction(ctx, func(ctx context.Context) (err error) {
+		tx, err := r.beginTxFn(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("begin transaction: %w", err)
+		}
+
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				if rollbackErr := rollback(ctx, tx); rollbackErr != nil {
+					panic(fmt.Errorf("rollback transaction after panic: %w", rollbackErr))
+				}
+				panic(recovered)
+			}
+
+			if err != nil {
+				if rollbackErr := rollback(ctx, tx); rollbackErr != nil {
+					err = errors.Join(err, rollbackErr)
+				}
+				return
+			}
+
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("commit transaction: %w", commitErr)
+			}
+		}()
+
+		err = fn(ctx, tx)
+		return err
+	})
+}
+
+// TraceTransaction instruments native transactions retained by infrastructure
+// adapters for exact cursor/locking/commit semantics. The callback must include
+// begin and deferred commit/rollback; it owns the transaction and its errors.
+// No SQL text or arguments are attached. Individual raw statements are not
+// represented as SQL child spans by this boundary instrumentation.
+func TraceTransaction(ctx context.Context, fn func(context.Context) error) (err error) {
+	// End after the adapter callback has completed its transaction cleanup.
 	ctx, span := zerotrace.TracerFromContext(ctx).Start(ctx, "sql.transaction")
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -297,33 +332,7 @@ func (r *Resource) WithinTransaction(ctx context.Context, fn func(context.Contex
 		span.End()
 	}()
 
-	tx, err := r.beginTxFn(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-
-	defer func() {
-		if recovered := recover(); recovered != nil {
-			if rollbackErr := rollback(ctx, tx); rollbackErr != nil {
-				panic(fmt.Errorf("rollback transaction after panic: %w", rollbackErr))
-			}
-			panic(recovered)
-		}
-
-		if err != nil {
-			if rollbackErr := rollback(ctx, tx); rollbackErr != nil {
-				err = errors.Join(err, rollbackErr)
-			}
-			return
-		}
-
-		if commitErr := tx.Commit(); commitErr != nil {
-			err = fmt.Errorf("commit transaction: %w", commitErr)
-		}
-	}()
-
-	err = fn(ctx, tx)
-	return err
+	return fn(ctx)
 }
 
 func rollback(ctx context.Context, tx *sql.Tx) error {

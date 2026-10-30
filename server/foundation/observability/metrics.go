@@ -10,7 +10,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/redis/go-redis/v9"
+	zeroprom "github.com/zeromicro/go-zero/core/prometheus"
 )
 
 type Metrics struct {
@@ -21,6 +23,9 @@ type Metrics struct {
 }
 
 func NewMetrics(namespace string) *Metrics {
+	// Enable go-zero's existing operation instruments without starting its
+	// separate HTTP agent. The application serves the selected families below.
+	zeroprom.Enable()
 	requests := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
 		Name:      "http_requests_total",
@@ -69,7 +74,33 @@ func (m *Metrics) RegisterRedisPool(client *redis.Client) error {
 }
 
 func (m *Metrics) Handler() http.Handler {
-	return promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{})
+	return promhttp.HandlerFor(prometheus.Gatherers{
+		m.registry,
+		redisMetricsGatherer{source: prometheus.DefaultGatherer},
+	}, promhttp.HandlerOpts{})
+}
+
+// go-zero v1.10.2 registers its managed Redis operation/pool metrics globally.
+// Select only those verified families: merging the entire global registry
+// would duplicate Go/process collectors and expose unrelated instruments.
+type redisMetricsGatherer struct{ source prometheus.Gatherer }
+
+func (g redisMetricsGatherer) Gather() ([]*dto.MetricFamily, error) {
+	families, err := g.source.Gather()
+	if err != nil {
+		return nil, err
+	}
+	selected := make([]*dto.MetricFamily, 0, 10)
+	for _, family := range families {
+		switch family.GetName() {
+		case "redis_client_requests_duration_ms", "redis_client_requests_error_total", "redis_client_requests_slow_total",
+			"redis_client_pool_hit_total", "redis_client_pool_miss_total", "redis_client_pool_timeout_total",
+			"redis_client_pool_conn_total_current", "redis_client_pool_conn_idle_current",
+			"redis_client_pool_conn_stale_total", "redis_client_pool_conn_max":
+			selected = append(selected, family)
+		}
+	}
+	return selected, nil
 }
 
 func (m *Metrics) Registerer() prometheus.Registerer {

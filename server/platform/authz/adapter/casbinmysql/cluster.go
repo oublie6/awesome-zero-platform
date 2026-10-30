@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	foundationdb "github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -188,48 +189,61 @@ func (e *Engine) mutateRules(ctx context.Context, transform func([]authz.RawRule
 		return true, nil
 	}
 
-	tx, err := e.db.BeginTx(ctx, nil)
-	if err != nil {
-		return false, fmt.Errorf("begin authorization policy transaction: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
+	var nextVersion uint64
+	changed := false
+	err := foundationdb.TraceTransaction(ctx, func(ctx context.Context) error {
+		tx, err := e.db.BeginTx(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("begin authorization policy transaction: %w", err)
+		}
+		defer func() { _ = tx.Rollback() }()
 
-	version, err := lockPolicyVersion(ctx, tx)
-	if err != nil {
-		return false, err
-	}
-	current, err := loadRawRules(ctx, tx)
-	if err != nil {
-		return false, err
-	}
-	next, err := transform(copyRules(current))
-	if err != nil {
-		return false, err
-	}
-	next = normalizeRawRules(next)
-	if err := e.ValidateRawRules(ctx, next); err != nil {
-		return false, err
-	}
-	if err := e.validatePolicySafety(current, next); err != nil {
-		return false, err
-	}
-	if err := validateActiveSuperAdminSafety(ctx, tx, next); err != nil {
-		return false, err
-	}
-	if reflect.DeepEqual(normalizeRawRules(current), next) {
-		return false, nil
-	}
-	if err := replaceRawRulesTx(ctx, tx, next); err != nil {
-		return false, err
-	}
-	nextVersion := version + 1
-	if _, err := tx.ExecContext(ctx, `UPDATE authorization_policy_state
+		version, err := lockPolicyVersion(ctx, tx)
+		if err != nil {
+			return err
+		}
+		current, err := loadRawRules(ctx, tx)
+		if err != nil {
+			return err
+		}
+		next, err := transform(copyRules(current))
+		if err != nil {
+			return err
+		}
+		next = normalizeRawRules(next)
+		if err := e.ValidateRawRules(ctx, next); err != nil {
+			return err
+		}
+		if err := e.validatePolicySafety(current, next); err != nil {
+			return err
+		}
+		if err := validateActiveSuperAdminSafety(ctx, tx, next); err != nil {
+			return err
+		}
+		if reflect.DeepEqual(normalizeRawRules(current), next) {
+			return nil
+		}
+		if err := replaceRawRulesTx(ctx, tx, next); err != nil {
+			return err
+		}
+		nextVersion = version + 1
+		if _, err := tx.ExecContext(ctx, `UPDATE authorization_policy_state
 		SET version = ?, updated_at = CURRENT_TIMESTAMP(6)
 		WHERE policy_key = ?`, nextVersion, globalPolicyKey); err != nil {
-		return false, fmt.Errorf("advance authorization policy version: %w", err)
+			return fmt.Errorf("advance authorization policy version: %w", err)
+		}
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("commit authorization policy transaction: %w", err)
+		}
+
+		changed = true
+		return nil
+	})
+	if err != nil {
+		return false, err
 	}
-	if err := tx.Commit(); err != nil {
-		return false, fmt.Errorf("commit authorization policy transaction: %w", err)
+	if !changed {
+		return false, nil
 	}
 
 	if err := e.reloadCommittedVersion(ctx, nextVersion); err != nil {
