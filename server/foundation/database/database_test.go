@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 func TestConfigValidate(t *testing.T) {
@@ -251,4 +253,30 @@ func assertMock(t *testing.T, db *sql.DB, mock sqlmock.Sqlmock) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet sqlmock expectations: %v", err)
 	}
+}
+
+func TestWithinTransactionPropagatesNativeTraceSpan(t *testing.T) {
+	t.Parallel()
+	db, mock := newMockDB(t)
+	mock.ExpectBegin()
+	mock.ExpectCommit()
+
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.AlwaysSample()))
+	defer func() { _ = provider.Shutdown(context.Background()) }()
+	ctx, parent := provider.Tracer("database-test").Start(context.Background(), "request")
+	defer parent.End()
+
+	resource := &Resource{beginTxFn: db.BeginTx}
+	var observed oteltrace.SpanContext
+	if err := resource.WithinTransaction(ctx, func(txCtx context.Context, tx *sql.Tx) error {
+		observed = oteltrace.SpanFromContext(txCtx).SpanContext()
+		return nil
+	}); err != nil {
+		t.Fatalf("WithinTransaction() error = %v", err)
+	}
+	if !observed.IsValid() || observed.TraceID() != parent.SpanContext().TraceID() ||
+		observed.SpanID() == parent.SpanContext().SpanID() {
+		t.Fatalf("transaction must create a distinct child span: %v", observed)
+	}
+	assertMock(t, db, mock)
 }
