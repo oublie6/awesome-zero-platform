@@ -31,6 +31,9 @@ func NewModelCache(cfg Config, namespace string, errNotFound error) (*ModelCache
 	if !cfg.Model.Enabled {
 		return &ModelCache{errNotFound: errNotFound}, nil
 	}
+	if cfg.DB != 0 {
+		return nil, fmt.Errorf("go-zero model cache requires Redis DB 0")
+	}
 	namespace = strings.Trim(strings.TrimSpace(namespace), ":")
 	if namespace == "" {
 		return nil, fmt.Errorf("model cache namespace is required")

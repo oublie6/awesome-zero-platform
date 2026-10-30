@@ -133,6 +133,10 @@ func (c Config) Validate() error {
 		return fmt.Errorf("redis.readinessTimeout must be greater than 0")
 	}
 	if c.Model.Enabled {
+		// The go-zero Redis cache uses DB 0; reject silent cross-DB cache reads.
+		if c.DB != 0 {
+			return fmt.Errorf("redis.db must be 0 when go-zero model cache is enabled")
+		}
 		if strings.Trim(strings.TrimSpace(c.Model.KeyPrefix), ":") == "" {
 			return fmt.Errorf("redis.model.keyPrefix must not be empty when model caching is enabled")
 		}
