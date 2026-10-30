@@ -10,6 +10,7 @@ import (
 
 	mysql "github.com/go-sql-driver/mysql"
 	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
+	foundationdb "github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"github.com/oublie6/awesome-zero-platform/server/platform/admin"
 )
@@ -28,7 +29,7 @@ func NewCached(db *sql.DB, modelCache *foundationcache.ModelCache) (*Store, erro
 	if db == nil {
 		return nil, fmt.Errorf("mysql database is required")
 	}
-	return &Store{db: db, conn: sqlx.NewSqlConnFromDB(db), cache: modelCache}, nil
+	return &Store{db: db, conn: foundationdb.WrapSqlConn(db), cache: modelCache}, nil
 }
 
 func (s *Store) ListRoles(ctx context.Context) ([]admin.Role, error) {

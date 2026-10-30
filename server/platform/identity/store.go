@@ -8,6 +8,7 @@ import (
 
 	mysql "github.com/go-sql-driver/mysql"
 	foundationcache "github.com/oublie6/awesome-zero-platform/server/foundation/cache"
+	foundationdb "github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
@@ -77,11 +78,11 @@ type MySQLStore struct {
 }
 
 func NewMySQLStore(db *sql.DB) *MySQLStore {
-	return &MySQLStore{db: db, conn: sqlx.NewSqlConnFromDB(db)}
+	return &MySQLStore{db: db, conn: foundationdb.WrapSqlConn(db)}
 }
 
 func NewCachedMySQLStore(db *sql.DB, modelCache *foundationcache.ModelCache) *MySQLStore {
-	return &MySQLStore{db: db, conn: sqlx.NewSqlConnFromDB(db), cache: modelCache}
+	return &MySQLStore{db: db, conn: foundationdb.WrapSqlConn(db), cache: modelCache}
 }
 
 func (s *MySQLStore) InsertAccountTx(ctx context.Context, tx *sql.Tx, record accountRecord) error {
@@ -128,7 +129,7 @@ func (s *MySQLStore) GetAccountByID(ctx context.Context, accountID string) (Acco
 }
 
 func (s *MySQLStore) GetAccountByIDFresh(ctx context.Context, accountID string) (Account, error) {
-	return s.getAccount(ctx, s.db, `
+	return s.getAccountGoZero(ctx, `
 		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
 		FROM identity_accounts
 		WHERE account_id = ?
@@ -153,7 +154,7 @@ func (s *MySQLStore) GetAccountByUsername(ctx context.Context, usernameKey strin
 }
 
 func (s *MySQLStore) GetAccountByUsernameFresh(ctx context.Context, usernameKey string) (Account, error) {
-	return s.getAccount(ctx, s.db, `
+	return s.getAccountGoZero(ctx, `
 		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
 		FROM identity_accounts
 		WHERE username_key = ?
@@ -169,7 +170,7 @@ func (s *MySQLStore) GetAccountByEmail(ctx context.Context, emailKey string) (Ac
 }
 
 func (s *MySQLStore) GetAccountByEmailFresh(ctx context.Context, emailKey string) (Account, error) {
-	return s.getAccount(ctx, s.db, `
+	return s.getAccountGoZero(ctx, `
 		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
 		FROM identity_accounts
 		WHERE email_key = ?
@@ -185,7 +186,7 @@ func (s *MySQLStore) GetAccountByPhone(ctx context.Context, phoneKey string) (Ac
 }
 
 func (s *MySQLStore) GetAccountByPhoneFresh(ctx context.Context, phoneKey string) (Account, error) {
-	return s.getAccount(ctx, s.db, `
+	return s.getAccountGoZero(ctx, `
 		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
 		FROM identity_accounts
 		WHERE phone_key = ?
@@ -274,7 +275,7 @@ func (s *MySQLStore) InsertPasswordCredentialTx(ctx context.Context, tx *sql.Tx,
 }
 
 func (s *MySQLStore) GetPasswordCredentialByAccountID(ctx context.Context, accountID string) (storedCredential, error) {
-	return s.getPasswordCredential(ctx, s.db, `
+	return s.getPasswordCredentialGoZero(ctx, `
 		SELECT account_id, password_hash, password_changed_at, created_at, updated_at
 		FROM identity_password_credentials
 		WHERE account_id = ?
@@ -368,6 +369,57 @@ func (s *MySQLStore) phoneKey(value string) string {
 		return ""
 	}
 	return s.cache.Key("phone", value)
+}
+
+// accountQueryRow uses SQL column tags so go-zero sqlx can scan into a
+// struct while preserving the nullable identity fields and existing API types.
+type accountQueryRow struct {
+    ID string `db:"account_id"`
+    Username sql.NullString `db:"username"`
+    Email sql.NullString `db:"email"`
+    Phone sql.NullString `db:"phone"`
+    DisplayName string `db:"display_name"`
+    Status AccountStatus `db:"status"`
+    CreatedAt time.Time `db:"created_at"`
+    UpdatedAt time.Time `db:"updated_at"`
+}
+
+func (row accountQueryRow) account() Account {
+    return Account{
+        ID: row.ID, Username: nullStringValue(row.Username),
+        Email: nullStringValue(row.Email), Phone: nullStringValue(row.Phone),
+        DisplayName: row.DisplayName, Status: row.Status,
+        CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+    }
+}
+
+func (s *MySQLStore) getAccountGoZero(ctx context.Context, query string, args ...any) (Account, error) {
+    var row accountQueryRow
+    if err := s.conn.QueryRowCtx(ctx, &row, query, args...); err != nil {
+        if errors.Is(err, sql.ErrNoRows) { return Account{}, ErrAccountNotFound }
+        return Account{}, wrapIdentityError(ErrPersistence, err)
+    }
+    return row.account(), nil
+}
+
+type credentialQueryRow struct {
+    AccountID string `db:"account_id"`
+    Hash string `db:"password_hash"`
+    PasswordChangedAt time.Time `db:"password_changed_at"`
+    CreatedAt time.Time `db:"created_at"`
+    UpdatedAt time.Time `db:"updated_at"`
+}
+
+func (s *MySQLStore) getPasswordCredentialGoZero(ctx context.Context, query string, args ...any) (storedCredential, error) {
+    var row credentialQueryRow
+    if err := s.conn.QueryRowCtx(ctx, &row, query, args...); err != nil {
+        return storedCredential{}, wrapIdentityError(ErrPersistence, err)
+    }
+    return storedCredential{
+        AccountID: row.AccountID, Hash: row.Hash,
+        PasswordChangedAt: row.PasswordChangedAt,
+        CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+    }, nil
 }
 
 func (s *MySQLStore) getAccount(ctx context.Context, rower queryRower, query string, args ...any) (Account, error) {

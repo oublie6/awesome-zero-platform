@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
+	foundationdb "github.com/oublie6/awesome-zero-platform/server/foundation/database"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
@@ -45,7 +46,7 @@ func New(db *sql.DB, clock Clock) (*Archive, error) {
 	if db == nil || clock == nil {
 		return nil, fmt.Errorf("mysql game archive configuration is invalid")
 	}
-	return &Archive{db: db, conn: sqlx.NewSqlConnFromDB(db), clock: clock}, nil
+	return &Archive{db: db, conn: foundationdb.WrapSqlConn(db), clock: clock}, nil
 }
 
 func (a *Archive) Archive(record gamecore.FinalRecord) error {
@@ -114,23 +115,40 @@ func (a *Archive) LoadFinalRecord(ctx context.Context, id gamecore.InstanceID) (
 	return stored.Record, stored.ArchivedAt, nil
 }
 
+// archiveQueryRow maps database columns through go-zero's sqlx scanner.
+type archiveQueryRow struct {
+    InstanceID string `db:"instance_id"`
+    GameID string `db:"game_id"`
+    Ruleset string `db:"ruleset_version"`
+    Module string `db:"module_version"`
+    Fairness string `db:"fairness_suite_id"`
+    Participant uint8 `db:"participant_count"`
+    Status string `db:"final_status"`
+    Version uint64 `db:"final_version"`
+    Payload []byte `db:"payload"`
+    Digest []byte `db:"record_digest"`
+    ArchivedAt time.Time `db:"archived_at"`
+}
+
 func (a *Archive) queryRow(ctx context.Context, id gamecore.InstanceID) (storedRow, error) {
-	var stored storedRow
-	err := a.db.QueryRowContext(ctx, `
+    var row archiveQueryRow
+    err := a.conn.QueryRowCtx(ctx, &row, `
 SELECT instance_id, game_id, ruleset_version, module_version, fairness_suite_id,
        participant_count, final_status, final_version, payload, record_digest, archived_at
 FROM game_final_records
-WHERE instance_id = ?`, string(id)).Scan(
-		&stored.instanceID, &stored.gameID, &stored.ruleset, &stored.module, &stored.fairness,
-		&stored.participant, &stored.status, &stored.version, &stored.payload, &stored.digest, &stored.archivedAt,
-	)
+WHERE instance_id = ?`, string(id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return storedRow{}, fmt.Errorf("%w: instance %s", ErrArchiveNotFound, id)
 	}
 	if err != nil {
 		return storedRow{}, fmt.Errorf("read game final record: %w", err)
 	}
-	return stored, nil
+	return storedRow{
+        instanceID: row.InstanceID, gameID: row.GameID, ruleset: row.Ruleset,
+        module: row.Module, fairness: row.Fairness, participant: row.Participant,
+        status: row.Status, version: row.Version, payload: row.Payload,
+        digest: row.Digest, archivedAt: row.ArchivedAt,
+    }, nil
 }
 
 func restoreRecord(stored storedRow) (gamecore.FinalRecord, error) {

@@ -2,7 +2,6 @@ package identity
 
 import (
 	"context"
-	"database/sql"
 	"strings"
 )
 
@@ -24,45 +23,21 @@ func (s *MySQLStore) ListAccounts(ctx context.Context, query AccountQuery) (Acco
 	}
 
 	var total int64
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM identity_accounts`+whereSQL, args...).Scan(&total); err != nil {
+	if err := s.conn.QueryRowCtx(ctx, &total, `SELECT COUNT(*) FROM identity_accounts`+whereSQL, args...); err != nil {
 		return AccountPage{}, wrapIdentityError(ErrPersistence, err)
 	}
 
 	listArgs := append([]any(nil), args...)
 	listArgs = append(listArgs, query.PageSize, (query.Page-1)*query.PageSize)
-	rows, err := s.db.QueryContext(ctx, `
-		SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
-		FROM identity_accounts`+whereSQL+`
-		ORDER BY created_at DESC, account_id DESC
-		LIMIT ? OFFSET ?`, listArgs...)
-	if err != nil {
-		return AccountPage{}, wrapIdentityError(ErrPersistence, err)
-	}
-	defer rows.Close()
-
-	items := make([]Account, 0, query.PageSize)
-	for rows.Next() {
-		var account Account
-		var username, email, phone sql.NullString
-		if err := rows.Scan(
-			&account.ID,
-			&username,
-			&email,
-			&phone,
-			&account.DisplayName,
-			&account.Status,
-			&account.CreatedAt,
-			&account.UpdatedAt,
-		); err != nil {
-			return AccountPage{}, wrapIdentityError(ErrPersistence, err)
-		}
-		account.Username = nullStringValue(username)
-		account.Email = nullStringValue(email)
-		account.Phone = nullStringValue(phone)
-		items = append(items, account)
-	}
-	if err := rows.Err(); err != nil {
-		return AccountPage{}, wrapIdentityError(ErrPersistence, err)
-	}
+	var records []accountQueryRow
+	if err := s.conn.QueryRowsCtx(ctx, &records, `
+        SELECT account_id, username, email, phone, display_name, status, created_at, updated_at
+        FROM identity_accounts`+whereSQL+`
+        ORDER BY created_at DESC, account_id DESC
+        LIMIT ? OFFSET ?`, listArgs...); err != nil {
+        return AccountPage{}, wrapIdentityError(ErrPersistence, err)
+    }
+    items := make([]Account, 0, len(records))
+    for _, row := range records { items = append(items, row.account()) }
 	return AccountPage{Items: items, Total: total, Page: query.Page, PageSize: query.PageSize}, nil
 }

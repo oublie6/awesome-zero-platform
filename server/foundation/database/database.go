@@ -191,7 +191,7 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 
 	resource := &Resource{
 		db:      db,
-		sqlConn: sqlx.NewSqlConnFromDB(db),
+		sqlConn: WrapSqlConn(db),
 		closeFn: db.Close,
 		pingFn: func(ctx context.Context) error {
 			return db.PingContext(ctx)
@@ -214,6 +214,23 @@ func Open(ctx context.Context, cfg Config) (Handle, error) {
 
 // SqlConn returns the go-zero SQL access path over the same configured pool.
 // Do not close the underlying RawDB through the sqlx wrapper.
+// WrapSqlConn ensures standard go-zero SQL tracing and connection reuse, while
+// treating expected MySQL constraint conflicts as business errors rather than
+// outages that should trip the shared sqlx circuit breaker.
+func WrapSqlConn(db *sql.DB) sqlx.SqlConn {
+    if db == nil { return nil }
+    return sqlx.NewSqlConnFromDB(db, sqlx.WithAcceptable(func(err error) bool {
+        var driverErr *mysql.MySQLError
+        if errors.As(err, &driverErr) {
+            switch driverErr.Number {
+            case 1062, 1451, 1452:
+                return true
+            }
+        }
+        return false
+    }))
+}
+
 func (r *Resource) SqlConn() sqlx.SqlConn {
 	if r == nil { return nil }
 	return r.sqlConn
