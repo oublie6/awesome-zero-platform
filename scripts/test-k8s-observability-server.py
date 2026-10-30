@@ -47,6 +47,69 @@ assert '--storage.tsdb.retention.time=3d' in prom['args']
 assert '--storage.tsdb.retention.size=512MB' in prom['args']
 setup = resources['Job', 'elastic-bootstrap']['spec']['template']['spec']['containers'][0]['args'][0]
 assert 'awesome-logs-three-days' in setup and '"min_age":"3d"' in setup
+
+# Goal 0043 keeps Badger opt-in to this server profile and preserves the
+# existing Jaeger Service contract while binding its data to hk-worker.
+jaeger = resources['Deployment', 'jaeger']['spec']
+assert jaeger['replicas'] == 1
+assert jaeger['strategy']['type'] == 'Recreate'
+jaeger_pod = jaeger['template']['spec']
+assert jaeger_pod['securityContext']['runAsNonRoot'] is True
+assert jaeger_pod['securityContext']['runAsUser'] == 10001
+assert jaeger_pod['securityContext']['runAsGroup'] == 10001
+assert jaeger_pod['securityContext']['fsGroup'] == 10001
+jaeger_container = next(c for c in jaeger_pod['containers'] if c['name'] == 'jaeger')
+assert jaeger_container['image'] == 'jaegertracing/jaeger:2.20.0'
+assert jaeger_container['args'] == ['--config=/etc/jaeger/config.yaml']
+assert jaeger_container['resources'] == {
+    'requests': {'cpu': '50m', 'memory': '128Mi'},
+    'limits': {'cpu': '1', 'memory': '512Mi'},
+}
+assert jaeger_container['readinessProbe']['tcpSocket']['port'] == 'ui'
+jaeger_ports = {(p['name'], p['containerPort']) for p in jaeger_container['ports']}
+assert jaeger_ports == {('ui', 16686), ('otlp-grpc', 4317), ('otlp-http', 4318)}
+jaeger_service = resources['Service', 'jaeger']['spec']
+service_ports = {(p['name'], p['port'], p['targetPort']) for p in jaeger_service['ports']}
+assert service_ports == {
+    ('ui', 16686, 'ui'), ('otlp-grpc', 4317, 'otlp-grpc'),
+    ('otlp-http', 4318, 'otlp-http'),
+}
+jaeger_pv = resources['PersistentVolume', 'awesome-zero-jaeger']['spec']
+assert jaeger_pv['persistentVolumeReclaimPolicy'] == 'Retain'
+assert jaeger_pv['capacity']['storage'] == '2Gi'
+assert jaeger_pv['accessModes'] == ['ReadWriteOnce']
+assert jaeger_pv['local']['path'] == '/data/awesome-zero-platform/jaeger'
+assert jaeger_pv['claimRef'] == {
+    'namespace': 'awesome-zero-platform', 'name': 'jaeger-badger'
+}
+assert jaeger_pv['nodeAffinity']['required']['nodeSelectorTerms'][0]['matchExpressions'][0] == {
+    'key': 'kubernetes.io/hostname', 'operator': 'In', 'values': ['hk-worker']
+}
+jaeger_pvc = resources['PersistentVolumeClaim', 'jaeger-badger']['spec']
+assert jaeger_pvc['volumeName'] == 'awesome-zero-jaeger'
+assert jaeger_pvc['storageClassName'] == 'awesome-zero-local'
+assert jaeger_pvc['resources']['requests']['storage'] == '2Gi'
+config_volume = next(v for v in jaeger_pod['volumes'] if v['name'] == 'jaeger-config')
+config_map = resources['ConfigMap', config_volume['configMap']['name']]['data']['config.yaml']
+config = yaml.safe_load(config_map)
+assert config['service']['pipelines']['traces'] == {
+    'receivers': ['otlp'], 'processors': ['batch'],
+    'exporters': ['jaeger_storage_exporter'],
+}
+assert config['extensions']['jaeger_query']['storage']['traces'] == 'primary_store'
+badger = config['extensions']['jaeger_storage']['backends']['primary_store']['badger']
+assert badger['directories'] == {'keys': '/badger/keys', 'values': '/badger/values'}
+assert badger['ephemeral'] is False
+assert badger['ttl']['spans'] == '72h'
+assert config['exporters']['jaeger_storage_exporter']['trace_storage'] == 'primary_store'
+assert config['receivers']['otlp']['protocols']['grpc']['endpoint'] == '0.0.0.0:4317'
+assert config['receivers']['otlp']['protocols']['http']['endpoint'] == '0.0.0.0:4318'
+mounts = {m['name']: m for m in jaeger_container['volumeMounts']}
+assert mounts['jaeger-config']['mountPath'] == '/etc/jaeger/config.yaml'
+assert mounts['jaeger-config']['readOnly'] is True
+assert mounts['jaeger-data']['mountPath'] == '/badger'
+data_volume = next(v for v in jaeger_pod['volumes'] if v['name'] == 'jaeger-data')
+assert data_volume['persistentVolumeClaim']['claimName'] == 'jaeger-badger'
 for o in objects:
     assert o['kind'] not in ('Secret', 'Ingress', 'ClusterRole', 'ClusterRoleBinding')
     if o['kind'] == 'Service':
