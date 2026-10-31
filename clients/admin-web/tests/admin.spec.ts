@@ -439,17 +439,16 @@ test('tables and dialogs stay inside narrow viewports; action overflow remains u
   await clickAccountAction(page, /Alice Example/, '详情')
   const drawer = page.getByRole('dialog', { name: '账号详情' })
   await expect(drawer).toBeVisible()
+  // Visibility begins during the slide-in transition. Wait for the drawer to
+  // enter the viewport, with 0.001 CSS pixel tolerance for Chromium precision.
+  await expect.poll(async () => {
+    const bounds = await drawer.boundingBox()
+    if (!bounds) return Infinity
+    return Math.max(bounds.width - 360, -bounds.x, bounds.x + bounds.width - 360)
+  }, { message: 'drawer enters and fits the narrow viewport' }).toBeLessThanOrEqual(0.001)
   const drawerShot = testInfo.outputPath('screenshots', 'account-detail-drawer-360x800.png')
   await mkdir(dirname(drawerShot), { recursive: true })
   await page.screenshot({ path: drawerShot, fullPage: true })
-  const drawerBounds = await drawer.boundingBox()
-  expect(drawerBounds).not.toBeNull()
-  // Chromium transforms may introduce subpixel floating-point noise (e.g.
-  // 360.000015px). Keep the tolerance below one thousandth of a CSS pixel.
-  const subpixelTolerance = 0.001
-  expect(drawerBounds!.width).toBeLessThanOrEqual(360 + subpixelTolerance)
-  expect(drawerBounds!.x).toBeGreaterThanOrEqual(-subpixelTolerance)
-  expect(drawerBounds!.x + drawerBounds!.width).toBeLessThanOrEqual(360 + subpixelTolerance)
   const pageWidth = await page.evaluate(() => document.documentElement.scrollWidth)
   expect(pageWidth).toBeLessThanOrEqual(360)
 })

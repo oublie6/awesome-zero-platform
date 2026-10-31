@@ -165,6 +165,14 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run Admin Web browser tests
         run: npm test
+      - name: Preserve Admin Web browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-web-browser-results
+          path: clients/admin-web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload Admin web failure log
         if: failure() && steps.admin-build.outcome == 'failure'
         uses: actions/upload-artifact@v4
