@@ -44,6 +44,7 @@ type MockOptions = {
   failLogout?: boolean
   expiredPaths?: string[]
   invalidRefresh?: boolean
+  refreshGate?: Promise<void>
   permissions?: Permission[]
 }
 
@@ -97,6 +98,7 @@ async function mockApi(page: Page, options: MockOptions = {}) {
     }
     if (path === '/api/auth/refresh' && request.method() === 'POST') {
       refreshCount += 1
+      await options.refreshGate
       if (options.invalidRefresh || body?.refreshToken !== 'test-refresh') {
         await route.fulfill(fail(401, 'INVALID_REFRESH', 'refresh token expired'))
         return
@@ -274,6 +276,41 @@ test('logout clears the local session even when the server logout request fails'
   expect(api.calls.some(call => call.path === '/api/auth/logout' && call.method === 'POST')).toBe(true)
   expect(await page.evaluate(() => sessionStorage.getItem('awesome-zero-admin.tokens'))).toBeNull()
 })
+
+for (const signInAgain of [false, true]) {
+  test(`late refresh cannot ${signInAgain ? 'replace a newer login' : 'restore a logged-out session'}`, async ({ page }) => {
+    let releaseRefresh!: () => void
+    const refreshGate = new Promise<void>(resolve => { releaseRefresh = resolve })
+    const api = await mockApi(page, { expiredPaths: ['/api/admin/system/overview', '/api/admin/system/configuration'], refreshGate })
+    await installSession(page)
+    try {
+      await page.goto('/dashboard')
+      await expect(page.getByRole('heading', { name: '运行概览' })).toBeVisible()
+      await page.evaluate(() => {
+        const tokens = JSON.parse(sessionStorage.getItem('awesome-zero-admin.tokens') || '{}')
+        sessionStorage.setItem('awesome-zero-admin.tokens', JSON.stringify({ ...tokens, accessToken: 'expired-access' }))
+      })
+      await page.getByRole('menuitem', { name: '系统状态' }).click()
+      await expect.poll(() => api.refreshCount).toBe(1)
+      await page.getByRole('button', { name: 'Platform Admin' }).click()
+      await page.getByText('退出登录', { exact: true }).click()
+      await expect(page).toHaveURL(/\/login$/)
+      if (signInAgain) {
+        await page.getByLabel('身份标识').fill('platform-admin')
+        await page.getByLabel('密码', { exact: true }).fill('correct-horse-battery')
+        await page.getByRole('button', { name: '建立管理会话' }).click()
+        await expect(page).toHaveURL(/\/dashboard$/)
+      }
+      const refreshed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/auth/refresh')
+      releaseRefresh()
+      await (await refreshed).finished()
+      await page.waitForLoadState('networkidle')
+      const tokens = await page.evaluate(() => sessionStorage.getItem('awesome-zero-admin.tokens'))
+      if (signInAgain) expect(JSON.parse(tokens || '{}')).toMatchObject({ accessToken: 'test-access', refreshToken: 'test-refresh' })
+      else expect(tokens).toBeNull()
+    } finally { releaseRefresh() }
+  })
+}
 
 test('route permissions hide links and block direct navigation for unauthorized users', async ({ page }) => {
   await mockApi(page, { permissions: [{ resource: '/admin/system/overview', action: 'GET' }, { resource: '/admin/me', action: 'GET' }] })

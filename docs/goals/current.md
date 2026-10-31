@@ -78,6 +78,7 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 
 ### In progress
 
+- Final auth self-review reproduced two late-refresh defects deterministically: a delayed refresh restored tokens after logout and replaced tokens from a subsequent login (2/2 regressions failed before the fix). Authentication-operation versions now reject stale refresh/login responses and prevent stale cleanup from clearing a newer session; retry paths also check the version. Reverify both regressions and the complete suite, then deploy the resulting source SHA rather than the intermediate form-only image.
 - Final self-review found account form rules missing matching Element Plus prop bindings for username/displayName/email/phone. The premature archive is reverted while preserving the completed live evidence. Bind the four fields, add a regression proving invalid inputs prevent writes, rebuild/redeploy the source-SHA image and repeat affected live acceptance before final archival.
 
 ### Remaining
@@ -86,6 +87,7 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 
 ### Verification status
 
+- Authentication response-version correction: production typecheck/build and all 18 local Chromium tests passed (5.4m). Both deterministic late-refresh regressions failed before the fix and passed afterward; the complete route/viewport matrix also passed. Second-pass review checked stale success/failure cleanup, old-promise finalizers, single-flight preservation, and login/logout generation changes. The intermediate form-only image was imported but not rolled out; final combined source deployment follows this checkpoint.
 - Reopened account-form correction: production typecheck/build passed, and all 16 local Chromium tests passed (4.5m), including the new invalid-input/no-write regression and the six-viewport route matrix. The final archive was reverted before declaring the thread goal complete; updated source deployment/CI is pending.
 | Scope | Evidence |
 | --- | --- |
