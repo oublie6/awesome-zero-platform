@@ -75,9 +75,12 @@ async function main() {
       const shell = bootstrap.shell
       bootstrap.destroy()
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-      return {shellCleared:bootstrap.shell === null, status:shell.hand.status, snapshot:shell.hand.snapshot}
+      return {shellCleared:bootstrap.shell === null, status:shell.hand.status, snapshot:shell.hand.snapshot,
+        contentCleared:cc.director.getScene().getChildByName('Canvas').getChildByName('SafeContent') === null,
+        resizeListener:cc.view.hasEventListener('canvas-resize',bootstrap.layout,bootstrap),
+        designListener:cc.view.hasEventListener('design-resolution-changed',bootstrap.layout,bootstrap)}
     })
-    assert.deepEqual(disposed,{shellCleared:true,status:'disconnected',snapshot:null})
+    assert.deepEqual(disposed,{shellCleared:true,status:'disconnected',snapshot:null,contentCleared:true,resizeListener:false,designListener:false})
     report.disposal = disposed
     assert.deepEqual(errors,[])
     assert.deepEqual(failures,[])

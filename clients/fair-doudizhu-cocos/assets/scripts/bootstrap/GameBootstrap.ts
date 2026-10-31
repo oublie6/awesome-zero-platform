@@ -60,5 +60,9 @@ export class GameBootstrap extends Component {
     view.off('design-resolution-changed', this.layout, this)
     this.shell?.dispose()
     this.shell = null
+    this.content?.destroy()
+    this.content = null
+    this.title = null
+    this.status = null
   }
 }
