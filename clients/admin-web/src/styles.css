@@ -198,3 +198,15 @@ a {
     width: 100% !important;
   }
 }
+
+/* Narrow screens: keep controls reachable without forcing document-wide overflow. */
+@media (max-width: 760px) {
+  .panel, .el-card, .el-tabs, .el-tab-pane { min-width: 0; }
+  .el-table { width: 100%; max-width: 100%; }
+  .el-pagination { flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
+  .el-descriptions__content, .el-descriptions__label { overflow-wrap: anywhere; }
+  .metric-value { overflow-wrap: anywhere; font-size: 22px; }
+  .el-dialog { width: calc(100vw - 24px) !important; max-width: calc(100vw - 24px); margin: 12px auto; }
+  .el-drawer { width: min(100vw, 720px) !important; }
+  .table-actions { flex-wrap: nowrap; }
+}
