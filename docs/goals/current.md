@@ -5,7 +5,7 @@
 - State: in_progress
 - Started: 2026-10-31
 - Completed:
-- Blockers: Full-goal runtime gates still require Creator 3.8.8, WeChat/Douyin developer tools and target devices; none are installed in this Linux environment.
+- Blockers: Official Creator/WeChat/Douyin Windows tools are installed on the data disk. Native Windows Creator import/build and real Web scene checks passed. Mini-game SDK/devices, project-owned app IDs/domains and supported interactive developer-tool environments remain unqualified; Wine startup did not provide usable simulators.
 
 ## Goal
 
@@ -67,13 +67,17 @@ Single primary implementer; use subagents only for independent review or API doc
 - Added a sequential source verification script and Fair Doudizhu client_foundation CI job. New standalone checks pass: game-client-core 26 tests, doudizhu-client 7, Shell/assets 7. Existing unchanged secure-envelope 9 tests also passed separately. Production backend code, data schema and deployments are unchanged.
 - Real Chromium exercised WebHttp login, WebSocketTransport bearer authentication and ping/pong against the real Go service through a temporary local self-signed TLS bridge. Invalid token was rejected; secure entropy and session storage passed; no page errors or tokens in query strings. The existing read-only acceptance account was used and its owned session logged out. TLS bridge/port forwarding/browser processes stopped.
 
+- Installed official Creator 3.8.8, WeChat 2.01.2510260 and Douyin 4.5.7 on the data disk; attempted Wine 6/11 startup sequentially. Creator Wine was stopped at low available memory; WeChat/Douyin did not yield qualified simulators. All owned processes stopped; available memory recovered to ~4.3 GiB. Removed ~2.4 GiB redundant archives/payload/old prefix; data disk ~64%, ~14 GiB free.
+- Native Windows Creator CLI import and all three target builds passed (exit 36); both mini-game game.json outputs verified landscape. Actual generated-config strict TypeScript check passed. Fixed source .js/TS resolution, package exports/library configuration, viewport cropping/framebuffer distortion, portrait font size and UI ownership cleanup.
+- Actual built Web entry passed at 1280×720, 844×390 and 390×844 with framebuffer/display ratio and actual rendered-font thresholds. Component disposal, replacement and parent destruction clear owned UI and view listeners. Final screenshots manually self-reviewed; final browser errors/warnings/request failures are empty. Earlier weak layout passes are superseded, with their defects and regression failures preserved.
+
 ### In progress
 
-- User requested installing the missing environment and testing it. Installed official Creator 3.8.8, WeChat 2.01.2510260 and Douyin 4.5.7 Windows packages under /data/awesome-zero-platform-tools/goal0045, plus Wine/Xvfb/fonts. Wine 6 crashed before project import; Wine 11 reached Creator build-manager initialization but emitted a login-server timeout and used enough memory to leave only ~370 MiB available. Stopped owned Wine processes and recovered ~4.3 GiB available; no OOM observed. Native Windows CI import/build/real-scene browser checks are being added to remove Wine and local resource limits from qualification. IDE startup tests remain sequential and pending; Goal 0045 stays in_progress.
+- Goal 0045 stays in_progress for supported mini-game developer-tool/SDK and real-device qualification. This phase is handed back with verified build/Web runtime paths and explicit platform blockers; it is not archived or reset.
 
 ### Remaining
 
-- Run Creator 3.8.8 actual import, generated-config compile, preview and target builds. Static official declarations and scene-reference tests do not prove engine execution, visual layout or absence of engine warnings.
+- Complete interactive Creator GUI preview and real mobile safe-area/orientation/background checks. Native CLI import, generated-config compile, three target exports and built Web scene runtime have passed; they do not prove interactive editor or hardware qualification.
 - Qualify WeChat/Douyin in developer tools and devices: app IDs/domain whitelist, bearer subprotocol selection, entropy, lifecycle/storage/share and resource cleanup. Do not infer Mini Game entropy from Douyin Mini App documentation.
 - Continue planned protocol integration in Goal 0046: separate durable envelope from current doudizhu-api-command-v1 request DTO, implement mapping, per-account/aggregate sequence/ID allocation and safe retries, private snapshot and terminal-evidence mapping. Do not submit the durable CommandEnvelope directly as a wire request or infer game state from notifications.
 
@@ -81,11 +85,12 @@ Single primary implementer; use subagents only for independent review or API doc
 
 - Node 22.23.4: dependency installs, strict shared-package typecheck/build/tests, official @cocos/creator-types@3.8.8 script typecheck and renderer-free Shell build/tests passed. scripts/verify-client-foundation.sh completed successfully.
 - Source and controlled Fake Adapter tests are separate from the real Chromium HTTP/WSS transport probe. Private runtime evidence and logs: /root/.config/awesome-zero-platform/goal0045-evidence (0700, files 0600), no password/token values.
-- npm run typecheck:creator cannot run successfully: temp/tsconfig.cocos.json is absent because Creator is not installed. No Creator import/preview/build, mini-game developer-tool or device result is marked passed.
-- Final source 0fc7ebb9a31f51ddf1830c6f05021eac474e3a09: CI 41193878945 and Fair Doudizhu 41193878962 both succeeded, including client_foundation, backend unit/race/integration/runtime and manifest interoperability. Publication-only Actions are checked after pushing and reported in the closing handoff.
-- Phase review: docs/operations/goal0045-client-foundation-review.md. Source fixes are 1af0c07, fb9768b and 0fc7ebb. Local tests total 49 (26 core, 7 protocol, 7 Shell/assets, 9 unchanged HPKE); real Chromium HTTP/WSS evidence is separate.
-- Mandatory self-review completed: SDK timing, cancellation/deadlines, stale callbacks, duplicate full-snapshot confirmation, Go phase/TTL compatibility, version/identity boundaries, secret handling and cleanup. Reproduced regressions before correction; remaining editor/device uncertainty is explicitly recorded in the phase report.
+- Accepted implementation source 7da85a9cf6b4cc3c0404dbecdd40b2e7d6cc2539: Cocos Creator Smoke 41208033225, CI 41208033131 and Fair Doudizhu 41208033122 all succeeded. Native job 124557119115 generated Web/WeChat/Douyin artifacts and actual Web screenshots; artifact 13044679501 is retained for seven days with a private local copy. Creator build logs contain documented non-blocking default-compression/plugin-migration warnings; browser warnings are empty.
+- Final native browser report SHA256: c94f2815c3628237525cfe2b8bc689d6b9f384d5008734eac2d995fea6ca0250. Web transport probe remains separately tied to unchanged adapter source 0fc7ebb; it is not a playable-game or production TLS qualification.
+- Phase review: docs/operations/goal0045-client-foundation-review.md. Local/source tests total 49 (26 core, 7 protocol, 7 Shell/assets, 9 unchanged HPKE), plus native builds and real browser lifecycle/layout checks. Official WeChat/Douyin tools were installed/attempted but SDK/device checks are not marked passed.
+
+- Mandatory self-review completed: SDK timing, cancellation/deadlines, stale callbacks, duplicate full-snapshot confirmation, Go phase/TTL compatibility, version/identity boundaries, secret handling and cleanup. Reproduced regressions before correction; additional runtime self-review found and fixed false-ready polling, cropped/stretched canvas, small portrait text and retained UI; engine parent-destruction order and Web host initialization/page lifetime were checked against actual 3.8.8 source. Remaining interactive editor/SDK/device and long-term memory uncertainty is explicitly recorded in the phase report.
 
 ## Completion Report
 
-Phase review and fixes delivered in docs/operations/goal0045-client-foundation-review.md and clients/fair-doudizhu-cocos/PLATFORM-VALIDATION.md. Source checkpoints are pushed directly to main with green Actions. This publication records the final evidence and handoff; its Actions result is verified after pushing. Goal 0045 remains in_progress, not archived/reset: Creator 3.8.8 import/preview/target builds, developer tools/devices, Douyin Mini Game entropy and subsequent Goal 0046 protocol integration remain explicitly open. No full game or platform-runtime completion is claimed.
+Phase review and fixes delivered in docs/operations/goal0045-client-foundation-review.md and clients/fair-doudizhu-cocos/PLATFORM-VALIDATION.md. Verified implementation source 7da85a9 is pushed directly to main with green CI, Fair Doudizhu and native Cocos Creator Smoke. The final publication updates only evidence/docs/notices; its Actions result is checked after pushing and recorded in the closing handoff. Goal 0045 remains in_progress, not archived/reset: interactive editor preview, supported developer-tool SDK/device qualification, Douyin Mini Game entropy and later Goal 0046 identity/protocol integration remain open. No playable game or mini-game runtime completion is claimed. Existing Go services, schema, deployments and Admin Web are unchanged.

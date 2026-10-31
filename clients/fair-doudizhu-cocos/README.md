@@ -18,6 +18,8 @@ actual Shell and scene/meta references. `typecheck:shell` compiles only the
 renderer-free Shell/composition code. Neither check starts the Cocos engine.
 The local `file:` dependencies resolve built `dist` ESM files; build the packages
 before importing the project. Do not point Creator at unbuilt TypeScript packages.
+Local asset imports use their actual `.ts` extension for Creator; the standalone
+TypeScript build rewrites these to `.js` for Node ESM.
 
 ## Creator import and preview (requires installed editor)
 
@@ -38,9 +40,30 @@ before importing the project. Do not point Creator at unbuilt TypeScript package
 Stable `.meta` files are committed; `library`, `temp`, `local`, `profiles` and
 build outputs remain ignored. Entry scene structure follows the official 3.8.8
 [2D template](https://github.com/cocos/cocos-engine/blob/v3.8.8/editor/assets/default_file_content/scene/scene-2d.scene).
+Template attribution is retained in [third-party notices](THIRD-PARTY-NOTICES.md).
 Actual editor/build/runtime results are tracked in
 [platform validation](PLATFORM-VALIDATION.md) and the
 [phase review](../../docs/operations/goal0045-client-foundation-review.md).
+
+## Native Windows build and runtime check
+
+The `Cocos Creator Smoke` workflow installs the official pinned 3.8.8 Windows
+archive, imports/builds this project, checks the generated TypeScript configuration,
+starts the real Web scene in Chromium, and exports both mini-game targets in sequence.
+Logs, per-target build reports, artifacts and browser screenshots are retained as
+`cocos-creator-web-evidence`. Mini-game exports use Creator's default test app IDs;
+developer-tool qualification needs project-owned IDs and domain configuration.
+Exports do not prove SDK/device compatibility.
+
+To use an installed editor from repository root in PowerShell:
+
+```powershell
+./scripts/verify-cocos-runtime.ps1 -CreatorExe 'C:/tools/Creator/CocosCreator.exe' -OutputRoot 'C:/temp/cocos-smoke'
+# Optional -Platform: wechatgame or bytedance-mini-game
+```
+
+The check requires Creator's documented success exit code 36 and a target entry
+artifact. It does not provide app credentials or bypass editor/platform login.
 
 ## Entropy and platform differences
 
