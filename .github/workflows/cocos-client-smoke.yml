@@ -57,8 +57,12 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $browser = Join-Path $env:RUNNER_TEMP 'cocos-browser'
-          npm install --prefix $browser --no-save --package-lock=false --no-audit --no-fund playwright@1.64.1
-          if ($LASTEXITCODE -ne 0) { throw 'Browser driver install failed' }
+          New-Item -ItemType Directory -Force -Path $browser | Out-Null
+          Push-Location $browser
+          try {
+            npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.64.1
+            if ($LASTEXITCODE -ne 0) { throw 'Browser driver install failed' }
+          } finally { Pop-Location }
           $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $env:RUNNER_TEMP 'cocos-browser-cache'
           & "$browser\node_modules\.bin\playwright.cmd" install chromium
           if ($LASTEXITCODE -ne 0) { throw 'Chromium install failed' }
