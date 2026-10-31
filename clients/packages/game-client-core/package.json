@@ -15,6 +15,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./web": {
+      "types": "./dist/web.d.ts",
+      "import": "./dist/web.js"
+    },
+    "./platform": {
+      "types": "./dist/platform.d.ts",
+      "import": "./dist/platform.js"
+    },
+    "./minigame": {
+      "types": "./dist/minigame.d.ts",
+      "import": "./dist/minigame.js"
     }
   }
 }
