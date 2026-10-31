@@ -7,11 +7,15 @@ on:
     paths:
       - '.github/workflows/cocos-client-smoke.yml'
       - 'scripts/verify-cocos-*'
+      - 'scripts/verify-client-foundation.sh'
       - 'clients/fair-doudizhu-cocos/assets/**'
       - 'clients/fair-doudizhu-cocos/package*.json'
       - 'clients/packages/game-client-core/src/**'
+      - 'clients/packages/game-client-core/package*.json'
       - 'clients/packages/doudizhu-client/src/**'
+      - 'clients/packages/doudizhu-client/package*.json'
       - 'clients/packages/secure-envelope/src/**'
+      - 'clients/packages/secure-envelope/package*.json'
 
 permissions:
   contents: read
