@@ -1,5 +1,5 @@
 import { _decorator, Color, Component, Label, Layers, Node, SafeArea, UITransform, view } from 'cc'
-import { GameClientShell } from '../game/GameClientShell.js'
+import { GameClientShell } from '../game/GameClientShell.ts'
 
 const { ccclass } = _decorator
 
