@@ -7,6 +7,8 @@
   },
   "private": true,
   "dependencies": {
-    "@awesome-zero-platform/secure-envelope": "file:../packages/secure-envelope"
+    "@awesome-zero-platform/secure-envelope": "file:../packages/secure-envelope",
+    "@awesome-zero-platform/game-client-core": "file:../packages/game-client-core",
+    "@awesome-zero-platform/doudizhu-client": "file:../packages/doudizhu-client"
   }
 }
