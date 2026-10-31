@@ -28,6 +28,7 @@ class MiniVault implements SessionVault {
     return typeof raw === 'string' && raw ? raw : null
   }
   async save(token: string): Promise<void> {
+    if (!token) throw new Error('empty session token')
     if (!this.sdk.setStorageSync) throw new Error('secure session storage unsupported')
     this.sdk.setStorageSync(this.key, token)
   }
