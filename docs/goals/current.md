@@ -59,6 +59,7 @@ Single primary implementer; use subagents only for independent review or API doc
 ### Completed
 
 - Cross-platform design accepted and documented.
+- ChatGPT committed first-pass pure TypeScript packages: `clients/packages/game-client-core` (capability ports, secure entropy and socket URL guards) and `clients/packages/doudizhu-client` (server-versioned hand store, reconnect-state guard and command envelope validation). Added standalone Node test suites and README files for both. These are foundations, not full Cocos runtime or platform adapters.
 
 ### In progress
 
@@ -66,11 +67,11 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### Remaining
 
-- Foundation implementation and verification.
+- Codex independent test execution (`npm install`, `npm test`, typecheck for both packages), dependency audit and fixes; wire actual platform adapters and Cocos bootstrap; validate platform SDK/Creator tooling and real runtime. Final archive only after required validation.
 
 ### Verification status
 
-- Not started.
+- Source committed; runtime/CI verification of new packages not yet established. No claim of Web/WeChat/Douyin build compatibility yet.
 
 ## Completion Report
 
