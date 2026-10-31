@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { DataAnalysis, User, Key, Setting, Document, Lock, Fold, Expand, SwitchButton } from '@element-plus/icons-vue'
@@ -7,7 +7,11 @@ import { DataAnalysis, User, Key, Setting, Document, Lock, Fold, Expand, SwitchB
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
-const collapsed = ref(false)
+const collapsed = ref(typeof window !== 'undefined' && window.innerWidth <= 760)
+const mobile = ref(typeof window !== 'undefined' && window.innerWidth <= 760)
+function syncViewport() { mobile.value = window.innerWidth <= 760; if (mobile.value) collapsed.value = true }
+onMounted(() => { window.addEventListener('resize', syncViewport) })
+watch(() => route.path, () => { if (mobile.value) collapsed.value = true })
 const title = computed(() => String(route.meta.title || 'Admin'))
 
 onMounted(() => auth.loadMe().catch(() => router.replace('/login')))
@@ -72,7 +76,7 @@ async function signOut() {
 <style scoped>
 .shell {
   min-height: 100vh;
-  min-width: 760px;
+  min-width: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
 }
@@ -216,5 +220,17 @@ main {
   .top-actions {
     gap: 10px;
   }
+}
+
+@media (max-width: 760px) {
+  .shell { grid-template-columns: 64px minmax(0, 1fr); }
+  .sidebar, .sidebar:not(.collapsed) { width: 64px; }
+  .brand { padding: 0 12px; }
+  .brand-copy { display: none; }
+  .topbar { padding: 0 10px; }
+  .content { padding: 12px; }
+  .user-trigger { max-width: 110px; }
+  .top-actions .el-tag { display: none; }
+  .crumb b { padding: 0 3px; }
 }
 </style>
