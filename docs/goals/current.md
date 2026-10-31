@@ -5,7 +5,7 @@
 - State: in_progress
 - Started: 2026-10-31
 - Completed:
-- Blockers:
+- Blockers: Authenticated live browser acceptance is pending a known safe Admin test account. The live bootstrap endpoint reports `available: false`, and no test credentials were available in this run.
 
 ## Goal
 
@@ -65,27 +65,39 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 
 ### Completed
 
-- Read the full `AGENTS.md` and current-goal template; confirmed Goal 0043 is archived and no other current goal was active.
-- Confirmed a clean `main` at `43da912`, then ran `git pull --ff-only`; synchronized to `bd18019` with clean worktree.
-- Read the Admin platform architecture, Admin API contract, Admin Web operations/deployment instructions, Kubernetes Admin Web manifest and server profile docs. Confirmed the known latest Admin Web change at `bd18019b` is a mobile sidebar fix.
+- Read the full `AGENTS.md`, this goal and all referenced architecture, API, operations, deployment, manifest and server-profile documents. Started from a clean, synchronized `main` at `bd18019`.
+- Audited the Admin Web API client, token vault, auth store, route guards, layout/navigation, all eleven views, Element Plus usage, styles, Vite/build configuration, Docker/Nginx configuration and Kubernetes baseline.
+- Fixed verified gaps across session refresh and logout cleanup, stale/cancelled reads, permission-filtered navigation/actions, route denial handling, error/retry states, account/role/authorization workflows, confirmations, form validation, keyboard focus, mobile navigation and responsive layouts. Kept server authorization authoritative and retained the existing API contract.
+- Added deterministic Playwright coverage for login, concurrent expired-token refresh/retry, refresh failure, logout failure, route permissions, account CRUD/search/pagination/session revocation, roles/permissions, policy confirmation, Dashboard/bootstrap retries, mobile navigation and narrow dialog/table layouts.
+- Reduced the initial JS bundle through route/component splitting and on-demand Element Plus registration. The production build typechecks and emits no >500 kB chunk warning; largest emitted JS asset is 86.17 kB (29.33 kB gzip).
+- Added an isolated Admin Web server profile containing only the Admin Web Deployment and Service, one replica pinned to `hk-worker`, `Recreate`, `imagePullPolicy: Never`, and a full-source-SHA image. The cluster node has one filesystem-backed disk; this stateless UI uses node ephemeral storage and adds no PV, PVC or data mount.
+- Built and imported the full-SHA image into the target node's containerd, deployed it, and verified rollout Ready at 1/1 on `hk-worker`. Updated after CI exposed a 768px profile overflow and an asynchronous refresh-test race; the tablet layout and polling assertion are fixed and the updated image is now deployed.
+- Verified live `/health` (200), static JS (200), SPA `/accounts` fallback (200), Nginx `/api` proxy to the real bootstrap status endpoint (`available: false`), and unauthenticated `/admin/me`, `/admin/accounts`, `/admin/roles` and `/admin/audit/events` API calls (401). Real Chromium checked login/bootstrap at all six required widths with no console, page or request errors and no page-level horizontal overflow. Protected `/accounts` redirects to login.
+- Confirmed `app-api` Deployment UID, generation and images are unchanged; PVC/PV inventory is unchanged; temporary image-import and browser-runtime containers/pods were removed. Rollback is documented, and the prior Admin Web ReplicaSet remains available to `kubectl rollout undo`.
 
 ### In progress
 
-- Source/deployment inventory and gap analysis. Confirmed live cluster currently has no Admin Web Deployment or Service, so deployment needs an isolated server profile rather than applying the default two-replica base.
-- Checking available local/containerized Node and Chromium tooling, and inspecting all screens, layouts, API/session code, Docker/Nginx and deployment assets.
+- Final live acceptance is limited to authenticated Admin Web flows. Bootstrap is disabled or already completed, and no safe existing Admin test credentials were available; no account was created and no production data was changed.
 
 ### Remaining
 
-- Complete source/API/build/deploy audit and resolve browser tool availability.
-- Implement and verify fixes and automated coverage.
-- Run real Chromium viewport/state acceptance, correct issues, deploy SHA-pinned image and run live acceptance.
-- Complete self-review, archive goal, commit/push and verify CI.
+- Obtain an authorized, non-destructive Admin test account (or a secure way to use one) and run live login, permission, account/role/audit route and safe read-only operation checks. Do not create or mutate production accounts to bypass the unavailable credentials.
+- Complete the goal only after that live authenticated acceptance passes; then archive Goal 0044 and reset the current-goal template.
 
 ### Verification status
 
-- Initialization, repository state and referenced documentation: passed.
-- Frontend, browser and Kubernetes acceptance: not started.
+- Local `npm run build` (TypeScript typecheck + Vite production build): passed; no >500 kB chunk warning.
+- Local Playwright Chromium: 15/15 passed, including all 11 routes across 1920x1080, 1440x900, 1024x768, 768x1024, 390x844 and 360x800; captured representative login, bootstrap, account, error, empty, modal and drawer states under ignored `clients/admin-web/test-results/`.
+- GitHub Actions: commit `ba06f6dfe4062de920b2cfb07707e9ac77b844f3` initially failed the refresh-count timing assertion and found `/profile` overflow at 768px. Fixed both in `30db007875f7318fdcc748366042d63e3e3ddbf0`; its CI run `41162217250` completed successfully, including Admin Web browser tests, Go unit/race, integration, secure-envelope and Production Compose runtime acceptance.
+- Kustomize render and live diff: exactly the intended Deployment and Service; final diff is empty after applying the profile. Deployment image tag is the full source SHA `30db007875f7318fdcc748366042d63e3e3ddbf0`; containerd image ID is `sha256:5bf67c73071caeadc7a46342cd4cc077ae9d04ccf305c9d5665a4b14e2cd11b5`.
+- Live cluster HTTP/Nginx and real-Chromium checks: passed for health, static asset, history fallback, API proxy and safe public login/bootstrap flow at all six widths. Authenticated routes and operations remain unverified because no test credentials were available; mocked browser tests do not substitute for those checks.
+- Before/after safety checks: `app-api` remains UID `f04fe952-7afa-49b0-8efe-0daa92c30705`, generation 6 and the same app-api/Filebeat images; PVC/PV inventory unchanged. No MySQL, Redis, Elasticsearch, Jaeger or persistent volume resources were modified.
+- `git diff --check`: passed. Full Actions status is green for source checkpoint `30db007875f7318fdcc748366042d63e3e3ddbf0`; the server-profile and goal-report commit is documentation/deployment configuration and will trigger its own Actions run when pushed.
 
 ## Completion Report
 
-Not started.
+Goal remains in progress pending authenticated live acceptance. Changes are reusable client integration and deployment configuration; no backend/module/database contracts were changed. Source commits pushed to `main`: `ba06f6d` and `30db007`. The corrected source is deployed from its full SHA and CI is green.
+
+Self-review covered auth/token state transitions, coalesced refresh and retry ordering, stale requests and abort cleanup, API payloads against the documented contract, route/action presentation guards, validation boundaries, destructive-action confirmations, recovery/error paths, mobile/tablet bounds, Docker/Nginx assets, exact rendered Kubernetes resources, node placement and rollback. The second-pass review fixed the 768px two-column overflow and made the refresh test wait for the asynchronous retry. No frontend condition is treated as an authorization boundary. No production account operation was performed.
+
+Remaining uncertainty: the live login and authorized account/role/audit workflows could not be exercised without an authorized test account; server-side access was verified to return 401 without credentials. Local simulated-browser coverage and live unauthenticated checks are reported separately.
