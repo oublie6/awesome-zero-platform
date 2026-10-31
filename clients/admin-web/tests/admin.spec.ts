@@ -330,7 +330,12 @@ test('account create, edit, disable confirmation and detail drawer work', async 
   await dialog.getByLabel('初始密码').fill('correct-horse-battery')
   await dialog.getByRole('button', { name: '保存' }).click()
   await expect.poll(() => api.calls.some(call => call.path === '/api/admin/accounts' && call.method === 'POST' && call.body?.username === 'new-user')).toBe(true)
+  // Wait for creation and the list refresh before targeting a row. The table
+  // reuses row DOM nodes when the newly created account is inserted first.
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByRole('row', { name: /New User new-user/ })).toBeVisible()
   const alice = page.getByRole('row', { name: /Alice Example/ })
+  await expect(alice).toContainText(seedAccounts[0].id)
   await alice.getByRole('button', { name: '编辑' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.getByRole('dialog').getByLabel('显示名称').fill('Alice Updated')

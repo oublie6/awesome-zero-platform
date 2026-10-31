@@ -77,6 +77,7 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 
 ### In progress
 
+- Artifact `13030864457` from CI `41171791853` proves an account-test race: it clicked a reused table row before the create-triggered refresh finished, sending PATCH to newly created account `...0100` instead of Alice `...0001`. The test now waits for the create dialog to close and the new row to appear, then checks Alice's UUID before clicking edit. The drawer test and the other 13 tests passed; artifact upload succeeded (21 files).
 - CI `41171626998` showed the new right-edge check running during the drawer's slide-in transition (right edge 413.197px); the other 14 browser tests passed. The bounds assertion now polls until the drawer enters and fits the viewport before capturing its screenshot, retaining the 0.001 CSS pixel tolerance and the exact document-width check.
 - Preserving CI browser screenshots and failure traces as the `admin-web-browser-results` artifact (7-day retention), because local Playwright output is replaced by subsequent test runs and CI previously did not upload browser evidence.
 - Resumed on user request. Latest report-only checkpoint `2be84fd` exposed a Chromium bounding-box precision failure (`360.000015px` versus `360px`); fixing only the assertion tolerance to 0.001 CSS pixel while also checking both drawer edges. The integer document-width assertion stays exact. Its other 14 browser tests and Go jobs passed.
@@ -89,6 +90,7 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 
 ### Verification status
 
+- Focused account create/edit/disable/detail Chromium flow after waiting for the post-create row refresh: passed (1/1, 25.4s). The UUID-specific PATCH assertion is retained, so editing a different row still fails. The CI trace was inspected to identify the actual request target rather than weakening that assertion.
 - Focused Chromium table/dialog/drawer test with transition-aware bounds polling: passed (1/1, 17.3s). Self-review confirmed that a drawer remaining outside the viewport fails the polling assertion; no arbitrary delay or whole-pixel allowance was added. CI evidence upload is configured for both successful screenshots and failure diagnostics.
 - Resume verification: focused Chromium table/dialog/drawer test passed (1/1, 21.2s) after adding the subpixel precision tolerance and edge checks. The first local launch lacked the correct browser-cache environment path; rerunning with the existing Chromium cache succeeded. This change affects tests only; deployed application assets are unchanged. Full CI rerun follows the checkpoint push.
 - Local `npm run build` (TypeScript typecheck + Vite production build): passed; no >500 kB chunk warning.
