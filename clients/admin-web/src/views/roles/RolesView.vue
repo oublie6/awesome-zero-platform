@@ -24,8 +24,8 @@ const canReadResources = auth.can('/admin/authorization/resources', 'GET')
 const canReadRolePermissions = auth.can('/admin/roles/_/permissions', 'GET')
 const formRef = ref()
 const formRules = {
-  code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }, { pattern: /^[a-z][a-z0-9_]{1,63}$/, message: '使用小写字母开头的字母、数字或下划线', trigger: 'blur' }],
-  displayName: [{ required: true, message: '请输入显示名称', trigger: 'blur' }],
+  code: [{ required: true, whitespace: true, message: '请输入角色编码', trigger: 'blur' }],
+  displayName: [{ required: true, whitespace: true, message: '请输入显示名称', trigger: 'blur' }],
 }
 let listController: AbortController | undefined
 let permissionController: AbortController | undefined

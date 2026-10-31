@@ -41,17 +41,21 @@ const formRules = {
     if (![form.username, form.email, form.phone].some(value => value.trim())) done(new Error('用户名、邮箱或手机号至少填写一项'))
     else done()
   }, trigger: 'blur' }],
-  displayName: [{ required: true, message: '请输入显示名称', trigger: 'blur' }],
+  displayName: [{ required: true, whitespace: true, message: '请输入显示名称', trigger: 'blur' }],
   password: [{ validator: (_rule: unknown, value: string, done: (error?: Error) => void) => {
     if (!editing.value && new TextEncoder().encode(value || '').length < 8) done(new Error('密码至少需要 8 个字节'))
     else done()
   }, trigger: 'blur' }],
   email: [{ validator: (_rule: unknown, value: string, done: (error?: Error) => void) => {
-    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) done(new Error('请输入有效邮箱地址'))
+    const email = (value || '').trim()
+    // Keep basic client checks compatible with the server's net/mail parser,
+    // including local domains and quoted local parts. The server validates RFC syntax.
+    if (email && (email.length > 320 || /[^\x00-\x7f]/.test(email) || !/^[^@]+@[^@]+$/.test(email))) done(new Error('请输入有效邮箱地址'))
     else done()
   }, trigger: 'blur' }],
   phone: [{ validator: (_rule: unknown, value: string, done: (error?: Error) => void) => {
-    if (value && !/^\+[1-9]\d{1,14}$/.test(value)) done(new Error('手机号须使用 E.164 格式'))
+    const phone = (value || '').trim()
+    if (phone && !/^\+[1-9]\d{1,14}$/.test(phone)) done(new Error('手机号须使用 E.164 格式'))
     else done()
   }, trigger: 'blur' }],
 }
