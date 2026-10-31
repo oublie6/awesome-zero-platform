@@ -35,7 +35,8 @@ export class MiniSocketTransport implements SocketTransport {
     if (!accessToken) return Promise.reject(new Error('access token required'))
     return new Promise((resolve, reject) => {
       let settled = false
-      const socket = this.sdk.connectSocket({
+      let socket: MiniSocket
+      socket = this.sdk.connectSocket({
         url, protocols: ['bearer', accessToken],
         success: () => {
           if (settled) return
