@@ -10,6 +10,7 @@ const items = ref<Account[]>([])
 const roles = ref<Role[]>([])
 const total = ref(0)
 const loading = ref(false)
+const loadError = ref('')
 const dialog = ref(false)
 const detail = ref(false)
 const editing = ref<Account | null>(null)
@@ -20,11 +21,14 @@ const form = reactive({ username: '', email: '', phone: '', displayName: '', sta
 
 async function load() {
   loading.value = true
+  loadError.value = ''
   try {
     const [page, roleList] = await Promise.all([adminApi.accounts(query), adminApi.roles()])
     items.value = page.items
     total.value = page.total
     roles.value = roleList
+  } catch (error) {
+    loadError.value = error instanceof Error ? error.message : '加载账号列表失败'
   } finally {
     loading.value = false
   }
@@ -105,6 +109,8 @@ onMounted(load)
   </PageHeader>
 
   <div class="panel">
+    <el-alert v-if="loadError" type="error" :title="loadError" :closable="false" show-icon style="margin-bottom:12px" />
+    <el-button v-if="loadError" @click="load" style="margin-bottom:12px">重试加载</el-button>
     <div class="toolbar">
       <el-input v-model="query.search" clearable placeholder="用户名 / 邮箱 / 手机号 / 显示名" style="width: 320px" />
       <el-select v-model="query.status" clearable placeholder="状态" style="width: 130px">
