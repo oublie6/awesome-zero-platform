@@ -28,6 +28,7 @@ export class GameClientShell {
   async connect(socket: SocketTransport, endpoint: string, token: string): Promise<void> {
     if (this.disposed) throw new Error('client disposed')
     this.connection?.close()
+    if (this.hand.status !== 'disconnected') this.hand.setStatus('disconnected')
     this.connection = new ConnectionManager(socket)
     this.hand.setStatus('reconnecting')
     try {
