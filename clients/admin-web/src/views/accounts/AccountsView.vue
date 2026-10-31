@@ -262,10 +262,10 @@ onMounted(load)
   <el-dialog v-model="dialog" :title="editing ? '编辑账号' : '创建账号'" width="650">
     <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
       <div class="grid grid-2">
-        <el-form-item label="用户名"><el-input v-model="form.username" /></el-form-item>
-        <el-form-item label="显示名称"><el-input v-model="form.displayName" /></el-form-item>
-        <el-form-item label="邮箱"><el-input v-model="form.email" /></el-form-item>
-        <el-form-item label="手机号（E.164）"><el-input v-model="form.phone" /></el-form-item>
+        <el-form-item label="用户名" prop="username"><el-input v-model="form.username" /></el-form-item>
+        <el-form-item label="显示名称" prop="displayName"><el-input v-model="form.displayName" /></el-form-item>
+        <el-form-item label="邮箱" prop="email"><el-input v-model="form.email" /></el-form-item>
+        <el-form-item label="手机号（E.164）" prop="phone"><el-input v-model="form.phone" /></el-form-item>
         <el-form-item v-if="!editing" label="初始密码" prop="password"><el-input v-model="form.password" type="password" show-password /></el-form-item>
         <el-form-item v-if="!editing" label="初始角色">
           <el-select v-model="form.roles" multiple style="width: 100%">
