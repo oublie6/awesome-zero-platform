@@ -55,3 +55,32 @@ export function websocketURL(endpoint: string): URL {
   }
   return url
 }
+
+/** A platform-neutral connection manager; credentials are never part of the URL. */
+export class ConnectionManager {
+  private connection: SocketConnection | null = null
+  private unsubscribe: Unsubscribe[] = []
+  private generation = 0
+  constructor(private readonly socket: SocketTransport) {}
+  async open(url: string, token: string, onMessage: (message: string) => void, onClose: () => void): Promise<void> {
+    websocketURL(url)
+    this.close()
+    const generation = this.generation
+    const connection = await this.socket.connect(url, token)
+    if (generation !== this.generation) { connection.close(); return }
+    this.connection = connection
+    this.unsubscribe.push(connection.onMessage(onMessage), connection.onClose(() => {
+      if (this.generation === generation) { this.close(); onClose() }
+    }))
+  }
+  async send(value: unknown): Promise<void> {
+    if (!this.connection) throw new Error('socket disconnected')
+    await this.connection.send(JSON.stringify(value))
+  }
+  close(): void {
+    this.generation++
+    this.unsubscribe.splice(0).forEach(fn => fn())
+    this.connection?.close()
+    this.connection = null
+  }
+}
