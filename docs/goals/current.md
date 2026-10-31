@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: in_progress
+- State: blocked
 - Started: 2026-10-31
 - Completed:
 - Blockers: Authenticated live browser acceptance is pending a known safe Admin test account. The live bootstrap endpoint reports `available: false`, and no test credentials were available in this run.
@@ -92,11 +92,11 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 - Kustomize render and live diff: exactly the intended Deployment and Service; final diff is empty after applying the profile. Deployment image tag is the full source SHA `30db007875f7318fdcc748366042d63e3e3ddbf0`; containerd image ID is `sha256:5bf67c73071caeadc7a46342cd4cc077ae9d04ccf305c9d5665a4b14e2cd11b5`.
 - Live cluster HTTP/Nginx and real-Chromium checks: passed for health, static asset, history fallback, API proxy and safe public login/bootstrap flow at all six widths. Authenticated routes and operations remain unverified because no test credentials were available; mocked browser tests do not substitute for those checks.
 - Before/after safety checks: `app-api` remains UID `f04fe952-7afa-49b0-8efe-0daa92c30705`, generation 6 and the same app-api/Filebeat images; PVC/PV inventory unchanged. No MySQL, Redis, Elasticsearch, Jaeger or persistent volume resources were modified.
-- `git diff --check`: passed. Full Actions status is green for source checkpoint `30db007875f7318fdcc748366042d63e3e3ddbf0`; the server-profile and goal-report commit is documentation/deployment configuration and will trigger its own Actions run when pushed.
+- `git diff --check`: passed. All Actions for server-profile/report checkpoint `60984449420ed1f85fdf46c30fc80af0dfd5c2f6` passed: CI `41163066284` (including browser, unit/race, integration and runtime), Fair Doudizhu `41163066272`, and Kubernetes Observability Manifests `41163066331`. The original Go setup steps eventually completed without restarting the runs.
 
 ## Completion Report
 
-Goal remains in progress pending authenticated live acceptance. Changes are reusable client integration and deployment configuration; no backend/module/database contracts were changed. Source commits pushed to `main`: `ba06f6d` and `30db007`. The corrected source is deployed from its full SHA and CI is green.
+Goal is blocked pending authenticated live acceptance. The same missing test-credential condition was confirmed across three consecutive goal turns; no authorized test account or secure credential source has been provided. Changes are reusable client integration and deployment configuration; no backend/module/database contracts were changed. Source commits pushed to `main`: `ba06f6d` and `30db007`; deployment/report checkpoint `6098444` is pushed and all its Actions passed. The corrected source is deployed from its full SHA. Do not archive or mark the goal completed until the remaining live authenticated checks pass.
 
 Self-review covered auth/token state transitions, coalesced refresh and retry ordering, stale requests and abort cleanup, API payloads against the documented contract, route/action presentation guards, validation boundaries, destructive-action confirmations, recovery/error paths, mobile/tablet bounds, Docker/Nginx assets, exact rendered Kubernetes resources, node placement and rollback. The second-pass review fixed the 768px two-column overflow and made the refresh test wait for the asynchronous retry. No frontend condition is treated as an authorization boundary. No production account operation was performed.
 
