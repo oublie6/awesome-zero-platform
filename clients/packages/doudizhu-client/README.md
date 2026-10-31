@@ -13,7 +13,7 @@ casts or submits the durable envelope as a wire request. Goal 0046 must implemen
 explicit mapping and per-account/aggregate sequence allocation; callers currently
 supply command IDs/sequences. `createCommand` freezes a copy so retries can reuse
 identical metadata/payload. Its validity window is capped at the current default
-60 seconds; game payload legality is always checked by the server.
+two minutes (application default, distinct from dispatcher-generated timestamps); game payload legality is always checked by the server.
 
 HandStore clones/freezes confirmed snapshots, ignores equal/older versions and
 prevents submitting terminal hands. Router checks event/result protocol versions;

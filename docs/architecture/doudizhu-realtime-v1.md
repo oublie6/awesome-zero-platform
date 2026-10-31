@@ -8,7 +8,7 @@ Goal 0032 exposes the authenticated Goal 0031 Doudizhu dispatcher through the ex
 
 Client requests:
 
-- `doudizhu.command` — payload is the exact Goal 0031 `doudizhu-command-request-v1` object.
+- `doudizhu.command` — payload is the exact Goal 0031 `doudizhu-api-command-v1` object.
 - `doudizhu.hand.sync` — payload is `doudizhu-realtime-sync-v1` with `handId` and optional `knownVersion`.
 
 Server responses and account-targeted events:

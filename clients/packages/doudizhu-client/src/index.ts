@@ -97,7 +97,7 @@ export function requireValidCommand(command: CommandEnvelope): void {
   if (!utcMillis.test(command.issuedAt) || !utcMillis.test(command.expiresAt) ||
       !Number.isFinite(issued) || !Number.isFinite(expires) ||
       new Date(issued).toISOString() !== command.issuedAt || new Date(expires).toISOString() !== command.expiresAt ||
-      expires <= issued || expires - issued > 60_000) throw new Error('invalid command envelope time window')
+      expires <= issued || expires - issued > 120_000) throw new Error('invalid command envelope time window')
 }
 
 export type GameMessageType =

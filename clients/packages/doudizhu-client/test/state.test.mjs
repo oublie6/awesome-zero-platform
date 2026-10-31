@@ -41,8 +41,9 @@ test('duplicate snapshots do not replace state and consumers cannot mutate accep
 })
 test('invalid command shapes, names, actor claims and timestamps fail closed', () => {
   const c={v:'fair-doudizhu-command-v1',name:'doudizhu.room.ready.set.v1',commandId:'id',aggregateType:'room',aggregateId:'room_1',clientSeq:1,expectedVersion:1,issuedAt:'2026-10-31T00:00:00.000Z',expiresAt:'2026-10-31T00:01:00.000Z',payload:{ready:true}}
-  for(const patch of [{name:'unknown.v1'},{aggregateType:'hand'},{payload:null},{payload:[]},{payload:{actorId:'fake'}},{seat:1},{issuedAt:'2026-02-30T00:00:00.000Z'},{expiresAt:'2026-10-31T00:02:00.000Z'},{clientSeq:NaN},{commandId:' '},{expectedVersion:0}]) assert.throws(()=>requireValidCommand({...c,...patch}),/invalid/)
+  for(const patch of [{name:'unknown.v1'},{aggregateType:'hand'},{payload:null},{payload:[]},{payload:{actorId:'fake'}},{seat:1},{issuedAt:'2026-02-30T00:00:00.000Z'},{expiresAt:'2026-10-31T00:02:00.001Z'},{clientSeq:NaN},{commandId:' '},{expectedVersion:0}]) assert.throws(()=>requireValidCommand({...c,...patch}),/invalid/)
   assert.throws(()=>requireValidCommand(null),/invalid/)
+  assert.doesNotThrow(()=>requireValidCommand({...c,expiresAt:'2026-10-31T00:02:00.000Z'}))
 })
 
 test('router gates wire versions and old unsubscribe cannot remove a replacement listener', async()=>{
