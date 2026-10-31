@@ -7,6 +7,8 @@ import { adminApi } from '@/api/admin'
 import type { Permission, Resource, Role } from '@/types/admin'
 
 const roles = ref<Role[]>([])
+const loadError = ref('')
+const loading = ref(false)
 const resources = ref<Resource[]>([])
 const selected = ref<Role | null>(null)
 const permissions = ref<Permission[]>([])
@@ -15,8 +17,14 @@ const editing = ref<Role | null>(null)
 const form = reactive({ code: '', displayName: '', description: '' })
 
 async function load() {
-  ;[roles.value, resources.value] = await Promise.all([adminApi.roles(), adminApi.resources()])
-  if (!selected.value && roles.value[0]) await select(roles.value[0])
+  loading.value = true
+  loadError.value = ''
+  try {
+    ;[roles.value, resources.value] = await Promise.all([adminApi.roles(), adminApi.resources()])
+    if (!selected.value && roles.value[0]) await select(roles.value[0])
+  } catch (error) {
+    loadError.value = error instanceof Error ? error.message : '角色信息加载失败'
+  } finally { loading.value = false }
 }
 
 async function select(role: Role) {
@@ -71,7 +79,9 @@ onMounted(load)
     <el-button type="primary" @click="open()">创建角色</el-button>
   </PageHeader>
 
-  <div class="role-grid">
+  <el-alert v-if="loadError" type="error" :title="loadError" :closable="false" show-icon style="margin-bottom:12px" />
+  <el-button v-if="loadError" @click="load" style="margin-bottom:12px">重试加载</el-button>
+  <div class="role-grid" v-loading="loading">
     <section class="panel role-list">
       <div v-for="role in roles" :key="role.code" :class="['role-item', { active: selected?.code === role.code }]" @click="select(role)">
         <div class="role-copy">
