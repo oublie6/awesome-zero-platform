@@ -38,14 +38,25 @@ jobs:
       - name: Prepare and verify client packages
         shell: bash
         run: bash scripts/verify-client-foundation.sh
+      - name: Restore official Creator archive
+        id: creator_archive
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/creator-3.8.8.zip
+          key: creator-3.8.8-win-121518-e365030aa4f24b515f499cf093cd86fdf38a0f763b5fbcacb20e96253e0fcc0b
       - name: Install official Creator 3.8.8
-        timeout-minutes: 10
+        timeout-minutes: 22
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $archive = Join-Path $env:RUNNER_TEMP 'creator-3.8.8.zip'
-          curl.exe --fail --location --retry 1 --retry-delay 5 --connect-timeout 30 --max-time 240 --speed-limit 102400 --speed-time 60 --output $archive 'https://download.cocos.com/CocosCreator/v3.8.8/CocosCreator-v3.8.8-win-121518.zip'
-          if ($LASTEXITCODE -ne 0) { throw 'Official Creator download failed within its bounded transfer deadline' }
+          if (-not (Test-Path $archive)) {
+            for ($attempt = 0; $attempt -lt 2; $attempt++) {
+              curl.exe --fail --location --continue-at - --connect-timeout 30 --max-time 600 --speed-limit 102400 --speed-time 60 --output $archive 'https://download.cocos.com/CocosCreator/v3.8.8/CocosCreator-v3.8.8-win-121518.zip'
+              if ($LASTEXITCODE -eq 0) { break }
+              if ($attempt -eq 1) { throw 'Official Creator download failed within its bounded transfer deadline' }
+            }
+          }
           $expected = 'e365030aa4f24b515f499cf093cd86fdf38a0f763b5fbcacb20e96253e0fcc0b'
           if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Creator archive hash mismatch' }
           $creatorRoot = Join-Path $env:RUNNER_TEMP 'creator-3.8.8'
@@ -53,6 +64,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Creator extraction failed' }
           "COCOS_SMOKE_CREATOR=$creatorRoot\CocosCreator.exe" >> $env:GITHUB_ENV
           "COCOS_SMOKE_OUTPUT=$env:RUNNER_TEMP\cocos-web-output" >> $env:GITHUB_ENV
+      - name: Cache verified official Creator archive
+        if: steps.creator_archive.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/creator-3.8.8.zip
+          key: creator-3.8.8-win-121518-e365030aa4f24b515f499cf093cd86fdf38a0f763b5fbcacb20e96253e0fcc0b
       - name: Import actual project and build Web
         id: web_build
         shell: pwsh
