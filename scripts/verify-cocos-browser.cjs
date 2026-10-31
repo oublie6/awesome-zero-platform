@@ -53,6 +53,8 @@ async function main() {
         return {canvasPixels:{width:element.width,height:element.height},
           canvasRect:{x:domCanvas.x,y:domCanvas.y,width:domCanvas.width,height:domCanvas.height},
           title:title.getComponent(cc.Label).string, status:status.getComponent(cc.Label).string,
+          titleFontPixels:title.getComponent(cc.Label).actualFontSize * cc.view.getScaleY()/cc.screen.devicePixelRatio,
+          statusFontPixels:status.getComponent(cc.Label).actualFontSize * cc.view.getScaleY()/cc.screen.devicePixelRatio,
           active:title.activeInHierarchy && status.activeInHierarchy,
           content:rect(content), titleBounds:rect(title), statusBounds:rect(status),
           bootstrap:!!canvas.getComponent('GameBootstrap')}
@@ -63,6 +65,7 @@ async function main() {
       assert.ok(Math.abs((state.canvasPixels.width/state.canvasPixels.height)/(state.canvasRect.width/state.canvasRect.height)-1) < 0.01, 'framebuffer must match the displayed aspect ratio')
       assert.equal(state.title,'公平斗地主')
       assert.match(state.status,/请选择/)
+      assert.ok(state.titleFontPixels >= 18 && state.statusFontPixels >= 12, 'entry text must remain readable after resizing')
       assert.ok(state.active && state.bootstrap, 'actual scene/bootstrap must be active')
       for (const rect of [state.titleBounds,state.statusBounds]) {
         assert.ok(rect.width > 0 && rect.height > 0)

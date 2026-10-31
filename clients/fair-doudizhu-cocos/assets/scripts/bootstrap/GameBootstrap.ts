@@ -47,11 +47,16 @@ export class GameBootstrap extends Component {
     if (!this.content || !this.title || !this.status) return
     this.content.getComponent(SafeArea)!.updateArea()
     const size = this.content.getComponent(UITransform)!
-    const width = Math.max(1, Math.min(size.width - 32, 760))
     const height = Math.max(1, size.height)
-    this.title.node.getComponent(UITransform)!.setContentSize(width, Math.min(70, height * 0.2))
+    const portrait = height > size.width
+    const width = Math.max(1, Math.min(size.width - 32, portrait ? 1216 : 760))
+    this.title.fontSize = portrait ? 72 : 42
+    this.title.lineHeight = this.title.fontSize + 8
+    this.status.fontSize = portrait ? 48 : 22
+    this.status.lineHeight = this.status.fontSize + 8
+    this.title.node.getComponent(UITransform)!.setContentSize(width, Math.min(portrait ? 100 : 70, height * 0.2))
     this.title.node.setPosition(0, height * 0.23, 0)
-    this.status.node.getComponent(UITransform)!.setContentSize(width, Math.min(120, height * 0.35))
+    this.status.node.getComponent(UITransform)!.setContentSize(width, Math.min(portrait ? 300 : 120, height * 0.35))
     this.status.node.setPosition(0, 0, 0)
   }
 
