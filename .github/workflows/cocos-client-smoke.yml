@@ -53,6 +53,7 @@ jobs:
           "COCOS_SMOKE_CREATOR=$creatorRoot\CocosCreator.exe" >> $env:GITHUB_ENV
           "COCOS_SMOKE_OUTPUT=$env:RUNNER_TEMP\cocos-web-output" >> $env:GITHUB_ENV
       - name: Import actual project and build Web
+        id: web_build
         shell: pwsh
         run: ./scripts/verify-cocos-runtime.ps1 -CreatorExe $env:COCOS_SMOKE_CREATOR -OutputRoot $env:COCOS_SMOKE_OUTPUT
       - name: Typecheck using Creator generated configuration
@@ -60,6 +61,7 @@ jobs:
         working-directory: clients/fair-doudizhu-cocos
         run: npm run typecheck:creator
       - name: Start the built scene in Chromium
+        if: ${{ !cancelled() && steps.web_build.outcome == 'success' }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'

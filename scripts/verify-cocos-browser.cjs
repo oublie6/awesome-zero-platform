@@ -30,18 +30,19 @@ async function main() {
     page.on('requestfailed', request => failures.push({url:request.url(), error:request.failure()?.errorText}))
     page.on('response', response => { if (response.status() >= 400) failures.push({url:response.url(), status:response.status()}) })
     await page.goto(`http://127.0.0.1:${server.address().port}/`, {waitUntil:'load'})
-    await page.waitForFunction(async () => {
-      try {
-        const cc = globalThis.cc?.director ? globalThis.cc : await globalThis.System?.import('cc')
-        const canvas = cc?.director.getScene()?.getChildByName('Canvas')
-        return !!canvas?.getChildByName('SafeContent')?.getChildByName('GameStatus')
-      } catch { return false }
+    await page.waitForFunction(() => !!globalThis.System?.import, undefined, {timeout:90000})
+    await page.evaluate(async () => { globalThis.__cocosSmokeEngine = await System.import('cc') })
+    // Poll synchronously: a Promise is truthy even when its eventual result is false.
+    await page.waitForFunction(() => {
+      const cc = globalThis.__cocosSmokeEngine
+      const canvas = cc.director.getScene()?.getChildByName('Canvas')
+      return !!canvas?.getChildByName('SafeContent')?.getChildByName('GameStatus')
     }, undefined, {timeout:90000})
     for (const [width, height] of [[1280,720],[844,390],[390,844]]) {
       await page.setViewportSize({width, height})
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       const state = await page.evaluate(async () => {
-        const cc = globalThis.cc?.director ? globalThis.cc : await System.import('cc')
+        const cc = globalThis.__cocosSmokeEngine
         const canvas = cc.director.getScene().getChildByName('Canvas')
         const content = canvas.getChildByName('SafeContent')
         const title = content.getChildByName('GameTitle')
@@ -65,7 +66,7 @@ async function main() {
       await page.screenshot({path:path.join(evidence,`entry-${width}x${height}.png`)})
     }
     const disposed = await page.evaluate(async () => {
-      const cc = globalThis.cc?.director ? globalThis.cc : await System.import('cc')
+      const cc = globalThis.__cocosSmokeEngine
       const bootstrap = cc.director.getScene().getChildByName('Canvas').getComponent('GameBootstrap')
       const shell = bootstrap.shell
       bootstrap.destroy()

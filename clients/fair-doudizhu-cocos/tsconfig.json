@@ -3,6 +3,16 @@
   "compilerOptions": {
     "strict": true,
     "noImplicitOverride": true,
-    "allowImportingTsExtensions": true
-  }
+    "allowImportingTsExtensions": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "skipLibCheck": true
+  },
+  "include": [
+    "assets/**/*.ts"
+  ]
 }
