@@ -63,11 +63,12 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### In progress
 
-- None.
+- ChatGPT implementation phase: added browser HTTP/WebSocket/secure-random/session/lifecycle/share adapters; injected mini-game HTTP/WebSocket/secure-random adapters; added portable connection lifecycle and Doudizhu event router/command factory. Platform SDK support and actual Cocos import have not yet been verified.
 
 ### Remaining
 
-- Codex independent test execution (`npm install`, `npm test`, typecheck for both packages), dependency audit and fixes; wire actual platform adapters and Cocos bootstrap; validate platform SDK/Creator tooling and real runtime. Final archive only after required validation.
+- Complete platform bootstrap/composition, Cocos scene integration, and actual game-shell flows; reconcile API and SDK signatures against real server and platform implementations.
+- After development, Codex independent test execution (`npm install`, `npm test`, typecheck for both packages), dependency audit, fixes, Creator build, simulator and real runtime validation. Final archive only after required validation.
 
 ### Verification status
 
