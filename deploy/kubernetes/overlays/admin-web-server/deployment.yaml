@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: admin-web
-          image: awesome-zero-platform/admin-web:30db007875f7318fdcc748366042d63e3e3ddbf0
+          image: awesome-zero-platform/admin-web:776be5e4e478a85016fb8b8caff57d94505dcab8
           imagePullPolicy: Never
           ports:
             - name: http
