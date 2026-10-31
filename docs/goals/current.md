@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: in_progress
+- State: blocked
 - Started: 2026-10-31
 - Completed:
 - Blockers: Authenticated live browser acceptance is pending a known safe Admin test account. The live bootstrap endpoint reports `available: false`, and no test credentials were available in this run.
@@ -90,6 +90,7 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 
 ### Verification status
 
+- Latest tested checkpoint `585dbab4a3e16218cd8cacd028604f78a86dfaff`: CI `41172033543` completed successfully, including all 15 Chromium tests, typecheck/build, unit/race, integration and Production Compose runtime acceptance; Fair Doudizhu `41172033666` also passed. Browser artifact `13031465926` (`admin-web-browser-results`, 7-day retention) was downloaded and inspected: 18 screenshots, including desktop/mobile, empty/error, modal/drawer states. The narrow drawer screenshot was visually reviewed and fits the viewport. All subsequent changes are status/report documentation.
 - Focused account create/edit/disable/detail Chromium flow after waiting for the post-create row refresh: passed (1/1, 25.4s). The UUID-specific PATCH assertion is retained, so editing a different row still fails. The CI trace was inspected to identify the actual request target rather than weakening that assertion.
 - Focused Chromium table/dialog/drawer test with transition-aware bounds polling: passed (1/1, 17.3s). Self-review confirmed that a drawer remaining outside the viewport fails the polling assertion; no arbitrary delay or whole-pixel allowance was added. CI evidence upload is configured for both successful screenshots and failure diagnostics.
 - Resume verification: focused Chromium table/dialog/drawer test passed (1/1, 21.2s) after adding the subpixel precision tolerance and edge checks. The first local launch lacked the correct browser-cache environment path; rerunning with the existing Chromium cache succeeded. This change affects tests only; deployed application assets are unchanged. Full CI rerun follows the checkpoint push.
@@ -102,6 +103,8 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 - `git diff --check`: passed. All Actions for server-profile/report checkpoint `60984449420ed1f85fdf46c30fc80af0dfd5c2f6` passed: CI `41163066284` (including browser, unit/race, integration and runtime), Fair Doudizhu `41163066272`, and Kubernetes Observability Manifests `41163066331`. The original Go setup steps eventually completed without restarting the runs.
 
 ## Completion Report
+
+Resumed acceptance checkpoint: `c8b9b59`, `59bd179` and `585dbab` fixed test precision/animation/refresh synchronization while retaining strict request-target and document-width assertions; CI artifact preservation was added. Latest code/test checkpoint `585dbab` is fully green, with screenshots retained in artifact `13031465926`. No application asset or Kubernetes runtime change was needed for these test-only fixes. The missing authorized test-credential blocker has persisted across at least three resumed goal turns; no credential response arrived. Goal remains blocked and unarchived until authenticated live acceptance is possible.
 
 Goal is blocked pending authenticated live acceptance. The same missing test-credential condition was confirmed across three consecutive goal turns; no authorized test account or secure credential source has been provided. Changes are reusable client integration and deployment configuration; no backend/module/database contracts were changed. Source commits pushed to `main`: `ba06f6d` and `30db007`; deployment/report checkpoint `6098444` is pushed and all its Actions passed. The corrected source is deployed from its full SHA. Do not archive or mark the goal completed until the remaining live authenticated checks pass.
 
