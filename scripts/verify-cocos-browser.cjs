@@ -48,8 +48,10 @@ async function main() {
         const title = content.getChildByName('GameTitle')
         const status = content.getChildByName('GameStatus')
         const rect = node => {const r=node.getComponent(cc.UITransform).getBoundingBoxToWorld(); return {x:r.x, y:r.y, width:r.width, height:r.height}}
-        const domCanvas = document.getElementById('GameCanvas').getBoundingClientRect()
-        return {canvasRect:{x:domCanvas.x,y:domCanvas.y,width:domCanvas.width,height:domCanvas.height},
+        const element = document.getElementById('GameCanvas')
+        const domCanvas = element.getBoundingClientRect()
+        return {canvasPixels:{width:element.width,height:element.height},
+          canvasRect:{x:domCanvas.x,y:domCanvas.y,width:domCanvas.width,height:domCanvas.height},
           title:title.getComponent(cc.Label).string, status:status.getComponent(cc.Label).string,
           active:title.activeInHierarchy && status.activeInHierarchy,
           content:rect(content), titleBounds:rect(title), statusBounds:rect(status),
@@ -57,6 +59,8 @@ async function main() {
       })
       assert.ok(state.canvasRect.x >= -1 && state.canvasRect.y >= -1, 'canvas must start inside the viewport')
       assert.ok(state.canvasRect.x+state.canvasRect.width <= width+1 && state.canvasRect.y+state.canvasRect.height <= height+1, 'canvas must fit the actual browser viewport')
+      assert.ok(state.canvasPixels.width > 0 && state.canvasPixels.height > 0)
+      assert.ok(Math.abs((state.canvasPixels.width/state.canvasPixels.height)/(state.canvasRect.width/state.canvasRect.height)-1) < 0.01, 'framebuffer must match the displayed aspect ratio')
       assert.equal(state.title,'公平斗地主')
       assert.match(state.status,/请选择/)
       assert.ok(state.active && state.bootstrap, 'actual scene/bootstrap must be active')

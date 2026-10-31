@@ -15,5 +15,22 @@
     <div id="Cocos3dGameContainer"><canvas id="GameCanvas" tabindex="0"></canvas></div>
   </div>
   <%- include(cocosTemplate, {}) %>
+  <script>
+    System.import('cc').then((engine) => {
+      engine.game.once(engine.Game.EVENT_ENGINE_INITED, () => {
+        // Desktop subframes need an explicit physical size; CSS alone stretches
+        // the old framebuffer. Use the public API and the engine's capped DPR.
+        const resize = () => {
+          const dpr = engine.screen.devicePixelRatio;
+          engine.screen.windowSize = new engine.Size(window.innerWidth * dpr, window.innerHeight * dpr);
+        };
+        resize();
+        window.addEventListener('resize', resize);
+        window.addEventListener('pagehide', (event) => {
+          if (!event.persisted) window.removeEventListener('resize', resize);
+        });
+      });
+    }).catch((error) => console.error(error));
+  </script>
 </body>
 </html>
