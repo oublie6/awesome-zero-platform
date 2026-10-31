@@ -16,7 +16,8 @@ for findings, source commits, evidence, SDK differences and handoff tasks.
 | Creator generated-config strict TypeScript check | Passed; actual generated configuration, Bundler package resolution |
 | Real built Web scene in Chromium | Passed at 1280×720, 844×390 and 390×844: active bootstrap/UI, viewport/framebuffer ratio, rendered font size, component disposal/restart and parent disposal; screenshots manually reviewed |
 | Interactive Creator GUI preview | Not qualified: Linux Wine startup failed/stopped; native CI used CLI import/build and real built Web runtime |
-| WeChat/Douyin developer tools and device tests | Official Windows tools installed; Wine startup attempted, no usable simulator result; supported OS/app IDs/devices still required |
+| Linux community WeChat developer tool | GUI/guest mode and CLI connection passed on v2.02.2609240-2 without Wine. Actual artifact import returns code 10 for Creator’s sample AppID; project-owned AppID/account pending. No mini-game scene/SDK pass claimed |
+| Douyin developer tool and device tests | Windows/Wine attempt unqualified; unused Windows tools/Wine removed. Platform SDK/device validation remains open |
 | Full game client / three-player hand | Not implemented by this foundation; later goals |
 
 ## Reproducible checks and editor handoff

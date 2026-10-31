@@ -5,7 +5,7 @@
 - State: in_progress
 - Started: 2026-10-31
 - Completed:
-- Blockers: Official Creator/WeChat/Douyin Windows tools are installed on the data disk. Native Windows Creator import/build and real Web scene checks passed. Mini-game SDK/devices, project-owned app IDs/domains and supported interactive developer-tool environments remain unqualified; Wine startup did not provide usable simulators.
+- Blockers: Native Creator builds and real Web checks passed. Linux community WeChat 2.02.2609240-2 starts in guest mode and its CLI connects, but importing the actual mini-game artifact with the Creator sample AppID returns code 10 (AppID does not exist). Awaiting a project-owned test AppID/account authorization. Douyin SDK/devices remain unqualified. Unused Windows/Wine installations have been removed at the user’s request.
 
 ## Goal
 
@@ -71,9 +71,12 @@ Single primary implementer; use subagents only for independent review or API doc
 - Native Windows Creator CLI import and all three target builds passed (exit 36); both mini-game game.json outputs verified landscape. Actual generated-config strict TypeScript check passed. Fixed source .js/TS resolution, package exports/library configuration, viewport cropping/framebuffer distortion, portrait font size and UI ownership cleanup.
 - Actual built Web entry passed at 1280×720, 844×390 and 390×844 with framebuffer/display ratio and actual rendered-font thresholds. Component disposal, replacement and parent destruction clear owned UI and view listeners. Final screenshots manually self-reviewed; final browser errors/warnings/request failures are empty. Earlier weak layout passes are superseded, with their defects and regression failures preserved.
 
+- At the user’s request, removed failed Windows Creator/WeChat/Douyin tool directories, all Wine prefixes and 150 verified session-installed Wine/i386 packages; removed the Wine apt source/key and foreign architecture. Preserved required Linux GTK/Xvfb/fonts. Kubelet/containerd remain active; root disk ~45% (~22 GiB free), data disk ~47–48% (~20 GiB free).
+- Installed and checksum-verified msojocs community Linux WeChat v2.02.2609240-2 (Electron 36.6.0) on the data disk. It runs without Wine, shows guest mode and the mini-game project manager. Worked around the packaged CLI’s extra --electron argument and non-XDG default path using a dedicated launcher and an app-specific config symlink; local CLI connected to the running tool. No production source change was needed.
+
 ### In progress
 
-- Goal 0045 stays in_progress for supported mini-game developer-tool/SDK and real-device qualification. This phase is handed back with verified build/Web runtime paths and explicit platform blockers; it is not archived or reset.
+- Continuing Linux community WeChat developer-tool qualification. GUI/guest-mode/CLI startup passed; artifact import reached AppID validation and failed on the sample ID. User is locating a project-owned test AppID. SDK/scene/device success is not claimed; Goal 0045 remains in_progress and is not archived/reset.
 
 ### Remaining
 

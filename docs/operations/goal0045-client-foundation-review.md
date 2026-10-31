@@ -165,7 +165,7 @@ Web 探针在增加网络超时后针对网络等待修复源码 `0fc7ebb` 重�
 
 当前工程已有最小宿主场景，不再要求开发者手动创建场景才能引用 Bootstrap；采用代码创建状态 UI，并使用引擎 SafeArea、Label 换行/缩字及 resize 监听清理。场景结构参考官方 [3.8.8 2D 模板](https://github.com/cocos/cocos-engine/blob/v3.8.8/editor/assets/default_file_content/scene/scene-2d.scene)，静态测试检查相机、脚本 UUID、引用和 Meta 唯一性。
 
-用户随后要求“安装环境测试”，因此继续安装并实际运行，不能沿用“工具未安装”的旧结论。工具均在数据盘 `/data/awesome-zero-platform-tools/goal0045/`，未提交二进制或缓存：
+用户随后要求“安装环境测试”，因此继续安装并实际运行，不能沿用“工具未安装”的旧结论。安装及测试目录均放在数据盘 `/data/awesome-zero-platform-tools/goal0045/`，未提交二进制或缓存。下表为 Windows/Wine 历史尝试；之后已按用户要求清理，当前 Linux 环境见后续补充：
 
 | 工具 | 安装来源/版本 | 实际执行结果 |
 | --- | --- | --- |
@@ -191,6 +191,16 @@ Web 探针在增加网络超时后针对网络等待修复源码 `0fc7ebb` 重�
 [证据 artifact 13044679501](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033225/artifacts/13044679501) 含三目标 zip、构建日志/结果、配置、浏览器 JSON 和三张截图，保留至 2026-11-07。下载归档 SHA256 已核对 API digest：`43272cd7b6667083a5db2d16c33d0672ecd6b90f3cf76478a6347bcd4f963f0a`；browser-runtime.json SHA256 为 `c94f2815c3628237525cfe2b8bc689d6b9f384d5008734eac2d995fea6ca0250`。另保留私有本地副本 `/root/.config/awesome-zero-platform/goal0045-evidence/native-windows-41208033225/`（0700/0600），无凭据或二进制入 Git。
 
 本机最终可用内存约 4.3 GiB，无 swap；根盘约 51%，数据盘约 64%，可用约 14 GiB。已停止全部本次 IDE/Wine/浏览器/转发进程，清理约 2.4 GiB 重复安装归档/解包中间文件/旧 Wine 前缀，保留数据盘已安装工具和证据。未进行全局镜像/缓存/PV 清理或服务重启。
+
+## Linux 微信工具与清理补充
+
+Linux 可以用于小程序/小游戏开发。“未提供官方 Linux 工具”和“Linux 不能开发”不是同一结论。本次原 Windows/Wine 尝试不能覆盖 Linux 社区移植路线。进一步安装 [msojocs/wechat-web-devtools-linux](https://github.com/msojocs/wechat-web-devtools-linux) 的 [v2.02.2609240-2](https://github.com/msojocs/wechat-web-devtools-linux/releases/tag/v2.02.2609240-2)，发布日期 2026-10-30。实际包为 Linux Electron 36.6.0（不能仅依据较旧 README 的 NW.js 描述）；发行 tar.gz 的 SHA256 与 GitHub release digest 核对为 `654f8a392d9c11f00b54f09d3902e79d900e85fcecd61c195770fc656c18e5d3`。
+
+实际结果：纯 Linux GUI 启动成功，进入官方工具提供的游客模式，可看到小游戏项目入口；进程内存约 300–500 MiB。已在卸载 Wine 后再次启动，证明此路径不依赖 Wine。社区包 CLI 包装器额外插入 `--electron`，导致命令只显示帮助；直接以随包 Electron 的 Node 模式运行 CLI 入口后参数正确。CLI 还硬编码默认配置目录，使用 `/root/.config/wechat-devtools` 应用级符号链接指向数据盘配置目录，未修改 HOME。保留独立启动器 `/data/awesome-zero-platform-tools/goal0045/wechat-cli.sh`，没有修改项目生产代码或社区包内部文件。独立 D-Bus 会话/本地 GIO 用于无桌面服务器上的 GUI 测试。
+
+在设置页只开启本地 CLI 服务端口后，CLI 成功连接 `127.0.0.1` 并实际调用 open 导入已构建的 `wechatgame`。工具对 Creator 默认示例 AppID 返回 `code: 10, 不存在此 AppID`。这是实际导入结果，不是“没有工具”；也不能据此断言该 AppID 在所有环境下已失效。CLI 本身退出 0 但返回错误，故未把退出码当导入成功。未伪造账号、未绕过 AppID 校验、未上传项目；等待用户提供项目自有测试 AppID，后续可能仍需开发者扫码授权。截图和主进程原始错误节选保留于私有证据目录。GUI/CLI 可运行不等于小游戏场景或 wx SDK/真机资格通过，社区移植版也不等于官方宿主全兼容。
+
+用户要求清理后，已删除本次安装的 Windows Creator 3.8.8、微信 Windows 2.01.2510260、抖音 Windows 4.5.7、Wine 前缀/旧启动脚本/重复安装归档，并卸载 150 个经 apt 历史核实为本次 Wine 引入的软件包（含 i386 依赖）。模拟移除计划逐项验证只含 Wine/本次外来架构包，amd64 基础系统库不在移除列表；保留 Linux 工具需要的 GTK/Xvfb/字体。Wine 软件源及其专用 key、i386 架构配置已移除，已安装 Wine/i386 包数为 0。Kubelet/containerd 仍 active，未清理集群镜像、PV 或业务数据。根盘现约 45% 使用、剩余约 22 GiB；数据盘约 47–48%、剩余约 20 GiB；无 swap。Linux 已安装工具及必要证据保留，冗余 Linux 下载归档也已删除。
 
 交回 ChatGPT 的具体任务：
 
