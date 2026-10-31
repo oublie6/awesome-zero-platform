@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: ready
-- Started:
+- State: in_progress
+- Started: 2026-10-31
 - Completed:
-- Blockers:
+- Blockers: Full-goal runtime gates still require Creator 3.8.8, WeChat/Douyin developer tools and target devices; none are installed in this Linux environment.
 
 ## Goal
 
@@ -58,22 +58,31 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### Completed
 
-- Cross-platform design accepted and documented.
-- ChatGPT committed first-pass pure TypeScript packages: `clients/packages/game-client-core` (capability ports, secure entropy and socket URL guards) and `clients/packages/doudizhu-client` (server-versioned hand store, reconnect-state guard and command envelope validation). Added standalone Node test suites and README files for both. These are foundations, not full Cocos runtime or platform adapters.
+- ChatGPT's accepted cross-platform design and first-pass implementation retained. Codex phase review examined Goal 0045 client history through 1642121f01b4d94f1de90a282d461522ff934549 and actual imports, owner APIs and Go dispatcher/realtime structures.
+- Reproduced five missing transport-lifecycle regressions before fixes. Corrected MiniSocketTask creation versus onOpen, synchronous callbacks, early failures/close, cancellation and old callback isolation. Shared connection cleanup is used by Web and injected mini-game adapters.
+- Corrected WeChat entropy to UserCryptoManager; missing Douyin Mini Game entropy still fails closed. Corrected native HTTP abort, capability errors, session empty values and target-specific share callback handling.
+- Corrected duplicate/mutable snapshots, terminal action gating, command envelope/version validation and router unsubscribe lifecycle. Shell initialization is idempotent, late connection completions cannot change disposed/replaced state, and hand.sync includes the exact required protocol version. Cross-hand notifications do not mutate the selected hand.
+- Added Entry.scene with Canvas/camera/bootstrap binding and stable Meta assets; responsive UI uses SafeArea and unregisters resize events. Corrected missing Component override modifiers discovered against official 3.8.8 declarations.
+- Added a sequential source verification script and Fair Doudizhu client_foundation CI job. New standalone checks pass: game-client-core 23 tests, doudizhu-client 7, Shell/assets 6. Existing unchanged secure-envelope 9 tests also passed separately. Production backend code, data schema and deployments are unchanged.
+- Real Chromium exercised WebHttp login, WebSocketTransport bearer authentication and ping/pong against the real Go service through a temporary local self-signed TLS bridge. Invalid token was rejected; secure entropy and session storage passed; no page errors or tokens in query strings. The existing read-only acceptance account was used and its owned session logged out. TLS bridge/port forwarding/browser processes stopped.
 
 ### In progress
 
-- ChatGPT implementation phase: added browser HTTP/WebSocket/secure-random/session/lifecycle/share adapters; injected mini-game HTTP/WebSocket/secure-random adapters; added portable connection lifecycle and Doudizhu event router/command factory. Platform SDK support and actual Cocos import have not yet been verified.
+- Codex phase handoff: complete report, final self-review, commit/push and verify Actions. This is a phase check, not completion or archival of Goal 0045.
 
 ### Remaining
 
-- Complete platform bootstrap/composition, Cocos scene integration, and actual game-shell flows; reconcile API and SDK signatures against real server and platform implementations.
-- After development, Codex independent test execution (`npm install`, `npm test`, typecheck for both packages), dependency audit, fixes, Creator build, simulator and real runtime validation. Final archive only after required validation.
+- Run Creator 3.8.8 actual import, generated-config compile, preview and target builds. Static official declarations and scene-reference tests do not prove engine execution, visual layout or absence of engine warnings.
+- Qualify WeChat/Douyin in developer tools and devices: app IDs/domain whitelist, bearer subprotocol selection, entropy, lifecycle/storage/share and resource cleanup. Do not infer Mini Game entropy from Douyin Mini App documentation.
+- Continue planned protocol integration in Goal 0046: separate durable envelope from current doudizhu-api-command-v1 request DTO, implement mapping, per-account/aggregate sequence/ID allocation and safe retries, private snapshot and terminal-evidence mapping. Do not submit the durable CommandEnvelope directly as a wire request or infer game state from notifications.
 
 ### Verification status
 
-- Source committed; runtime/CI verification of new packages not yet established. No claim of Web/WeChat/Douyin build compatibility yet.
+- Node 22.23.4: dependency installs, strict shared-package typecheck/build/tests, official @cocos/creator-types@3.8.8 script typecheck and renderer-free Shell build/tests passed. scripts/verify-client-foundation.sh completed successfully.
+- Source and controlled Fake Adapter tests are separate from the real Chromium HTTP/WSS transport probe. Private runtime evidence and logs: /root/.config/awesome-zero-platform/goal0045-evidence (0700, files 0600), no password/token values.
+- npm run typecheck:creator cannot run successfully: temp/tsconfig.cocos.json is absent because Creator is not installed. No Creator import/preview/build, mini-game developer-tool or device result is marked passed.
+- Related Actions for the forthcoming source checkpoint and final report commit will be checked after pushing; no CI success claim is made yet.
 
 ## Completion Report
 
-Not started.
+Phase review and fixes only. Goal 0045 remains in_progress and must not be archived or reset. Full editor/target runtime acceptance remains open; the phase report will record exact source commit, CI evidence, capability differences and the next ChatGPT tasks.

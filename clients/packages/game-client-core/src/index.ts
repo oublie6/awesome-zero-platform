@@ -13,8 +13,12 @@ export interface SocketConnection {
   onMessage(handler: (message: string) => void): Unsubscribe
   onClose(handler: () => void): Unsubscribe
 }
+export interface SocketOptions {
+  /** Portable cancellation: does not require a browser AbortController in mini-games. */
+  onCancel?: (handler: () => void) => Unsubscribe
+}
 export interface SocketTransport {
-  connect(url: string, accessToken: string): Promise<SocketConnection>
+  connect(url: string, accessToken: string, options?: SocketOptions): Promise<SocketConnection>
 }
 export interface SessionVault {
   load(): Promise<string | null>
@@ -29,6 +33,7 @@ export interface AppLifecycle {
   onBackground(handler: () => void): Unsubscribe
 }
 export interface SharePort {
+  /** Initiation/copy result; never proof that another player received an invite. */
   invite(roomCode: string): Promise<boolean>
 }
 export interface GamePlatform {
@@ -47,13 +52,13 @@ export async function requireSecureBytes(source: SecureRandomSource, length: num
   if (!(bytes instanceof Uint8Array) || bytes.byteLength !== length) throw new Error('secure random unavailable')
   return bytes
 }
-export function websocketURL(endpoint: string): URL {
-  const url = new URL(endpoint)
-  if (url.protocol !== 'wss:' && url.protocol !== 'ws:') throw new Error('WebSocket scheme required')
-  if (url.username || url.password || url.searchParams.has('token') || url.searchParams.has('access_token')) {
-    throw new Error('credentials in WebSocket URL prohibited')
-  }
-  return url
+export function websocketURL(endpoint: string): { readonly protocol: string; readonly pathname: string } {
+  // Do not assume URL exists in a mini-game JS runtime. This is a credential
+  // guard; the native transport still validates the endpoint/host itself.
+  if (typeof endpoint !== 'string' || !/^wss?:\/\//.test(endpoint)) throw new Error('WebSocket scheme required')
+  const match = /^(wss?):\/\/([^/?#]+)(\/[^?#]*)?$/.exec(endpoint)
+  if (!match || /[@\\\s]/.test(endpoint)) throw new Error('credentials in WebSocket URL prohibited')
+  return {protocol: match[1] + ':', pathname: match[3] ?? '/'}
 }
 
 /** A platform-neutral connection manager; credentials are never part of the URL. */
@@ -61,17 +66,25 @@ export class ConnectionManager {
   private connection: SocketConnection | null = null
   private unsubscribe: Unsubscribe[] = []
   private generation = 0
+  private cancellations = new Set<() => void>()
   constructor(private readonly socket: SocketTransport) {}
   async open(url: string, token: string, onMessage: (message: string) => void, onClose: () => void): Promise<void> {
     websocketURL(url)
     this.close()
     const generation = this.generation
-    const connection = await this.socket.connect(url, token)
-    if (generation !== this.generation) { connection.close(); return }
+    const connection = await this.socket.connect(url, token, { onCancel: handler => {
+      this.cancellations.add(handler)
+      return () => { this.cancellations.delete(handler) }
+    } })
+    if (generation !== this.generation) { connection.close(); throw new Error('connection cancelled') }
     this.connection = connection
-    this.unsubscribe.push(connection.onMessage(onMessage), connection.onClose(() => {
+    const offMessage = connection.onMessage(message => { if (this.generation === generation) onMessage(message) })
+    this.unsubscribe.push(offMessage)
+    const offClose = connection.onClose(() => {
       if (this.generation === generation) { this.close(); onClose() }
-    }))
+    })
+    if (generation !== this.generation) { offClose(); throw new Error('connection closed during registration') }
+    this.unsubscribe.push(offClose)
   }
   async send(value: unknown): Promise<void> {
     if (!this.connection) throw new Error('socket disconnected')
@@ -79,8 +92,12 @@ export class ConnectionManager {
   }
   close(): void {
     this.generation++
-    this.unsubscribe.splice(0).forEach(fn => fn())
-    this.connection?.close()
+    const cancellations = [...this.cancellations]
+    this.cancellations.clear()
+    cancellations.forEach(cancel => { try { cancel() } catch { /* continue owned-resource cleanup */ } })
+    this.unsubscribe.splice(0).forEach(fn => { try { fn() } catch { /* continue owned-resource cleanup */ } })
+    const connection = this.connection
     this.connection = null
+    connection?.close()
   }
 }

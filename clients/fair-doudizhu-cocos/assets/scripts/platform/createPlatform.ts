@@ -1,7 +1,7 @@
 import { createMiniPlatform, type MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import { WebHttp, WebLifecycle, WebRandom, WebSessionVault, WebShare, WebSocketTransport } from '@awesome-zero-platform/game-client-core/web'
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
-import { detectRuntimeTarget } from './platform-target'
+import { detectRuntimeTarget } from './platform-target.js'
 
 /** Only the runtime composition root may read platform globals. */
 export function createPlatform(config: {apiBase: string; sdk?: MiniPlatformSDK}): GamePlatform {

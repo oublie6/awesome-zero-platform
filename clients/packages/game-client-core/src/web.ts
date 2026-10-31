@@ -1,5 +1,6 @@
-import type { AppLifecycle, HttpTransport, SecureRandomSource, SessionVault, SharePort, SocketConnection, SocketTransport, Unsubscribe } from './index.js'
+import type { AppLifecycle, HttpTransport, SecureRandomSource, SessionVault, SharePort, SocketConnection, SocketTransport, SocketOptions, Unsubscribe } from './index.js'
 import { websocketURL } from './index.js'
+import { openSocket } from './socket.js'
 
 export class WebHttp implements HttpTransport {
   constructor(private readonly base = '/api') {}
@@ -16,38 +17,30 @@ export class WebHttp implements HttpTransport {
   }
 }
 export class WebSocketTransport implements SocketTransport {
-  async connect(endpoint: string, accessToken: string): Promise<SocketConnection> {
+  async connect(endpoint: string, accessToken: string, options?: SocketOptions): Promise<SocketConnection> {
     websocketURL(endpoint)
     if (!accessToken) throw new Error('access token required')
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket(endpoint, ['bearer', accessToken])
-      const onOpen = () => {
-        cleanup()
-        const messages = new Set<(value: string) => void>()
-        const closes = new Set<() => void>()
-        ws.addEventListener('message', event => {
-          if (typeof event.data === 'string') messages.forEach(cb => cb(event.data))
-        })
-        ws.addEventListener('close', () => closes.forEach(cb => cb()))
-        resolve({
-          send(message) {
-            if (ws.readyState !== WebSocket.OPEN) return Promise.reject(new Error('socket not open'))
-            ws.send(message)
-            return Promise.resolve()
-          },
-          close(code, reason) { ws.close(code, reason) },
-          onMessage(cb) { messages.add(cb); return () => { messages.delete(cb) } },
-          onClose(cb) { closes.add(cb); return () => { closes.delete(cb) } }
-        })
-      }
-      const onFailure = () => { cleanup(); reject(new Error('WebSocket connection failed')) }
-      const cleanup = () => { ws.removeEventListener('open', onOpen); ws.removeEventListener('error', onFailure); ws.removeEventListener('close', onFailure) }
-      ws.addEventListener('open', onOpen, { once: true })
-      ws.addEventListener('error', onFailure, { once: true })
-      ws.addEventListener('close', onFailure, { once: true })
-    })
+    const ws = new WebSocket(endpoint, ['bearer', accessToken])
+    return openSocket({
+      bind(events) {
+        const message = (event: MessageEvent) => { if (typeof event.data === 'string') events.message(event.data) }
+        ws.addEventListener('open', events.open)
+        ws.addEventListener('message', message)
+        ws.addEventListener('close', events.close)
+        ws.addEventListener('error', events.error)
+        return () => {
+          ws.removeEventListener('open', events.open)
+          ws.removeEventListener('message', message)
+          ws.removeEventListener('close', events.close)
+          ws.removeEventListener('error', events.error)
+        }
+      },
+      async send(data) { if (ws.readyState !== WebSocket.OPEN) throw new Error('socket not open'); ws.send(data) },
+      close(code, reason) { ws.close(code, reason) }
+    }, options)
   }
 }
+
 export class WebRandom implements SecureRandomSource {
   async bytes(length: number): Promise<Uint8Array> {
     if (!Number.isSafeInteger(length) || length < 1 || length > 65536 || !globalThis.crypto?.getRandomValues) throw new Error('secure random unavailable')
@@ -58,8 +51,8 @@ export class WebRandom implements SecureRandomSource {
 }
 export class WebSessionVault implements SessionVault {
   constructor(private readonly key = 'fair-doudizhu-session') {}
-  async load() { return sessionStorage.getItem(this.key) }
-  async save(token: string) { sessionStorage.setItem(this.key, token) }
+  async load() { const value = sessionStorage.getItem(this.key); return value?.trim() ? value : null }
+  async save(token: string) { if (!token.trim()) throw new Error('empty session token'); sessionStorage.setItem(this.key, token) }
   async clear() { sessionStorage.removeItem(this.key) }
 }
 export class WebLifecycle implements AppLifecycle {

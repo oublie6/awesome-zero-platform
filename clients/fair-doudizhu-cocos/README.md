@@ -1,24 +1,55 @@
 # Fair Doudizhu Cocos Client
 
-Minimal code-first Cocos Creator 3.8 LTS skeleton for the Fair Doudizhu client.
+Cocos Creator **3.8.8** foundation with an entry status screen, not a playable table.
+Business state and transports are in small engine-independent packages; HPKE remains
+in the existing `@awesome-zero-platform/secure-envelope` package.
 
-## Intent
+## Reproducible source checks
 
-- TypeScript owns application, domain, networking, security, layout, and animation logic.
-- Cocos scenes remain thin composition roots instead of business-logic containers.
-- Platform APIs are isolated behind adapters so Web and other mini-game targets can be added later.
-- The reusable HPKE client lives in `clients/packages/secure-envelope` and is not coupled to Cocos.
+Use Node 22.23.4 from the repository root:
 
-## First local import
+```bash
+bash scripts/verify-client-foundation.sh
+```
 
-1. Install Cocos Creator 3.8.8 from the Cocos Dashboard.
-2. Import this directory as an existing project.
-3. Let Creator generate ignored `library/`, `temp/`, `local/`, and `profiles/` directories.
-4. Create one empty 2D scene with a Canvas root.
-5. Attach `GameBootstrap` to a root node and run Preview.
+This installs/builds packages in dependency order, checks shared contracts and
+all Cocos scripts against official `@cocos/creator-types@3.8.8`, and tests the
+actual Shell and scene/meta references. `typecheck:shell` compiles only the
+renderer-free Shell/composition code. Neither check starts the Cocos engine.
+The local `file:` dependencies resolve built `dist` ESM files; build the packages
+before importing the project. Do not point Creator at unbuilt TypeScript packages.
 
-The repository intentionally does not commit editor-generated caches or a binary scene assembled by drag-and-drop. The first scene is a minimal host for code-created UI.
+## Creator import and preview (requires installed editor)
 
-## Secure random on WeChat
+1. Run the source checks above.
+2. Import this directory as an existing project in Creator **3.8.8**.
+3. Open `assets/scenes/Entry.scene`. It has a Canvas, orthographic camera and
+   `GameBootstrap` attached through a stable script UUID; no manual scene creation
+   or component attachment is required.
+4. Preview the scene. Expect the Chinese title and initialization status, not a
+   lobby/game table. Inspect console, landscape/portrait resizing and safe areas.
+5. Set Entry as the start/included scene in the Build panel; build Web, WeChat
+   Mini Game and mainland Douyin Mini Game separately. Configure the actual app IDs,
+   landscape orientation and approved HTTPS/WSS domains in their target settings.
+   No production app ID, network endpoint or generated editor/build cache is committed.
+6. After editor import, `npm run typecheck:creator` uses Creator's generated
+   `temp/tsconfig.cocos.json`. It requires the editor; it is not the standalone check.
 
-`WechatRandomSource` wraps the asynchronous `wx.getRandomValues` API. The secure-envelope package prefetches those true random bytes before a seal operation and exposes them synchronously only for the duration of that operation, because HPKE libraries expect the Web Crypto `getRandomValues` contract. It fails closed when secure entropy is unavailable or exhausted and never falls back to `Math.random`.
+Stable `.meta` files are committed; `library`, `temp`, `local`, `profiles` and
+build outputs remain ignored. Entry scene structure follows the official 3.8.8
+[2D template](https://github.com/cocos/cocos-engine/blob/v3.8.8/editor/assets/default_file_content/scene/scene-2d.scene).
+Actual editor/build/runtime results are tracked in
+[platform validation](PLATFORM-VALIDATION.md) and the
+[phase review](../../docs/operations/goal0045-client-foundation-review.md).
+
+## Entropy and platform differences
+
+WeChat uses `wx.getUserCryptoManager().getRandomValues` (minimum documented base
+library 2.17.3), explicitly injected at composition. `WechatRandomSource` adapts
+that existing entropy port to the unchanged HPKE package. It does not access a
+hidden global `wx` or fall back to `Math.random`.
+
+Douyin Mini Game entropy support has not been established by a mini-game SDK
+runtime; the similarly named **mini-app** API is not proof. Missing/incompatible
+entropy fails closed. Platform login codes are ephemeral authorization material,
+not game identities; server login/session integration remains Goal 0046.

@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext",
+    "strict": true, "outDir": "dist", "rootDir": "assets/scripts", "declaration": true,
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["assets/scripts/game/**/*.ts", "assets/scripts/platform/**/*.ts", "assets/scripts/foundation/**/*.ts"]
+}

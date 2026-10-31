@@ -7,8 +7,19 @@
   },
   "private": true,
   "dependencies": {
-    "@awesome-zero-platform/secure-envelope": "file:../packages/secure-envelope",
+    "@awesome-zero-platform/doudizhu-client": "file:../packages/doudizhu-client",
     "@awesome-zero-platform/game-client-core": "file:../packages/game-client-core",
-    "@awesome-zero-platform/doudizhu-client": "file:../packages/doudizhu-client"
+    "@awesome-zero-platform/secure-envelope": "file:../packages/secure-envelope"
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck:shell": "tsc -p tsconfig.shell.json --noEmit",
+    "test": "tsc -p tsconfig.shell.json && node --test test/*.test.mjs",
+    "typecheck:creator": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.static.json"
+  },
+  "devDependencies": {
+    "@cocos/creator-types": "3.8.8",
+    "typescript": "5.9.2"
   }
 }

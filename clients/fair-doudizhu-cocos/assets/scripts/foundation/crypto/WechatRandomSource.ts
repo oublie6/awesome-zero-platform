@@ -1,29 +1,16 @@
-declare const wx: unknown
-
+import { type MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import type { AsyncRandomSource } from '@awesome-zero-platform/secure-envelope'
+import { MiniRandom } from '@awesome-zero-platform/game-client-core/minigame'
 
-type WechatRandomValuesResult = { randomValues: ArrayBuffer }
-type WechatAPI = {
-  getRandomValues(options: {
-    length: number
-    success(result: WechatRandomValuesResult): void
-    fail(error: unknown): void
-  }): void
-}
-
+/** Explicit SDK injection; reuse the entropy adapter, never a second HPKE implementation. */
 export class WechatRandomSource implements AsyncRandomSource {
-  constructor(private readonly api: WechatAPI = wx as unknown as WechatAPI) {}
-
-  bytes(length: number): Promise<Uint8Array> {
-    if (!Number.isSafeInteger(length) || length <= 0 || length > 1_048_576) {
-      return Promise.reject(new RangeError('length must be between 1 and 1048576'))
-    }
-    return new Promise<Uint8Array>((resolve, reject) => {
-      this.api.getRandomValues({
-        length,
-        success: (result) => resolve(new Uint8Array(result.randomValues)),
-        fail: reject,
-      })
-    })
+  private readonly random: MiniRandom
+  constructor(api: Pick<MiniPlatformSDK, 'getUserCryptoManager'>) {
+    this.random = new MiniRandom({getRandomValues: args => {
+      const manager = api.getUserCryptoManager?.()
+      if (!manager?.getRandomValues) throw new Error('WeChat secure random unsupported')
+      manager.getRandomValues(args)
+    }})
   }
+  bytes(length: number): Promise<Uint8Array> { return this.random.bytes(length) }
 }

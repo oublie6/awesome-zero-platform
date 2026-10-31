@@ -57,6 +57,17 @@ jobs:
           ./business/doudizhu/application/...
           ./business/doudizhu/infrastructure/...
 
+  client_foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+      - name: Verify portable client packages and Cocos source contracts
+        run: bash scripts/verify-client-foundation.sh
+
   manifest_client:
     runs-on: ubuntu-latest
     timeout-minutes: 15
