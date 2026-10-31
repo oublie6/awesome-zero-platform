@@ -85,7 +85,63 @@ Private evidence: `wechat-sdk-probe.json`, `wechat-clean-console.json` and
 `wechat-clean-scene.png` in the phase evidence directory. After an earlier DOM
 inspection probe failed against the mini-game document shim, a fresh compile
 produced 13 informational console entries, including successful scene loading,
-with no captured warning/error entries. The final screenshot was manually
+with no captured warning/error entries (a console DOM capture is not a complete event stream). The final screenshot was manually
 reviewed. This is community Linux simulator evidence, not official-host or
 real-device qualification. The tool was stopped after testing; no upload or
 publication was performed.
+
+## User-authorized device upload
+
+At the user's explicit request, development version **0.0.45** was uploaded and a
+preview QR was generated with the logged-in tool. No review submission or formal
+release was made. Original debug output was rejected: source size 8171 KB exceeded
+the 4 MB main-package limit. A separate local `wechatgame-device` copy now declares
+`{"name":"cocos-engine","root":"cocos-js/"}` in `game.json`'s `subpackages`.
+Its root `game.js` wraps the complete original bootstrap in
+`wx.loadSubpackage({name: 'cocos-engine', success: function () { /* original */ },
+fail: function (error) { console.error('Cocos engine subpackage failed to load', error) }})`.
+An inert `cocos-js/game.js` is the subpackage entry; existing SystemJS module
+registration still loads the original engine modules after download succeeds.
+`projectname` is changed to `fair-doudizhu-device` in this copy only.
+
+To reproduce the packaging from an untouched export (set the owned Mini Game
+AppID in the copied project config before import):
+
+```python
+# Run in a Python script with SOURCE and TARGET set to separate absolute paths.
+from pathlib import Path
+import json, shutil
+src, dst = Path(SOURCE), Path(TARGET)
+assert not dst.exists(), 'Preserve any existing target; select a new directory'
+config = json.loads((src / 'game.json').read_text())
+assert not config.get('subpackages'), 'This recipe is for the unpartitioned export'
+shutil.copytree(src, dst)
+config['subpackages'] = [{'name': 'cocos-engine', 'root': 'cocos-js/'}]
+(dst / 'game.json').write_text(json.dumps(config, indent=2) + '\n')
+original = (src / 'game.js').read_text()
+(dst / 'game.js').write_text(
+    'wx.loadSubpackage({name:"cocos-engine",success:function(){\n' + original +
+    '\n},fail:function(error){console.error("Cocos engine subpackage failed to load",error)}});\n')
+(dst / 'cocos-js/game.js').write_text('// Original engine modules load after subpackage success.\n')
+```
+
+The uploaded package retains the **unminified original engine**, not the separate
+Terser experiment. Hash comparison against the source artifact found only three
+changed files (`game.js`, `game.json`, `project.config.json`) and one new file
+(`cocos-js/game.js`); no removed files or engine/resource changes. WeChat's successful
+upload and preview reports agree: main **915134 bytes**, engine subpackage **7472470
+bytes**, total **8387604 bytes**. The simulator screenshot after preview confirms
+the landscape entry still renders. The compiler warns it skips processing engine
+files above 2000 KB; this is not a warning-free production build qualification.
+This is an explicit post-export device-test package, not a new native Creator
+release-build result. Integrate appropriate Creator release/feature trimming or
+subpackage settings before production distribution.
+
+Run the installed CLI's `upload` with `--project <device-directory> --version
+0.0.45 --desc <description> --info-output <private-json>`, and `preview` with
+`--project <device-directory> --qr-format image --qr-output <private-png>
+--info-output <private-json>` (each as one command). Upload requires user
+authorization; do not upload again merely to repeat verification. Private evidence
+includes `wechat-device-package-manifest.json`, upload/preview info, QR and
+`wechat-device-scene-after-preview.png`. Device results remain **pending user
+feedback**; an uploaded package or QR is not proof of successful device execution.

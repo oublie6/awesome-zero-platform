@@ -204,7 +204,7 @@ Linux 可以用于小程序/小游戏开发。“未提供官方 Linux 工具”
 
 SDK 探测使用真实五个 core 源文件经 TypeScript CommonJS 转译及私有模块加载器，注入真实小游戏上下文并调用 createMiniPlatform('wechat', wx, 'https://example.invalid')，不是可控 Fake SDK。SDK 3.17.5 返回两次不同的 32 字节随机值，第一组同时验证非全零；vault 存取/清除后恢复此前存储；前后台监听注册/卸载成功；wx.login 返回非空 code（未保存 code）。未调用 HTTP/WSS、分享或后端换证，没有发布/上传。随机值和登录 code 不进入报告。此结果不能推出设备密码学实现、系统挂起恢复、WSS bearer 协商或完整身份链已通过。
 
-一次诊断误用了小游戏 document shim 不支持的 querySelector，产生两条诊断 TypeError，归因于探测脚本而非产品；随后重新编译，不再执行 DOM 探针。干净控制台按 shadow DOM 提取全部 13 条消息，均为 info-level，包含成功加载场景；独立保存 SDK 探测和干净运行证据，不能把早先受污染的日志当零错误结果。最终截图由当前实现者自审，确认横屏入口文字显示；这不是独立审查、完整牌桌或真机资格。
+一次诊断误用了小游戏 document shim 不支持的 querySelector，产生两条诊断 TypeError，归因于探测脚本而非产品；随后重新编译，不再执行 DOM 探针。干净控制台通过 shadow DOM 捕获 13 条消息，均为 info-level（DOM 抓取不等于完整事件流），包含成功加载场景；独立保存 SDK 探测和干净运行证据，不能把早先受污染的日志当零错误结果。最终截图由当前实现者自审，确认横屏入口文字显示；这不是独立审查、完整牌桌或真机资格。
 
 私有证据位于既有 evidence 目录（0700，文件 0600）：wechat-sdk-probe.json SHA256 `8ef91c295bb67dfa7db1442abdbc2eb8e72576d5ab9b692d9aad77e3edb80e4e`；wechat-clean-console.json `c730c7f04c30b268e667be3612eba586ee55a439bb543c61b2bf90723704c145`；wechat-clean-scene.png `5bba9e6752d7a3f1d89974f4c10c18727e8c4dd57cd7376418a1f83f2dab204d`。已停止工具释放资源，可用内存回到约 4.3 GiB，无 swap，根盘/数据盘约 45%/47%，kubelet/containerd active。未保存 AppSecret、登录 code、随机值或新增后端凭据。
 
@@ -220,3 +220,16 @@ SDK 探测使用真实五个 core 源文件经 TypeScript CommonJS 转译及私�
 新增 Web 宿主尺寸适配由 Cocos 3.8.8 的公开 API 完成，未读取/修改引擎私有状态，也没有伪造 cc。检查了 Game.once 在初始化前/后注册的真实语义、screen.windowSize 的物理像素单位/桌面子窗口限制、引擎 DPR 上限；Web 宿主 resize 监听在永久 pagehide 时清理，bfcache 暂存时保留。仅修改 HTML 模板脚本的本地预验证使用真实已构建引擎加提议脚本，**不替代原生 Creator 重建资格**。真机刘海/旋转/移动系统挂起和长期堆内存分析没有运行。
 
 自审覆盖了边界输入、SDK 同步回调和抛错、close/error/cancel 先后、旧成功/失败/监听、重复消息和版本、不可变状态、身份字段、协议层次、秘密与 URL、启动/销毁、构建依赖/导出、资源范围及验证证据强度。修复后复跑受影响测试和严格类型检查；剩余不确定性均按上述运行层次列明，不以单元测试、声明文件或绿色 CI 替代 Creator/工具/真机结果。
+
+
+## 用户授权的真机测试包上传
+
+用户明确要求“上传一下我用真机试一下”后，使用已扫码的工具上传开发版本 0.0.45 并生成真机预览二维码；未提交审核或正式发布。初次上传失败：source size 8171KB exceed max limit 4MB，证明原先 debug 导出成功不代表包可上传。工具 Terser 5.27.1 的单独实验将引擎脚本从 6737130 压至 3032794 字节，但其余资源仍使主包超限；该实验文件未用于上传。
+
+上传采用保留原导出的独立 wechatgame-device 副本：game.json 声明 cocos-engine 分包 root=cocos-js/；根 game.js 的完整原启动代码放入 wx.loadSubpackage success 回调，fail 仅报错不启动应用；新增空分包入口 cocos-js/game.js，项目名设为 fair-doudizhu-device。哈希逐文件比对确认只改三份启动/配置文件、新增分包入口，无原引擎/业务/资源修改或文件删除。复现步骤见 PLATFORM-VALIDATION.md。这是本地导出后包装，不是新的 Creator release 构建资格；正式分发前应将发布压缩、功能裁剪/分包纳入可重复的 Creator 构建配置。
+
+微信 CLI upload 和 preview 均实际成功，返回一致包体：主包 915134 字节，引擎分包 7472470 字节，总计 8387604 字节。预览完成后模拟器截图显示横屏入口“公平斗地主”和初始化后的状态文字；工具构建面板保留“文件超过 2000KB，编译进程不处理”提示，不能宣称所有工具日志零警告。二维码已展示给用户，真机打开、横屏、安全区、前后台与分享结果等待用户反馈，未标记通过。
+
+私有证据：wechat-device-package-manifest.json SHA256 `f8fafec6ab735f8a0ed7ef8de122997f4e4de5d380f2efa382b4c53cfb9d5671`；wechat-upload-info.json 与 wechat-preview-info.json 内容一致，SHA256 均为 `a6cb7709d1aa8931a8eb35710f8043d2091d2937c27282f5910febf2f7d7c0e0`；wechat-device-scene-after-preview.png `eef644db1d453308b3880eb560ebf4c4b2c8a2bd3c7d98edd7f3f2ff83951764`。当前实现者自审检查了加载成功/失败分支、原文件哈希、AppID/密钥不入库、用户授权范围和测试证据层次。另用 Node VM 执行实际包装后的 game.js，受控 wx.loadSubpackage 验证成功回调前不启动、失败只报错不启动、成功回调进入原 bootstrap；这是本地回调顺序检查，不是实际网络中断/重试或真机恢复资格。
+
+报告检查点 acf6041d8f32eb66cf3eae75b144b7d2da41dd92 的 [CI 41229934812](https://github.com/oublie6/awesome-zero-platform/actions/runs/41229934812) 与 [Fair Doudizhu 41229934872](https://github.com/oublie6/awesome-zero-platform/actions/runs/41229934872) 均成功；包括 source client_foundation、清单/加密、应用、MySQL 集成及通用 CI 单元/集成/运行时等门禁。此 CI 未执行本地微信上传或真机测试，后两者必须分别依据微信返回结果和用户设备反馈判断。

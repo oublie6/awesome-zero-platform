@@ -76,6 +76,8 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### In progress
 
+- At the user’s explicit request, development version 0.0.45 uploaded successfully and preview QR delivered. Original export exceeded WeChat’s 4 MB main-package limit; a separate post-export device-test copy loads unchanged cocos-js through wx.loadSubpackage before the original bootstrap. WeChat reports main 915134 bytes / engine 7472470 / total 8387604. Its simulator entry rendered after preview; device execution awaits user feedback. No review submission or formal release.
+
 - Linux community WeChat imported the final native artifact after user scan login and Mini Game AppID configuration. Actual Entry.scene rendered in landscape; SDK 3.17.5 probes using actual adapter source passed for login code, two 32-byte entropy requests, vault save/load/clear with restoration, and lifecycle registration/removal. Full networking, lifecycle delivery, sharing and device qualification remain open. Goal 0045 stays in_progress, not archived/reset.
 
 ### Remaining
@@ -85,6 +87,8 @@ Single primary implementer; use subagents only for independent review or API doc
 - Continue planned protocol integration in Goal 0046: separate durable envelope from current doudizhu-api-command-v1 request DTO, implement mapping, per-account/aggregate sequence/ID allocation and safe retries, private snapshot and terminal-evidence mapping. Do not submit the durable CommandEnvelope directly as a wire request or infer game state from notifications.
 
 ### Verification status
+
+- Latest pre-upload report commit acf6041d8f32eb66cf3eae75b144b7d2da41dd92: CI 41229934812 and Fair Doudizhu 41229934872 both succeeded. Upload/preview success and package-file hashes are separate local evidence, not tests performed by CI. The device package changes only game.js, game.json and project.config.json and adds cocos-js/game.js; raw engine/resources remain unchanged. Reproducible packaging procedure and warnings are recorded in PLATFORM-VALIDATION.md.
 
 - WeChat simulator evidence: wechat-sdk-probe.json SHA256 8ef91c295bb67dfa7db1442abdbc2eb8e72576d5ab9b692d9aad77e3edb80e4e; fresh clean console SHA256 c730c7f04c30b268e667be3612eba586ee55a439bb543c61b2bf90723704c145. Final screenshot manually reviewed. Default compiler concurrency hit the session memory-high limit; bundled-source-supported COMPILE_THREADS=1 / MULTI_TASK_WORKERS=1 resolved the loading bottleneck. Tool stopped; available memory ~4.3 GiB, no swap, root/data disks 45%/47%, kubelet/containerd active.
 
