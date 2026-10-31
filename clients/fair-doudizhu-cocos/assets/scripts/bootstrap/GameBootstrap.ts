@@ -1,4 +1,4 @@
-import { _decorator, Color, Component, Label, Node, UITransform, Vec3, view, Widget } from 'cc'
+import { _decorator, Color, Component, Label, Node, UITransform, Vec3, view } from 'cc'
 import { GameClientShell } from '../game/GameClientShell'
 
 const { ccclass } = _decorator
