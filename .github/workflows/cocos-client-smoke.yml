@@ -9,6 +9,7 @@ on:
       - 'scripts/verify-cocos-*'
       - 'scripts/verify-client-foundation.sh'
       - 'clients/fair-doudizhu-cocos/assets/**'
+      - 'clients/fair-doudizhu-cocos/build-templates/**'
       - 'clients/fair-doudizhu-cocos/package*.json'
       - 'clients/fair-doudizhu-cocos/tsconfig*.json'
       - 'clients/packages/game-client-core/src/**'
