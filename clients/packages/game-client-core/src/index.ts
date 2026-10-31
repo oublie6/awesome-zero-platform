@@ -5,7 +5,7 @@ export interface PlatformAuth {
   acquireCode(): Promise<string>
 }
 export interface HttpTransport {
-  request<T>(path: string, options?: { method?: string; body?: unknown; signal?: AbortSignal }): Promise<T>
+  request<T>(path: string, options?: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number }): Promise<T>
 }
 export interface SocketConnection {
   send(message: string): Promise<void>
@@ -14,6 +14,8 @@ export interface SocketConnection {
   onClose(handler: () => void): Unsubscribe
 }
 export interface SocketOptions {
+  /** Opening deadline, default 15 seconds. */
+  timeoutMs?: number
   /** Portable cancellation: does not require a browser AbortController in mini-games. */
   onCancel?: (handler: () => void) => Unsubscribe
 }

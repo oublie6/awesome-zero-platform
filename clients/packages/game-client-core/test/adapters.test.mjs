@@ -63,7 +63,7 @@ test('Web HTTP preserves method, JSON, abort signal and rejects non-2xx',async t
   let args;override(t,'fetch',async (url,options)=>{args={url,options};return{ok:true,json:async()=>({ok:true})}})
   const signal=new AbortController().signal
   assert.deepEqual(await new WebHttp('/api').request('/read',{method:'POST',body:{a:1},signal}),{ok:true})
-  assert.equal(args.url,'/api/read');assert.equal(args.options.signal,signal);assert.equal(args.options.body,'{"a":1}')
+  assert.equal(args.url,'/api/read');assert.ok(args.options.signal instanceof AbortSignal);assert.equal(args.options.body,'{"a":1}')
   override(t,'fetch',async()=>({ok:false,status:500}));await assert.rejects(new WebHttp().request('/read'),/500/)
   await assert.rejects(new WebHttp().request('//host'),/relative/)
 })
@@ -106,4 +106,22 @@ test('synchronous abort during native request creation aborts its returned task'
  const control=new AbortController();let aborts=0
  const http=new MiniHttp({request(){control.abort();return{abort(){aborts++}}}},'https://example.org')
  await assert.rejects(http.request('/read',{signal:control.signal}),/cancelled/);assert.equal(aborts,1)
+})
+test('HTTP deadlines reject never-completing native requests and abort owned work',async t=>{
+ let aborts=0
+ const mini=new MiniHttp({request(){return{abort(){aborts++}}}},'https://example.org')
+ await assert.rejects(mini.request('/read',{timeoutMs:2}),/timed out/);assert.equal(aborts,1)
+ override(t,'fetch',(_url,{signal})=>new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>{aborts++;reject(new Error('aborted'))})))
+ await assert.rejects(new WebHttp().request('/read',{timeoutMs:2}),/timed out/);assert.equal(aborts,2)
+ const controller=new AbortController(),request=new WebHttp().request('/read',{signal:controller.signal});controller.abort();await assert.rejects(request,/aborted/);assert.equal(aborts,3)
+})
+test('mini handshake deadline rejects and releases SDK callbacks',async()=>{
+ const task=new Task(),pending=new MiniSocketTransport({connectSocket(){return task}}).connect('wss://example.org/ws','token',{timeoutMs:2})
+ await assert.rejects(pending,/timed out/);assert.equal(task.listeners,0);assert.equal(task.closes,1)
+})
+test('invalid opening deadlines fail before creating a native task',async()=>{
+ let created=0
+ await assert.rejects(new MiniSocketTransport({connectSocket(){created++;return new Task()}}).connect('wss://example.org/ws','token',{timeoutMs:0}),/invalid network timeout/)
+ await assert.rejects(new WebSocketTransport().connect('wss://example.org/ws','token',{timeoutMs:0}),/invalid network timeout/)
+ assert.equal(created,0)
 })

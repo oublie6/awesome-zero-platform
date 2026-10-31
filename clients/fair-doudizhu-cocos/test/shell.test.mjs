@@ -49,3 +49,13 @@ test('a wire view is never cast into local authoritative state without mapping',
  s.events.receive(JSON.stringify({type:'doudizhu.hand.snapshot',payload:{v:'doudizhu-realtime-event-v1',handId:'hand-1',notModified:false,view:{version:7,payload:{cards:['3S']}}}}))
  assert.equal(s.hand.snapshot,null);assert.equal(s.hand.canSubmit,false);s.dispose()
 })
+test('same-version full snapshot confirms reconnect without replacing confirmed state',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ let p=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await p;s.acceptVerifiedSnapshot(snapshot)
+ p=s.connect(t,'wss://example.org/ws','token');t.tasks[1].resolve();await p
+ assert.equal(s.hand.status,'synchronizing')
+ s.acceptVerifiedSnapshot({...snapshot,view:{cards:['duplicate must not overwrite']}})
+ assert.equal(s.hand.status,'connected');assert.deepEqual(s.hand.snapshot.view,snapshot.view)
+ s.hand.setStatus('synchronizing');s.acceptVerifiedSnapshot({...snapshot,version:6});assert.equal(s.hand.status,'synchronizing')
+ s.dispose()
+})

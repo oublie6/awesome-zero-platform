@@ -1,3 +1,4 @@
+import { networkTimeout } from './network-timeout.js'
 import type { SocketConnection, SocketOptions, Unsubscribe } from './index.js'
 
 /** Shared adapter lifecycle. Drivers supply platform events; core never reads SDK globals. */
@@ -11,12 +12,15 @@ export function openSocket(driver: SocketDriver, options: SocketOptions = {}): P
     let state: 'connecting' | 'open' | 'closed' = 'connecting'
     let unbind: Unsubscribe = () => {}
     let uncancel: Unsubscribe = () => {}
+    const timeout = networkTimeout(options.timeoutMs)
+    const timer = setTimeout(() => finish(new Error('socket connection timed out')), timeout)
     const messages = new Set<(data: string) => void>()
     const closes = new Set<() => void>()
     const finish = (error?: Error, code?: number, reason?: string) => {
       if (state === 'closed') return
       const pending = state === 'connecting'
       state = 'closed'
+      clearTimeout(timer)
       try { unbind() } catch { /* callback guards still prevent delivery */ }
       try { uncancel() } catch { /* owned socket must still close */ }
       // Close even a failed opening attempt; late native callbacks are inert.
@@ -44,7 +48,7 @@ export function openSocket(driver: SocketDriver, options: SocketOptions = {}): P
     }
     try {
       unbind = driver.bind({
-        open() { if (state === 'connecting') { state = 'open'; resolve(connection) } },
+        open() { if (state === 'connecting') { state = 'open'; clearTimeout(timer); resolve(connection) } },
         message(data) { if (state === 'open') messages.forEach(cb => cb(data)) },
         close() { finish() },
         error() { finish(new Error('socket connection failed')) }

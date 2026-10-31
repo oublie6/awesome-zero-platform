@@ -19,3 +19,8 @@ still requires target qualification; absence fails closed. HTTP cancellation use
 an injected AbortSignal and native RequestTask.abort where provided. Session
 storage is platform storage, not an encrypted vault. Share results indicate UI
 invocation/copy (WeChat/Web) or the Douyin callback, never recipient delivery.
+
+HTTP requests and socket opening attempts default to a 15-second deadline; callers
+may supply a positive `timeoutMs` within the host timer range. Deadlines cancel
+owned work, reject pending operations and remove listeners. HTTP external abort
+and response-body reads remain inside the same deadline.

@@ -64,10 +64,12 @@ export class GameClientShell {
   }
   acceptVerifiedSnapshot(snapshot: HandSnapshot): void {
     if (this.disposed) return
-    if (this.hand.apply(snapshot)) {
-      if (this.hand.status === 'synchronizing') this.hand.setStatus('connected')
-      this.notify(`牌局 ${snapshot.handId} · 版本 ${snapshot.version} · ${snapshot.phase}`)
+    const applied = this.hand.apply(snapshot)
+    const confirmed = this.hand.snapshot
+    if (this.hand.status === 'synchronizing' && confirmed?.handId === snapshot.handId && confirmed.version === snapshot.version) {
+      this.hand.setStatus('connected')
     }
+    if (applied) this.notify(`牌局 ${snapshot.handId} · 版本 ${snapshot.version} · ${snapshot.phase}`)
   }
   async syncHand(handId: string, knownVersion?: number): Promise<void> {
     if (this.disposed || !this.connection || !['synchronizing','connected'].includes(this.hand.status)) throw new Error('not connected')

@@ -7,7 +7,7 @@ test('pure entrypoints contain no renderer, platform SDK, adapter imports or run
   const source=ts.createSourceFile(path,await readFile(new URL(path,import.meta.url),'utf8'),ts.ScriptTarget.Latest,true)
   const forbidden=new Set(['wx','tt','window','document','navigator','WebSocket','sessionStorage','crypto','URL'])
   const visit=node=>{
-   if(ts.isImportDeclaration(node))assert.match(node.moduleSpecifier.text,/^\.\/index\.js$/)
+   if(ts.isImportDeclaration(node))assert.match(node.moduleSpecifier.text,/^\.\/(index|network-timeout)\.js$/)
    if(ts.isIdentifier(node))assert.equal(forbidden.has(node.text),false,`${path}: ${node.text}`)
    ts.forEachChild(node,visit)
   };visit(source)

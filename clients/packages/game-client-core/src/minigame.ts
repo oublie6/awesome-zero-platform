@@ -1,5 +1,6 @@
 import type { HttpTransport, SecureRandomSource, SocketConnection, SocketTransport, SocketOptions } from './index.js'
 import { websocketURL } from './index.js'
+import { networkTimeout } from './network-timeout.js'
 import { openSocket } from './socket.js'
 
 /** Minimal SDK shapes injected by the composition root. No references to global wx or tt. */
@@ -37,6 +38,7 @@ export class MiniSocketTransport implements SocketTransport {
     const endpoint = websocketURL(url)
     if (endpoint.protocol !== 'wss:') throw new Error('mini-game socket requires WSS')
     if (!accessToken) throw new Error('access token required')
+    networkTimeout(options?.timeoutMs)
     // SDK success means task creation, not handshake. Defer synchronous fail until
     // the returned task and its listeners exist; never read uninitialized bindings.
     let fail: () => void = () => { failed = true }
@@ -80,10 +82,12 @@ export class MiniSocketTransport implements SocketTransport {
 
 export class MiniHttp implements HttpTransport {
   constructor(private readonly sdk: MiniSDK, private readonly base: string) {}
-  request<T>(path: string, opts: { method?: string; body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
+  request<T>(path: string, opts: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number } = {}): Promise<T> {
     if (!this.sdk.request) return Promise.reject(new Error('platform HTTP unsupported'))
     if (!path.startsWith('/') || path.startsWith('//')) return Promise.reject(new Error('relative API path required'))
     return new Promise((resolve, reject) => {
+      const timeout = networkTimeout(opts.timeoutMs)
+      let timer: ReturnType<typeof setTimeout> | undefined
       let finished = false
       let cancelled = false
       let task: {abort?(): void} | void
@@ -91,16 +95,22 @@ export class MiniHttp implements HttpTransport {
         if (finished) return
         cancelled = true
         complete(new Error('HTTP request cancelled'))
-        task?.abort?.()
+        try { task?.abort?.() } catch { /* request already rejected; continue cleanup */ }
       }
       const complete = (error?: Error, data?: unknown) => {
         if (finished) return
         finished = true
+        clearTimeout(timer)
         opts.signal?.removeEventListener('abort', abort)
         if (error) reject(error); else resolve(data as T)
       }
       if (opts.signal?.aborted) { abort(); return }
       opts.signal?.addEventListener('abort', abort, {once:true})
+      timer = setTimeout(() => {
+        cancelled = true
+        complete(new Error('HTTP request timed out'))
+        try { task?.abort?.() } catch { /* promise already rejected and callbacks are inert */ }
+      }, timeout)
       try {
         task = this.sdk.request!({
           url: this.base + path, method: opts.method ?? 'GET', data: opts.body,

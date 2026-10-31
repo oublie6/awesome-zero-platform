@@ -1,25 +1,41 @@
 import type { AppLifecycle, HttpTransport, SecureRandomSource, SessionVault, SharePort, SocketConnection, SocketTransport, SocketOptions, Unsubscribe } from './index.js'
 import { websocketURL } from './index.js'
+import { networkTimeout } from './network-timeout.js'
 import { openSocket } from './socket.js'
 
 export class WebHttp implements HttpTransport {
   constructor(private readonly base = '/api') {}
-  async request<T>(path: string, options: { method?: string; body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
+  async request<T>(path: string, options: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number } = {}): Promise<T> {
     if (!path.startsWith('/') || path.startsWith('//')) throw new Error('relative API path required')
-    const response = await fetch(this.base + path, {
-      method: options.method ?? 'GET',
-      signal: options.signal,
-      headers: options.body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body)
-    })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    return response.json() as Promise<T>
+    const timeout = networkTimeout(options.timeoutMs)
+    const controller = new AbortController()
+    let timedOut = false
+    const abort = () => controller.abort()
+    const timer = setTimeout(() => { timedOut = true; controller.abort() }, timeout)
+    options.signal?.addEventListener('abort', abort, {once: true})
+    if (options.signal?.aborted) abort()
+    try {
+      const response = await fetch(this.base + path, {
+        method: options.method ?? 'GET', signal: controller.signal,
+        headers: options.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+        body: options.body === undefined ? undefined : JSON.stringify(options.body)
+      })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      return await response.json() as T
+    } catch (error) {
+      if (timedOut) throw new Error('HTTP request timed out')
+      throw error
+    } finally {
+      clearTimeout(timer)
+      options.signal?.removeEventListener('abort', abort)
+    }
   }
 }
 export class WebSocketTransport implements SocketTransport {
   async connect(endpoint: string, accessToken: string, options?: SocketOptions): Promise<SocketConnection> {
     websocketURL(endpoint)
     if (!accessToken) throw new Error('access token required')
+    networkTimeout(options?.timeoutMs)
     const ws = new WebSocket(endpoint, ['bearer', accessToken])
     return openSocket({
       bind(events) {
