@@ -67,3 +67,47 @@ export function requireValidCommand(command: CommandEnvelope): void {
     throw new Error('invalid command envelope')
   }
 }
+
+export type GameMessageType =
+  | 'doudizhu.command.result'
+  | 'doudizhu.hand.changed'
+  | 'doudizhu.hand.snapshot'
+  | 'doudizhu.hand.evidence'
+  | 'doudizhu.error'
+
+export interface RealtimeEnvelope {
+  id?: string
+  type: GameMessageType | 'system.hello' | 'system.pong'
+  payload?: unknown
+}
+
+/** Routes only recognized protocol messages, never fabricates authoritative state. */
+export class GameMessageRouter {
+  private listeners = new Map<string, Set<(payload: unknown) => void>>()
+  on(type: GameMessageType, handler: (payload: unknown) => void): () => void {
+    const set = this.listeners.get(type) ?? new Set<(payload: unknown) => void>()
+    set.add(handler)
+    this.listeners.set(type, set)
+    return () => {
+      set.delete(handler)
+      if (set.size === 0) this.listeners.delete(type)
+    }
+  }
+  receive(raw: string): void {
+    let value: unknown
+    try { value = JSON.parse(raw) } catch { throw new Error('invalid realtime JSON') }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid realtime envelope')
+    const msg = value as Record<string, unknown>
+    if (typeof msg.type !== 'string') throw new Error('missing realtime type')
+    const callbacks = this.listeners.get(msg.type)
+    callbacks?.forEach(callback => callback(msg.payload))
+  }
+  clear(): void { this.listeners.clear() }
+}
+
+/** Pure client command creation; caller supplies a secure unique ID and monotonic sequence. */
+export function createCommand(input: Omit<CommandEnvelope, 'v'>): CommandEnvelope {
+  const result: CommandEnvelope = { v: 'fair-doudizhu-command-v1', ...input }
+  requireValidCommand(result)
+  return result
+}
