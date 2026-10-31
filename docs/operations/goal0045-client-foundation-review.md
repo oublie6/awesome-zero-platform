@@ -1,6 +1,6 @@
 # Goal 0045 客户端基础阶段性验收
 
-日期：2026-10-31。结论：**已完成源码审查/修复、49 项自动化测试、Creator 3.8.8 原生三目标构建、真实 Web 场景运行与适配器通信验证；小游戏 SDK/真机资格尚未完成。** Goal 0045 保持 `in_progress`，不归档、不恢复空白模板。本报告不表示完整斗地主客户端或三个发布目标已经可用。
+日期：2026-10-31。结论：**已完成源码审查/修复、49 项自动化测试、Creator 3.8.8 原生三目标构建、真实 Web 场景运行与适配器通信验证；微信社区 Linux 模拟器已运行入口场景并通过部分真实 SDK 探测，完整小游戏 SDK/真机资格尚未完成。** Goal 0045 保持 `in_progress`，不归档、不恢复空白模板。本报告不表示完整斗地主客户端或三个发布目标已经可用。
 
 ## 范围、提交和责任
 
@@ -111,7 +111,7 @@ npm --prefix clients/packages/secure-envelope test
 | Creator 实际生成配置的严格 tsc | **通过** | 保留 strict/noImplicitOverride，解析真实本地包 exports；不是伪造 temp 配置 |
 | 实际构建 Web 场景/Chromium | **通过** | 1280×720、844×390、390×844；实际 canvas/渲染比例、字号、节点边界、销毁/重挂载/父节点销毁、监听清理；逐张自审截图 |
 | Creator 交互式 GUI 编辑器预览 | **未取得合格结果** | Linux Wine 失败/主动停止；Windows CI 执行 CLI 导入构建，随后实际 Web 引擎运行，未冒充交互式编辑器操作 |
-| 微信/抖音开发者工具、真机、平台审核 | **工具安装并尝试启动，模拟器/真机未通过** | Wine 下未取得可用工具界面/小游戏执行证据，缺平台应用配置和设备；不标记通过 |
+| 微信/抖音开发者工具、真机、平台审核 | **微信社区 Linux 模拟器入口与部分 SDK 通过；其他未完成** | 真实场景、登录 code、随机源、存储与监听注册/卸载通过；WSS、生命周期触发、分享、真机与审核未验证；抖音 Wine 尝试仍不合格 |
 
 CI 增加 `Fair Doudizhu / client_foundation`，执行同一顺序脚本；原 manifest_client 继续运行 HPKE/签名清单测试和互操作。网络等待修复检查点 `0fc7ebb9a31f51ddf1830c6f05021eac474e3a09` 的 [CI 41193878945](https://github.com/oublie6/awesome-zero-platform/actions/runs/41193878945) 和 [Fair Doudizhu 41193878962](https://github.com/oublie6/awesome-zero-platform/actions/runs/41193878962) 均已成功，包括新增 client_foundation、现有 manifest_client/互操作、单元/竞态/集成及运行时门禁。最终报告提交的 Actions 另在推送后核对，并在交接消息中给出。
 
@@ -127,13 +127,13 @@ Web 探针在增加网络超时后针对网络等待修复源码 `0fc7ebb` 重�
 
 | 能力 | Web | 微信小游戏 | 大陆抖音小游戏 |
 | --- | --- | --- | --- |
-| 登录 | 浏览器 HTTP 测试账号登录通过；正式平台身份 UI 未实现 | wx.login 临时 code；后端换证/绑定待 Goal 0046 | tt.login 可能只返回 anonymousCode；适配器拒绝把它当已认证 code，后端换证待实现 |
+| 登录 | 浏览器 HTTP 测试账号登录通过；正式平台身份 UI 未实现 | 实际适配器 + Linux 模拟器 wx.login 返回非空 code；后端换证/绑定待 Goal 0046 | tt.login 可能只返回 anonymousCode；适配器拒绝把它当已认证 code，后端换证待实现 |
 | HTTP/错误/取消 | 真实登录 + 状态/AbortSignal 自动化通过 | wx.request/RequestTask 注入；可控 SDK 测试通过，未跑平台 | tt.request 要求 HTTPS/合法域名；测试了状态与 abort，未跑平台 |
 | SocketTask/失败/关闭 | 真实 WebSocket、错误认证通过；取消/旧事件测试通过 | connectSocket 返回任务；等 onOpen，不能等 success；不假定存在所有 off 方法 | 独立核对 SocketTask 文档；同样等 onOpen；不假定 off 方法，关闭后回调失效 |
 | 握手认证 | ['bearer', accessToken] 与当前服务兼容，真实 WSS 通过 | 文档列出 protocols/header；真机是否正确保留/协商 bearer 待验 | 文档列出 protocols/header 并要求服务返回所选协议；真机待验，不把 Header 能力从微信推断过来 |
-| 安全随机源 | HTTPS 浏览器 crypto.getRandomValues 实际通过 | UserCryptoManager.getRandomValues，文档最低 2.17.3；注入/长度/缺失测试通过，真机未验 | **未确认 Mini Game 安全熵 API**；mini-app 同名方法不能作证；缺失即拒绝，不用 Math.random |
-| 存储 | sessionStorage 实际存取/清除通过，按标签页隔离 | 同步存储接口；可控 SDK 测试，未实机；不是加密安全存储 | 同步存储端口/缺失能力测试；实际 SDK/生命周期组合仍待工具验证 |
-| 前后台 | document visibilitychange 注册/卸载自动化通过；未测移动 OS 挂起 | onShow/onHide 和对应卸载需同时存在，否则明确失败；工具/真机待验 | 同样进行能力检查而不假定完全一致；工具/真机待验 |
+| 安全随机源 | HTTPS 浏览器 crypto.getRandomValues 实际通过 | UserCryptoManager.getRandomValues，文档最低 2.17.3；真实适配器 + 模拟器 SDK 3.17.5 两次 32 字节返回成功且不同；真机未验 | **未确认 Mini Game 安全熵 API**；mini-app 同名方法不能作证；缺失即拒绝，不用 Math.random |
+| 存储 | sessionStorage 实际存取/清除通过，按标签页隔离 | 实际适配器 + 模拟器 SDK 存取/清除通过并恢复原值；未实机，不是加密安全存储 | 同步存储端口/缺失能力测试；实际 SDK/生命周期组合仍待工具验证 |
+| 前后台 | document visibilitychange 注册/卸载自动化通过；未测移动 OS 挂起 | 实际适配器 + 模拟器 SDK 注册/卸载通过；前后台事件触发/系统挂起/真机未验 | 同样进行能力检查而不假定完全一致；工具/真机待验 |
 | 分享 | Clipboard 能力/缺失单元测试；不是系统分享送达证明 | 调用 UI 不等于分享送达；素材/用户手势和真机待验 | 使用 success/fail/cancel；PC 宿主有不支持分享的明确差异，失败不能当成功；工具/真机待验 |
 
 主要官方依据（核对日期同本报告）：
@@ -198,14 +198,22 @@ Linux 可以用于小程序/小游戏开发。“未提供官方 Linux 工具”
 
 实际结果：纯 Linux GUI 启动成功，进入官方工具提供的游客模式，可看到小游戏项目入口；进程内存约 300–500 MiB。已在卸载 Wine 后再次启动，证明此路径不依赖 Wine。社区包 CLI 包装器额外插入 `--electron`，导致命令只显示帮助；直接以随包 Electron 的 Node 模式运行 CLI 入口后参数正确。CLI 还硬编码默认配置目录，使用 `/root/.config/wechat-devtools` 应用级符号链接指向数据盘配置目录，未修改 HOME。保留独立启动器 `/data/awesome-zero-platform-tools/goal0045/wechat-cli.sh`，没有修改项目生产代码或社区包内部文件。独立 D-Bus 会话/本地 GIO 用于无桌面服务器上的 GUI 测试。
 
-在设置页只开启本地 CLI 服务端口后，CLI 成功连接 `127.0.0.1` 并实际调用 open 导入已构建的 `wechatgame`。工具对 Creator 默认示例 AppID 返回 `code: 10, 不存在此 AppID`。这是实际导入结果，不是“没有工具”；也不能据此断言该 AppID 在所有环境下已失效。CLI 本身退出 0 但返回错误，故未把退出码当导入成功。未伪造账号、未绕过 AppID 校验、未上传项目；等待用户提供项目自有测试 AppID，后续可能仍需开发者扫码授权。截图和主进程原始错误节选保留于私有证据目录。GUI/CLI 可运行不等于小游戏场景或 wx SDK/真机资格通过，社区移植版也不等于官方宿主全兼容。
+在设置页只开启本地 CLI 服务端口后，CLI 成功连接 `127.0.0.1` 并实际调用 open 导入已构建的 `wechatgame`。工具对 Creator 默认示例 AppID 返回 `code: 10, 不存在此 AppID`。这是实际导入结果，不是“没有工具”；也不能据此断言该 AppID 在所有环境下已失效。CLI 本身退出 0 但返回错误，故未把退出码当导入成功。当时未伪造账号、未绕过 AppID 校验、未上传项目；此初始阻塞随后通过用户提供小游戏 AppID 和扫码登录解除，见下述新增结果。截图和主进程原始错误节选保留于私有证据目录。GUI/CLI 可运行不等于小游戏场景或 wx SDK/真机资格通过，社区移植版也不等于官方宿主全兼容。
+
+后续实际验证：用户扫码登录后，普通小程序 AppID 虽可 open，但工具切换小程序模式并报缺 app.json；改用用户新申请的小游戏 AppID（仅本地构建产物配置）后，CLI open 成功且识别小游戏。默认编译进程池触及本次 systemd 会话 MemoryHigh=2500M，出现明显停顿；停止该次会话后，从随包 asar 源码确认 getWorkerPoolSize/pm2WorkerManager 支持 COMPILE_THREADS 和 MULTI_TASK_WORKERS。两个变量均设 1 后，编译完成，Cocos 3.8.8 日志显示成功加载 Entry.scene，实际横屏画面显示“公平斗地主”和入口状态文字。无应用源码或工具内部补丁；该配置仅用于本地开发工具资源控制。测量时 cgroup memory.events 的 high/max/oom/oom_kill 均为 0，不代表长期内存资格已通过。
+
+SDK 探测使用真实五个 core 源文件经 TypeScript CommonJS 转译及私有模块加载器，注入真实小游戏上下文并调用 createMiniPlatform('wechat', wx, 'https://example.invalid')，不是可控 Fake SDK。SDK 3.17.5 返回两次不同的 32 字节随机值，第一组同时验证非全零；vault 存取/清除后恢复此前存储；前后台监听注册/卸载成功；wx.login 返回非空 code（未保存 code）。未调用 HTTP/WSS、分享或后端换证，没有发布/上传。随机值和登录 code 不进入报告。此结果不能推出设备密码学实现、系统挂起恢复、WSS bearer 协商或完整身份链已通过。
+
+一次诊断误用了小游戏 document shim 不支持的 querySelector，产生两条诊断 TypeError，归因于探测脚本而非产品；随后重新编译，不再执行 DOM 探针。干净控制台按 shadow DOM 提取全部 13 条消息，均为 info-level，包含成功加载场景；独立保存 SDK 探测和干净运行证据，不能把早先受污染的日志当零错误结果。最终截图由当前实现者自审，确认横屏入口文字显示；这不是独立审查、完整牌桌或真机资格。
+
+私有证据位于既有 evidence 目录（0700，文件 0600）：wechat-sdk-probe.json SHA256 `8ef91c295bb67dfa7db1442abdbc2eb8e72576d5ab9b692d9aad77e3edb80e4e`；wechat-clean-console.json `c730c7f04c30b268e667be3612eba586ee55a439bb543c61b2bf90723704c145`；wechat-clean-scene.png `5bba9e6752d7a3f1d89974f4c10c18727e8c4dd57cd7376418a1f83f2dab204d`。已停止工具释放资源，可用内存回到约 4.3 GiB，无 swap，根盘/数据盘约 45%/47%，kubelet/containerd active。未保存 AppSecret、登录 code、随机值或新增后端凭据。
 
 用户要求清理后，已删除本次安装的 Windows Creator 3.8.8、微信 Windows 2.01.2510260、抖音 Windows 4.5.7、Wine 前缀/旧启动脚本/重复安装归档，并卸载 150 个经 apt 历史核实为本次 Wine 引入的软件包（含 i386 依赖）。模拟移除计划逐项验证只含 Wine/本次外来架构包，amd64 基础系统库不在移除列表；保留 Linux 工具需要的 GTK/Xvfb/字体。Wine 软件源及其专用 key、i386 架构配置已移除，已安装 Wine/i386 包数为 0。Kubelet/containerd 仍 active，未清理集群镜像、PV 或业务数据。根盘现约 45% 使用、剩余约 22 GiB；数据盘约 47–48%、剩余约 20 GiB；无 swap。Linux 已安装工具及必要证据保留，冗余 Linux 下载归档也已删除。
 
 交回 ChatGPT 的具体任务：
 
 1. 复用已通过的 Creator **3.8.8** 原生 CLI/生成配置/三目标构建和 Web 入口路径。继续交互式编辑器预览、真实移动设备/刘海安全区/系统旋转和长期资源检查；不要再把已通过的导入/导出列为“编辑器未安装”。
-2. 配置合法小游戏 app ID/域名和工具；分别实测 wx/tt 登录、WSS bearer 协商、存储/前后台/分享和熵。尤其确认抖音 **Mini Game** 密码学安全随机源，缺失时保持拒绝。不要仅依据本报告里的可控 SDK 测试放行。
+2. 复用已成功的微信小游戏 AppID/扫码登录/模拟器入口与部分 SDK 结果；继续验证域名、HTTP/WSS bearer、前后台触发/分享/真机，独立实测 tt 登录、存储/前后台/分享和熵。尤其确认抖音 **Mini Game** 密码学安全随机源，缺失时保持拒绝。不要仅依据本报告里的可控 SDK 测试放行。
 3. 按 Goal 0046 实现有据可查的身份换证/会话、授权 HTTP、准确 wire DTO/结果/私有快照/终局映射、ID/序号与原请求重试，解决揭示 AAD 上下文可获得性；会话寿命、撤销/退出清理和小游戏持久存储的敏感信息策略也需明确；本阶段不展开完整牌桌或 Go 重构。
 4. 最终三人真实牌局、房间/准备/公平性/出牌/结算属于既定后续目标，尚未开发/验收。本阶段不开放游戏生产流量；按用户要求，本次交接保持 Goal 0045，不归档、不重置。
 

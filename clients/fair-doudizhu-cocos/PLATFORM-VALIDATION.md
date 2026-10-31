@@ -16,7 +16,7 @@ for findings, source commits, evidence, SDK differences and handoff tasks.
 | Creator generated-config strict TypeScript check | Passed; actual generated configuration, Bundler package resolution |
 | Real built Web scene in Chromium | Passed at 1280×720, 844×390 and 390×844: active bootstrap/UI, viewport/framebuffer ratio, rendered font size, component disposal/restart and parent disposal; screenshots manually reviewed |
 | Interactive Creator GUI preview | Not qualified: Linux Wine startup failed/stopped; native CI used CLI import/build and real built Web runtime |
-| Linux community WeChat developer tool | GUI/guest mode and CLI connection passed on v2.02.2609240-2 without Wine. Actual artifact import returns code 10 for Creator’s sample AppID; project-owned AppID/account pending. No mini-game scene/SDK pass claimed |
+| Linux community WeChat developer tool | Passed on community v2.02.2609240-2 / SDK 3.17.5 with a user-owned Mini Game AppID and scan login: actual 3.8.8 Entry.scene rendered in landscape. Actual adapter + wx SDK probes passed for login code, entropy, storage and lifecycle registration/removal. HTTP/WSS, lifecycle event delivery, share and devices remain unqualified |
 | Douyin developer tool and device tests | Windows/Wine attempt unqualified; unused Windows tools/Wine removed. Platform SDK/device validation remains open |
 | Full game client / three-player hand | Not implemented by this foundation; later goals |
 
@@ -55,3 +55,37 @@ Creator build logs retain non-blocking default-compression/plugin-migration warn
 the final browser report has no errors, warnings or failed requests.
 
 GameBootstrap displays entry status only. No playable lobby/card table is claimed.
+
+## Linux WeChat simulator checkpoint
+
+The final Windows-built WeChat artifact from source `7da85a9` was imported using
+`/data/awesome-zero-platform-tools/goal0045/wechat-cli.sh open --project
+/data/awesome-zero-platform-tools/goal0045/mini-game-projects/wechatgame --lang zh`
+(run as one shell command from the installed tool's `bin` directory).
+Only the local artifact's AppID was overridden. A regular Mini Program AppID led
+to Mini Program mode and missing `app.json`; the user-owned Mini Game AppID plus
+scan login selected Mini Game mode and successfully loaded `Entry.scene`.
+
+Launch the installed Linux tool with `COMPILE_THREADS=1 MULTI_TASK_WORKERS=1`.
+These environment settings are supported by its bundled compiler source. Default
+parallel compilation hit the bounded session's memory-high limit; the single
+worker run completed with no memory-high/OOM events at the measured checkpoint.
+Do not interpret the earlier black loading screen as an application failure.
+
+A private diagnostic bundle transpiled the actual `platform.ts`, `minigame.ts`,
+`socket.ts`, `network-timeout.ts` and `index.ts` sources with TypeScript into a
+small CommonJS loader, injected into the real simulator's context. It called
+`createMiniPlatform('wechat', wx, 'https://example.invalid')`: two 32-byte entropy
+requests returned distinct results, with the first checked as nonzero, vault save/load/clear passed with
+previous storage restored, lifecycle hooks registered/unregistered, and login
+returned a nonempty code. No HTTP call, WSS connection, backend token exchange or
+share was made. Returned login codes and random bytes were not recorded.
+
+Private evidence: `wechat-sdk-probe.json`, `wechat-clean-console.json` and
+`wechat-clean-scene.png` in the phase evidence directory. After an earlier DOM
+inspection probe failed against the mini-game document shim, a fresh compile
+produced 13 informational console entries, including successful scene loading,
+with no captured warning/error entries. The final screenshot was manually
+reviewed. This is community Linux simulator evidence, not official-host or
+real-device qualification. The tool was stopped after testing; no upload or
+publication was performed.
