@@ -12,7 +12,7 @@ type RowAction = {
   type: ActionType
 }
 
-const props = defineProps<{ status: Account['status'] }>()
+const props = defineProps<{ status: Account['status']; allowed?: ActionKey[]; loadingAction?: ActionKey }>()
 const emit = defineEmits<{
   detail: []
   edit: []
@@ -26,12 +26,15 @@ const measureRoot = ref<HTMLElement | null>(null)
 const visibleCount = ref(0)
 let resizeObserver: ResizeObserver | undefined
 
-const actions = computed<RowAction[]>(() => [
-  { key: 'detail', label: '详情', type: 'info' },
-  { key: 'edit', label: '编辑', type: 'primary' },
-  { key: 'toggle', label: props.status === 'active' ? '禁用' : '启用', type: props.status === 'active' ? 'warning' : 'success' },
-  { key: 'reset', label: '重置密码', type: 'danger' },
-])
+const actions = computed<RowAction[]>(() => {
+  const available: RowAction[] = [
+    { key: 'detail', label: '详情', type: 'info' },
+    { key: 'edit', label: '编辑', type: 'primary' },
+    { key: 'toggle', label: props.status === 'active' ? '禁用' : '启用', type: props.status === 'active' ? 'warning' : 'success' },
+    { key: 'reset', label: '重置密码', type: 'danger' },
+  ]
+  return available.filter(action => !props.allowed || props.allowed.includes(action.key))
+})
 
 const visibleActions = computed(() => actions.value.slice(0, visibleCount.value))
 const overflowActions = computed(() => actions.value.slice(visibleCount.value))
@@ -100,6 +103,8 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
       :key="action.key"
       size="small"
       :type="action.type"
+      :loading="props.loadingAction === action.key"
+      :disabled="Boolean(props.loadingAction)"
       plain
       @click="execute(action.key)"
     >
@@ -107,7 +112,7 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
     </el-button>
 
     <el-dropdown v-if="overflowActions.length" trigger="click" placement="bottom-end" @command="execute">
-      <el-button class="more-action" size="small" circle aria-label="更多账号操作">
+      <el-button class="more-action" size="small" circle aria-label="更多账号操作" :disabled="Boolean(props.loadingAction)">
         <el-icon><MoreFilled /></el-icon>
       </el-button>
       <template #dropdown>

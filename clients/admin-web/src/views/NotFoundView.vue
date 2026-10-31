@@ -1,2 +1,2 @@
 <template><div class="not-found"><div class="technical">HTTP 404</div><h1>ROUTE NOT FOUND</h1><p>这个控制面入口不存在，或者模块尚未挂载。</p><el-button type="primary" @click="$router.push('/dashboard')">返回控制面</el-button></div></template>
-<style scoped>.not-found{min-height:100vh;display:grid;place-content:center;text-align:center}.technical{color:#fb7185}h1{font:700 52px var(--az-mono);margin:12px}p{color:var(--az-muted)}</style>
+<style scoped>.not-found{min-height:100vh;display:grid;place-content:center;justify-items:center;gap:12px;padding:24px;text-align:center}.technical{color:#fb7185}h1{font:700 clamp(24px,7vw,52px)/1.1 var(--az-mono);letter-spacing:-.04em;overflow-wrap:anywhere;margin:0}p{max-width:560px;color:var(--az-muted);line-height:1.6}</style>

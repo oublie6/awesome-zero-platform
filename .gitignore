@@ -8,6 +8,8 @@ coverage/
 node_modules/
 dist/
 .vite/
+/clients/admin-web/test-results/
+/clients/admin-web/playwright-report/
 
 # Cocos Creator generated state
 /clients/fair-doudizhu-cocos/library/

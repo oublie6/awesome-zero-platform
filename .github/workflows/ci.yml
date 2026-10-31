@@ -150,9 +150,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.23.4
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Typecheck and build
         id: admin-build
         run: |
@@ -161,6 +161,10 @@ jobs:
           status=$?
           tail -n 80 admin-web-build.log
           exit $status
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run Admin Web browser tests
+        run: npm test
       - name: Upload Admin web failure log
         if: failure() && steps.admin-build.outcome == 'failure'
         uses: actions/upload-artifact@v4

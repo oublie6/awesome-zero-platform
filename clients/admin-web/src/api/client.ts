@@ -5,6 +5,11 @@ interface TokenResponse extends TokenState { tokenType: string; account: { id: s
 export class ApiError extends Error { constructor(message: string, public code: string, public status: number, public requestId = '') { super(message) } }
 let refreshPromise: Promise<TokenState> | null = null
 
+function expireSession() {
+  sessionTokenVault.clear()
+  window.dispatchEvent(new CustomEvent('admin-auth-expired'))
+}
+
 async function parse<T>(response: Response): Promise<T> {
   let body: Envelope<T> | undefined
   try { body = await response.json() as Envelope<T> } catch { throw new ApiError('服务返回了不可解析的响应', 'INVALID_RESPONSE', response.status) }
@@ -18,7 +23,7 @@ async function refresh(): Promise<TokenState> {
   if (!refreshPromise) {
     refreshPromise = fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: current.refreshToken }) })
       .then(parse<TokenResponse>).then(result => { const next: TokenState = result; sessionTokenVault.write(next); window.dispatchEvent(new CustomEvent('admin-auth-token')); return next })
-      .catch(error => { sessionTokenVault.clear(); window.dispatchEvent(new CustomEvent('admin-auth-expired')); throw error })
+      .catch(error => { expireSession(); throw error })
       .finally(() => { refreshPromise = null })
   }
   return refreshPromise
@@ -27,14 +32,24 @@ async function refresh(): Promise<TokenState> {
 export async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
   const headers = new Headers(init.headers)
   if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json')
-  const token = sessionTokenVault.read()?.accessToken
-  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const tokenUsed = sessionTokenVault.read()?.accessToken
+  if (tokenUsed) headers.set('Authorization', `Bearer ${tokenUsed}`)
   let response = await fetch(`/api${path}`, { ...init, headers })
   if (response.status === 401 && retry && !path.startsWith('/auth/')) {
-    await refresh()
-    const next = sessionTokenVault.read()?.accessToken
-    if (next) headers.set('Authorization', `Bearer ${next}`)
+    // A sibling request may already have rotated the refresh token while this
+    // response was in flight. Reuse that token instead of rotating twice.
+    let next = sessionTokenVault.read()?.accessToken
+    if (!next || next === tokenUsed) {
+      await refresh()
+      next = sessionTokenVault.read()?.accessToken
+    }
+    if (!next) {
+      expireSession()
+      throw new ApiError('登录已失效', 'UNAUTHORIZED', 401)
+    }
+    headers.set('Authorization', `Bearer ${next}`)
     response = await fetch(`/api${path}`, { ...init, headers })
+    if (response.status === 401) expireSession()
   }
   return parse<T>(response)
 }

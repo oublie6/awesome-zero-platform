@@ -3,29 +3,46 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { DataAnalysis, User, Key, Setting, Document, Lock, Fold, Expand, SwitchButton } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const collapsed = ref(typeof window !== 'undefined' && window.innerWidth <= 760)
 const mobile = ref(typeof window !== 'undefined' && window.innerWidth <= 760)
-function syncViewport() { mobile.value = window.innerWidth <= 760; if (mobile.value) collapsed.value = true }
+const mobileMenuOpen = ref(false)
+function syncViewport() {
+  mobile.value = window.innerWidth <= 760
+  if (!mobile.value) mobileMenuOpen.value = false
+}
 onMounted(() => { window.addEventListener('resize', syncViewport) })
 onUnmounted(() => window.removeEventListener('resize', syncViewport))
-watch(() => route.path, () => { if (mobile.value) collapsed.value = true })
+watch(() => route.path, () => { mobileMenuOpen.value = false })
 const title = computed(() => String(route.meta.title || 'Admin'))
 
-onMounted(() => auth.loadMe().catch(() => router.replace('/login')))
+const canView = (resource: string) => auth.can(resource, 'GET')
+const canViewIdentity = computed(() => canView('/admin/accounts') || canView('/admin/roles'))
+const canViewAuthorization = computed(() => canView('/admin/authorization/resources') || canView('/admin/authorization/engine'))
 
 async function signOut() {
-  await auth.logout()
-  router.replace('/login')
+  try {
+    await auth.logout()
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '服务端退出失败，已清除此浏览器会话')
+  } finally {
+    await router.replace('/login')
+  }
 }
 </script>
 
 <template>
   <div class="shell">
-    <aside :class="['sidebar', { collapsed }]">
+    <div v-if="mobileMenuOpen" class="mobile-backdrop" @click="mobileMenuOpen = false" />
+    <aside
+      v-if="!mobile || mobileMenuOpen"
+      :class="['sidebar', { collapsed: !mobile && collapsed, 'mobile-sidebar': mobile }]"
+      aria-label="管理导航"
+    >
       <div class="brand">
         <div class="brand-mark">AZ</div>
         <div v-show="!collapsed" class="brand-copy">
@@ -33,27 +50,32 @@ async function signOut() {
           <small>PLATFORM ADMIN</small>
         </div>
       </div>
-      <el-menu router :default-active="route.path" :collapse="collapsed" background-color="transparent" text-color="#aebdca" active-text-color="#fff">
-        <el-menu-item index="/dashboard"><el-icon><DataAnalysis /></el-icon><template #title>运行概览</template></el-menu-item>
-        <el-sub-menu index="identity">
+      <el-menu router :default-active="route.path" :collapse="!mobile && collapsed" background-color="transparent" text-color="#aebdca" active-text-color="#fff" @select="mobileMenuOpen = false">
+        <el-menu-item v-if="canView('/admin/system/overview')" index="/dashboard"><el-icon><DataAnalysis /></el-icon><template #title>运行概览</template></el-menu-item>
+        <el-sub-menu v-if="canViewIdentity" index="identity">
           <template #title><el-icon><User /></el-icon><span>身份管理</span></template>
-          <el-menu-item index="/accounts">账号管理</el-menu-item>
-          <el-menu-item index="/roles">角色管理</el-menu-item>
+          <el-menu-item v-if="canView('/admin/accounts')" index="/accounts">账号管理</el-menu-item>
+          <el-menu-item v-if="canView('/admin/roles')" index="/roles">角色管理</el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="authorization">
+        <el-sub-menu v-if="canViewAuthorization" index="authorization">
           <template #title><el-icon><Key /></el-icon><span>权限管理</span></template>
-          <el-menu-item index="/authorization/standard">标准配置</el-menu-item>
-          <el-menu-item index="/authorization/engine">权限引擎 <span class="expert-dot">DEV</span></el-menu-item>
+          <el-menu-item v-if="canView('/admin/authorization/resources')" index="/authorization/standard">标准配置</el-menu-item>
+          <el-menu-item v-if="canView('/admin/authorization/engine')" index="/authorization/engine">权限引擎 <span class="expert-dot">DEV</span></el-menu-item>
         </el-sub-menu>
-        <el-menu-item index="/audit"><el-icon><Document /></el-icon><template #title>操作审计</template></el-menu-item>
-        <el-menu-item index="/system"><el-icon><Setting /></el-icon><template #title>系统状态</template></el-menu-item>
+        <el-menu-item v-if="canView('/admin/audit/events')" index="/audit"><el-icon><Document /></el-icon><template #title>操作审计</template></el-menu-item>
+        <el-menu-item v-if="canView('/admin/system/overview')" index="/system"><el-icon><Setting /></el-icon><template #title>系统状态</template></el-menu-item>
       </el-menu>
     </aside>
 
     <main>
       <header class="topbar">
-        <el-button text circle aria-label="切换侧边栏" :disabled="mobile" @click="collapsed = !collapsed">
-          <el-icon><component :is="collapsed ? Expand : Fold" /></el-icon>
+        <el-button
+          text
+          circle
+          :aria-label="mobile ? '打开导航菜单' : collapsed ? '展开导航' : '收起导航'"
+          @click="mobile ? mobileMenuOpen = !mobileMenuOpen : collapsed = !collapsed"
+        >
+          <el-icon><component :is="mobile ? (mobileMenuOpen ? Fold : Expand) : (collapsed ? Expand : Fold)" /></el-icon>
         </el-button>
         <div class="crumb"><span>ADMIN</span><b>/</b>{{ title }}</div>
         <div class="top-actions">
@@ -62,7 +84,7 @@ async function signOut() {
             <span class="user-trigger"><el-icon><Lock /></el-icon><span class="user-name">{{ auth.displayName }}</span></span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="router.push('/profile')">个人中心</el-dropdown-item>
+                <el-dropdown-item v-if="canView('/admin/me')" @click="router.push('/profile')">个人中心</el-dropdown-item>
                 <el-dropdown-item divided @click="signOut"><el-icon><SwitchButton /></el-icon>退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -93,6 +115,8 @@ async function signOut() {
 .sidebar.collapsed {
   width: 64px;
 }
+
+.mobile-backdrop { display: none; }
 
 .brand {
   height: 64px;
@@ -224,14 +248,29 @@ main {
 }
 
 @media (max-width: 760px) {
-  .shell { grid-template-columns: 64px minmax(0, 1fr); }
-  .sidebar, .sidebar:not(.collapsed) { width: 64px; }
-  .brand { padding: 0 12px; }
-  .brand-copy { display: none; }
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidebar.mobile-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 31;
+    width: min(280px, 84vw);
+    overflow-y: auto;
+    box-shadow: 16px 0 40px #0008;
+  }
+  .mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: #0009;
+  }
+  .brand { padding: 0 14px; }
+  .brand-copy { display: block; }
   .topbar { padding: 0 10px; }
   .content { padding: 12px; }
   .user-trigger { max-width: 110px; }
   .top-actions .el-tag { display: none; }
   .crumb b { padding: 0 3px; }
+  .topbar > .el-button { min-width: 40px; min-height: 40px; }
 }
 </style>

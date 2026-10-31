@@ -32,6 +32,11 @@ a {
   color: inherit;
 }
 
+:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
 .panel {
   background: linear-gradient(145deg, #111a24, #0f171f);
   border: 1px solid var(--az-border);
@@ -209,4 +214,16 @@ a {
   .el-dialog { width: calc(100vw - 24px) !important; max-width: calc(100vw - 24px); margin: 12px auto; }
   .el-drawer { width: min(100vw, 720px) !important; }
   .table-actions { flex-wrap: nowrap; }
+  .el-button { min-height: 40px; }
+  .el-button--small { min-height: 40px; }
+  .el-input__wrapper, .el-select__wrapper { min-height: 44px; }
+  .el-input__inner { font-size: 16px; }
+  .el-menu-item, .el-sub-menu__title { min-height: 48px; }
+  .el-dropdown-menu__item { min-height: 44px; }
+  .el-pagination button { min-width: 40px; min-height: 40px; }
+  .el-checkbox { min-height: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

@@ -1,8 +1,10 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
+import 'element-plus/es/components/message/style/css'
+import 'element-plus/es/components/message-box/style/css'
 import './styles.css'
 import App from './App.vue'
 import router from './router'
-createApp(App).use(createPinia()).use(router).use(ElementPlus).mount('#app')
+document.documentElement.classList.add('dark')
+createApp(App).use(createPinia()).use(router).mount('#app')

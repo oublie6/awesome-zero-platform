@@ -1,11 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { adminApi } from '@/api/admin'
 import { useAuthStore } from '@/stores/auth'
 const auth=useAuthStore(),overview=ref<Record<string,unknown>>({}),loading=ref(true),error=ref('')
-async function loadOverview(){ loading.value=true; error.value=''; try{overview.value=await adminApi.overview()}catch(e){error.value=e instanceof Error?e.message:'加载运行概览失败'}finally{loading.value=false} }
+let controller: AbortController | undefined
+async function loadOverview(){
+  controller?.abort()
+  const next = new AbortController()
+  controller = next
+  loading.value=true; error.value=''
+  try { const result = await adminApi.overview(next.signal); if (!next.signal.aborted) overview.value=result }
+  catch(e) { if (!next.signal.aborted) error.value=e instanceof Error?e.message:'加载运行概览失败' }
+  finally { if (!next.signal.aborted) loading.value=false }
+}
 onMounted(loadOverview)
+onBeforeUnmount(() => controller?.abort())
 const cards=computed(()=>{ const engine=overview.value.engine as {name?:string}|undefined; return [
   ['API SERVICE',overview.value.service||'unknown'],['MYSQL',overview.value.mysql||'unknown'],['REDIS',overview.value.redis||'unknown'],['AUTH ENGINE',engine?.name||'unknown']
 ]})

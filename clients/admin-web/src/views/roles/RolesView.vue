@@ -1,35 +1,74 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageHeader from '@/components/PageHeader.vue'
 import CodePanel from '@/components/CodePanel.vue'
 import { adminApi } from '@/api/admin'
+import { useAuthStore } from '@/stores/auth'
 import type { Permission, Resource, Role } from '@/types/admin'
 
 const roles = ref<Role[]>([])
 const loadError = ref('')
 const loading = ref(false)
+const permissionsLoading = ref(false)
+const permissionsSaving = ref(false)
+const saving = ref(false)
 const resources = ref<Resource[]>([])
 const selected = ref<Role | null>(null)
 const permissions = ref<Permission[]>([])
 const dialog = ref(false)
 const editing = ref<Role | null>(null)
 const form = reactive({ code: '', displayName: '', description: '' })
+const auth = useAuthStore()
+const canReadResources = auth.can('/admin/authorization/resources', 'GET')
+const canReadRolePermissions = auth.can('/admin/roles/_/permissions', 'GET')
+const formRef = ref()
+const formRules = {
+  code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }, { pattern: /^[a-z][a-z0-9_]{1,63}$/, message: '使用小写字母开头的字母、数字或下划线', trigger: 'blur' }],
+  displayName: [{ required: true, message: '请输入显示名称', trigger: 'blur' }],
+}
+let listController: AbortController | undefined
+let permissionController: AbortController | undefined
 
 async function load() {
+  listController?.abort()
+  const controller = new AbortController()
+  listController = controller
   loading.value = true
   loadError.value = ''
   try {
-    ;[roles.value, resources.value] = await Promise.all([adminApi.roles(), adminApi.resources()])
-    if (!selected.value && roles.value[0]) await select(roles.value[0])
+    const [nextRoles, nextResources] = await Promise.all([
+      adminApi.roles(controller.signal),
+      canReadResources ? adminApi.resources(controller.signal) : Promise.resolve([]),
+    ])
+    if (controller.signal.aborted) return
+    roles.value = nextRoles
+    resources.value = nextResources
+    const selectedRole = nextRoles.find(role => role.code === selected.value?.code) || nextRoles[0]
+    if (selectedRole) await select(selectedRole)
+    else { selected.value = null; permissions.value = [] }
   } catch (error) {
+    if (controller.signal.aborted) return
     loadError.value = error instanceof Error ? error.message : '角色信息加载失败'
-  } finally { loading.value = false }
+  } finally { if (!controller.signal.aborted) loading.value = false }
 }
 
 async function select(role: Role) {
+  permissionController?.abort()
+  const controller = new AbortController()
+  permissionController = controller
   selected.value = role
-  permissions.value = await adminApi.rolePermissions(role.code)
+  permissions.value = []
+  if (!canReadRolePermissions) return
+  permissionsLoading.value = true
+  try {
+    const nextPermissions = await adminApi.rolePermissions(role.code, controller.signal)
+    if (!controller.signal.aborted && selected.value?.code === role.code) permissions.value = nextPermissions
+  } catch (error) {
+    if (!controller.signal.aborted) ElMessage.error(error instanceof Error ? error.message : '角色权限加载失败')
+  } finally {
+    if (!controller.signal.aborted) permissionsLoading.value = false
+  }
 }
 
 function checked(resource: string, action: string) {
@@ -43,9 +82,14 @@ function toggle(resource: string, action: string, value: unknown) {
 }
 
 async function savePermissions() {
-  if (!selected.value) return
-  await adminApi.replaceRolePermissions(selected.value.code, permissions.value)
-  ElMessage.success('权限已保存')
+  if (!selected.value || permissionsSaving.value) return
+  permissionsSaving.value = true
+  try {
+    await adminApi.replaceRolePermissions(selected.value.code, permissions.value)
+    ElMessage.success('权限已保存')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '权限保存失败')
+  } finally { permissionsSaving.value = false }
 }
 
 function open(role?: Role) {
@@ -55,28 +99,42 @@ function open(role?: Role) {
 }
 
 async function save() {
-  if (editing.value) await adminApi.updateRole(editing.value.code, form)
-  else await adminApi.createRole(form)
-  dialog.value = false
-  await load()
-  ElMessage.success('角色已保存')
+  if (saving.value) return
+  const valid = await formRef.value?.validate().then(() => true).catch(() => false)
+  if (!valid) return
+  saving.value = true
+  try {
+    if (editing.value) await adminApi.updateRole(editing.value.code, form)
+    else await adminApi.createRole(form)
+    dialog.value = false
+    await load()
+    ElMessage.success('角色已保存')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '角色保存失败')
+  } finally { saving.value = false }
 }
 
 async function remove(role: Role) {
-  await ElMessageBox.confirm(`删除角色 ${role.displayName}？该角色必须没有成员。`, '危险操作')
-  await adminApi.deleteRole(role.code)
-  selected.value = null
-  await load()
+  try {
+    await ElMessageBox.confirm(`删除角色 ${role.displayName}？该角色必须没有成员。`, '危险操作', { type: 'warning', confirmButtonText: '删除角色', cancelButtonText: '取消' })
+    await adminApi.deleteRole(role.code)
+    if (selected.value?.code === role.code) selected.value = null
+    await load()
+    ElMessage.success('角色已删除')
+  } catch (error) {
+    if (error instanceof Error) ElMessage.error(error.message)
+  }
 }
 
 const rawPreview = () => permissions.value.map(permission => `p, ${selected.value?.code}, ${permission.resource}, ${permission.action}`).join('\n')
 
+onBeforeUnmount(() => { listController?.abort(); permissionController?.abort() })
 onMounted(load)
 </script>
 
 <template>
   <PageHeader title="角色管理" description="角色信息、资源操作矩阵和最终生成的 Casbin p 策略放在同一个工作区。">
-    <el-button type="primary" @click="open()">创建角色</el-button>
+    <el-button v-if="auth.can('/admin/roles', 'POST')" type="primary" @click="open()">创建角色</el-button>
   </PageHeader>
 
   <el-alert v-if="loadError" type="error" :title="loadError" :closable="false" show-icon style="margin-bottom:12px" />
@@ -99,13 +157,13 @@ onMounted(load)
           <span class="technical muted">{{ selected.code }}</span>
         </div>
         <div class="button-group role-actions">
-          <el-button @click="open(selected)">编辑</el-button>
-          <el-button v-if="!selected.system" type="danger" plain @click="remove(selected)">删除</el-button>
+          <el-button v-if="auth.can('/admin/roles/_', 'PATCH')" @click="open(selected)">编辑</el-button>
+          <el-button v-if="!selected.system && auth.can('/admin/roles/_', 'DELETE')" type="danger" plain @click="remove(selected)">删除</el-button>
         </div>
       </div>
 
-      <el-tabs>
-        <el-tab-pane label="权限矩阵">
+      <el-tabs v-loading="permissionsLoading">
+        <el-tab-pane v-if="canReadRolePermissions && canReadResources" label="权限矩阵">
           <el-table :data="resources">
             <el-table-column label="资源" min-width="230">
               <template #default="scope">
@@ -116,16 +174,16 @@ onMounted(load)
             <el-table-column label="操作" min-width="420">
               <template #default="scope">
                 <div class="permission-actions">
-                  <el-checkbox v-for="action in scope.row.actions" :key="action" :model-value="checked(scope.row.pattern, action)" @change="toggle(scope.row.pattern, action, $event)">
+                <el-checkbox v-for="action in scope.row.actions" :key="action" :disabled="!auth.can('/admin/roles/_/permissions', 'PUT')" :model-value="checked(scope.row.pattern, action)" @change="toggle(scope.row.pattern, action, $event)">
                     <span class="technical">{{ action }}</span>
                   </el-checkbox>
                 </div>
               </template>
             </el-table-column>
           </el-table>
-          <el-button type="primary" style="margin-top: 16px" @click="savePermissions">保存权限</el-button>
+          <el-button v-if="auth.can('/admin/roles/_/permissions', 'PUT')" type="primary" :loading="permissionsSaving" style="margin-top: 16px" @click="savePermissions">保存权限</el-button>
         </el-tab-pane>
-        <el-tab-pane label="原始策略"><CodePanel title="GENERATED CASBIN POLICY" :value="rawPreview() || '# no policy'" /></el-tab-pane>
+        <el-tab-pane v-if="canReadRolePermissions" label="原始策略"><CodePanel title="GENERATED CASBIN POLICY" :value="rawPreview() || '# no policy'" /></el-tab-pane>
         <el-tab-pane label="技术信息">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="Role Code"><span class="technical">{{ selected.code }}</span></el-descriptions-item>
@@ -138,15 +196,15 @@ onMounted(load)
   </div>
 
   <el-dialog v-model="dialog" :title="editing ? '编辑角色' : '创建角色'">
-    <el-form label-position="top">
-      <el-form-item label="角色编码"><el-input v-model="form.code" :disabled="Boolean(editing)" placeholder="platform_operator" /></el-form-item>
-      <el-form-item label="显示名称"><el-input v-model="form.displayName" /></el-form-item>
+    <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
+      <el-form-item label="角色编码" prop="code"><el-input v-model="form.code" :disabled="Boolean(editing)" placeholder="platform_operator" /></el-form-item>
+      <el-form-item label="显示名称" prop="displayName"><el-input v-model="form.displayName" /></el-form-item>
       <el-form-item label="描述"><el-input v-model="form.description" type="textarea" /></el-form-item>
     </el-form>
     <template #footer>
       <div class="button-group">
         <el-button @click="dialog = false">取消</el-button>
-        <el-button type="primary" @click="save">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
       </div>
     </template>
   </el-dialog>

@@ -1,7 +1,7 @@
-FROM node:22-alpine AS build
+FROM node:22.23.4-slim AS build
 WORKDIR /workspace
-COPY clients/admin-web/package.json ./package.json
-RUN npm install --no-audit --no-fund
+COPY clients/admin-web/package.json clients/admin-web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY clients/admin-web/ ./
 RUN npm run build
 
