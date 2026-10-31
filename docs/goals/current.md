@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: blocked
+- State: in_progress
 - Started: 2026-10-31
 - Completed:
 - Blockers: Authenticated live browser acceptance is pending a known safe Admin test account. The live bootstrap endpoint reports `available: false`, and no test credentials were available in this run.
@@ -77,6 +77,7 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 
 ### In progress
 
+- Resumed on user request. Latest report-only checkpoint `2be84fd` exposed a Chromium bounding-box precision failure (`360.000015px` versus `360px`); fixing only the assertion tolerance to 0.001 CSS pixel while also checking both drawer edges. The integer document-width assertion stays exact. Its other 14 browser tests and Go jobs passed.
 - Final live acceptance is limited to authenticated Admin Web flows. Bootstrap is disabled or already completed, and no safe existing Admin test credentials were available; no account was created and no production data was changed.
 
 ### Remaining
@@ -86,6 +87,7 @@ Primary agent owns implementation, test design/execution, deployment, integratio
 
 ### Verification status
 
+- Resume verification: focused Chromium table/dialog/drawer test passed (1/1, 21.2s) after adding the subpixel precision tolerance and edge checks. The first local launch lacked the correct browser-cache environment path; rerunning with the existing Chromium cache succeeded. This change affects tests only; deployed application assets are unchanged. Full CI rerun follows the checkpoint push.
 - Local `npm run build` (TypeScript typecheck + Vite production build): passed; no >500 kB chunk warning.
 - Local Playwright Chromium: 15/15 passed, including all 11 routes across 1920x1080, 1440x900, 1024x768, 768x1024, 390x844 and 360x800; captured representative login, bootstrap, account, error, empty, modal and drawer states under ignored `clients/admin-web/test-results/`.
 - GitHub Actions: commit `ba06f6dfe4062de920b2cfb07707e9ac77b844f3` initially failed the refresh-count timing assertion and found `/profile` overflow at 768px. Fixed both in `30db007875f7318fdcc748366042d63e3e3ddbf0`; its CI run `41162217250` completed successfully, including Admin Web browser tests, Go unit/race, integration, secure-envelope and Production Compose runtime acceptance.

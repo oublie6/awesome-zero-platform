@@ -444,7 +444,12 @@ test('tables and dialogs stay inside narrow viewports; action overflow remains u
   await page.screenshot({ path: drawerShot, fullPage: true })
   const drawerBounds = await drawer.boundingBox()
   expect(drawerBounds).not.toBeNull()
-  expect(drawerBounds!.width).toBeLessThanOrEqual(360)
+  // Chromium transforms may introduce subpixel floating-point noise (e.g.
+  // 360.000015px). Keep the tolerance below one thousandth of a CSS pixel.
+  const subpixelTolerance = 0.001
+  expect(drawerBounds!.width).toBeLessThanOrEqual(360 + subpixelTolerance)
+  expect(drawerBounds!.x).toBeGreaterThanOrEqual(-subpixelTolerance)
+  expect(drawerBounds!.x + drawerBounds!.width).toBeLessThanOrEqual(360 + subpixelTolerance)
   const pageWidth = await page.evaluate(() => document.documentElement.scrollWidth)
   expect(pageWidth).toBeLessThanOrEqual(360)
 })
