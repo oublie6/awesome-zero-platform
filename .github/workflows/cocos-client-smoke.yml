@@ -1,0 +1,71 @@
+name: Cocos Creator Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cocos-client-smoke.yml'
+      - 'scripts/verify-cocos-*'
+      - 'clients/fair-doudizhu-cocos/assets/**'
+      - 'clients/fair-doudizhu-cocos/package*.json'
+      - 'clients/packages/game-client-core/src/**'
+      - 'clients/packages/doudizhu-client/src/**'
+      - 'clients/packages/secure-envelope/src/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cocos-client-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  creator_web:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+      - name: Prepare and verify client packages
+        shell: bash
+        run: bash scripts/verify-client-foundation.sh
+      - name: Install official Creator 3.8.8
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $archive = Join-Path $env:RUNNER_TEMP 'creator-3.8.8.zip'
+          Invoke-WebRequest 'https://download.cocos.com/CocosCreator/v3.8.8/CocosCreator-v3.8.8-win-121518.zip' -OutFile $archive
+          $expected = 'e365030aa4f24b515f499cf093cd86fdf38a0f763b5fbcacb20e96253e0fcc0b'
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Creator archive hash mismatch' }
+          $creatorRoot = Join-Path $env:RUNNER_TEMP 'creator-3.8.8'
+          & 7z x -y "-o$creatorRoot" $archive | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw 'Creator extraction failed' }
+          "COCOS_SMOKE_CREATOR=$creatorRoot\CocosCreator.exe" >> $env:GITHUB_ENV
+          "COCOS_SMOKE_OUTPUT=$env:RUNNER_TEMP\cocos-web-output" >> $env:GITHUB_ENV
+      - name: Import actual project and build Web
+        shell: pwsh
+        run: ./scripts/verify-cocos-runtime.ps1 -CreatorExe $env:COCOS_SMOKE_CREATOR -OutputRoot $env:COCOS_SMOKE_OUTPUT
+      - name: Start the built scene in Chromium
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $browser = Join-Path $env:RUNNER_TEMP 'cocos-browser'
+          npm install --prefix $browser --no-save --package-lock=false --no-audit --no-fund playwright@1.64.1
+          if ($LASTEXITCODE -ne 0) { throw 'Browser driver install failed' }
+          $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $env:RUNNER_TEMP 'cocos-browser-cache'
+          & "$browser\node_modules\.bin\playwright.cmd" install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Chromium install failed' }
+          $env:COCOS_SMOKE_PLAYWRIGHT_MODULE = "$browser\node_modules\playwright"
+          node scripts/verify-cocos-browser.cjs "$env:COCOS_SMOKE_OUTPUT\web-desktop" .runtime/goal0045-cocos
+          if ($LASTEXITCODE -ne 0) { throw 'Actual Cocos scene runtime failed' }
+      - name: Preserve Creator and browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cocos-creator-web-evidence
+          path: .runtime/goal0045-cocos/
+          if-no-files-found: warn
+          retention-days: 7

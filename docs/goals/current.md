@@ -69,7 +69,7 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### In progress
 
-- Codex phase handoff: complete report, final self-review, commit/push and verify Actions. This is a phase check, not completion or archival of Goal 0045.
+- User requested installing the missing environment and testing it. Installed official Creator 3.8.8, WeChat 2.01.2510260 and Douyin 4.5.7 Windows packages under /data/awesome-zero-platform-tools/goal0045, plus Wine/Xvfb/fonts. Wine 6 crashed before project import; Wine 11 reached Creator build-manager initialization but emitted a login-server timeout and used enough memory to leave only ~370 MiB available. Stopped owned Wine processes and recovered ~4.3 GiB available; no OOM observed. Native Windows CI import/build/real-scene browser checks are being added to remove Wine and local resource limits from qualification. IDE startup tests remain sequential and pending; Goal 0045 stays in_progress.
 
 ### Remaining
 
@@ -82,8 +82,10 @@ Single primary implementer; use subagents only for independent review or API doc
 - Node 22.23.4: dependency installs, strict shared-package typecheck/build/tests, official @cocos/creator-types@3.8.8 script typecheck and renderer-free Shell build/tests passed. scripts/verify-client-foundation.sh completed successfully.
 - Source and controlled Fake Adapter tests are separate from the real Chromium HTTP/WSS transport probe. Private runtime evidence and logs: /root/.config/awesome-zero-platform/goal0045-evidence (0700, files 0600), no password/token values.
 - npm run typecheck:creator cannot run successfully: temp/tsconfig.cocos.json is absent because Creator is not installed. No Creator import/preview/build, mini-game developer-tool or device result is marked passed.
-- Related Actions for the forthcoming source checkpoint and final report commit will be checked after pushing; no CI success claim is made yet.
+- Final source 0fc7ebb9a31f51ddf1830c6f05021eac474e3a09: CI 41193878945 and Fair Doudizhu 41193878962 both succeeded, including client_foundation, backend unit/race/integration/runtime and manifest interoperability. Publication-only Actions are checked after pushing and reported in the closing handoff.
+- Phase review: docs/operations/goal0045-client-foundation-review.md. Source fixes are 1af0c07, fb9768b and 0fc7ebb. Local tests total 49 (26 core, 7 protocol, 7 Shell/assets, 9 unchanged HPKE); real Chromium HTTP/WSS evidence is separate.
+- Mandatory self-review completed: SDK timing, cancellation/deadlines, stale callbacks, duplicate full-snapshot confirmation, Go phase/TTL compatibility, version/identity boundaries, secret handling and cleanup. Reproduced regressions before correction; remaining editor/device uncertainty is explicitly recorded in the phase report.
 
 ## Completion Report
 
-Phase review and fixes only. Goal 0045 remains in_progress and must not be archived or reset. Full editor/target runtime acceptance remains open; the phase report will record exact source commit, CI evidence, capability differences and the next ChatGPT tasks.
+Phase review and fixes delivered in docs/operations/goal0045-client-foundation-review.md and clients/fair-doudizhu-cocos/PLATFORM-VALIDATION.md. Source checkpoints are pushed directly to main with green Actions. This publication records the final evidence and handoff; its Actions result is verified after pushing. Goal 0045 remains in_progress, not archived/reset: Creator 3.8.8 import/preview/target builds, developer tools/devices, Douyin Mini Game entropy and subsequent Goal 0046 protocol integration remain explicitly open. No full game or platform-runtime completion is claimed.
