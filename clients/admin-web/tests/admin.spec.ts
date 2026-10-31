@@ -247,11 +247,11 @@ test('expired access token refreshes and retries; concurrent stale requests rota
   })
   await page.getByRole('menuitem', { name: '系统状态' }).click()
   await expect(page.getByRole('heading', { name: '系统状态' })).toBeVisible()
-  expect(api.refreshCount).toBe(1)
+  await expect.poll(() => api.refreshCount).toBe(1)
+  await expect.poll(() => api.calls.filter(call => call.path === '/api/admin/system/overview')).toHaveLength(3)
+  await expect.poll(() => api.calls.filter(call => call.path === '/api/admin/system/configuration')).toHaveLength(2)
   const stored = await page.evaluate(() => JSON.parse(sessionStorage.getItem('awesome-zero-admin.tokens') || '{}')) as { accessToken?: string; refreshToken?: string }
   expect(stored).toMatchObject({ accessToken: 'fresh-access', refreshToken: 'fresh-refresh' })
-  expect(api.calls.filter(call => call.path === '/api/admin/system/overview')).toHaveLength(3)
-  expect(api.calls.filter(call => call.path === '/api/admin/system/configuration')).toHaveLength(2)
 })
 
 test('failed refresh clears the browser session and returns to login', async ({ page }) => {
