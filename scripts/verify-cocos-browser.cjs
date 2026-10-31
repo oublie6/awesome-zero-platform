@@ -82,6 +82,23 @@ async function main() {
     })
     assert.deepEqual(disposed,{shellCleared:true,status:'disconnected',snapshot:null,contentCleared:true,resizeListener:false,designListener:false})
     report.disposal = disposed
+    const parentDisposal = await page.evaluate(async () => {
+      const cc = globalThis.__cocosSmokeEngine
+      const canvas = cc.director.getScene().getChildByName('Canvas')
+      const replacement = canvas.addComponent('GameBootstrap')
+      const frames = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      await frames()
+      const content = canvas.getChildByName('SafeContent')
+      const restarted = !!replacement.shell && !!content && canvas.children.filter(node => node.name === 'SafeContent').length === 1
+      canvas.destroy()
+      await frames()
+      return {restarted, canvasDestroyed:!canvas.isValid, contentDestroyed:!!content && !content.isValid,
+        shellCleared:replacement.shell === null,
+        resizeListener:cc.view.hasEventListener('canvas-resize',replacement.layout,replacement),
+        designListener:cc.view.hasEventListener('design-resolution-changed',replacement.layout,replacement)}
+    })
+    assert.deepEqual(parentDisposal,{restarted:true,canvasDestroyed:true,contentDestroyed:true,shellCleared:true,resizeListener:false,designListener:false})
+    report.parentDisposal = parentDisposal
     assert.deepEqual(errors,[])
     assert.deepEqual(failures,[])
     report.result='passed'
