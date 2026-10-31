@@ -52,7 +52,7 @@ async function signOut() {
 
     <main>
       <header class="topbar">
-        <el-button text circle aria-label="切换侧边栏" @click="collapsed = !collapsed">
+        <el-button text circle aria-label="切换侧边栏" :disabled="mobile" @click="collapsed = !collapsed">
           <el-icon><component :is="collapsed ? Expand : Fold" /></el-icon>
         </el-button>
         <div class="crumb"><span>ADMIN</span><b>/</b>{{ title }}</div>
