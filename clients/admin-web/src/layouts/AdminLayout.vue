@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { DataAnalysis, User, Key, Setting, Document, Lock, Fold, Expand, SwitchButton } from '@element-plus/icons-vue'
@@ -11,6 +11,7 @@ const collapsed = ref(typeof window !== 'undefined' && window.innerWidth <= 760)
 const mobile = ref(typeof window !== 'undefined' && window.innerWidth <= 760)
 function syncViewport() { mobile.value = window.innerWidth <= 760; if (mobile.value) collapsed.value = true }
 onMounted(() => { window.addEventListener('resize', syncViewport) })
+onUnmounted(() => window.removeEventListener('resize', syncViewport))
 watch(() => route.path, () => { if (mobile.value) collapsed.value = true })
 const title = computed(() => String(route.meta.title || 'Admin'))
 
