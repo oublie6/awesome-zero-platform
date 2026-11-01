@@ -1,5 +1,7 @@
 # Doudizhu Realtime Protocol v1
 
+> **Implemented v1 vs approved future target:** This document describes the existing live-memory protocol and its limitations. B-level crash recovery is a future implementation decision defined in [game runtime and recovery principles](../principles/02-game-runtime-and-recovery.md). Do not interpret v1's no-Redis-live-snapshot statement as forbidding disposable Redis cache or future recoverable checkpoints; do not claim v1 already has durable live-operation replay.
+
 ## Purpose
 
 Goal 0032 exposes the authenticated Goal 0031 Doudizhu dispatcher through the existing WebSocket hub without moving game rules into transport code or persisting active cards. HTTP and WSS commands share the same dispatcher, replay cache, authorization, lifecycle supervisor, live directory, and terminal archive.
