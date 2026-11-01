@@ -112,9 +112,9 @@ Execution rules:
 - Do not expand, reinterpret, or silently replace the goal, deliverables, constraints, or acceptance criteria.
 - ChatGPT, as the primary agent, owns architecture, implementation, test design, execution of every test available in its environment, integration, failure fixes, and final verification.
 - Subagents may be used for independent analysis or review. Codex may be used only for specifically identified supplementary tests that ChatGPT cannot execute in its environment; it must not duplicate normal implementation or testing work.
-- Codex may update only the status, working-state, verification-status, and completion-report sections of `docs/goals/current.md` unless the goal explicitly permits other documentation changes.
+- Codex may update only the status, working-state, verification-status, and completion-report sections of `docs/goals/current.md` unless the goal explicitly permits other changes. It independently reviews the complete Goal and reports PASS/FAIL/BLOCKED.
 - Set the goal state to `in_progress` when implementation begins.
-- Set the goal state to `completed` only after every acceptance criterion passes.
+- Set the goal state to `completed` only after every acceptance criterion passes, including mandatory independent Codex acceptance at the verified source SHA.
 - Set the goal state to `blocked` only when a genuine blocker is recorded with evidence.
 - When resuming after a long pause, context compaction, or substantial scope discussion, reread this file and the current goal before continuing.
 
@@ -128,22 +128,22 @@ Before finishing:
 6. Summarize changed files, verification results, commit and push results, unresolved blockers, and intentionally deferred work.
 7. Stop when the goal is completed and pushed, or when a genuine blocker is documented.
 
-## ChatGPT–Codex collaboration workflow
+## ChatGPT–Codex collaboration workflow — mandatory independent acceptance
 
-Use the following as the default ownership model unless the user explicitly assigns different responsibilities for a specific task.
+This workflow is **mandatory for every executable development Goal** unless the user explicitly changes it. The roles are distinct: **ChatGPT designs, develops, tests and fixes; Codex independently accepts and reports.** Codex verification is required even when ChatGPT's tests and GitHub Actions pass.
 
-1. **ChatGPT owns development and testing.** ChatGPT clarifies requirements, defines the goal and acceptance criteria, designs architecture and contracts, changes production code, writes and maintains tests and documentation, executes every verification available in its environment, fixes failures, reviews the integrated diff, and commits and pushes completed work directly to `main`.
-2. **GitHub Actions provides automatic repository verification.** CI should cover compilation, deterministic unit and package tests, repository regression, dependency boundaries, frontend builds, integration checks, runtime acceptance, and appropriate race checks where the CI environment supports them.
-3. **Codex is only a supplementary test executor.** Codex may be invoked only after ChatGPT documents a concrete test that ChatGPT cannot perform because of an environment, platform, device, browser, resource, credential, or tooling limitation. The handoff must state the exact missing test, why ChatGPT could not run it, the command or procedure, and the evidence expected.
-4. **Codex must stay within the documented gap.** Codex must not independently rerun the entire goal, duplicate tests ChatGPT already completed, add speculative stress variants, redesign architecture, implement features, edit production code, alter test semantics, or fix discovered defects unless the user explicitly authorizes that expanded role.
-5. **Findings return to ChatGPT.** Codex records the supplementary test result and evidence. When Codex exposes a defect, ChatGPT owns root-cause analysis, the production or test fix, regression coverage, complete re-verification, commit, and push.
-6. **No work is manufactured for handoff.** When ChatGPT and CI can execute all required acceptance checks, no Codex phase is required.
-7. **Use committed handoff checkpoints on `main` only when a real supplementary gap exists.** ChatGPT commits and pushes the implementation and available-test checkpoint before Codex starts. Codex should normally produce only a verification report; any source change requires explicit user authorization and subsequent ChatGPT review.
-8. **Preserve evidence.** Completion reports must distinguish tests run by ChatGPT, tests run by GitHub Actions, supplementary tests run by Codex, unavailable integrations, failures encountered, fixes made by ChatGPT, final verification results, commit SHA, and push result.
+1. **ChatGPT owns design and implementation.** Inspect the current code and applicable principles, define a bounded Goal and measurable acceptance criteria, implement code and tests, run all available checks, perform adversarial self-review, fix own findings, and commit/push a coherent development checkpoint to `main`.
+2. **GitHub Actions verifies automatically.** Record CI build, lint, unit/integration/contract checks, dependency boundaries and any supported runtime/race gates. Do not treat green CI as Codex acceptance.
+3. **Codex independently verifies the complete Goal.** After a development checkpoint is pushed, Codex pulls the exact SHA on clean synchronized `main` and checks requirements against source and behavior, executes the full relevant acceptance suite (including tests ChatGPT ran), and performs real integration/runtime, performance and fault-injection validation when applicable and available. Independent rerunning is **intended**, not prohibited duplication.
+4. **Codex is an acceptance reviewer, not the default implementer.** Codex records test environment, commands, artifact/source SHA, observed outputs, defects, blockers, unverified checks and an explicit `PASS / FAIL / BLOCKED` result. It must not silently repair production code, redesign architecture, widen the Goal or declare missing tests passed. Source fixes belong to ChatGPT unless the user explicitly delegates otherwise.
+5. **Defect loop:** Codex reports issues → ChatGPT investigates, changes implementation/tests and performs available re-verification → ChatGPT commits/pushes `main` → Codex independently reruns affected tests and the applicable regression gates. Repeat until acceptance passes or a genuine blocker remains.
+6. **Completion is evidence-based.** A Goal may become `completed` only after required ChatGPT verification, CI gates and Codex independent acceptance pass at the **same accepted source SHA**, or when a documented criterion is explicitly amended by the user. Record real-device and environment limitations without inventing success.
+7. **Main-only sequential coordination.** No feature branch, PR or concurrent edit of the same files; ChatGPT hands off a pushed immutable commit SHA and acceptance checklist. Codex may edit only Goal working state, verification status and completion report in `docs/goals/current.md` unless expressly authorized otherwise.
+8. **Handoff must be actionable.** Specify exact commit SHA, the Goal requirements and principles, commands and environments for validation, performance/recovery failure cases when applicable, expected evidence and reporting location. ChatGPT must not promise that Codex ran tests until actual evidence is available.
 
-The intended default flow is:
+Default sequence:
 
-`ChatGPT goal/design/implementation/tests/fixes on main -> GitHub Actions verification -> only when a specific unavailable test remains, Codex runs that exact supplementary test and reports evidence -> ChatGPT handles any resulting code or test changes`
+`ChatGPT design → ChatGPT implementation and available tests → ChatGPT self-review / fixes → commit and push main → GitHub Actions → Codex independent full acceptance → [FAIL: ChatGPT fixes + commit, Codex rechecks] → PASS and Goal completion`
 
 ## Resource constraints
 
