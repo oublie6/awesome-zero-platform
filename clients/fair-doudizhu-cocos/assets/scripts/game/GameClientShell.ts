@@ -1,3 +1,4 @@
+import { createWireCommand, parseWireResult, type WireCommand, type WireCommandResult } from '@awesome-zero-platform/doudizhu-client/wire'
 import { parsePrivateViewResult } from '@awesome-zero-platform/doudizhu-client/view'
 import { HandStore, GameMessageRouter, type HandSnapshot } from '@awesome-zero-platform/doudizhu-client'
 import { ConnectionManager, type SocketTransport } from '@awesome-zero-platform/game-client-core'
@@ -11,12 +12,30 @@ export class GameClientShell {
   private initialized = false
   private generation = 0
   private syncSequence = 0
+  private pendingCommands = new Map<string, { request: WireCommand; resolve: (value: WireCommandResult) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>()
   private notify: (message: string) => void
   constructor(notify: (message: string) => void) { this.notify = notify }
   async initialize(): Promise<void> {
     if (this.disposed || this.initialized) return
     this.initialized = true
     this.notify('游戏功能正在开发，暂未开放房间操作')
+    this.events.on('doudizhu.command.result', payload => {
+      if (this.disposed) return
+      const id = (payload as {requestId?: unknown})?.requestId
+      if (typeof id !== 'string') return
+      const pending = this.pendingCommands.get(id)
+      if (!pending) return
+      try {
+        const result = parseWireResult(payload, pending.request)
+        this.pendingCommands.delete(id)
+        clearTimeout(pending.timer)
+        pending.resolve(result)
+      } catch (error) {
+        this.pendingCommands.delete(id)
+        clearTimeout(pending.timer)
+        pending.reject(error instanceof Error ? error : new Error('invalid command response'))
+      }
+    })
     this.events.on('doudizhu.hand.changed', payload => {
       if (this.hand.snapshot && (payload as {handId?: string}).handId !== this.hand.snapshot.handId) return
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')
@@ -63,6 +82,7 @@ export class GameClientShell {
   async connect(socket: SocketTransport, endpoint: string, token: string): Promise<void> {
     if (this.disposed) throw new Error('client disposed')
     const generation = ++this.generation
+    this.rejectPending('connection replaced; command outcome unknown')
     this.connection?.close()
     if (this.hand.status !== 'disconnected') this.hand.setStatus('disconnected')
     const connection = new ConnectionManager(socket)
@@ -71,7 +91,7 @@ export class GameClientShell {
     try {
       await connection.open(endpoint, token,
         raw => { try { this.events.receive(raw) } catch { this.notify('收到不合法的服务器消息') } },
-        () => { if (!this.disposed) { this.hand.setStatus('disconnected'); this.notify('连接中断，请重连') } })
+        () => { if (!this.disposed && generation === this.generation) { this.rejectPending('connection lost; command outcome unknown'); this.hand.setStatus('disconnected'); this.notify('连接中断，请重连') } })
       if (this.disposed || generation !== this.generation) return
       this.hand.setStatus('synchronizing')
       this.notify('已连接，等待房间或牌局状态同步')
@@ -100,10 +120,38 @@ export class GameClientShell {
       payload: { v: 'doudizhu-realtime-sync-v1', handId, ...(knownVersion === undefined ? {} : {knownVersion}) }
     })
   }
+  /** Transmit only actual Go dispatcher commands; timeout is an unknown outcome, never a proof of failure. */
+  async submitCommand(input: Omit<WireCommand, 'v'>): Promise<WireCommandResult> {
+    if (this.disposed || !this.connection || this.hand.status !== 'connected') throw new Error('game connection not ready')
+    const request = createWireCommand(input)
+    if (this.pendingCommands.has(request.requestId)) throw new Error('command already pending')
+    return new Promise<WireCommandResult>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pendingCommands.delete(request.requestId)
+        reject(new Error('command timeout; outcome unknown, retry with same requestId'))
+      }, 15000)
+      this.pendingCommands.set(request.requestId, {request, resolve, reject, timer})
+      void this.connection!.send({id: request.requestId, type: 'doudizhu.command', payload: request}).catch(error => {
+        const pending = this.pendingCommands.get(request.requestId)
+        if (!pending) return
+        clearTimeout(pending.timer)
+        this.pendingCommands.delete(request.requestId)
+        reject(error instanceof Error ? error : new Error('command send failed; outcome unknown'))
+      })
+    })
+  }
+  private rejectPending(reason: string): void {
+    for (const pending of this.pendingCommands.values()) {
+      clearTimeout(pending.timer)
+      pending.reject(new Error(reason))
+    }
+    this.pendingCommands.clear()
+  }
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
     this.generation++
+    this.rejectPending('client disposed; command outcome unknown')
     this.connection?.close()
     this.events.clear()
     this.hand.reset()
