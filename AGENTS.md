@@ -6,6 +6,21 @@ Awesome Zero Platform is a general-purpose, highly extensible Go/go-zero applica
 
 Build a maintainable **modular monolith first**. Preserve clear ownership and contracts so a module can be extracted into a separately deployed service when measurable scale, reliability, team ownership, or release independence justifies it. Microservices, dynamic plugins, and distributed infrastructure are evolution options rather than default architecture.
 
+## Mandatory architecture principles — design-time compliance
+
+**Every design, coding task, review, refactor, architecture proposal, Goal definition and Codex handoff MUST comply with the canonical principles in `docs/principles/`.** This is not optional guidance. Read [the index](docs/principles/README.md) and every relevant principle page before choosing a design, changing an interface, or writing implementation code:
+
+- [01 Modularity and evolution](docs/principles/01-modularity-and-evolution.md): ownership, dependency direction, modular monolith, go-zero first, extraction readiness.
+- [02 Game runtime and durable recovery](docs/principles/02-game-runtime-and-recovery.md): memory-authoritative execution, MySQL durable log/commit-before-ack B-level recovery target, Redis as auxiliary, snapshots, replay, epoch fencing, performance.
+- [03 Client portability](docs/principles/03-client-portability.md): WeChat-first qualification, future cross-platform battles on the same backend, unified AccountID, platform-neutral business core, security and fairness.
+- [04 Engineering gates](docs/principles/04-engineering-gates.md): design checklist, performance budgets, fault tests, resource/secret hygiene and honest evidence.
+
+**Before implementing a design**, write down its owner, public contract, data authority, module dependencies, operational and failure semantics, performance cost, security constraints, migration/rollback approach and test evidence. Explicitly distinguish **implemented facts** from **accepted target architecture** and future work. A design violating these principles must be revised; if the active Goal or a published contract conflicts, **stop and document the conflict for an explicit Goal/contract amendment** rather than silently expanding scope or changing production behavior.
+
+**Binding decisions:** Go/go-zero modular monolith first; Domain free of infrastructure/platform SDKs; isolated module-owned data; memory execution with a target of durable MySQL log-before-ack recovery for live hands (not currently implemented); Redis for routing/presence/discardable cache, not per-turn authority; same authoritative Go game and stable internal identities across all clients; WeChat Mini Game qualifies first, future targets share pure TS protocol/game code; strict versions, idempotency, bounded resources, crash/fencing tests and performance measurement.
+
+This directory is the normative source for these decisions. Keep `AGENTS.md` compact by linking detailed requirements there. Existing goal-specific acceptance and historical evidence remain intact; future Goals should link relevant principles and prove their compliance.
+
 ## go-zero first infrastructure standard
 
 - **go-zero First:** go-zero is the primary application infrastructure framework. Prefer its maintained, public, version-compatible components over directly invoking parallel native clients or implementing duplicate infrastructure when go-zero already provides an equivalent capability. This includes SQL access (sqlx), Redis/cache, HTTP routing and middleware, configuration, logging, telemetry, and other applicable capabilities.
@@ -85,7 +100,7 @@ Before planning or editing code:
 
 1. Read this file completely.
 2. Read `docs/goals/current.md` completely.
-3. Read only the architecture, requirement, and decision documents explicitly referenced by the current goal, plus source files needed for implementation.
+3. **Always read `docs/principles/README.md` and the relevant principle pages**, then read architecture, requirement, and decision documents explicitly referenced by the current goal, plus source files needed for implementation.
 4. Confirm the working tree is clean and the checked-out branch is `main`. Preserve any pre-existing local work and stop if the repository is not clean.
 5. Synchronize `main` with `origin/main` using `git pull --ff-only`. If synchronization cannot complete cleanly, stop and document the blocker.
 6. Inspect the synchronized repository state and relevant Git diff.
