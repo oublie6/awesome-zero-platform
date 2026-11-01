@@ -19,6 +19,10 @@
     "./wire": {
       "types": "./dist/wire.d.ts",
       "import": "./dist/wire.js"
+    },
+    "./view": {
+      "types": "./dist/view.d.ts",
+      "import": "./dist/view.js"
     }
   }
 }
