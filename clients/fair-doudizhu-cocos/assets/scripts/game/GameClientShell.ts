@@ -4,6 +4,7 @@ import { HandStore, GameMessageRouter, type HandSnapshot } from '@awesome-zero-p
 import { ConnectionManager, type SocketTransport } from '@awesome-zero-platform/game-client-core'
 
 /** UI orchestration over confirmed server messages. No generated fake game state. */
+const MAX_PENDING_COMMANDS = 32
 export class GameClientShell {
   readonly hand = new HandStore()
   readonly events = new GameMessageRouter()
@@ -75,8 +76,18 @@ export class GameClientShell {
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')
       this.notify('已收到终局证据，牌局操作已停止')
     })
-    this.events.on('doudizhu.error', () => {
-      if (!this.disposed) this.notify('服务器拒绝操作，请同步后重试')
+    this.events.on('doudizhu.error', payload => {
+      if (this.disposed) return
+      const event = payload as {requestId?: unknown; code?: unknown}
+      if (typeof event.requestId === 'string' && typeof event.code === 'string') {
+        const pending = this.pendingCommands.get(event.requestId)
+        if (pending) {
+          this.pendingCommands.delete(event.requestId)
+          clearTimeout(pending.timer)
+          pending.reject(new Error('server rejected command: ' + event.code))
+        }
+      }
+      this.notify('服务器拒绝操作，请同步后重试')
     })
   }
   async connect(socket: SocketTransport, endpoint: string, token: string): Promise<void> {
@@ -124,19 +135,27 @@ export class GameClientShell {
   async submitCommand(input: Omit<WireCommand, 'v'>): Promise<WireCommandResult> {
     if (this.disposed || !this.connection || this.hand.status !== 'connected') throw new Error('game connection not ready')
     const request = createWireCommand(input)
+    if (request.type.startsWith('hand.')) {
+      if (!this.hand.canSubmit || this.hand.snapshot?.handId !== request.aggregateId ||
+          this.hand.snapshot.version !== request.expectedVersion) throw new Error('hand not eligible for command')
+    }
     if (this.pendingCommands.has(request.requestId)) throw new Error('command already pending')
+    if (this.pendingCommands.size >= MAX_PENDING_COMMANDS) throw new Error('pending command capacity exceeded')
     return new Promise<WireCommandResult>((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const generation = this.generation
+      const connection = this.connection!
+      const entry = {request, resolve, reject, timer: undefined as unknown as ReturnType<typeof setTimeout>}
+      entry.timer = setTimeout(() => {
+        if (this.pendingCommands.get(request.requestId) !== entry) return
         this.pendingCommands.delete(request.requestId)
         reject(new Error('command timeout; outcome unknown, retry with same requestId'))
       }, 15000)
-      this.pendingCommands.set(request.requestId, {request, resolve, reject, timer})
-      void this.connection!.send({id: request.requestId, type: 'doudizhu.command', payload: request}).catch(error => {
-        const pending = this.pendingCommands.get(request.requestId)
-        if (!pending) return
-        clearTimeout(pending.timer)
+      this.pendingCommands.set(request.requestId, entry)
+      void connection.send({id: request.requestId, type: 'doudizhu.command', payload: request}).catch(() => {
+        if (this.generation !== generation || this.pendingCommands.get(request.requestId) !== entry) return
+        clearTimeout(entry.timer)
         this.pendingCommands.delete(request.requestId)
-        reject(error instanceof Error ? error : new Error('command send failed; outcome unknown'))
+        reject(new Error('command send failed; outcome unknown'))
       })
     })
   }
