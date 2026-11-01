@@ -27,6 +27,10 @@
     "./minigame": {
       "types": "./dist/minigame.d.ts",
       "import": "./dist/minigame.js"
+    },
+    "./session": {
+      "types": "./dist/session.d.ts",
+      "import": "./dist/session.js"
     }
   }
 }
