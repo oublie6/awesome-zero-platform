@@ -15,7 +15,7 @@ export class GameClientShell {
   async initialize(): Promise<void> {
     if (this.disposed || this.initialized) return
     this.initialized = true
-    this.notify('请选择 Web / 微信 / 抖音平台，并完成安全登录后进入房间')
+    this.notify('游戏功能正在开发，暂未开放房间操作')
     this.events.on('doudizhu.hand.changed', payload => {
       if (this.hand.snapshot && (payload as {handId?: string}).handId !== this.hand.snapshot.handId) return
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')

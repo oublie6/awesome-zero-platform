@@ -65,6 +65,27 @@ To use an installed editor from repository root in PowerShell:
 The check requires Creator's documented success exit code 36 and a target entry
 artifact. It does not provide app credentials or bypass editor/platform login.
 
+## Cloud WeChat simulator check
+
+The current entry displays “游戏功能正在开发，暂未开放房间操作”. It has no
+login/room buttons yet; do not interpret a rendered entry as playable gameplay.
+
+With the pinned Linux community tool running, open the built Mini Game project,
+wait for the scene and open its debugger panel. From the repository root:
+
+```bash
+COCOS_SMOKE_PLAYWRIGHT_MODULE=/absolute/path/to/playwright \
+WECHAT_SMOKE_CDP_URL=http://127.0.0.1:19227 \
+node scripts/verify-wechat-simulator.cjs /private/path/to/evidence
+```
+
+The check locates the actual Cocos execution context, verifies entry text, injects
+a touch through the debugger's Input protocol, and requires Cocos to receive it.
+It removes its listener and saves a JSON report/screenshot. The debugger frontend
+API is specific to the pinned community tool; update the probe if that frontend
+changes. This is an operator-run simulator check, not CI or real-device coverage.
+It neither authenticates a backend session nor uploads/publishes a package.
+
 ## Entropy and platform differences
 
 WeChat uses `wx.getUserCryptoManager().getRandomValues` (minimum documented base

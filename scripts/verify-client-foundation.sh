@@ -2,6 +2,7 @@
 # Portable source checks; this does not run Creator or a mini-game developer tool.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
+node --check scripts/verify-wechat-simulator.cjs
 for package in game-client-core doudizhu-client; do
   npm --prefix "clients/packages/$package" ci --no-audit --no-fund
   npm --prefix "clients/packages/$package" run typecheck
