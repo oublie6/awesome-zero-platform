@@ -143,5 +143,9 @@ Run the installed CLI's `upload` with `--project <device-directory> --version
 --info-output <private-json>` (each as one command). Upload requires user
 authorization; do not upload again merely to repeat verification. Private evidence
 includes `wechat-device-package-manifest.json`, upload/preview info, QR and
-`wechat-device-scene-after-preview.png`. Device results remain **pending user
-feedback**; an uploaded package or QR is not proof of successful device execution.
+`wechat-device-scene-after-preview.png`. The user subsequently reported **the home page opens in WeChat, but nothing is
+clickable**. GameBootstrap creates only title/status Labels and has no Button or
+click handlers; interactive login/room UI is not implemented. Record this as
+user-reported basic device launch, not verified touch input or a playable game.
+Device model/OS, orientation, safe areas and lifecycle remain unverified. An
+uploaded package or QR alone is not proof of successful device execution.

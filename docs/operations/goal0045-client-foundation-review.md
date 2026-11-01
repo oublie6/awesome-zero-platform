@@ -233,3 +233,8 @@ SDK 探测使用真实五个 core 源文件经 TypeScript CommonJS 转译及私�
 私有证据：wechat-device-package-manifest.json SHA256 `f8fafec6ab735f8a0ed7ef8de122997f4e4de5d380f2efa382b4c53cfb9d5671`；wechat-upload-info.json 与 wechat-preview-info.json 内容一致，SHA256 均为 `a6cb7709d1aa8931a8eb35710f8043d2091d2937c27282f5910febf2f7d7c0e0`；wechat-device-scene-after-preview.png `eef644db1d453308b3880eb560ebf4c4b2c8a2bd3c7d98edd7f3f2ff83951764`。当前实现者自审检查了加载成功/失败分支、原文件哈希、AppID/密钥不入库、用户授权范围和测试证据层次。另用 Node VM 执行实际包装后的 game.js，受控 wx.loadSubpackage 验证成功回调前不启动、失败只报错不启动、成功回调进入原 bootstrap；这是本地回调顺序检查，不是实际网络中断/重试或真机恢复资格。
 
 报告检查点 acf6041d8f32eb66cf3eae75b144b7d2da41dd92 的 [CI 41229934812](https://github.com/oublie6/awesome-zero-platform/actions/runs/41229934812) 与 [Fair Doudizhu 41229934872](https://github.com/oublie6/awesome-zero-platform/actions/runs/41229934872) 均成功；包括 source client_foundation、清单/加密、应用、MySQL 集成及通用 CI 单元/集成/运行时等门禁。此 CI 未执行本地微信上传或真机测试，后两者必须分别依据微信返回结果和用户设备反馈判断。
+
+
+## 真机反馈补充（2026-11-01）
+
+用户反馈“当前可以在小程序里面打开首页了，但是什么都点不了”。记录为用户报告的微信内基础启动成功，不扩展成完整真机资格：设备型号/系统、实际版本号、横屏、安全区、前后台与分享尚无单独证据。重新检查 GameBootstrap 和 GameClientShell：场景只创建标题和状态 Label，未创建 Button、绑定点击/触摸处理或实现登录/房间 UI。当前不可点击符合这版入口的实现，不能据此判定微信触摸失效或伪造修复。后续应按既定身份/协议集成阶段实现真正可操作的登录与房间流程，仍不将本阶段扩展为完整斗地主。
