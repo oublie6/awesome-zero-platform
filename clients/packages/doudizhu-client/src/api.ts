@@ -1,4 +1,7 @@
-import type { HttpTransport } from '@awesome-zero-platform/game-client-core'
+/** Structural port avoids coupling this package to a specific platform transport. */
+export interface DoudizhuHttpTransport {
+  request<T>(path: string, options?: { method?: string; body?: unknown; accessToken?: string }): Promise<T>
+}
 import { createWireCommand, parseWireResult, type WireCommand, type WireCommandResult } from './wire.js'
 import { parsePrivateViewResult, type PrivateHandProjection } from './view.js'
 
@@ -16,7 +19,7 @@ function unwrap(value: unknown): unknown {
 }
 /** Injectable transport; no platform SDK or implicit credentials in the business layer. */
 export class DoudizhuHTTPClient {
-  constructor(private readonly transport: HttpTransport, private readonly accessToken: () => string) {}
+  constructor(private readonly transport: DoudizhuHttpTransport, private readonly accessToken: () => string) {}
   private token(): string {
     const token = this.accessToken()
     if (typeof token !== 'string' || !token.trim() || /[\r\n]/.test(token)) throw new Error('authenticated token required')
