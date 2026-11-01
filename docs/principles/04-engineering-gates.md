@@ -17,6 +17,15 @@
 - Pass correlation `requestId / commandId / roomId / handId / stateVersion` through tracing where applicable without including secrets or high-cardinality IDs as unbounded metric labels.
 - Review deployment and rollback implications. No production upload, data migration, destructive operation or account use without explicit task authorization.
 
+## Mandatory ChatGPT → Codex independent acceptance workflow
+
+- **ChatGPT owns development:** design against these principles, implement production changes and regression tests, run all available verification, self-review, fix defects, then commit and push an identifiable checkpoint to `main`.
+- **GitHub Actions is the automatic verification gate**, not a substitute for independent review. Record the exact commit and actual CI outcomes.
+- **Codex owns independent acceptance:** pull the exact checkpoint on clean `main`, independently inspect requirements/contracts/diff, rerun the relevant acceptance suite even when ChatGPT already ran it, and verify actual builds, integration, runtime, performance, security and failure/recovery cases required by the Goal. Report `PASS`, `FAIL` or `BLOCKED` with commands, environment, artifacts and reproducible evidence.
+- **ChatGPT owns fixes:** Codex does not silently modify production code or expand requirements; hand defects back. ChatGPT fixes, commits and pushes; Codex reruns affected and regression checks. Repeat as needed.
+- **Acceptance cannot be self-declared:** a Goal is complete only after all applicable required checks, CI and Codex independent acceptance are green for the same source revision. If hardware/credentials/platforms prevent verification, document the specific blocker; do not call it a pass.
+- **Controlled handoff:** one writer at a time on `main`, no feature branches or concurrent competing changes; include commit SHA, acceptance checklist, applicable principle pages, reproducible commands, and expected evidence. See `AGENTS.md` for the normative full process.
+
 ## Proof and acceptance
 
 - CI: narrow unit/contract/typecheck/import-boundary tests; schema/API compatibility; builds per qualified target; race/benchmark/fault tests where supported. Tests should fail for the relevant regression, not simply reassert a mock.
