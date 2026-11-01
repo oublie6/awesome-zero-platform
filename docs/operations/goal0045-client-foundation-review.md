@@ -1,6 +1,6 @@
 # Goal 0045 客户端基础阶段性验收
 
-日期：2026-10-31。结论：**已完成源码审查/修复、49 项自动化测试、Creator 3.8.8 原生三目标构建、真实 Web 场景运行与适配器通信验证；微信社区 Linux 模拟器已运行入口场景并通过部分真实 SDK 探测，完整小游戏 SDK/真机资格尚未完成。** Goal 0045 保持 `in_progress`，不归档、不恢复空白模板。本报告不表示完整斗地主客户端或三个发布目标已经可用。
+日期：2026-10-31；收尾更新：2026-11-01。结论：**已完成源码审查/修复、49 项自动化测试、Creator 3.8.8 原生三目标构建、真实 Web 场景运行与适配器通信验证；微信社区 Linux 模拟器已运行入口场景并通过部分真实 SDK 探测，完整小游戏 SDK/真机资格尚未完成。** Goal 0045 保持 `in_progress`，不归档、不恢复空白模板。本报告不表示完整斗地主客户端或三个发布目标已经可用。
 
 ## 范围、提交和责任
 
@@ -21,8 +21,9 @@
 | `0acc8ad` | 实测 CDN 约 2.5 MB/s 后调长下载上限、断点续传并缓存已校验的官方归档 |
 | `b1b55f0` | Web 子窗口使用 screen.windowSize 同步物理渲染缓冲区及 DPR；加入真实显示比例检查 |
 | `7da85a9` | 竖屏字号/文本区域适配；检查实际渲染字号，保留横屏布局 |
+| `5ef378f` | 修正无法执行的平台选择/登录提示；新增实际小游戏上下文的入口/原生触摸/监听清理检查，浏览器验证同步检查准确文案 |
 
-本阶段的源码检查、测试执行、修复和修复后的自审由当前 Codex 执行；GitHub Actions 负责仓库 CI。修复代码的第二轮检查称为**自审**，不冒充另一位独立审查者。最后的报告提交只更新验收文档、模板来源声明和 Working State；其 SHA/Actions 状态在交接消息中给出。
+本阶段的源码检查、测试执行、修复和修复后的自审由当前 Codex 执行；GitHub Actions 负责仓库 CI。修复代码的第二轮检查称为**自审**，不冒充另一位独立审查者。收尾实现提交包含准确入口文案和模拟器检查脚本；之后的报告提交只整理验收证据与 Working State，最终 SHA/Actions 状态在交接消息中给出。
 
 变更属于客户端集成：可复用技术端口在 game-client-core，游戏状态在 doudizhu-client，渲染和组合在 Cocos 工程。没有修改 Go 后端、数据库结构、部署配置、生产账号权限或牌局数据；真实通信仅使用既有只读验收账号登录、心跳及退出本次会话。
 
@@ -170,7 +171,7 @@ Web 探针在增加网络超时后针对网络等待修复源码 `0fc7ebb` 重�
 | 工具 | 安装来源/版本 | 实际执行结果 |
 | --- | --- | --- |
 | Cocos Creator | 官方 Windows 3.8.8 `win-121518`；归档 SHA256 `e365030aa4f24b515f499cf093cd86fdf38a0f763b5fbcacb20e96253e0fcc0b` | Wine 6 启动崩溃；Wine 11 进入构建管理器，但出现登录服务超时且本机可用内存降至约 370 MiB，主动停止并恢复至约 4.3 GiB。此超时不能单独证明必须登录 |
-| Creator 原生环境 | GitHub Actions windows-2022，官方相同归档并校验 SHA256 | `41203283718` 真实导入了场景和脚本，构建退出 34：`GameClientShell.js` / `platform-target.js` 不能映射到 .ts。修复 `1ab48ea` 使用真实 .ts 路径，独立 Node ESM 构建启用 rewriteRelativeImportExtensions；本地类型检查和 7 项测试通过，`41204313900` 的三个目标均返回 36 并生成真实产物；随后发现默认 Web 裁切、小游戏默认竖屏和生成配置类型解析问题，已继续修复；最终 7da85a9 的检查 41208033225 已通过（96d697c 那轮在下载前置步骤超时，见下文） |
+| Creator 原生环境 | GitHub Actions windows-2022，官方相同归档并校验 SHA256 | `41203283718` 真实导入了场景和脚本，构建退出 34：`GameClientShell.js` / `platform-target.js` 不能映射到 .ts。修复 `1ab48ea` 使用真实 .ts 路径，独立 Node ESM 构建启用 rewriteRelativeImportExtensions；本地类型检查和 7 项测试通过，`41204313900` 的三个目标均返回 36 并生成真实产物；随后发现默认 Web 裁切、小游戏默认竖屏和生成配置类型解析问题，已继续修复；此前 7da85a9 的检查 41208033225 已通过（96d697c 那轮在下载前置步骤超时，见下文） |
 | 抖音开发者工具 | 官方 Windows 4.5.7 | Wine 11 启动并加载主程序，更新服务确认当前版本；出现 Windows COM/图形/网络兼容性错误。补齐 EGL 后限内存重试，CDP 未能连接且显示未取得可用 UI。没有导入小游戏、调用 tt SDK 或真机验证 |
 | 微信开发者工具 | 官方备份稳定 Windows x64 2.01.2510260；下载 MD5 与官方 `cc80edf59019e01341399699c4247ec2` 一致；不称最新版 | Wine 11 启动 NW.js 窗口，但捕获界面为空灰色，日志有 Windows API/图像解码错误；未取得可用模拟器或 wx SDK 执行结果 |
 
@@ -182,9 +183,9 @@ Web 探针在增加网络超时后针对网络等待修复源码 `0fc7ebb` 重�
 
 运行检查本身也经过纠错：原先 async waitForFunction 返回 Promise，被轮询当作已就绪，随后读取空场景；现先加载真实 cc 模块，再同步轮询实际 Canvas/SafeContent/GameStatus。又通过逐张截图发现逻辑节点边界检查漏掉固定 DOM 画布，加入真实 viewport 边界。此前宽松运行检查虽然返回 passed，**不作为最终布局验收证据**。单独销毁的旧产物验证为隔离生命周期问题暂时省略 viewport 断言，只记失败证据，不记资格通过。
 
-新增 `Cocos Creator Smoke` 工作流与 `scripts/verify-cocos-runtime.ps1`、`scripts/verify-cocos-browser.cjs`：Windows 原生实际导入/构建必须退出 36 且存在 Web 产物；随后用真实 Chromium 加载引擎、检查 Bootstrap/UI、三个尺寸和销毁。失败必须保留日志，不能将 ordinary exit 0 或静态声明检查当成功。生成配置下的 tsc 检查和微信/抖音产物导出也已加入，按序执行；原生运行 `41206496385` 在 `0acc8ad` 上三个目标导出、严格生成配置检查及当时的浏览器断言均通过，两个 game.json 确认为 landscape。但逐张自审截图发现 CSS 拉伸，而当时的断言只验证画布边界，**该次不作为最终布局资格通过**。继续新增渲染比例、实际字号检查：未修改的该次原生产物复现比例失败；同一真实引擎/场景加候选宿主修复脚本的本地预验证复现字号失败，后者不是 Creator 重建资格。最新 `7da85a9cf6b4cc3c0404dbecdd40b2e7d6cc2539` 的完整原生验证 `41208033225` 已通过，最终三张截图均已逐张复核。`41205713103` 在代码执行前因 240 秒下载上限过短而失败：第二次传输收到约 611 MiB/980 MiB，速率约 2.5 MB/s；不是编辑器或客户端失败。修正为每次最多 600 秒、断点续传且只重试一次，使用官方 cache restore/save，SHA256 每次解压前仍校验；修复失败不再重复下载已验证归档。
+新增 `Cocos Creator Smoke` 工作流与 `scripts/verify-cocos-runtime.ps1`、`scripts/verify-cocos-browser.cjs`：Windows 原生实际导入/构建必须退出 36 且存在 Web 产物；随后用真实 Chromium 加载引擎、检查 Bootstrap/UI、三个尺寸和销毁。失败必须保留日志，不能将 ordinary exit 0 或静态声明检查当成功。生成配置下的 tsc 检查和微信/抖音产物导出也已加入，按序执行；原生运行 `41206496385` 在 `0acc8ad` 上三个目标导出、严格生成配置检查及当时的浏览器断言均通过，两个 game.json 确认为 landscape。但逐张自审截图发现 CSS 拉伸，而当时的断言只验证画布边界，**该次不作为最终布局资格通过**。继续新增渲染比例、实际字号检查：未修改的该次原生产物复现比例失败；同一真实引擎/场景加候选宿主修复脚本的本地预验证复现字号失败，后者不是 Creator 重建资格。此前 `7da85a9cf6b4cc3c0404dbecdd40b2e7d6cc2539` 的完整原生验证 `41208033225` 已通过，最终三张截图均已逐张复核。`41205713103` 在代码执行前因 240 秒下载上限过短而失败：第二次传输收到约 611 MiB/980 MiB，速率约 2.5 MB/s；不是编辑器或客户端失败。修正为每次最多 600 秒、断点续传且只重试一次，使用官方 cache restore/save，SHA256 每次解压前仍校验；修复失败不再重复下载已验证归档。
 
-最终源码验证为 `7da85a9cf6b4cc3c0404dbecdd40b2e7d6cc2539`：[Cocos Creator Smoke 41208033225](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033225)、[CI 41208033131](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033131)、[Fair Doudizhu 41208033122](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033122) 全部成功。Windows job `124557119115` 使用缓存恢复且每次校验官方 Creator 归档；真实生成配置 tsc 通过，三个目标分别退出 36。构建日志保留 `merge_dep` 默认压缩选项回退、小游戏配置无版本号跳过迁移等非阻塞提示，未宣称编辑器所有日志零警告。
+此前布局修复源码验证为 `7da85a9cf6b4cc3c0404dbecdd40b2e7d6cc2539`：[Cocos Creator Smoke 41208033225](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033225)、[CI 41208033131](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033131)、[Fair Doudizhu 41208033122](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033122) 全部成功。Windows job `124557119115` 使用缓存恢复且每次校验官方 Creator 归档；真实生成配置 tsc 通过，三个目标分别退出 36。构建日志保留 `merge_dep` 默认压缩选项回退、小游戏配置无版本号跳过迁移等非阻塞提示，未宣称编辑器所有日志零警告。
 
 最终 browser-runtime.json 为 passed，errors/warnings/failed requests 均为空。实际 canvas 显示与缓冲区尺寸逐一匹配：1280×720、844×390、390×844；标题/状态实际 CSS 字号分别约 43/23、28.35/15.17、22.24/14.93，竖屏自动换行。单独销毁后 UI/两类 view 监听清除、Shell 断开；重新挂载只创建一个 SafeContent，父节点销毁后组件/子 UI/监听均清理。截图已进行独立于自动断言的第二遍自审；这是当前实现者的自审，不是另一位审查者。
 
@@ -228,7 +229,7 @@ SDK 探测使用真实五个 core 源文件经 TypeScript CommonJS 转译及私�
 
 上传采用保留原导出的独立 wechatgame-device 副本：game.json 声明 cocos-engine 分包 root=cocos-js/；根 game.js 的完整原启动代码放入 wx.loadSubpackage success 回调，fail 仅报错不启动应用；新增空分包入口 cocos-js/game.js，项目名设为 fair-doudizhu-device。哈希逐文件比对确认只改三份启动/配置文件、新增分包入口，无原引擎/业务/资源修改或文件删除。复现步骤见 PLATFORM-VALIDATION.md。这是本地导出后包装，不是新的 Creator release 构建资格；正式分发前应将发布压缩、功能裁剪/分包纳入可重复的 Creator 构建配置。
 
-微信 CLI upload 和 preview 均实际成功，返回一致包体：主包 915134 字节，引擎分包 7472470 字节，总计 8387604 字节。预览完成后模拟器截图显示横屏入口“公平斗地主”和初始化后的状态文字；工具构建面板保留“文件超过 2000KB，编译进程不处理”提示，不能宣称所有工具日志零警告。二维码已展示给用户，真机打开、横屏、安全区、前后台与分享结果等待用户反馈，未标记通过。
+微信 CLI upload 和 preview 均实际成功，返回一致包体：主包 915134 字节，引擎分包 7472470 字节，总计 8387604 字节。预览完成后模拟器截图显示横屏入口“公平斗地主”和初始化后的状态文字；工具构建面板保留“文件超过 2000KB，编译进程不处理”提示，不能宣称所有工具日志零警告。二维码已展示给用户；随后用户确认能打开、横屏、无异常、文字完整（见下节）。安全区、前后台与分享仍未验证。
 
 私有证据：wechat-device-package-manifest.json SHA256 `f8fafec6ab735f8a0ed7ef8de122997f4e4de5d380f2efa382b4c53cfb9d5671`；wechat-upload-info.json 与 wechat-preview-info.json 内容一致，SHA256 均为 `a6cb7709d1aa8931a8eb35710f8043d2091d2937c27282f5910febf2f7d7c0e0`；wechat-device-scene-after-preview.png `eef644db1d453308b3880eb560ebf4c4b2c8a2bd3c7d98edd7f3f2ff83951764`。当前实现者自审检查了加载成功/失败分支、原文件哈希、AppID/密钥不入库、用户授权范围和测试证据层次。另用 Node VM 执行实际包装后的 game.js，受控 wx.loadSubpackage 验证成功回调前不启动、失败只报错不启动、成功回调进入原 bootstrap；这是本地回调顺序检查，不是实际网络中断/重试或真机恢复资格。
 
@@ -237,4 +238,36 @@ SDK 探测使用真实五个 core 源文件经 TypeScript CommonJS 转译及私�
 
 ## 真机反馈补充（2026-11-01）
 
-用户反馈“当前可以在小程序里面打开首页了，但是什么都点不了”。记录为用户报告的微信内基础启动成功，不扩展成完整真机资格：设备型号/系统、实际版本号、横屏、安全区、前后台与分享尚无单独证据。重新检查 GameBootstrap 和 GameClientShell：场景只创建标题和状态 Label，未创建 Button、绑定点击/触摸处理或实现登录/房间 UI。当前不可点击符合这版入口的实现，不能据此判定微信触摸失效或伪造修复。后续应按既定身份/协议集成阶段实现真正可操作的登录与房间流程，仍不将本阶段扩展为完整斗地主。
+用户反馈“当前可以在小程序里面打开首页了，但是什么都点不了”。记录为用户报告的微信内基础启动成功，不扩展成完整真机资格：设备型号/系统、实际版本号、安全区、前后台与分享尚无单独证据。用户随后明确反馈“横屏，无异常，文字完整”，记录为用户真机反馈，不冒充本机独立执行。重新检查 GameBootstrap 和 GameClientShell：场景只创建标题和状态 Label，未创建 Button、绑定点击/触摸处理或实现登录/房间 UI。当前不可点击符合这版入口的实现，不能据此判定微信触摸失效或伪造修复。后续应按既定身份/协议集成阶段实现真正可操作的登录与房间流程，仍不将本阶段扩展为完整斗地主。
+
+
+## 2026-11-01 收尾与剩余任务归属
+
+用户确认日常采用云服务器上的微信开发者工具模拟器。当前范围为原始 Goal 0045 的阶段性验收、实际缺陷修复和交接；不创建/归档 Goal，不把后续身份/房间/完整牌桌开发挪入本阶段。
+
+| 项目 | 收尾状态 | 证据或后续归属 |
+| --- | --- | --- |
+| 模块边界、协议审查、类型检查和回归 | 已完成本阶段工作 | core 26、protocol 7、Shell/assets 7；原 secure-envelope 9 项既有测试/互操作由既有证据和 CI 验证，源文件不改 |
+| 入口误导文案 | 已修正并经新原生产物确认 | 原文要求“选择平台并登录”但没有入口；改为“游戏功能正在开发，暂未开放房间操作”。新 smoke 在旧原生产物上实际失败，浏览器断言也改为精确匹配 |
+| 云端输入与脚本执行 | 新源码原生产物检查通过 | 在调试器的实际小游戏执行上下文，通过 System.import('cc') 获取真实引擎。Input.dispatchTouchEvent 的 touchStart/touchEnd 使 Cocos 收到 1 次 TOUCH_START，并移除临时监听；没有直接调用游戏回调或伪造状态 |
+| 用户真机反馈 | 已记录 | 微信内能打开、横屏、无异常、文字完整；当前入口无按钮符合源码。设备型号/系统、原生分享、系统挂起恢复等未独立验证 |
+| 运行环境 | 已选择并整理 | 保留已验证的社区 Linux 微信工具和真实构建产物；不要求用户手机 USB 接入云服务器。真机调试二维码已生成，但未观察到手机调试连接，不列为成功 |
+| 安卓模拟器试验 | 已停止并清理 | 官方 Emulator 37.2.13 / Android 11，KVM 可创建 VM；默认将 1 GB 请求升为 2 GB，在 2500 MiB 会话上限下触发 cgroup OOM。官方 -lowram 后实测 MemTotal 997976 KiB、sys.boot_completed=1，进程 RSS 约 1.35 GiB，另有缓存；微信 8.0.80 安装未成功完成，未登录。选择既有开发工具后清理约 5.3 GiB 实际磁盘占用，保留私有证据；数据盘恢复约 47% / 20 GiB 可用、内存约 4.3 GiB 可用，无 swap |
+| 交互式 Creator GUI / 抖音真实 SDK / 跨设备能力 | 环境验证缺口，未标记通过 | 原生 CLI 三目标构建和实际 Web/微信入口已有证据；不重装已弃用 Wine 路线，不用小程序 API 假定抖音 Mini Game 安全熵可用 |
+| 登录、真实 wire DTO、状态恢复；房间 UI | 身份/协议属 Goal 0046，房间属 Goal 0047 | 依据已接受架构的阶段划分，实现身份换证/会话、授权 HTTP/WSS、typed DTO/私有快照/终局证据、ID/序号和安全重试；本阶段不编造按钮对应的生产 API 或本地权威牌局 |
+
+新增 scripts/verify-wechat-simulator.cjs 为操作者本机运行的版本限定检查：选择真实 Cocos 上下文，校验标题、准确入口提示和 devtools 平台，通过调试器原生触摸协议验证事件交付，finally 移除监听并保存报告/截图。CI 只检查该脚本语法；本地登录后的模拟器检查和 GitHub Actions 不混为一层。早期外层 SDK 上下文/纯鼠标输入及全局 cc 探针不合格；使用真正游戏上下文、System.import('cc') 和触摸输入后得到成功结果。当前入口没有业务按钮，触摸交付通过不表示登录或房间 UI 已开发。
+
+保留的私有证据：android-trial-report.json SHA256 `6face6e497d428d90912931bbbe1fe9b79ce298a040acc1fde2b0d431112b29d`；wechat-native-touch-success.json `fd69fb15890a2929fa65937064511fe8b69e5517d3c65f08dac8aa52fe4e4f5c`；wechat-entry-before-copy-fix/wechat-runtime.json `83137d1d02ef879f78219e1c6662d9a5a34cc7892a11c915bee830c8478daf4c`（预期失败）。SDK、AVD、APK 等未提交，未修改 Kubernetes/Go 配置、数据或权限。
+
+### 本阶段最终验证与自审
+
+实际验证源码 `5ef378f62f5d81992a569af99c4141ee7432e7c2` 已推送 main：[Cocos Creator Smoke 41264441151](https://github.com/oublie6/awesome-zero-platform/actions/runs/41264441151)、[CI 41264441148](https://github.com/oublie6/awesome-zero-platform/actions/runs/41264441148)、[Fair Doudizhu 41264441201](https://github.com/oublie6/awesome-zero-platform/actions/runs/41264441201) 均成功。原生 job 124724196347 的 Web/WeChat/Douyin 构建均退出 36；生成配置 tsc、实际 Web 三尺寸/比例/字号/准确文案/销毁恢复通过，浏览器 errors/warnings/failures 均为空。三张新截图由当前实现者逐张自审，文本完整。
+
+[原生产物 13066896631](https://github.com/oublie6/awesome-zero-platform/actions/runs/41264441151/artifacts/13066896631) 已下载并核对 API digest：归档 SHA256 `459fbc989da7630f964567ac5f955a21630ef6466d2859a9b24eb5f162f5747d`；browser-runtime.json `f9677ecd82cd895acc245460fd5b64e4438ee4589285c0ac791910f6352ef038`。私有副本 native-windows-41264441151 保留，未提交生成文件。
+
+从该归档直接解压新的 wechatgame-5ef378f，仅本地 project.config.json 覆盖用户拥有的小游戏 AppID，未替换引擎或应用代码。操作者打开调试器并等待编译完成后，仓库脚本 verify-wechat-simulator.cjs 实际退出 0：标题正确、准确状态文本、platform=devtools、touch.received=1、listenerRemoved=true。新项目首次执行因面板未打开、其次因场景尚未加载而明确失败，准备完成后才通过；它们是工具前置条件，未冒充产品运行失败或通过。最终截图自审确认横屏入口；工具含 SDK 提示及旧 API 提醒，不宣称工具控制台零警告。新证据 wechat-5ef378f/wechat-runtime.json SHA256 `4008d3f97dd90e4840752da33da64c79439311914a7f8853d991575a110f23bf`；wechat-scene.png `4c6f4017032df940134b085013c21cd497302b789896e8ed5294850a0f3b57b2`。
+
+本轮单独进行的第二遍**自审**（并非独立审查）重新对照当前目标、架构边界和提交逐行检查：新文案不许诺不存在的操作；浏览器断言与实际输出一致；小游戏选择实际 Cocos 上下文而非外层 SDK；原生触摸确实到达真实 input；探针成功和异常路径均保存结果、移除自有监听并断开 CDP；没有调用业务接口、记录授权 code/随机值或硬编码 AppID。旧产物的精确文案检查先失败，新原生产物通过，避免测试只验证自身。前置条件失败路径亦实际执行。没有发现需要额外生产代码修复的问题；版本限定调试器 API、人工先打开项目/面板及编译等待、截图中的工具缩放、长期资源行为仍是限制。未重新运行未变更的 Go/HPKE 本地测试；相关仓库门禁由 Actions 实际执行。未执行的 Creator GUI、抖音 SDK、真机系统能力、微信 HTTP/WSS/分享仍按矩阵列为缺口，不阻碍本次阶段报告交接，但不据此宣称完整 Goal 0045 通过。
+
+工具已停止，安卓试验及 Wine 已清理，保留 Linux 工具/构建/小型证据。最终可用内存约 4.3 GiB、无 swap；根盘 45%（22 GiB 可用）、数据盘 48%（20 GiB 可用）；kubelet/containerd active。未改变 Go 服务、数据库、集群部署或生产权限。开发版本仍为此前上传的 0.0.45，本轮新文案只完成源码/构建/模拟器验证，没有重复上传、提交审核或正式发布。报告发布提交只更新三份文档；推送后检查其 CI，在最终交接给出结果。

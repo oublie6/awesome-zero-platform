@@ -44,11 +44,11 @@ Go wire DTO/private snapshot/evidence mapping, stable command IDs/sequences and
 safe retries. The durable CommandEnvelope is not the current WSS request shape.
 Resolve the reveal AAD time context before a real encrypted reveal flow.
 
-Accepted source: `7da85a9cf6b4cc3c0404dbecdd40b2e7d6cc2539`.
-[Cocos Creator Smoke 41208033225](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033225),
-[CI 41208033131](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033131)
-and [Fair Doudizhu 41208033122](https://github.com/oublie6/awesome-zero-platform/actions/runs/41208033122)
-all succeeded. Evidence artifact `13044679501` retains logs, three target archives,
+Accepted source: `5ef378f62f5d81992a569af99c4141ee7432e7c2`.
+[Cocos Creator Smoke 41264441151](https://github.com/oublie6/awesome-zero-platform/actions/runs/41264441151),
+[CI 41264441148](https://github.com/oublie6/awesome-zero-platform/actions/runs/41264441148)
+and [Fair Doudizhu 41264441201](https://github.com/oublie6/awesome-zero-platform/actions/runs/41264441201)
+all succeeded. Evidence artifact `13066896631` retains logs, three target archives,
 reports and screenshots for seven days; a private local evidence copy is retained.
 Earlier runs with weaker viewport checks are superseded and do not qualify layout.
 Creator build logs retain non-blocking default-compression/plugin-migration warnings;
@@ -147,5 +147,35 @@ includes `wechat-device-package-manifest.json`, upload/preview info, QR and
 clickable**. GameBootstrap creates only title/status Labels and has no Button or
 click handlers; interactive login/room UI is not implemented. Record this as
 user-reported basic device launch, not verified touch input or a playable game.
-Device model/OS, orientation, safe areas and lifecycle remain unverified. An
+The user later confirmed landscape, no anomalies and complete text. Model/OS,
+safe areas and lifecycle remain independently unverified. An
 uploaded package or QR alone is not proof of successful device execution.
+
+## Closeout runtime choice
+
+Daily cloud execution uses the existing community Linux developer-tool simulator.
+A user phone/USB connection is not required for routine simulator checks. The
+Android emulator trial is stopped and its SDK/AVD/APK removed after preserving
+private evidence. Android boot with official `-lowram` and 1 GB guest RAM passed,
+but WeChat installation/login did not qualify; that trial is not device evidence.
+
+The old entry text incorrectly asked users to select a platform and log in with
+no controls to do so. Source 5ef378f replaces it with an accurate development
+status. The new `verify-wechat-simulator.cjs` check rejects the old artifact's text.
+Actual touch delivery was separately verified against source 7da85a9's native
+artifact by selecting the game's real execution context and injecting a touch
+through the debugger Input protocol. Plain mouse attempts and outer-context
+probes are not qualification evidence. The new native artifact from run
+41264441151 now passes the repository smoke script: title/status/devtools checked,
+one native touch received by Cocos and temporary listener removed. Only the local
+project AppID was overridden; engine/application files are the native export.
+The operator must open the debugger and wait for compilation; checks before those
+prerequisites failed explicitly. Screenshots were self-reviewed. Private report
+`wechat-5ef378f/wechat-runtime.json` SHA256:
+`4008d3f97dd90e4840752da33da64c79439311914a7f8853d991575a110f23bf`.
+The tool is stopped after verification. This new artifact was not uploaded again;
+the existing user development package remains 0.0.45.
+
+The smoke script checks rendering/text/touch delivery and removes its listener.
+It does not implement or certify login/room UI. Login and full Go wire/session
+integration belong to Goal 0046; room/lobby UI belongs to Goal 0047.
