@@ -73,3 +73,21 @@ test('real Go private hand snapshot is applied after strict version and identity
  assert.equal(s.hand.snapshot?.version,2)
  s.dispose()
 })
+
+test('real WSS command response matches request and disconnect leaves outcome unknown',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const connected=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await connected
+ s.acceptVerifiedSnapshot(snapshot)
+ const req={requestId:'move-1',type:'hand.pass',aggregateId:'hand-1',clientSeq:1,expectedVersion:7}
+ const pending=s.submitCommand(req)
+ await tick()
+ assert.deepEqual(t.tasks[0].c.sent[0],{id:'move-1',type:'doudizhu.command',payload:{v:'doudizhu-api-command-v1',...req,payload:{}}})
+ const deliver=payload=>{for(const cb of t.tasks[0].c.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload}))}
+ deliver({v:'doudizhu-api-command-result-v1',requestId:'move-1',type:'hand.pass',live:{version:8,payload:{},requiresTermination:false}})
+ assert.equal((await pending).live.version,8)
+ const pending2=s.submitCommand({...req,requestId:'move-2'})
+ await tick()
+ for(const cb of t.tasks[0].c.closes)cb()
+ await assert.rejects(pending2,/outcome unknown/)
+ s.dispose()
+})
