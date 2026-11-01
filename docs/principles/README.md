@@ -11,6 +11,10 @@ Every agent must read `AGENTS.md`, `docs/goals/current.md`, and the applicable p
 3. [03 — Client portability and cross-platform battles](03-client-portability.md): WeChat-first qualification, platform-neutral protocol and state, unified account IDs, fairness and security.
 4. [04 — Engineering and decision gates](04-engineering-gates.md): tests, evidence, design review, observability, performance budgets and operational safety.
 
+## Mandatory development and acceptance ownership
+
+All executable development Goals follow **ChatGPT development and self-testing → commit/push to `main` → GitHub Actions → Codex independent full Goal acceptance → ChatGPT fixes → Codex re-verification**. Independent Codex reruns are required, even when ChatGPT and CI already passed. The evidence and source SHA must match; incomplete checks are reported as blocked, never declared passed. The owner/acceptance details and permitted edits are normative in `AGENTS.md` and [04 — Engineering gates](04-engineering-gates.md).
+
 ## Decision categories
 
 - **Required now:** module boundaries, dependency direction, server authority, command idempotency, no secret leakage, honest verification, resource bounds, explicit versioning and lifecycle cleanup.
