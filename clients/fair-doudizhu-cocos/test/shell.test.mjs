@@ -59,3 +59,17 @@ test('same-version full snapshot confirms reconnect without replacing confirmed 
  s.hand.setStatus('synchronizing');s.acceptVerifiedSnapshot({...snapshot,version:6});assert.equal(s.hand.status,'synchronizing')
  s.dispose()
 })
+
+test('real Go private hand snapshot is applied after strict version and identity checks',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const pending=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await pending
+ const wire={v:'doudizhu-live-private-view-v1',position:1,cards:['S3'],
+   public:{v:'doudizhu-live-public-view-v1',handId:'hand-1',phase:'BIDDING',stateVersion:2,
+     bidding:{},seats:[{position:1,accountId:'a',remainingCards:17},{position:2,accountId:'b',remainingCards:17},{position:3,accountId:'c',remainingCards:17}]}}
+ const deliver=(view)=>{for(const cb of t.tasks[0].c.messages)cb(JSON.stringify({type:'doudizhu.hand.snapshot',payload:{v:'doudizhu-realtime-event-v1',handId:'hand-1',view}}))}
+ deliver({version:2,payload:wire})
+ assert.equal(s.hand.status,'connected');assert.equal(s.hand.snapshot?.version,2);assert.deepEqual(s.hand.snapshot?.view.cards,['S3'])
+ deliver({version:3,payload:wire})
+ assert.equal(s.hand.snapshot?.version,2)
+ s.dispose()
+})
