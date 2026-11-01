@@ -111,7 +111,7 @@ Execution rules:
 - Do not load archived goals unless the current goal explicitly requires historical investigation.
 - Do not expand, reinterpret, or silently replace the goal, deliverables, constraints, or acceptance criteria.
 - ChatGPT, as the primary agent, owns architecture, implementation, test design, execution of every test available in its environment, integration, failure fixes, and final verification.
-- Subagents may be used for independent analysis or review. Codex may be used only for specifically identified supplementary tests that ChatGPT cannot execute in its environment; it must not duplicate normal implementation or testing work.
+- Subagents may be used for independent analysis or review. **Codex is the mandatory independent acceptance executor** after ChatGPT finishes and pushes a development checkpoint; Codex intentionally reruns relevant checks and tests full Goal acceptance, while ChatGPT retains implementation and defect-fix ownership.
 - Codex may update only the status, working-state, verification-status, and completion-report sections of `docs/goals/current.md` unless the goal explicitly permits other changes. It independently reviews the complete Goal and reports PASS/FAIL/BLOCKED.
 - Set the goal state to `in_progress` when implementation begins.
 - Set the goal state to `completed` only after every acceptance criterion passes, including mandatory independent Codex acceptance at the verified source SHA.
