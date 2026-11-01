@@ -85,6 +85,8 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### In progress
 
+- Started real Cocos/game state integration: `GameClientShell` now parses the actual Go private `doudizhu.hand.snapshot` view via `doudizhu-client/view`, validates hand identity, version and phase, then applies a server-authoritative `HandSnapshot`. Added a shell regression for good and mismatched wire views. This change is not yet verified by native Creator/Web/WeChat builds, CI or independent Codex review. Subsequent work remains: durable live-state commit/replay, real account/room/fairness and a playable UI.
+
 - 2026-11-01 current development checkpoint: extended the platform-neutral HTTP transport with optional Bearer authentication headers (Web and Mini Game adapters) and added `doudizhu-client/src/api.ts` for authenticated Go `/v1/doudizhu/commands` and private-hand HTTP reads. It validates the actual go-zero response envelope and correlates command replies; added API contract tests. Code is committed to `main`, but has not yet passed TypeScript/CI, real WeChat SDK, backend integration, independent Codex acceptance, or true playable E2E. Do not mark this Goal completed based on these files.
 
 - New user request authorizes wider future game implementation under the newly accepted principles; current Goal 0045 acceptance remains open. Added portable `GameSession` (server-exchange port, validated restoration, stale-login isolation), actual Go dispatcher DTO mapping `doudizhu-client/src/wire.ts`, and authoritative private-view parsing `src/view.ts`, with regression tests. These are initial development checkpoints only; they have not completed WeChat authentication, room/gameplay, B-level durable state recovery or source-to-runtime verification.
