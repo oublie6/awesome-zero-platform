@@ -45,7 +45,7 @@ export function parsePrivateHandView(raw: unknown): PrivateHandProjection {
       typeof pub.phase !== 'string' || !pub.phase ||
       !version(pub.stateVersion) || !record(pub.bidding) ||
       !Array.isArray(pub.seats) || pub.seats.length !== 3 ||
-      !pub.seats.every(seat => record(seat) && seatNumber(seat.position) && && typeof seat.accountId === 'string' &&
+      !pub.seats.every(seat => record(seat) && seatNumber(seat.position) && typeof seat.accountId === 'string' &&
         seat.accountId.length > 0 && Number.isSafeInteger(seat.remainingCards) &&
         (seat.remainingCards as number) >= 0 && (seat.remainingCards as number) <= 20) ||
       new Set(pub.seats.map(seat => (seat as Record<string, unknown>).position)).size !== 3 ||
