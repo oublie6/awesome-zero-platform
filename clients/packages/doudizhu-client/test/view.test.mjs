@@ -31,3 +31,19 @@ test('parsed private cards do not reference untrusted input',()=>{
   assert.deepEqual(result.view.cards,['S3','D4'])
   view.cards[0]='S3'
 })
+
+test('reject duplicate seat, account, malformed optional turn and duplicate or invalid cards', () => {
+  const v = () => structuredClone(view)
+  const duplicates=v(); duplicates.public.seats[1].position=1
+  assert.throws(()=>parsePrivateViewResult({version:4,payload:duplicates}),/public hand/)
+  const dupAccounts=v(); dupAccounts.public.seats[1].accountId='acct-a'
+  assert.throws(()=>parsePrivateViewResult({version:4,payload:dupAccounts}),/public hand/)
+  const invalidSeat=v(); invalidSeat.public.playingSeat='attacker-seat'
+  assert.throws(()=>parsePrivateViewResult({version:4,payload:invalidSeat}),/public hand/)
+  const cards=v(); cards.cards=['ZZ','ZZ']
+  assert.throws(()=>parsePrivateViewResult({version:4,payload:cards}),/private cards/)
+  const duplicatesCards=v(); duplicatesCards.cards=['S3','S3']
+  assert.throws(()=>parsePrivateViewResult({version:4,payload:duplicatesCards}),/private cards/)
+  const valid=v(); valid.cards=['XJ','YJ','S10']
+  assert.deepEqual(parsePrivateViewResult({version:4,payload:valid}).view.cards,valid.cards)
+})
