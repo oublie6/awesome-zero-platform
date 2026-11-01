@@ -28,6 +28,13 @@ function record(v: unknown): v is Record<string, unknown> {
 function version(v: unknown): v is number {
   return typeof v === 'number' && Number.isSafeInteger(v) && v >= 1
 }
+const cardCode = /^(?:[CDHS](?:[3-9]|10|J|Q|K|A|2)|XJ|YJ)$/
+function seatNumber(value: unknown): value is number {
+  return Number.isSafeInteger(value) && typeof value === 'number' && value >= 1 && value <= 3
+}
+function optionalSeat(pub: Record<string, unknown>, field: string): boolean {
+  return pub[field] === undefined || seatNumber(pub[field])
+}
 /** Accept only a complete, authorized private view from the trusted HTTP/WSS layer. */
 export function parsePrivateHandView(raw: unknown): PrivateHandProjection {
   if (!record(raw) || raw.v !== 'doudizhu-live-private-view-v1' || !record(raw.public))
@@ -38,15 +45,20 @@ export function parsePrivateHandView(raw: unknown): PrivateHandProjection {
       typeof pub.phase !== 'string' || !pub.phase ||
       !version(pub.stateVersion) || !record(pub.bidding) ||
       !Array.isArray(pub.seats) || pub.seats.length !== 3 ||
-      !pub.seats.every(seat => record(seat) && version(seat.position) &&
-        seat.position <= 3 && typeof seat.accountId === 'string' &&
+      !pub.seats.every(seat => record(seat) && seatNumber(seat.position) && && typeof seat.accountId === 'string' &&
         seat.accountId.length > 0 && Number.isSafeInteger(seat.remainingCards) &&
-        (seat.remainingCards as number) >= 0)) {
+        (seat.remainingCards as number) >= 0 && (seat.remainingCards as number) <= 20) ||
+      new Set(pub.seats.map(seat => (seat as Record<string, unknown>).position)).size !== 3 ||
+      new Set(pub.seats.map(seat => (seat as Record<string, unknown>).accountId)).size !== 3 ||
+      !optionalSeat(pub, 'landlordSeat') || !optionalSeat(pub, 'playingSeat') || !optionalSeat(pub, 'winnerSeat') ||
+      (pub.playing !== undefined && pub.playing !== null && !record(pub.playing))) {
     throw new Error('invalid public hand protocol')
   }
-  if (!version(raw.position) || raw.position > 3 ||
-      !Array.isArray(raw.cards) || !raw.cards.every(card => typeof card === 'string' &&
-      card.length > 0 && card.length <= 3)) {
+  if (!seatNumber(raw.position) ||
+      !Array.isArray(raw.cards) || raw.cards.length > 20 ||
+      !raw.cards.every(card => typeof card === 'string' && cardCode.test(card)) ||
+      new Set(raw.cards).size !== raw.cards.length ||
+      !pub.seats.some(seat => record(seat) && seat.position === raw.position)) {
     throw new Error('invalid private cards')
   }
   // Strict JSON copy protects the store against caller-side mutations; no secret card logging.
