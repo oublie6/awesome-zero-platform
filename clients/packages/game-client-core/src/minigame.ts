@@ -82,7 +82,7 @@ export class MiniSocketTransport implements SocketTransport {
 
 export class MiniHttp implements HttpTransport {
   constructor(private readonly sdk: MiniSDK, private readonly base: string) {}
-  request<T>(path: string, opts: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number } = {}): Promise<T> {
+  request<T>(path: string, opts: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number; accessToken?: string } = {}): Promise<T> {
     if (!this.sdk.request) return Promise.reject(new Error('platform HTTP unsupported'))
     if (!path.startsWith('/') || path.startsWith('//')) return Promise.reject(new Error('relative API path required'))
     return new Promise((resolve, reject) => {
@@ -114,7 +114,7 @@ export class MiniHttp implements HttpTransport {
       try {
         task = this.sdk.request!({
           url: this.base + path, method: opts.method ?? 'GET', data: opts.body,
-          header: opts.body === undefined ? undefined : {'content-type': 'application/json'},
+          header: { ...(opts.body === undefined ? {} : {'content-type': 'application/json'}), ...(opts.accessToken ? {Authorization: 'Bearer ' + opts.accessToken} : {}) },
           success: value => value.statusCode >= 200 && value.statusCode < 300
             ? complete(undefined, value.data) : complete(new Error(`HTTP ${value.statusCode}`)),
           fail: () => complete(new Error('platform HTTP failed'))
