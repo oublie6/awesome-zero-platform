@@ -23,6 +23,10 @@
     "./view": {
       "types": "./dist/view.d.ts",
       "import": "./dist/view.js"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js"
     }
   }
 }
