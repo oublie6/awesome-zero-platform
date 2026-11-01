@@ -5,7 +5,7 @@ export interface PlatformAuth {
   acquireCode(): Promise<string>
 }
 export interface HttpTransport {
-  request<T>(path: string, options?: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number }): Promise<T>
+  request<T>(path: string, options?: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number; accessToken?: string }): Promise<T>
 }
 export interface SocketConnection {
   send(message: string): Promise<void>
