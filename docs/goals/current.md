@@ -14,6 +14,8 @@ Implement the first *verified* cross-platform Cocos client foundation with a sma
 
 ## References
 
+- `docs/principles/README.md` and relevant canonical principle pages (mandatory for all design and future Goals; principles do not expand this Goal's scope).
+
 - `AGENTS.md`
 - `docs/architecture/fair-doudizhu-cross-platform-client.md` (accepted design)
 - `docs/api/fair-doudizhu-protocol-v1.md`
