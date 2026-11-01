@@ -1,5 +1,7 @@
 # Cross-platform Fair Doudizhu Client Architecture
 
+**Normative architecture and implementation gates:** [Engineering Principles](../principles/README.md), especially [client portability](../principles/03-client-portability.md) and [game runtime/recovery](../principles/02-game-runtime-and-recovery.md). This document supplies client-specific detail; principles are the authoritative cross-project policy. Existing initial milestones remain historical design context, not proof of delivery.
+
 Status: accepted design baseline (Goal 0045 onward). **Execution priority updated 2026-11-01: WeChat Mini Game first, other platform adapters retained but not release blockers.** Scope: client integration, not a new platform/server framework.
 
 ## Purpose and release targets
