@@ -5,7 +5,7 @@ import { openSocket } from './socket.js'
 
 export class WebHttp implements HttpTransport {
   constructor(private readonly base = '/api') {}
-  async request<T>(path: string, options: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number } = {}): Promise<T> {
+  async request<T>(path: string, options: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number; accessToken?: string } = {}): Promise<T> {
     if (!path.startsWith('/') || path.startsWith('//')) throw new Error('relative API path required')
     const timeout = networkTimeout(options.timeoutMs)
     const controller = new AbortController()
@@ -17,7 +17,7 @@ export class WebHttp implements HttpTransport {
     try {
       const response = await fetch(this.base + path, {
         method: options.method ?? 'GET', signal: controller.signal,
-        headers: options.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+        headers: { ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(options.accessToken ? { Authorization: 'Bearer ' + options.accessToken } : {}) },
         body: options.body === undefined ? undefined : JSON.stringify(options.body)
       })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
