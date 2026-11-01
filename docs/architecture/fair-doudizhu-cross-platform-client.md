@@ -1,10 +1,10 @@
 # Cross-platform Fair Doudizhu Client Architecture
 
-Status: accepted design baseline (Goal 0045 onward). Scope: client integration, not a new platform/server framework.
+Status: accepted design baseline (Goal 0045 onward). **Execution priority updated 2026-11-01: WeChat Mini Game first, other platform adapters retained but not release blockers.** Scope: client integration, not a new platform/server framework.
 
 ## Purpose and release targets
 
-Build one playable, three-person friend-room Fair Doudizhu client, with **Cocos Creator 3.8.x** rendering and a shared TypeScript core. First-class targets are **Web/H5, WeChat Mini Game, and mainland Douyin Mini Game**. Other Cocos-supported targets are future adapters, not promises of binary compatibility; TikTok international products are a separate qualification. Actual platform SDK, Creator export support and account prerequisites must be checked against the installed version and each platform's current documentation before declaring success.
+Build one playable, three-person friend-room Fair Doudizhu client, with **Cocos Creator 3.8.x** rendering and a shared TypeScript core. The **first fully functional and qualified release target is WeChat Mini Game**. Web/H5 remains a development/debugging target; mainland Douyin Mini Game is a future release target, with its adapter boundary retained. Other Cocos-supported targets are future adapters, not promises of binary compatibility; TikTok international products are a separate qualification. Actual platform SDK, Creator export support and account prerequisites must be checked against the installed version and each platform's current documentation before declaring success.
 
 First playable release: login; private room create/join/invite; seats/ready; fair contribution commit/reveal; bidding and landlord selection; card play/pass; settlement/evidence; reconnection and recovery from lost messages. Do not add payments, gambling, rankings, matchmaking, AI opponents, or commercial inventory in the baseline.
 
@@ -132,3 +132,11 @@ Prefer landscape for the match table with own cards at bottom and two other seat
 - Authentication ticket only if platform APIs cannot safely provide the existing handshake.
 - A separate games service only if scaling/availability requires it; Cocos code cannot repair server process-owned live state.
 - Additional capabilities (cloud save, push, payments, rankings, AI, remote asset CDN, observability events) only when justified by a concrete business scenario.
+
+## 2026-11-01 delivery priority decision (supersedes multi-target simultaneous qualification)
+
+- **P0 WeChat Mini Game playable vertical slice:** approved platform code-to-backend identity exchange and session; secure HTTPS/WSS; private friend room create/join/ready/share; fairness commit/reveal, bidding/play, settlement/evidence, disconnected/foreground recovery, and three real accounts completing one game. Implement only against actual Go wire DTOs. Resolve HPKE AAD issue/expiry context with backend before encrypted reveal; do not guess.
+- **P0 WeChat release path:** Creator 3.8.8 real build, deterministic packaging/subpackage under applicable size limits, SDK simulator, user-approved upload/preview and explicit device qualification. Never upload, publish or modify backend production environment without appropriate authorization.
+- **Preserved portability:** all game state/commands/fairness/protocol logic in pure TS packages; wx SDK exists solely in injected WeChat adapter/composition; browser retained for development and CI. Keep Douyin adapter source buildable where practical, but do not spend time qualifying tt SDK/devices or block WeChat milestones on Douyin entropy.
+- **Milestone sequencing:** conclude Goal 0045 only under its recorded acceptance policy or explicitly amend criteria; Goal 0046 identity/protocol, 0047 room, 0048 full hand, 0049 recovery, 0050 WeChat release qualification. Do not declare any unimplemented feature complete.
+- **Avoid duplicating business rules client-side.** Server owns state; never expose all players' cards or turn authority in Cocos. Don't substitute a mocked room or local game for integration acceptance.
