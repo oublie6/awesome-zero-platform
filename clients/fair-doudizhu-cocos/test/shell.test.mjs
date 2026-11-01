@@ -91,3 +91,48 @@ test('real WSS command response matches request and disconnect leaves outcome un
  await assert.rejects(pending2,/outcome unknown/)
  s.dispose()
 })
+
+test('P1 old send failure does not erase same-id command on replacement connection',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const first=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await first
+ s.acceptVerifiedSnapshot(snapshot)
+ let failOld
+ t.tasks[0].c.send=()=>new Promise((_,reject)=>{failOld=reject})
+ const cmd={requestId:'same-id',type:'hand.pass',aggregateId:'hand-1',clientSeq:1,expectedVersion:7}
+ const old=s.submitCommand(cmd);await tick()
+ const second=s.connect(t,'wss://example.org/ws','token');await assert.rejects(old,/outcome unknown/)
+ t.tasks[1].resolve();await second;s.acceptVerifiedSnapshot(snapshot)
+ const fresh=s.submitCommand(cmd);await tick()
+ failOld(Error('old socket rejected'));await tick()
+ for(const callback of t.tasks[1].c.messages) callback(JSON.stringify({type:'doudizhu.command.result',payload:{v:'doudizhu-api-command-result-v1',requestId:'same-id',type:'hand.pass',live:{version:8,payload:{},requiresTermination:false}}}))
+ assert.equal((await fresh).live.version,8)
+ s.dispose()
+})
+test('P2 server rejection settles matching request without waiting for timeout',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const start=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await start;s.acceptVerifiedSnapshot(snapshot)
+ const cmd={requestId:'rejected',type:'hand.pass',aggregateId:'hand-1',clientSeq:1,expectedVersion:7}
+ const pending=s.submitCommand(cmd);await tick()
+ for(const cb of t.tasks[0].c.messages)cb(JSON.stringify({type:'doudizhu.error',payload:{v:'doudizhu-realtime-event-v1',requestId:'rejected',code:'CONFLICT',message:'Doudizhu state conflict'}}))
+ await assert.rejects(pending,/server rejected command: CONFLICT/)
+ s.dispose()
+})
+test('P2 terminal hand blocks any hand mutation while room commands remain separately controlled',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const start=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await start
+ s.acceptVerifiedSnapshot({...snapshot,phase:'COMPLETED'})
+ await assert.rejects(s.submitCommand({requestId:'end',type:'hand.pass',aggregateId:'hand-1',clientSeq:1,expectedVersion:7}),/not eligible/)
+ assert.equal(t.tasks[0].c.sent.length,0)
+ s.dispose()
+})
+test('P2 outstanding commands have finite capacity',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const start=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await start
+ s.acceptVerifiedSnapshot(snapshot)
+ const pendings=[]
+ for(let i=0;i<32;i++) pendings.push(s.submitCommand({requestId:'cap-'+i,type:'hand.pass',aggregateId:'hand-1',clientSeq:i+1,expectedVersion:7}))
+ await assert.rejects(s.submitCommand({requestId:'overflow',type:'hand.pass',aggregateId:'hand-1',clientSeq:33,expectedVersion:7}),/capacity/)
+ assert.equal(t.tasks[0].c.sent.length,32)
+ s.dispose()
+ await Promise.all(pendings.map(p=>assert.rejects(p,/outcome unknown/)))
+})
