@@ -1,3 +1,4 @@
+import { parsePrivateViewResult } from '@awesome-zero-platform/doudizhu-client/view'
 import { HandStore, GameMessageRouter, type HandSnapshot } from '@awesome-zero-platform/doudizhu-client'
 import { ConnectionManager, type SocketTransport } from '@awesome-zero-platform/game-client-core'
 
@@ -22,13 +23,31 @@ export class GameClientShell {
       this.notify('收到牌局状态变化，请同步权威快照')
     })
     this.events.on('doudizhu.hand.snapshot', payload => {
-      // The server's private snapshot is validated and mapped in the protocol
-      // integration layer in Goal 0046; never assume the wire shape here.
-      if (!this.disposed) this.notify('已收到服务端私有牌局快照')
-      const event = payload as {handId?: string; knownVersion?: number; notModified?: boolean}
-      if (event.notModified && this.hand.status === 'synchronizing' &&
-          event.handId === this.hand.snapshot?.handId && event.knownVersion === this.hand.snapshot?.version) {
-        this.hand.setStatus('connected')
+      if (this.disposed) return
+      const event = payload as {handId?: string; knownVersion?: number; notModified?: boolean; view?: unknown}
+      if (event.notModified) {
+        if (this.hand.status === 'synchronizing' &&
+            event.handId === this.hand.snapshot?.handId && event.knownVersion === this.hand.snapshot?.version) {
+          this.hand.setStatus('connected')
+        }
+        return
+      }
+      if (!event.view) return
+      try {
+        const {version, view} = parsePrivateViewResult(event.view)
+        if (event.handId !== view.public.handId) throw new Error('hand identity mismatch')
+        if (view.public.phase !== 'BIDDING' && view.public.phase !== 'PLAYING' && view.public.phase !== 'COMPLETED') {
+          // Unknown live phases require an explicit protocol upgrade, not an invented state.
+          throw new Error('unsupported hand phase')
+        }
+        this.acceptVerifiedSnapshot({
+          handId: view.public.handId,
+          version,
+          phase: view.public.phase,
+          view: view as unknown as Readonly<Record<string, unknown>>
+        })
+      } catch {
+        this.notify('私有牌局数据校验失败，请重新同步')
       }
     })
     this.events.on('doudizhu.hand.evidence', payload => {
