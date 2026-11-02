@@ -36,7 +36,8 @@ func TestRecoverLivePhasesAndFailClosedMismatch(t *testing.T) {
 		{"completed-while-domain-bidding", domain.HandBidding, livehand.PhaseCompleted, true, true},
 		{"settling-final", domain.HandSettling, livehand.PhaseCompleted, true, true},
 		{"terminal-not-marked", domain.HandPlaying, livehand.PhaseCompleted, false, false},
-		{"invalid-terminated-phase", domain.HandCompleted, livehand.PhaseCompleted, true, false},
+		{"completed-domain-unfinished-replay", domain.HandCompleted, livehand.PhasePlaying, false, false},
+		{"completed-domain-final-receipt", domain.HandCompleted, livehand.PhaseCompleted, true, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

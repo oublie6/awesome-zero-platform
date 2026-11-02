@@ -30,6 +30,15 @@ func (s *Service) submitLiveBid(ctx context.Context, actor domain.AccountID, han
 	if err != nil {
 		return LiveHandCommandResult{}, err
 	}
+	// Completed-domain exact-ID retries are historical reads, not a new
+	// mutation. Consult the recovered, actor-bound durable receipt first.
+	if snapshot.Phase == domain.HandCompleted && commandID != "" {
+		if durable, ok := s.liveHands.(interface {
+			BidCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64, bidding.Score) (LiveHandCommandResult, error)
+		}); ok {
+			return durable.BidCommitted(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, score)
+		}
+	}
 	if snapshot.Phase != domain.HandBidding {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
 	}

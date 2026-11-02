@@ -96,7 +96,12 @@ export class DoudizhuHTTPClient {
     if(!/^[A-Za-z0-9_-]{1,128}$/.test(keyId))throw new Error('invalid signed manifest key id')
     const raw=await this.transport.request<unknown>('/api/v1/crypto/reveal-keys/'+encodeURIComponent(keyId),
       {accessToken:this.token()})
-    return unwrap(raw)
+    // Signed key manifests are published as raw documents by cryptohttp,
+    // not as the standard application {code,data} envelope.
+    if (!record(raw) || raw.protocolVersion!=='reveal-key-manifest-v1' ||
+      raw.keyId!==keyId || !Number.isSafeInteger(raw.manifestVersion) ||
+      typeof raw.signature!=='string') throw new Error('invalid Go signed reveal manifest')
+    return raw
   }
   /** Authenticated final archive; all seat points come from Go verification. */
   async finalEvidence(handId:string):Promise<FinalEvidenceRead> {
@@ -149,17 +154,22 @@ function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
     if (!Array.isArray(raw.seats) || raw.seats.length !== 3 ||
         !raw.seats.every(seat => record(seat) &&
         typeof seat.position === 'number' && Number.isSafeInteger(seat.position) && seat.position >= 1 && seat.position <= 3 &&
-        typeof seat.accountId === 'string' && typeof seat.ready === 'boolean') ||
+        (seat.accountId === undefined || typeof seat.accountId === 'string') && typeof seat.ready === 'boolean' &&
+        (seat.accountId !== undefined && seat.accountId !== '' || seat.ready === false)) ||
         new Set(raw.seats.map(s => s.position)).size !== 3 ||
         (raw.activeHandId !== undefined && typeof raw.activeHandId !== 'string')) {
       throw new Error('invalid member room view')
     }
-    if (raw.seats.filter(s => s.accountId !== '').length !== raw.occupied ||
-        new Set(raw.seats.filter(s => s.accountId !== '').map(s=>s.accountId)).size !== raw.occupied) {
+    const taken=raw.seats.filter(s=>typeof s.accountId==='string' && s.accountId!=='')
+    if (taken.length!==raw.occupied || new Set(taken.map(s=>s.accountId)).size!==raw.occupied) {
       throw new Error('invalid room seat ownership')
     }
   } else if (raw.seats !== undefined || raw.activeHandId !== undefined) {
     throw new Error('room preview leaked private membership fields')
+  }
+  if (raw.member) {
+    const seats=raw.seats.map(s=>({position:s.position,accountId:s.accountId??'',ready:s.ready}))
+    return {...raw,seats} as RoomRead
   }
   return JSON.parse(JSON.stringify(raw)) as RoomRead
 }

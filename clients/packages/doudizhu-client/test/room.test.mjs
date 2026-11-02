@@ -92,3 +92,22 @@ test('room coordinator supports asynchronous secure identities and validates top
  await assert.rejects(room.create('room-invalid'),/invalid authoritative room result/)
  assert.equal(room.needsReconciliation,true)
 })
+
+test('lost room.create acknowledgment preserves the exact request ID and locator',async()=>{
+ const {room,api,calls}=fixture()
+ let first=true
+ const original=api.command.bind(api)
+ api.command=async command=>{
+   if(first){first=false;calls.push(command);throw Error('lost committed reply')}
+   return original(command)
+ }
+ await assert.rejects(room.create('room-lost'),/lost committed reply/)
+ assert.equal(room.pendingRoomId,'room-lost')
+ assert.equal(room.needsReconciliation,true)
+ await assert.rejects(room.create('room-else'),/reconcile/)
+ await room.retryUnknown()
+ assert.equal(room.pendingRoomId,null)
+ assert.deepEqual(calls[0],calls[1])
+ assert.equal(room.state.roomId,'room-lost')
+ assert.equal(room.state.version,1)
+})

@@ -204,7 +204,7 @@ func (c Config) Validate() error {
 		if strings.TrimSpace(c.Doudizhu.BeaconProvider) == "" || strings.TrimSpace(c.Doudizhu.BeaconRound) == "" {
 			return fmt.Errorf("doudizhu beacon provider and round are required")
 		}
-		if len(c.Doudizhu.BeaconProofSecret) < 32 {
+		if c.Doudizhu.BeaconProvider != "drand-quicknet" && len(c.Doudizhu.BeaconProofSecret) < 32 {
 			return fmt.Errorf("doudizhu beacon proof secret must contain at least 32 characters")
 		}
 		if strings.TrimSpace(c.Doudizhu.ContributionKeyID) == "" {

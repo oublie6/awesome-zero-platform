@@ -36,6 +36,12 @@ func TestDoudizhuConfiguration(t *testing.T) {
 		t.Fatalf("prepared Doudizhu config=%#v", valid.Doudizhu)
 	}
 
+	quicknet := valid
+	quicknet.Doudizhu.BeaconProvider = "drand-quicknet"
+	quicknet.Doudizhu.BeaconProofSecret = ""
+	if err := quicknet.Validate(); err != nil {
+		t.Fatalf("verified Quicknet should not require unused legacy HMAC secret: %v", err)
+	}
 	tests := []struct {
 		name   string
 		mutate func(*Config)

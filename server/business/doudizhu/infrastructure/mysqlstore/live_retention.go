@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/livehand"
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
 
@@ -38,7 +39,7 @@ func (j *LiveJournal) PruneArchivedHand(ctx context.Context, id domain.HandID, o
 	if err != nil {
 		return ErrLivePruneNotEligible
 	}
-	if err := final.Validate(); err != nil {
+	if _, err := livehand.VerifyFinalRecord(final); err != nil {
 		return ErrLiveReplayIntegrity
 	}
 	if final.InstanceID() != gamecore.InstanceID(id) ||

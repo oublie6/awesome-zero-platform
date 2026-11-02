@@ -204,3 +204,42 @@ func TestRealMySQLThreeSeatFullHandSurvivesTakeoverAndFinalRestart(t *testing.T)
 	}
 	t.Logf("real MySQL three-seat game, 59 committed actions, sealed takeover and final replay: %s (CI runner, not production SLA)", time.Since(start))
 }
+
+func TestRecoverRejectsGenesisSeatReplacementBeforePrivateView(t *testing.T) {
+	if os.Getenv("APP_API_INTEGRATION") != "1" {
+		t.Skip("MySQL integration disabled")
+	}
+	db := openIntegrationDB(t)
+	ctx := context.Background()
+	id := domain.HandID(fmt.Sprintf("genesis-seat-bound-%d", time.Now().UnixNano()))
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM doudizhu_live_checkpoints WHERE hand_id=?", id)
+		_, _ = db.Exec("DELETE FROM doudizhu_live_actions WHERE hand_id=?", id)
+		_, _ = db.Exec("DELETE FROM doudizhu_live_writers WHERE hand_id=?", id)
+		_, _ = db.Exec("DELETE FROM doudizhu_protected_server_seeds WHERE hand_id=?", id)
+	})
+	seed, genesis, persisted := coordinatorCrashFixture(t, id)
+	store, err := mysqlstore.NewProtectedSeedStore(db, coordinatorCrashKey())
+	if err != nil { t.Fatal(err) }
+	if err := store.Save(ctx, id, seed); err != nil { t.Fatal(err) }
+	journal, err := mysqlstore.NewLiveJournal(db)
+	if err != nil { t.Fatal(err) }
+	if err := journal.Create(ctx, genesis); err != nil { t.Fatal(err) }
+	altered := genesis
+	altered.Seats[0].AccountID, altered.Seats[1].AccountID =
+		altered.Seats[1].AccountID, altered.Seats[0].AccountID
+	encoded, err := json.Marshal(altered)
+	if err != nil { t.Fatal(err) }
+	if _, err := db.ExecContext(ctx, "UPDATE doudizhu_live_writers SET genesis_snapshot=? WHERE hand_id=?", encoded, id); err != nil { t.Fatal(err) }
+	load := func(_ context.Context, target domain.HandID) (domain.HandSnapshot,error) {
+		if target != id { return domain.HandSnapshot{}, application.ErrNotFound }
+		return persisted,nil
+	}
+	coordinator := newCoordinatorCrashRuntime(t, db)
+	if err := coordinator.RecoverActive(ctx,load); !errors.Is(err,gamecore.ErrVerificationFailed) {
+		t.Fatalf("tampered seat-to-account binding accepted: %v",err)
+	}
+	if _, err := coordinator.PrivateView(ctx,id,persisted.Seats[0].AccountID);err==nil {
+		t.Fatal("private cards were exposed after a failed integrity check")
+	}
+}

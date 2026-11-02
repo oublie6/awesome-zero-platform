@@ -57,9 +57,9 @@ export class GameOnlineController {
   async reconnectAndResync(roomId?: string): Promise<RoomRead | null> {
     if (this.disposed || !this.session.authenticated) throw new Error('authenticated session required')
     await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
-    const target = roomId || this.rooms.state?.roomId
+    const target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId
     if (!target) return null
-    const room = await this.api.room(target)
+    const room = await this.lookupOrRetryPendingCreate(target)
     if (!room.member) throw new Error('room membership not confirmed after reconnect')
     this.rooms.restoreTrustedRoom(room.roomId, room.version, room.lastClientSequence)
     if (room.activeHandId) {
@@ -83,11 +83,26 @@ export class GameOnlineController {
   }
   /** Resolve an ambiguous command only from an authenticated, authoritative room read. */
   async reconcileRoom(roomId: string): Promise<RoomRead> {
-    const view = await this.roomInfo(roomId)
+    const view = await this.lookupOrRetryPendingCreate(roomId)
     if (!view.member) throw new Error('room membership not confirmed; outcome still unknown')
     this.rooms.restoreTrustedRoom(roomId, view.version, view.lastClientSequence)
     return view
   }
+  get pendingRoomId(): string | null { return this.rooms.pendingRoomId }
+
+  private async lookupOrRetryPendingCreate(roomId:string):Promise<RoomRead>{
+    try {
+      return await this.api.room(roomId)
+    } catch(error) {
+      // Only an authoritative NOT_FOUND for the generated locator permits
+      // an exact replay of the original request. Other errors remain unknown.
+      if(this.rooms.pendingRoomId!==roomId ||
+        !(error instanceof Error) || error.message!=='HTTP 404') throw error
+      await this.rooms.retryUnknown()
+      return this.api.room(roomId)
+    }
+  }
+
   async createRoom(): Promise<Readonly<{roomId:string;version:number}>> {
     if (this.disposed) throw new Error('online controller disposed')
     const roomId = 'room-' + await secureRoomCommandIdentity(this.platform.random).newRequestId()

@@ -70,7 +70,7 @@ Authentication:
   AccessTokenSecret: local-dev-only-access-token-secret-change-me-0001
   AccessTTL: 15m
   RefreshTTL: 720h
-  SessionKeyPrefix: authn:session:
+  SessionKeyPrefix: 'authn:session:'
 Authorization:
   Enabled: true
   Cluster:

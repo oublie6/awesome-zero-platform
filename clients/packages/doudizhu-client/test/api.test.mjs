@@ -84,3 +84,35 @@ test('client refuses malformed or mismatched server-signed reveal AAD context',a
  }})},()=> 'server-token')
  await assert.rejects(wrongHand.revealContext('hand-1',request),/mismatched/)
 })
+
+test('raw signed Go reveal-key manifest is passed to cryptographic verifier without API-envelope unwrap',async()=>{
+ const manifest={manifestVersion:7,protocolVersion:'reveal-key-manifest-v1',keyId:'key-1',
+   suite:'hpke-x25519-hkdf-sha256-aes-256-gcm',publicKey:'a',publicKeySha256:'b',
+   notBefore:'2026-11-02T00:00:00Z',expiresAt:'2026-11-03T00:00:00Z',
+   status:'active',signatureKeyId:'root-1',signature:'signed-by-root'}
+ const client=new DoudizhuHTTPClient({request:async()=>manifest},()=> 'token')
+ assert.deepEqual(await client.revealManifest('key-1'),manifest)
+ const envelope=new DoudizhuHTTPClient({request:async()=>({code:'OK',data:manifest})},()=> 'token')
+ await assert.rejects(envelope.revealManifest('key-1'),/signed reveal manifest/)
+})
+test('real partially occupied Go room has omitted empty-seat account IDs',async()=>{
+ for(const occupied of [1,2,3]){
+  const seats=[1,2,3].map(i=>i<=occupied
+    ? {position:i,accountId:'player-'+i,ready:true}
+    : {position:i,ready:false})
+  const client=new DoudizhuHTTPClient({request:async()=>({code:'OK',data:{
+    roomId:'r-1',version:occupied,status:'WAITING_PLAYERS',occupied,
+    member:true,lastClientSequence:0,seats
+  }})},()=> 'token')
+  const room=await client.room('r-1')
+  assert.equal(room.seats.length,3)
+  assert.equal(room.seats.filter(s=>s.accountId!=='').length,occupied)
+  assert.equal(room.seats[2].accountId,occupied===3?'player-3':'')
+ }
+ const invalid=new DoudizhuHTTPClient({request:async()=>({code:'OK',data:{
+    roomId:'r-1',version:1,status:'WAITING_PLAYERS',occupied:1,member:true,
+    lastClientSequence:0,seats:[{position:1,accountId:'a',ready:true},
+      {position:2,ready:true},{position:3,ready:false}]
+  }})},()=> 'token')
+ await assert.rejects(invalid.room('r-1'),/member room/)
+})

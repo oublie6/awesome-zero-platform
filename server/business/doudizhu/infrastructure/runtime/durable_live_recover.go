@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/application"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
@@ -35,7 +36,7 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 		if err != nil {
 			return fmt.Errorf("load authoritative hand %s: %w", id, err)
 		}
-		if !recoveryPhaseNeedsReplay(snapshot.Phase) {
+		if !recoveryPhaseNeedsReplay(snapshot.Phase) && snapshot.Phase != domain.HandCompleted {
 			// Terminal hands are owned by durable lifecycle records; never
 			// resurrect a finished game as an active executor.
 			continue
@@ -43,6 +44,12 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 		epoch, watermark, genesis, err := c.journal.Acquire(ctx, id)
 		if err != nil {
 			return fmt.Errorf("take fenced live ownership %s: %w", id, err)
+		}
+		// The domain hand is authoritative for immutable actor/seat and fair-deal
+		// identity. A valid-looking but tampered genesis cannot reassign
+		// private cards while retaining the same journal/seed.
+		if !sameImmutableRecoveryHand(snapshot, genesis) {
+			return fmt.Errorf("%w: genesis/authoritative hand identity mismatch for %s", gamecore.ErrVerificationFailed, id)
 		}
 		material, err := c.material(genesis)
 		if err != nil {
@@ -141,6 +148,22 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 	return nil
 }
 
+// All immutable deal inputs and each of the three seat/account bindings must
+// match the durable domain snapshot. Phase, version and termination status are
+// intentionally excluded because lifecycle advances them after the genesis.
+func sameImmutableRecoveryHand(authoritative, genesis domain.HandSnapshot) bool {
+	return authoritative.ID == genesis.ID &&
+		authoritative.RoomID == genesis.RoomID &&
+		reflect.DeepEqual(authoritative.Seats, genesis.Seats) &&
+		authoritative.ServerCommitment == genesis.ServerCommitment &&
+		authoritative.RevealKeyID == genesis.RevealKeyID &&
+		authoritative.RevealPublicKeySHA256 == genesis.RevealPublicKeySHA256 &&
+		authoritative.RevealKeyBoundAt.Equal(genesis.RevealKeyBoundAt) &&
+		reflect.DeepEqual(authoritative.BeaconPlan, genesis.BeaconPlan) &&
+		reflect.DeepEqual(authoritative.Beacon, genesis.Beacon) &&
+		reflect.DeepEqual(authoritative.Contributions, genesis.Contributions)
+}
+
 // Bidding, playing and settling are all crash-recoverable stages. Excluding
 // PLAYING used to silently abandon already acknowledged card actions.
 func recoveryPhaseNeedsReplay(phase domain.HandPhase) bool {
@@ -154,7 +177,7 @@ func recoveryPhaseNeedsReplay(phase domain.HandPhase) bool {
 
 func validateReplayedPhase(persisted domain.HandPhase, replayed string, terminal bool) error {
 	if terminal {
-		if replayed != livehand.PhaseCompleted || !recoveryPhaseNeedsReplay(persisted) {
+		if replayed != livehand.PhaseCompleted || (!recoveryPhaseNeedsReplay(persisted) && persisted != domain.HandCompleted) {
 			return gamecore.ErrVerificationFailed
 		}
 		return nil

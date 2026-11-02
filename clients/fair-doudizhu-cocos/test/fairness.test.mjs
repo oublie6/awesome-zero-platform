@@ -106,3 +106,35 @@ test('fairness recovery kit rejects changed seat and changed server commitment',
  await assert.rejects(mismatch.importRecoveryKit(kit,'hand-x'),/does not match/)
  assert.equal(mismatch.hasRecoverySecret,false)
 })
+
+test('known durable fairness rejection clears pending but preserves original secret',async()=>{
+ let reject=true
+ const api={fairness:async()=>({handId:'h-1',phase:'FAIRNESS_COMMITTING',version:4,
+    seat:1,committed:false,revealed:false,lastClientSequence:2}),
+  command:async c=>({v:'doudizhu-api-command-result-v1',requestId:c.requestId,type:c.type,
+    durable:reject?{v:'fair-doudizhu-command-result-v1',commandId:c.requestId,
+      accepted:false,failure:{code:'DDZ_VERSION_CONFLICT'}}:
+      {v:'fair-doudizhu-command-result-v1',commandId:c.requestId,accepted:true}})
+ }
+ const flow=new GameFairnessActions(api,{random:{bytes:async n=>new Uint8Array(n).fill(2)}},{})
+ const kit=await flow.prepareRecoveryKit('h-1','secret phrase')
+ await assert.rejects(flow.commit('h-1'),/DDZ_VERSION_CONFLICT/)
+ assert.equal(flow.needsReconciliation,false)
+ assert.equal(flow.exportRecoveryKit(),kit)
+ reject=false
+ await flow.commit('h-1')
+ assert.equal(flow.needsReconciliation,false)
+ flow.dispose()
+})
+test('disposal during async preparation must not recreate or expose sensitive entropy',async()=>{
+ let finish
+ const api={fairness:()=>new Promise(resolve=>{finish=resolve})}
+ const flow=new GameFairnessActions(api,{random:{bytes:async n=>new Uint8Array(n).fill(7)}},{})
+ const job=flow.prepareRecoveryKit('h-1')
+ flow.dispose()
+ finish({handId:'h-1',phase:'FAIRNESS_COMMITTING',version:3,
+   seat:1,committed:false,revealed:false,lastClientSequence:0})
+ await assert.rejects(job,/disposed/)
+ assert.equal(flow.hasRecoverySecret,false)
+ assert.equal(flow.recoveryKitPrepared,false)
+})

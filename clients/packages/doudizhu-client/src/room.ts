@@ -27,9 +27,25 @@ export class RoomCoordinator {
   private lastSequence = new Map<string, number>()
   private inFlight = false
   private uncertainOutcome = false
+  private pendingCommand: Omit<WireCommand, 'v'> | null = null
   constructor(private readonly api: RoomCommandPort, private readonly ids: CommandIdentity) {}
   get state(): Readonly<RoomState> | null { return this.room ? Object.freeze({...this.room}) : null }
   get needsReconciliation(): boolean { return this.uncertainOutcome }
+  /** Keep the committed-or-unknown room locator after a lost create reply. */
+  get pendingRoomId(): string | null { return this.pendingCommand?.aggregateId ?? null }
+
+  /** Exact-ID resend is safe even if the prior request committed. Go owns the
+   * durable dedup result; a new room command ID is never synthesized here. */
+  async retryUnknown(): Promise<RoomState> {
+    if (!this.uncertainOutcome || !this.pendingCommand || this.inFlight)
+      throw new Error('no exact pending room request to retry')
+    this.inFlight = true
+    try {
+      const cmd = this.pendingCommand
+      const response = await this.api.command(cmd)
+      return this.acceptResult(cmd, response)
+    } finally { this.inFlight = false }
+  }
 
   /** Adopt only a version from a trusted, authorized server-side room query. */
   restoreTrustedRoom(roomId: string, version: number, lastClientSequence = 0): void {
@@ -39,6 +55,7 @@ export class RoomCoordinator {
     this.room = Object.freeze({roomId, version})
     this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, lastClientSequence))
     this.uncertainOutcome = false
+    this.pendingCommand = null
   }
 
   create(roomId: string): Promise<RoomState> { return this.perform('room.create', roomId, 0, {}) }
@@ -76,39 +93,56 @@ export class RoomCoordinator {
       if (!Number.isSafeInteger(seq)) throw new Error('room sequence exhausted')
       // Persist sequence allocation even when the outcome is unknown; never recycle it.
       this.lastSequence.set(roomId, seq)
+      const requestId = await this.ids.newRequestId()
+      if (!validID(requestId)) throw new Error('secure command ID unavailable')
+      const command: Omit<WireCommand, 'v'> = {
+        requestId, type, aggregateId: roomId,
+        clientSeq: seq, expectedVersion, payload
+      }
+      this.pendingCommand = command
       let result: WireCommandResult
       try {
-        const requestId = await this.ids.newRequestId()
-        if (!validID(requestId)) throw new Error('secure command ID unavailable')
-        result = await this.api.command({
-          requestId, type, aggregateId: roomId,
-          clientSeq: seq, expectedVersion, payload
-        })
+        result = await this.api.command(command)
       } catch (error) {
         this.uncertainOutcome = true
         throw error
       }
-      const d = result?.durable as Record<string, unknown> | undefined
-      if (result?.v !== 'doudizhu-api-command-result-v1' || result.type !== type || !d || d.v !== 'fair-doudizhu-command-result-v1' ||
-        d.aggregateId !== roomId || d.commandId !== result.requestId ||
-        !Number.isSafeInteger(d.aggregateVersion) || (d.aggregateVersion as number) < 0 ||
-        typeof d.accepted !== 'boolean') {
-        this.uncertainOutcome = true
-        throw new Error('invalid authoritative room result; outcome unknown')
-      }
-      if (!d.accepted) {
-        const failure = d.failure
-        if (!record(failure) || typeof failure.code !== 'string' || !failure.code.trim())
-          { this.uncertainOutcome = true; throw new Error('malformed durable rejection; outcome unknown') }
-        throw new DurableRoomRejected(failure.code, Number.isSafeInteger(failure.currentVersion) ? failure.currentVersion as number : undefined)
-      }
-      if ((d.aggregateVersion as number) <= expectedVersion) {
-        this.uncertainOutcome = true
-        throw new Error('non-monotonic room version; outcome unknown')
-      }
-      this.room = type === 'room.leave' ? null : Object.freeze({roomId,version:d.aggregateVersion as number})
-      return Object.freeze({roomId,version:d.aggregateVersion as number})
+      return this.acceptResult(command, result)
     } finally { this.inFlight = false }
+  }
+  private acceptResult(command: Omit<WireCommand, 'v'>, result: WireCommandResult): RoomState {
+    const {roomId, type, expectedVersion, requestId} = {
+      roomId:command.aggregateId,type:command.type,expectedVersion:command.expectedVersion,
+      requestId:command.requestId
+    }
+    const d = result?.durable as Record<string, unknown> | undefined
+    if (result?.v !== 'doudizhu-api-command-result-v1' || result.requestId !== requestId ||
+      result.type !== type || !d || d.v !== 'fair-doudizhu-command-result-v1' ||
+      d.aggregateId !== roomId || d.commandId !== requestId ||
+      !Number.isSafeInteger(d.aggregateVersion) || (d.aggregateVersion as number) < 0 ||
+      typeof d.accepted !== 'boolean') {
+      this.uncertainOutcome = true
+      throw new Error('invalid authoritative room result; outcome unknown')
+    }
+    if (!d.accepted) {
+      const failure = d.failure
+      if (!record(failure) || typeof failure.code !== 'string' || !failure.code.trim()) {
+        this.uncertainOutcome = true
+        throw new Error('malformed durable rejection; outcome unknown')
+      }
+      this.uncertainOutcome = false
+      this.pendingCommand = null
+      throw new DurableRoomRejected(failure.code,
+        Number.isSafeInteger(failure.currentVersion) ? failure.currentVersion as number : undefined)
+    }
+    if ((d.aggregateVersion as number) <= expectedVersion) {
+      this.uncertainOutcome = true
+      throw new Error('non-monotonic room version; outcome unknown')
+    }
+    this.room = type === 'room.leave' ? null : Object.freeze({roomId,version:d.aggregateVersion as number})
+    this.uncertainOutcome = false
+    this.pendingCommand = null
+    return Object.freeze({roomId,version:d.aggregateVersion as number})
   }
 }
 function validID(value: unknown): value is string {

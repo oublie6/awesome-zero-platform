@@ -107,12 +107,12 @@ snapshot_json,created_at,updated_at) VALUES(?,?,'COMPLETED',?,REPEAT(0x00,32),1,
 	if err := journal.PruneArchivedHand(ctx, id, 30*24*time.Hour, retentionProof{record: gamecore.FinalRecord{}, archived: time.Now().Add(-45 * 24 * time.Hour)}); !errors.Is(err, mysqlstore.ErrLiveReplayIntegrity) {
 		t.Fatal("forged archive pruned:", err)
 	}
-	if err := journal.PruneArchivedHand(ctx, id, 30*24*time.Hour, archive); err != nil {
-		t.Fatal(err)
+	if err := journal.PruneArchivedHand(ctx, id, 30*24*time.Hour, archive); !errors.Is(err, mysqlstore.ErrLiveReplayIntegrity) {
+		t.Fatalf("generic but Doudizhu-incomplete archive was allowed to prune: %v", err)
 	}
 	var remaining int
-	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM doudizhu_live_writers WHERE hand_id=?`, id).Scan(&remaining); err != nil || remaining != 0 {
-		t.Fatalf("prune left writer behind: %d %v", remaining, err)
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM doudizhu_live_writers WHERE hand_id=?`, id).Scan(&remaining); err != nil || remaining != 1 {
+		t.Fatalf("invalid evidence deleted acknowledged history: %d %v", remaining, err)
 	}
 	stored, _, err := archive.LoadFinalRecord(ctx, gamecore.InstanceID(id))
 	if err != nil || !bytes.Equal(stored.Payload(), final.Payload()) || stored.Digest() != final.Digest() {

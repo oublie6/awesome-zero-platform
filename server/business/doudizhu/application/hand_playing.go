@@ -35,6 +35,13 @@ func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, ha
 	if err != nil {
 		return LiveHandCommandResult{}, err
 	}
+	if snapshot.Phase == domain.HandCompleted && commandID != "" {
+		if durable, ok := s.liveHands.(interface {
+			PlayCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64, []string) (LiveHandCommandResult, error)
+		}); ok {
+			return durable.PlayCommitted(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, cards)
+		}
+	}
 	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
 	}
@@ -77,6 +84,13 @@ func (s *Service) submitLivePass(ctx context.Context, actor domain.AccountID, ha
 	snapshot, err := s.authorizeHandViewer(ctx, actor, handID)
 	if err != nil {
 		return LiveHandCommandResult{}, err
+	}
+	if snapshot.Phase == domain.HandCompleted && commandID != "" {
+		if durable, ok := s.liveHands.(interface {
+			PassCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64) (LiveHandCommandResult, error)
+		}); ok {
+			return durable.PassCommitted(ctx, snapshot.ID, actor, commandID, expectedLiveVersion)
+		}
 	}
 	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)

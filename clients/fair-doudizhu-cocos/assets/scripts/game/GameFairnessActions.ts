@@ -60,7 +60,15 @@ function assertDurable(result:WireCommandResult,expectedType:string):void {
   if(!d || d.v!=='fair-doudizhu-command-result-v1' ||
     d.commandId!==result.requestId || result.type!==expectedType ||
     typeof d.accepted!=='boolean')throw new Error('unverifiable durable fairness result; outcome unknown')
-  if(!d.accepted)throw new Error('fairness request rejected: '+String((d.failure as {code?:unknown}|undefined)?.code??'unknown'))
+  if(!d.accepted) {
+    const failure=d.failure as {code?:unknown}|undefined
+    if(!failure || typeof failure.code!=='string' || !failure.code)
+      throw new Error('unverifiable fairness rejection; outcome unknown')
+    throw new DurableFairnessRejected(failure.code)
+  }
+}
+export class DurableFairnessRejected extends Error {
+  constructor(readonly code:string){super('fairness request rejected: '+code)}
 }
 type PendingSecret = {handId:string;seat:number;random:Uint8Array;phrase:string;commitment:string}
 export class GameFairnessActions {
@@ -70,11 +78,24 @@ export class GameFairnessActions {
   private secret:PendingSecret|null=null
   private prepared=false
   private inFlight=false
+  private disposed=false
+  private generation=0
   private pending:Omit<WireCommand,'v'>|null=null
   constructor(private readonly api:DoudizhuHTTPClient,private readonly platform:GamePlatform,
     private readonly trustedManifestRoots:Readonly<Record<string,string>>) {
     this.ids=secureRoomCommandIdentity(platform.random)
     this.sealer=new SecureEnvelopeSealer({randomSource:platform.random})
+  }
+  private ensureActive(epoch=this.generation):void {
+    if(this.disposed || this.generation!==epoch)throw new Error('fairness actions disposed')
+  }
+  private settle(result:WireCommandResult,expectedType:string):void{
+    try{assertDurable(result,expectedType)}
+    catch(error){
+      if(error instanceof DurableFairnessRejected)this.pending=null
+      throw error
+    }
+    this.pending=null
   }
   get needsReconciliation():boolean{return this.pending!==null}
   get hasRecoverySecret():boolean{return this.secret!==null}
@@ -84,6 +105,7 @@ export class GameFairnessActions {
    * The user must explicitly save this high-entropy secret OUTSIDE the game
    * before sending the corresponding irreversible public commitment. */
   exportRecoveryKit():string {
+    this.ensureActive()
     if(!this.secret)throw new Error('fairness recovery secret unavailable')
     const secret=this.secret
     const raw=JSON.stringify({v:kitVersion,handId:secret.handId,seat:secret.seat,
@@ -96,16 +118,21 @@ export class GameFairnessActions {
     this.assertAvailable()
     this.inFlight=true
     try{
+      const epoch=this.generation
       const view=await this.api.fairness(handId)
+      this.ensureActive(epoch)
       if(view.phase!=='FAIRNESS_COMMITTING'||view.committed)
         throw new Error('fairness preparation phase unavailable')
       if(this.secret && this.secret.handId!==handId)
         throw new Error('unrevealed contribution for a different hand')
       if(!this.secret){
         const random=await this.sealerRandom(32)
-        const chosenPhrase=phrase??encodeBase64Url(await this.sealerRandom(24))
-        const commitment=computeCommitment(handId,view.seat,random,chosenPhrase)
-        this.secret={handId,seat:view.seat,random,phrase:chosenPhrase,commitment}
+        try {
+          const chosenPhrase=phrase??encodeBase64Url(await this.sealerRandom(24))
+          this.ensureActive(epoch)
+          const commitment=computeCommitment(handId,view.seat,random,chosenPhrase)
+          this.secret={handId,seat:view.seat,random,phrase:chosenPhrase,commitment}
+        } finally {if(this.secret?.random!==random)random.fill(0)}
       }
       if(this.secret.seat!==view.seat)throw new Error('fairness seat changed')
       this.prepared=true
@@ -140,7 +167,9 @@ export class GameFairnessActions {
     try{
       const commitment=computeCommitment(expectedHandId,Number(kit.seat),random,kit.phrase)
       if(commitment!==kit.commitment)throw new Error('fairness recovery digest mismatch')
+      const epoch=this.generation
       const view=await this.api.fairness(expectedHandId)
+      this.ensureActive(epoch)
       if(view.seat!==kit.seat||view.revealed||
         (view.committed ? view.commitment!==commitment :
           view.phase!=='FAIRNESS_COMMITTING')||
@@ -158,14 +187,17 @@ export class GameFairnessActions {
     if(!this.pending || this.inFlight)throw new Error('no pending fairness request')
     this.inFlight=true
     try {
-      const result=await this.api.command(this.pending)
-      assertDurable(result,this.pending.type)
-      this.pending=null
+      const epoch=this.generation
+      const pending=this.pending
+      const result=await this.api.command(pending)
+      this.ensureActive(epoch)
+      this.settle(result,pending.type)
       if(result.type==='hand.reveal')this.clearSecret()
       return result
     }finally{this.inFlight=false}
   }
   private assertAvailable():void{
+    this.ensureActive()
     if(this.inFlight)throw new Error('fairness action in progress')
     if(this.pending)throw new Error('previous fairness result unknown; retry exact request first')
   }
@@ -173,14 +205,19 @@ export class GameFairnessActions {
     this.assertAvailable()
     this.inFlight=true
     try {
+      const epoch=this.generation
       const view=await this.api.fairness(handId)
+      this.ensureActive(epoch)
       if(view.phase!=='FAIRNESS_COMMITTING' || view.committed)throw new Error('fairness commit phase unavailable')
       if(this.secret && this.secret.handId!==handId)throw new Error('unrevealed contribution for a different hand')
       if(!this.secret){
         const random=await this.sealerRandom(32)
-        const chosenPhrase=phrase??encodeBase64Url(await this.sealerRandom(24))
-        const commitment=computeCommitment(handId,view.seat,random,chosenPhrase)
-        this.secret={handId,seat:view.seat,random,phrase:chosenPhrase,commitment}
+        try {
+          const chosenPhrase=phrase??encodeBase64Url(await this.sealerRandom(24))
+          this.ensureActive(epoch)
+          const commitment=computeCommitment(handId,view.seat,random,chosenPhrase)
+          this.secret={handId,seat:view.seat,random,phrase:chosenPhrase,commitment}
+        } finally {if(this.secret?.random!==random)random.fill(0)}
       }
       if(this.secret.seat!==view.seat ||
         (phrase!==undefined && phrase!==this.secret.phrase))
@@ -190,10 +227,11 @@ export class GameFairnessActions {
         requestId:await this.ids.newRequestId(),type:'hand.commit',aggregateId:handId,
         clientSeq:view.lastClientSequence+1,expectedVersion:view.version,payload:{commitment}
       }
+      this.ensureActive(epoch)
       this.pending=command
       const result=await this.api.command(command)
-      assertDurable(result,'hand.commit')
-      this.pending=null
+      this.ensureActive(epoch)
+      this.settle(result,'hand.commit')
       return result
     }finally{this.inFlight=false}
   }
@@ -203,13 +241,17 @@ export class GameFairnessActions {
     try{
       const secret=this.secret
       if(!secret || secret.handId!==handId)throw new Error('local committed fairness secret unavailable')
+      const epoch=this.generation
       const view=await this.api.fairness(handId)
+      this.ensureActive(epoch)
       if(view.phase!=='FAIRNESS_REVEALING' || !view.committed || view.revealed ||
         view.seat!==secret.seat || view.commitment!==secret.commitment)
         throw new Error('server commitment does not match local fairness secret')
       const requestId=await this.ids.newRequestId()
+      this.ensureActive(epoch)
       const clientSeq=view.lastClientSequence+1
       const context=await this.api.revealContext(handId,{requestId,clientSeq,expectedVersion:view.version})
+      this.ensureActive(epoch)
       const claims=context.ticket.claims
       if(claims.seat!==secret.seat || claims.commitment!==secret.commitment ||
         claims.keyId!==view.revealKeyId || claims.publicKeySha256!==view.revealPublicKeySha256 ||
@@ -220,7 +262,9 @@ export class GameFairnessActions {
       if(!bytesEqual(aad,computedAAD))throw new Error('signed reveal AAD mismatch')
       if(!Object.keys(this.trustedManifestRoots).length)
         throw new Error('trusted reveal key signing roots not configured')
-      const manifest=verifyRevealKeyManifest(await this.api.revealManifest(claims.keyId),{
+      const document=await this.api.revealManifest(claims.keyId)
+      this.ensureActive(epoch)
+      const manifest=verifyRevealKeyManifest(document,{
         roots:this.trustedManifestRoots,versions:this.manifestVersions,mode:'pinned',
         expectedKeyId:claims.keyId,expectedPublicKeySha256:encodeBase64Url(
           Uint8Array.from(view.revealPublicKeySha256.match(/../g)!.map(v=>parseInt(v,16)))),
@@ -235,6 +279,7 @@ export class GameFairnessActions {
       try{envelope=await this.sealer.seal({recipient:{keyId:claims.keyId,
         publicKey:manifest.publicKeyBytes},plaintext:bytes,aad})}
       finally{bytes.fill(0);aad.fill(0);computedAAD.fill(0)}
+      this.ensureActive(epoch)
       const command:Omit<WireCommand,'v'>={
         requestId,type:'hand.reveal',aggregateId:handId,clientSeq,
         expectedVersion:view.version,
@@ -244,8 +289,8 @@ export class GameFairnessActions {
       }
       this.pending=command
       const result=await this.api.command(command)
-      assertDurable(result,'hand.reveal')
-      this.pending=null
+      this.ensureActive(epoch)
+      this.settle(result,'hand.reveal')
       this.clearSecret()
       return result
     }finally{this.inFlight=false}
@@ -253,6 +298,7 @@ export class GameFairnessActions {
   private async sealerRandom(n:number):Promise<Uint8Array>{
     const v=await this.platform.random.bytes(n)
     if(!(v instanceof Uint8Array)||v.length!==n)throw new Error('secure random unavailable')
+    if(this.disposed){v.fill(0);throw new Error('fairness actions disposed')}
     return v
   }
   private clearSecret():void {
@@ -260,7 +306,12 @@ export class GameFairnessActions {
     this.secret=null
     this.prepared=false
   }
-  dispose():void{this.clearSecret();this.pending=null}
+  dispose():void{
+    this.disposed=true
+    this.generation++
+    this.clearSecret()
+    this.pending=null
+  }
 }
 function bytesEqual(a:Uint8Array,b:Uint8Array):boolean{
  if(a.length!==b.length)return false

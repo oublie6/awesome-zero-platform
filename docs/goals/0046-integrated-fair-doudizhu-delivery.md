@@ -124,3 +124,32 @@ Do not archive Goal 0046, change the historic Goal 0045 verdicts or request fina
 - Independent Codex whole-product acceptance must still verify one exact post-CI commit SHA. Never mark Goal complete solely from static source and CI.
 
 **No self-declared acceptance:** All these features remain pending automated validation and later external/device evidence until the exact release candidate CI is green.
+
+
+## Consolidated F01–F11 repair candidate — awaiting new CI and independent Codex recheck
+
+The 2026-11-02 independent acceptance at 0cc90a5 was **FAIL** (five P1,
+six P2); its unmodified report is retained in docs/goals/current.md.
+
+ChatGPT has staged a single repair candidate addressing:
+- F01 raw signed manifest response vs wrapped business API
+- F02 terminal-domain exact accepted receipt reconstruction and retry
+- F03 immutable domain/genesis fairness + seat/account integrity comparison
+- F04 domain-specific final evidence verification before destructive pruning
+- F05 omitted empty-seat accountId in actual Go JSON
+- F06 known rejected fairness response clears pending exact request, secret retained
+- F07 disposal generation fence on asynchronous fairness continuations
+- F08 Compose provisioned Quicknet, previous key roots and WeChat identity fields
+- F09 Quicknet no longer depends on unused HMAC proof secret
+- F10 quote the colon-ending development YAML scalar
+- F11 lost room.create response retains command ID and generated room locator for
+  authenticated read / exact Go dedup replay
+
+Regression work includes client manifest/room/rejected-result/lifetime/retry
+tests; actual-MySQL tampered-genesis test; completed-domain terminal receipt
+test; rejection of incomplete archival material; provider config test.
+
+**Verification not asserted here:** green CI, independent local process/network
+reproducers, authenticated end-to-end web/UI and final Codex acceptance must
+be rerun on the final commit. Never change Goal 0046 to completed while
+critical findings or platform qualifications remain open.
