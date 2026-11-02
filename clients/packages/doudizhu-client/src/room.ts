@@ -6,7 +6,7 @@ export interface RoomCommandPort {
 }
 export interface CommandIdentity {
   /** Fresh crypto-secure request ID; same ID must be used when reconciling an unknown outcome. */
-  newRequestId(): string
+  newRequestId(): string | Promise<string>
 }
 export interface RoomState {
   roomId: string
@@ -73,16 +73,18 @@ export class RoomCoordinator {
       this.lastSequence.set(roomId, seq)
       let result: WireCommandResult
       try {
+        const requestId = await this.ids.newRequestId()
+        if (!validID(requestId)) throw new Error('secure command ID unavailable')
         result = await this.api.command({
-          requestId: this.ids.newRequestId(), type, aggregateId: roomId,
+          requestId, type, aggregateId: roomId,
           clientSeq: seq, expectedVersion, payload
         })
       } catch (error) {
         this.uncertainOutcome = true
         throw error
       }
-      const d = result.durable as Record<string, unknown> | undefined
-      if (!d || d.v !== 'fair-doudizhu-command-result-v1' ||
+      const d = result?.durable as Record<string, unknown> | undefined
+      if (result.v !== 'doudizhu-api-command-result-v1' || result.type !== type || !d || d.v !== 'fair-doudizhu-command-result-v1' ||
         d.aggregateId !== roomId || d.commandId !== result.requestId ||
         !Number.isSafeInteger(d.aggregateVersion) || (d.aggregateVersion as number) < 0 ||
         typeof d.accepted !== 'boolean') {
@@ -109,4 +111,16 @@ function validID(value: unknown): value is string {
 }
 function record(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+/** Creates unpredictable, platform-neutral request IDs using only injected secure entropy. */
+export function secureRoomCommandIdentity(random: { bytes(length: number): Promise<Uint8Array> }): CommandIdentity {
+  return {
+    async newRequestId(): Promise<string> {
+      const bytes = await random.bytes(16)
+      if (!(bytes instanceof Uint8Array) || bytes.length !== 16)
+        throw new Error('secure request ID entropy unavailable')
+      return 'cmd-' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+    }
+  }
 }
