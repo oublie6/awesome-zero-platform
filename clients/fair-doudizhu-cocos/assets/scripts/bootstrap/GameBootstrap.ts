@@ -103,6 +103,7 @@ export class GameBootstrap extends Component {
       this.roomInput=this.createRoomInput()
       this.addMenu([
         {name:'LoginEntry',caption:'微信登录',action:()=>void this.login()},
+        {name:'ReconnectRoom',caption:'重连并同步',action:()=>void this.reconnect()},
         {name:'CreateRoom',caption:'创建房间',action:()=>void this.createRoom()},
         {name:'JoinRoom',caption:'加入房间',action:()=>void this.joinRoom()},
         {name:'ReadyRoom',caption:'准备',action:()=>void this.readyRoom()},
@@ -110,6 +111,7 @@ export class GameBootstrap extends Component {
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
         {name:'CommitFairness',caption:'提交洗牌承诺',action:()=>void this.commitFairness()},
         {name:'RevealFairness',caption:'加密提交随机贡献',action:()=>void this.revealFairness()},
+        {name:'RetryUnknownFairness',caption:'重试未确认提交',action:()=>void this.retryUnknownFairness()},
         {name:'RefreshFairness',caption:'刷新洗牌阶段',action:()=>void this.refreshFairness()},
         {name:'RoomEvidence',caption:'查看结算证据',action:()=>void this.showEvidence()},
         {name:'OpenTable',caption:'查看牌桌',action:()=>this.renderScreen('table')},
@@ -207,6 +209,24 @@ export class GameBootstrap extends Component {
       })
       this.notice('已验证微信账号并连接游戏服务')
     } catch(error) {if(generation===this.requestGeneration)this.notice('登录失败：'+this.message(error))}
+  }
+  private async reconnect():Promise<void> {
+    try {
+      const view=await this.requireOnline().reconnectAndResync(this.roomID || undefined)
+      if(view) {
+        this.roomID=view.roomId
+        if(view.activeHandId)this.handID=view.activeHandId
+      }
+      this.notice(view?'重连成功，已向服务器请求房间与牌局同步':'重连成功，等待创建或加入房间')
+    }catch(error){this.notice('重连失败：'+this.message(error))}
+  }
+  private async retryUnknownFairness():Promise<void>{
+    try{
+      const online=this.requireOnline()
+      if(!online.fairness.needsReconciliation)throw new Error('没有待确认的公平提交')
+      await online.fairness.retryUnknown()
+      await this.refreshFairness()
+    }catch(error){this.notice('未确认提交重试失败：'+this.message(error))}
   }
   private async createRoom():Promise<void> {
     try {
