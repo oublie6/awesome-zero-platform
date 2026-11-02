@@ -57,6 +57,7 @@ export interface RoomRead {
   status: 'WAITING_PLAYERS'|'READY'|'HAND_ACTIVE'|'CLOSED'
   occupied: number
   member: boolean
+  lastClientSequence: number
   seats?: ReadonlyArray<{position:number;accountId:string;ready:boolean}>
   activeHandId?: string
 }
@@ -65,7 +66,8 @@ function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
       !Number.isSafeInteger(raw.version) || (raw.version as number) < 1 ||
       !['WAITING_PLAYERS','READY','HAND_ACTIVE','CLOSED'].includes(raw.status as string) ||
       !Number.isSafeInteger(raw.occupied) || (raw.occupied as number) < 0 || (raw.occupied as number) > 3 ||
-      typeof raw.member !== 'boolean') throw new Error('invalid authoritative room view')
+      typeof raw.member !== 'boolean' || !Number.isSafeInteger(raw.lastClientSequence) ||
+      (raw.lastClientSequence as number) < 0) throw new Error('invalid authoritative room view')
   if (raw.member) {
     if (!Array.isArray(raw.seats) || raw.seats.length !== 3 ||
         !raw.seats.every(seat => record(seat) &&
