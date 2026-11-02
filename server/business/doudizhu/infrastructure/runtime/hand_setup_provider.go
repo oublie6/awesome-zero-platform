@@ -55,6 +55,17 @@ func (p *SeededHandSetupProvider) PrepareHand(ctx context.Context, room domain.R
 	if err != nil || len(publicKeyDigest) != 32 {
 		return application.HandSetup{}, fmt.Errorf("%w: reveal public-key digest", domain.ErrInvalidArgument)
 	}
+	plan := p.beaconPlan
+	if plan.Provider == DrandQuicknetProvider {
+		// Lock an objectively future round before any client commits, with no
+		// fallback to a relay-picked latest beacon or operator-chosen old round.
+		if plan.Round != "auto" {
+			return application.HandSetup{},fmt.Errorf("%w: drand round must be auto",domain.ErrInvalidArgument)
+		}
+		round,err:=DrandFutureRound(p.clock.Now())
+		if err!=nil{return application.HandSetup{},err}
+		plan.Round=round
+	}
 	prepared, err := p.seeds.Prepare(handID)
 	if err != nil {
 		return application.HandSetup{}, err
@@ -67,7 +78,7 @@ func (p *SeededHandSetupProvider) PrepareHand(ctx context.Context, room domain.R
 		RevealKeyID:           manifest.KeyID,
 		RevealPublicKeySHA256: hash,
 		RevealKeyBoundAt:      p.clock.Now().UTC(),
-		BeaconPlan:            p.beaconPlan,
+		BeaconPlan:            plan,
 	}, nil
 }
 
