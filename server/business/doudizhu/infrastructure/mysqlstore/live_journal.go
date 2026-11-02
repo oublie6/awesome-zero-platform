@@ -34,6 +34,14 @@ type LiveAction struct {
 	ResultDigest    [32]byte
 }
 
+// One Doudizhu hand has at most 54 played cards and bounded bidding turns.
+// Leave generous room for protocol evolution while preventing a corrupt or
+// malicious journal from exhausting memory during startup replay.
+const (
+	maxLiveActionsPerHand = 512
+	maxLiveActionPayloadBytes = 16 << 10
+)
+
 type LiveJournal struct{ db *sql.DB }
 
 func NewLiveJournal(db *sql.DB) (*LiveJournal, error) {
@@ -119,7 +127,8 @@ func (j *LiveJournal) Append(ctx context.Context, id domain.HandID, epoch uint64
 	if j == nil || j.db == nil || id == "" || epoch == 0 || commandID == "" || len(commandID) > 128 ||
 		actor == "" || len(actor) > 128 || command.ActorPosition < 1 || command.ActorPosition > 3 ||
 		outcome.Version == 0 || outcome.Version != command.ExpectedVersion+1 ||
-		len(command.Payload) == 0 || !json.Valid(command.Payload) {
+		len(command.Payload) == 0 || len(command.Payload) > maxLiveActionPayloadBytes ||
+		outcome.Version > maxLiveActionsPerHand+1 || !json.Valid(command.Payload) {
 		return fmt.Errorf("invalid durable live action")
 	}
 	if outcome.Terminal && len(outcome.FinalPayload) == 0 {
@@ -173,14 +182,18 @@ WHERE hand_id=? AND owner_epoch=? AND committed_version=?`, outcome.Version, id,
 func (j *LiveJournal) Read(ctx context.Context, id domain.HandID) ([]LiveAction, error) {
 	rows, err := j.db.QueryContext(ctx, `SELECT state_version,owner_epoch,command_id,actor_account_id,
 actor_position,expected_version,command_payload,result_digest
-FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC`, id)
+FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC LIMIT ?`, id, maxLiveActionsPerHand+1)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	out := make([]LiveAction, 0, 64)
 	expected := uint64(2)
+	var previousEpoch uint64
 	for rows.Next() {
+		if len(out) >= maxLiveActionsPerHand {
+			return nil, ErrLiveReplayIntegrity
+		}
 		var action LiveAction
 		var digest []byte
 		var pos uint64
@@ -189,11 +202,14 @@ FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC`, id)
 			&action.ExpectedVersion, &action.Payload, &digest); err != nil {
 			return nil, err
 		}
-		if action.Version != expected || action.ExpectedVersion != expected-1 || pos < 1 || pos > 3 ||
-			len(digest) != 32 || !json.Valid(action.Payload) {
+		if pos < 1 || pos > 3 {
 			return nil, ErrLiveReplayIntegrity
 		}
 		action.ActorPosition = uint8(pos)
+		if err := validateReplayAction(action, expected, previousEpoch, digest); err != nil {
+			return nil, err
+		}
+		previousEpoch = action.Epoch
 		copy(action.ResultDigest[:], digest)
 		out = append(out, action)
 		expected++
@@ -202,6 +218,21 @@ FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC`, id)
 		return nil, err
 	}
 	return out, nil
+}
+
+// Fail closed before building the in-memory receipt index. A malformed action
+// must not be replayed as a different actor, command identity or writer epoch.
+func validateReplayAction(action LiveAction, expectedVersion, previousEpoch uint64, digest []byte) error {
+	if action.Version != expectedVersion || action.ExpectedVersion != expectedVersion-1 ||
+		action.Epoch == 0 || action.Epoch < previousEpoch ||
+		action.CommandID == "" || len(action.CommandID) > 128 ||
+		action.Actor == "" || len(action.Actor) > 128 ||
+		action.ActorPosition < 1 || action.ActorPosition > 3 ||
+		len(action.Payload) == 0 || len(action.Payload) > maxLiveActionPayloadBytes ||
+		!json.Valid(action.Payload) || len(digest) != sha256.Size {
+		return ErrLiveReplayIntegrity
+	}
+	return nil
 }
 
 func (j *LiveJournal) List(ctx context.Context) ([]domain.HandID, error) {
