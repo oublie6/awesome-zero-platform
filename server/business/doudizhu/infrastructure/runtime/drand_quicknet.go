@@ -29,7 +29,10 @@ const (
  // target is constructed from an untrusted room/hand/command.
  drandQuicknetRelay = "https://api.drand.sh/v2/beacons/quicknet/rounds/"
 )
-var ErrUnverifiedBeacon=errors.New("independent drand beacon verification failed")
+var (
+ ErrUnverifiedBeacon=errors.New("independent drand beacon verification failed")
+ ErrBeaconNotPublished=errors.New("pinned drand beacon round not published yet")
+)
 
 // DrandQuicknet uses the RFC9380 unchained G1 signature scheme. The public
 // key is provisioned and pinned independently of the HTTP response.
@@ -86,6 +89,10 @@ func (d *DrandQuicknet) Fetch(ctx context.Context,plan domain.BeaconPlan)(domain
  resp,err:=d.client.Do(req)
  if err!=nil{return domain.BeaconValue{},fmt.Errorf("retrieve public drand round: %w",err)}
  defer resp.Body.Close()
+ if resp.StatusCode==http.StatusNotFound || resp.StatusCode==http.StatusTooEarly ||
+  resp.StatusCode==http.StatusTooManyRequests || resp.StatusCode==http.StatusServiceUnavailable {
+   return domain.BeaconValue{},ErrBeaconNotPublished
+ }
  if resp.StatusCode!=http.StatusOK{return domain.BeaconValue{},fmt.Errorf("%w: relay status %d",ErrUnverifiedBeacon,resp.StatusCode)}
  raw,err:=io.ReadAll(io.LimitReader(resp.Body,2049))
  if err!=nil || len(raw)>2048{return domain.BeaconValue{},ErrUnverifiedBeacon}
