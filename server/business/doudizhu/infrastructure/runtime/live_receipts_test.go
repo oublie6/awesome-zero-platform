@@ -75,3 +75,34 @@ func TestArchiveFailureKeepsOnlyCommittedTerminalReceipt(t *testing.T) {
 		})
 	}
 }
+
+
+func TestMySQLJSONNormalizationDoesNotRejectLegitimateRequestRetry(t *testing.T) {
+	c := &LiveHandCoordinator{receipts: make(map[domain.HandID]map[string]liveReceipt)}
+	id := domain.HandID("json-normalization-hand")
+	// The database JSON column may reorder fields and add whitespace.
+	fromMySQL := gamecore.Command{ActorPosition: 2, ExpectedVersion: 7,
+		Payload: []byte(`{"score": 1, "v": "doudizhu-live-bid-command-v1"}`)}
+	original := gamecore.Command{ExpectedVersion: 7,
+		Payload: []byte(`{"v":"doudizhu-live-bid-command-v1","score":1}`)}
+	c.storeReceipt(id, "actor-2", "accepted-id", fromMySQL,
+		gamecore.CommandOutcome{Version: 8, Payload: []byte(`{"ok":true}`)})
+	accepted, found, err := c.loadReceipt(context.Background(), id, "actor-2", "accepted-id", original)
+	if err != nil || !found || accepted.Version != 8 {
+		t.Fatalf("valid MySQL-normalized retry rejected: result=%+v found=%v err=%v", accepted, found, err)
+	}
+	tampered := original
+	tampered.Payload = []byte(`{"v":"doudizhu-live-bid-command-v1","score":2}`)
+	if _, found, err := c.loadReceipt(context.Background(), id, "actor-2", "accepted-id", tampered); !found || !errors.Is(err, gamecore.ErrVerificationFailed) {
+		t.Fatalf("semantically changed command was accepted: found=%v err=%v", found, err)
+	}
+	for _, malformed := range [][]byte{
+		[]byte(`{"v":"doudizhu-live-bid-command-v1","score":1} {}`),
+		[]byte(`{"v":"doudizhu-live-bid-command-v1","score":1`),
+	} {
+		original.Payload = malformed
+		if _, found, err := c.loadReceipt(context.Background(), id, "actor-2", "accepted-id", original); !found || !errors.Is(err, gamecore.ErrVerificationFailed) {
+			t.Fatalf("invalid JSON command was accepted: found=%v err=%v", found, err)
+		}
+	}
+}
