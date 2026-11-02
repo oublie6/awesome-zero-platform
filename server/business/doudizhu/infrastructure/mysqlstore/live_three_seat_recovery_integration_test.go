@@ -198,7 +198,7 @@ func TestRealMySQLThreeSeatFullHandSurvivesTakeoverAndFinalRestart(t *testing.T)
 	if err != nil || replay.Version != 60 {
 		t.Fatalf("lost terminal response was replayed as a new command: %+v %v", replay, err)
 	}
-	_, err = third.PlayCommitted(ctx, id, actor(lastSeat), lastID, 59, []string{"XJ"})
+	_, err = third.PlayCommitted(ctx, id, actor(lastSeat), lastID, 59, []string{lastCard, lastCard})
 	if !errors.Is(err, gamecore.ErrVerificationFailed) {
 		t.Fatalf("changed terminal request accepted using same command ID: %v", err)
 	}

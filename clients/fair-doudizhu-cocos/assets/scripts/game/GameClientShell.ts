@@ -21,7 +21,7 @@ export class GameClientShell {
   async initialize(): Promise<void> {
     if (this.disposed || this.initialized) return
     this.initialized = true
-    this.notify('游戏功能正在开发，暂未开放房间操作')
+    this.notify('连接模块就绪，请登录并同步服务端房间状态')
     this.events.on('doudizhu.command.result', payload => {
       if (this.disposed) return
       const id = (payload as {requestId?: unknown})?.requestId
