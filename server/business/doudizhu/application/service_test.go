@@ -251,6 +251,14 @@ func (s *testStore) WithinCommand(ctx context.Context, _ domain.AccountID, _ str
 	return nil
 }
 
+func (s *testStore) LoadRoom(_ context.Context, id domain.RoomID) (domain.RoomSnapshot, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	snapshot, ok := s.state.rooms[string(id)]
+	if !ok { return domain.RoomSnapshot{}, ErrNotFound }
+	return snapshot, nil
+}
+
 func (s *testStore) LoadHand(_ context.Context, id domain.HandID) (domain.HandSnapshot, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
