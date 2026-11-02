@@ -2,6 +2,7 @@ import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import { GameSession, type IdentityExchange } from '@awesome-zero-platform/game-client-core/session'
 import { RoomCoordinator, secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
 import { GameClientShell } from './GameClientShell.ts'
+import { GameHandActions } from './GameHandActions.ts'
 
 /**
  * Real session -> authenticated socket -> server-command composition.
@@ -11,6 +12,7 @@ export class GameOnlineController {
   readonly session: GameSession
   readonly shell: GameClientShell
   readonly rooms: RoomCoordinator
+  readonly actions: GameHandActions
   private disposed = false
   constructor(
     private readonly platform: GamePlatform,
@@ -20,6 +22,7 @@ export class GameOnlineController {
   ) {
     this.session = new GameSession(platform, identity)
     this.shell = new GameClientShell(onNotice)
+    this.actions = new GameHandActions(this.shell, platform.random)
     this.rooms = new RoomCoordinator(
       {command: input => this.shell.submitCommand(input)},
       secureRoomCommandIdentity(platform.random)
