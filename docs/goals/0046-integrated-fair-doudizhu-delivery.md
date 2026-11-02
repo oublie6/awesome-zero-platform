@@ -98,3 +98,10 @@ Do not archive Goal 0046, change the historic Goal 0045 verdicts or request fina
 - One bounded 256-stripe command lock is shared by Bid/Play/Pass per hand; the lock covers both receipt lookup and commit/publish, preventing accepted identical concurrent request IDs from receiving spurious version conflicts in the post-COMMIT pre-receipt window. No global lock and no unbounded per-attacker-ID mutex allocations.
 - Protected checkpoint replay now verifies each claimed actor is the actual owner of the replayed seat, even when a forged checkpoint and log claim the same false identity. Added adversarial checkpoint test.
 - Real MySQL integration launches 16 synchronized requests with one stable ID, verifies exactly one durable action and all identical authoritative outcomes, then performs a fenced coordinator takeover and repeats the same ID. This is a server-side concurrency proof, not three physically separate clients or a hardware-qualified WeChat session.
+
+## Frontend unknown-outcome safety — explicit same-ID recovery
+
+- GameHandActions now retains the exact requested hand mutation, including original command ID, client sequence, expected version and card payload, on socket timeout, disconnect or ambiguous server outcome. It forbids unrelated new moves until an exact retry or explicit after-authoritative-version reconciliation; a verified rejection can safely clear the pending request.
+- GameClientShell accepts a narrowly scoped explicit exact-ID retry even when the local hand version has advanced, while checking the hand identity and leaving all authority to the existing authenticated server. INTERNAL errors cannot be treated as confirmed rejections.
+- Cocos table adds explicit retry / confirmed-resync discard controls. No secret persistence or misleading auto-acceptance is introduced. These controls are in-memory; app-termination secret recovery and real device qualification remain separate gates.
+- Frontend regression tests exercise response loss, changed local version, exact-ID replay, blocking divergent new commands and user-controlled abandonment after trusted resync.

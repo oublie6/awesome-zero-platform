@@ -4,10 +4,10 @@ package mysqlstore_test
 
 import (
 	"context"
-	"errors"
 	"encoding/json"
-	"os"
+	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"

@@ -4,6 +4,15 @@ import { HandStore, GameMessageRouter, type HandSnapshot } from '@awesome-zero-p
 import { ConnectionManager, type SocketTransport } from '@awesome-zero-platform/game-client-core'
 
 /** UI orchestration over confirmed server messages. No generated fake game state. */
+/** This is an explicit, correlated pre-commit rejection from the Go
+ * dispatcher. INTERNAL, transport loss and timeouts are never definite. */
+export class CommandRejectedError extends Error {
+  constructor(readonly code: string) {
+    super('server rejected command: ' + code)
+    this.name = 'CommandRejectedError'
+  }
+}
+const DEFINITIVELY_REJECTED = new Set(['INVALID_REQUEST','CONFLICT','FORBIDDEN','NOT_FOUND'])
 const MAX_PENDING_COMMANDS = 32
 const SERVER_ERROR_CODES = new Set(['INVALID_REQUEST', 'CONFLICT', 'FORBIDDEN', 'NOT_FOUND', 'INTERNAL'])
 export class GameClientShell {
@@ -86,7 +95,9 @@ export class GameClientShell {
         if (pending) {
           this.pendingCommands.delete(event.requestId)
           clearTimeout(pending.timer)
-          pending.reject(new Error('server rejected command: ' + event.code))
+          pending.reject(DEFINITIVELY_REJECTED.has(event.code as string)
+            ? new CommandRejectedError(event.code as string)
+            : new Error('server error; command outcome unknown: ' + event.code))
         }
       }
       this.notify('服务器拒绝操作，请同步后重试')
@@ -137,12 +148,21 @@ export class GameClientShell {
     })
   }
   /** Transmit only actual Go dispatcher commands; timeout is an unknown outcome, never a proof of failure. */
-  async submitCommand(input: Omit<WireCommand, 'v'>): Promise<WireCommandResult> {
+  async submitCommand(input: Omit<WireCommand, 'v'>, exactUnknownRetry = false): Promise<WireCommandResult> {
     if (this.disposed || !this.connection || !this.transportReady) throw new Error('game connection not ready')
     const request = createWireCommand(input)
     if (request.type.startsWith('hand.')) {
-      if (!this.hand.canSubmit || this.hand.snapshot?.handId !== request.aggregateId ||
-          this.hand.snapshot.version !== request.expectedVersion) throw new Error('hand not eligible for command')
+      if (exactUnknownRetry) {
+        // A previously sent command may have committed before a lost reply.
+        // A stale local version MUST NOT block the same-ID verification.
+        // Ownership, seat, command fingerprint and accepted result are
+        // still checked by the Go application and MySQL receipt journal.
+        if (this.hand.snapshot?.handId !== request.aggregateId)
+          throw new Error('reconnected hand identity does not match pending command')
+      } else if (!this.hand.canSubmit || this.hand.snapshot?.handId !== request.aggregateId ||
+                 this.hand.snapshot.version !== request.expectedVersion) {
+        throw new Error('hand not eligible for command')
+      }
     }
     if (this.pendingCommands.has(request.requestId)) throw new Error('command already pending')
     if (this.pendingCommands.size >= MAX_PENDING_COMMANDS) throw new Error('pending command capacity exceeded')

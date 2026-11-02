@@ -25,7 +25,7 @@ type LiveHandCoordinator struct {
 	epochs          map[domain.HandID]uint64
 	receipts        map[domain.HandID]map[string]liveReceipt
 	checkpointSlots chan struct{}
-	commandStripes [256]sync.Mutex
+	commandStripes  [256]sync.Mutex
 }
 
 // Per-hand command serialization extends the gamecore transition lock across

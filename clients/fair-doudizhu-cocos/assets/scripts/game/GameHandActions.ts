@@ -1,7 +1,7 @@
 import type { WireCommand, WireCommandResult } from '@awesome-zero-platform/doudizhu-client/wire'
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
 import type { SecureRandomSource } from '@awesome-zero-platform/game-client-core'
-import { GameClientShell } from './GameClientShell.ts'
+import { GameClientShell, CommandRejectedError } from './GameClientShell.ts'
 
 /**
  * Explicit player actions against current authoritative hand version.
@@ -10,6 +10,7 @@ import { GameClientShell } from './GameClientShell.ts'
 export class GameHandActions {
   private seq = new Map<string, number>()
   private inFlight = false
+  private pending: Omit<WireCommand, 'v'> | null = null
   private readonly identities
   constructor(private readonly shell: GameClientShell, random: SecureRandomSource) {
     this.identities = secureRoomCommandIdentity(random)
@@ -26,9 +27,41 @@ export class GameHandActions {
     return this.send('hand.play', {cards:[...cards]}, 'PLAYING')
   }
   pass(): Promise<WireCommandResult> { return this.send('hand.pass', {}, 'PLAYING') }
+  get needsReconciliation(): boolean { return this.pending !== null }
+
+  /** Retry only the exact originally transmitted request ID, actor hand,
+   * sequence, payload and version. Reconnect may already have advanced the
+   * local snapshot; the authoritative Go server decides whether this was
+   * committed and returns the persisted result without reapplying it. */
+  async retryUnknown(): Promise<WireCommandResult> {
+    if (!this.pending || this.inFlight) throw new Error('no pending hand command to retry')
+    this.inFlight = true
+    try {
+      const result = await this.shell.submitCommand(this.pending, true)
+      this.pending = null
+      return result
+    } catch (err) {
+      if (err instanceof CommandRejectedError) this.pending = null
+      throw err
+    } finally {
+      this.inFlight = false
+    }
+  }
+  /** No local command can prove its own unknown outcome. After a trusted
+   * server snapshot advances beyond its expected version, the user may
+   * explicitly discard the old request (never resubmit it with a new ID). */
+  discardUnknownAfterSync(): void {
+    if (this.inFlight || !this.pending) throw new Error('no pending hand command')
+    const snapshot = this.shell.hand.snapshot
+    if (!snapshot || snapshot.handId !== this.pending.aggregateId ||
+      !this.shell.hand.canSubmit || snapshot.version <= this.pending.expectedVersion)
+      throw new Error('server has not confirmed a newer hand version')
+    this.pending = null
+  }
 
   private async send(type: 'hand.bid'|'hand.play'|'hand.pass', payload: Record<string, unknown>, phase: 'BIDDING'|'PLAYING'): Promise<WireCommandResult> {
     if (this.inFlight) throw new Error('hand command already in flight; outcome may be unknown')
+    if (this.pending) throw new Error('previous hand command outcome unknown; retry exact request or reconcile')
     const snapshot = this.shell.hand.snapshot
     if (!snapshot || snapshot.phase !== phase || !this.shell.hand.canSubmit) throw new Error('hand is not ready for this action')
     this.inFlight = true
@@ -44,7 +77,17 @@ export class GameHandActions {
         type, requestId, aggregateId: snapshot.handId, clientSeq: seq,
         expectedVersion: snapshot.version, payload
       }
-      return await this.shell.submitCommand(command)
+      this.pending = command
+      try {
+        const response = await this.shell.submitCommand(command)
+        this.pending = null
+        return response
+      } catch (err) {
+        // Transport timeout/disconnect and ambiguous server failures are
+        // UNKNOWN, not FAILED. Never allocate a fresh ID until reconciled.
+        if (err instanceof CommandRejectedError) this.pending = null
+        throw err
+      }
     } finally {
       this.inFlight = false
     }

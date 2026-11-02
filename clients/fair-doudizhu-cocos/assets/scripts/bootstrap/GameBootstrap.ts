@@ -145,6 +145,11 @@ export class GameBootstrap extends Component {
         controls.push({name:'PlayCards',caption:'出牌',action:()=>void this.play()},
                       {name:'PassTurn',caption:'不出',action:()=>void this.pass()})
       }
+      if(this.online?.actions.needsReconciliation){
+        controls.push(
+          {name:'RetryUnknownHand',caption:'重试未确认操作',action:()=>void this.retryUnknownHand()},
+          {name:'DiscardUnknownHand',caption:'按新快照放弃旧操作',action:()=>this.discardUnknownHand()})
+      }
       controls.push(
         {name:'RefreshHand',caption:'同步牌局',action:()=>void this.refreshHand()},
         {name:'FinalEvidence',caption:'核验结算',action:()=>void this.showEvidence()},
@@ -322,6 +327,21 @@ export class GameBootstrap extends Component {
       if(!snapshot)throw new Error('尚无当前牌局 ID，请先刷新房间')
       await this.requireOnline().shell.syncHand(snapshot.handId,snapshot.version)
     }catch(error){this.notice('牌局同步失败：'+this.message(error))}
+  }
+  private async retryUnknownHand():Promise<void>{
+    try {
+      const online=this.requireOnline()
+      await online.actions.retryUnknown()
+      await online.shell.syncHand(this.handID)
+      this.notice('原请求已确认，正在同步权威牌局状态')
+    } catch(error) { this.notice('原请求重试失败：'+this.message(error)) }
+  }
+  private discardUnknownHand():void{
+    try {
+      this.requireOnline().actions.discardUnknownAfterSync()
+      this.notice('已基于新的服务端牌局版本放弃旧请求，不会重复执行')
+      if(this.screen==='table')this.renderScreen('table')
+    } catch(error) { this.notice('不能放弃未确认操作：'+this.message(error)) }
   }
   private async bid(score:number):Promise<void> {
     try {await this.requireOnline().actions.bid(score);this.selectedCards.clear();await this.refreshHand()}
