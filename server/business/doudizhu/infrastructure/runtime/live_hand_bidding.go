@@ -34,6 +34,9 @@ func (c *LiveHandCoordinator) bidInternal(ctx context.Context, handID domain.Han
 	if err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("encode Doudizhu bid: %w", err)
 	}
+	lock := c.commandStripe(handID)
+	lock.Lock()
+	defer lock.Unlock()
 	known := gamecore.Command{ExpectedVersion: expectedVersion, Payload: payload}
 	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known); err != nil {
 		return application.LiveHandCommandResult{}, err

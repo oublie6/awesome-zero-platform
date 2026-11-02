@@ -163,6 +163,10 @@ func restoreRecoveryCheckpoint(
 			record.Outcome.Version != log.Version {
 			return nil, gamecore.ErrVerificationFailed
 		}
+		position, err := game.PositionForAccount(record.Actor)
+		if err != nil || position != record.Command.ActorPosition {
+			return nil, gamecore.ErrVerificationFailed
+		}
 		if _, duplicate := receipts[record.CommandID]; duplicate {
 			return nil, gamecore.ErrVerificationFailed
 		}

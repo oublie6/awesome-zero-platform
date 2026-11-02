@@ -72,6 +72,9 @@ func (c *LiveHandCoordinator) applyPlayingCommand(
 	expectedVersion uint64,
 	payload []byte,
 ) (application.LiveHandCommandResult, error) {
+	lock := c.commandStripe(handID)
+	lock.Lock()
+	defer lock.Unlock()
 	known := gamecore.Command{ExpectedVersion: expectedVersion, Payload: append([]byte(nil), payload...)}
 	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known); err != nil {
 		return application.LiveHandCommandResult{}, err

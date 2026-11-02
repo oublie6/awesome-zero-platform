@@ -25,6 +25,23 @@ type LiveHandCoordinator struct {
 	epochs          map[domain.HandID]uint64
 	receipts        map[domain.HandID]map[string]liveReceipt
 	checkpointSlots chan struct{}
+	commandStripes [256]sync.Mutex
+}
+
+// Per-hand command serialization extends the gamecore transition lock across
+// exact command-ID receipt lookup and publication. Without it two simultaneous
+// retries could race between a committed state and its in-memory receipt,
+// incorrectly reporting a version conflict for an already accepted command.
+// Fixed-size stripes prevent attacker-chosen hand IDs allocating unbounded locks.
+func (c *LiveHandCoordinator) commandStripe(id domain.HandID) *sync.Mutex {
+	const offset64 uint64 = 14695981039346656037
+	const prime64 uint64 = 1099511628211
+	hash := offset64
+	for i := 0; i < len(id); i++ {
+		hash ^= uint64(id[i])
+		hash *= prime64
+	}
+	return &c.commandStripes[hash%uint64(len(c.commandStripes))]
 }
 
 func NewLiveHandCoordinator(seeds *SeedVault, directory *gamecore.LiveDirectory) (*LiveHandCoordinator, error) {

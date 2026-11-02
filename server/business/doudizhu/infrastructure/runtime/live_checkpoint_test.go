@@ -165,6 +165,17 @@ func TestRecoveryCheckpointRequiresExactCommittedStateAndPrivateViews(t *testing
 	if _, err := restoreRecoveryCheckpoint(newRecoveryCheckpointGame(t), mysqlstore.LiveCheckpoint{Version: 2, Payload: bad}, []mysqlstore.LiveAction{record}); !errors.Is(err, gamecore.ErrVerificationFailed) {
 		t.Fatalf("forged private state was accepted: %v", err)
 	}
+	forgedActor := checkpoint
+	forgedActor.Receipts = append([]checkpointReceipt(nil), checkpoint.Receipts...)
+	forgedActor.Receipts[0].Actor = "not-a-seat-owner"
+	forgedLog := record
+	forgedLog.Actor = "not-a-seat-owner"
+	forgedBytes, _ := json.Marshal(forgedActor)
+	if _, err := restoreRecoveryCheckpoint(newRecoveryCheckpointGame(t),
+		mysqlstore.LiveCheckpoint{Version: 2, Payload: forgedBytes},
+		[]mysqlstore.LiveAction{forgedLog}); !errors.Is(err, gamecore.ErrVerificationFailed) {
+		t.Fatalf("signed checkpoint with wrong actor-to-seat binding accepted: %v", err)
+	}
 	forged := record
 	forged.ResultDigest[0] ^= 1
 	if _, err := restoreRecoveryCheckpoint(newRecoveryCheckpointGame(t), mysqlstore.LiveCheckpoint{Version: 2, Payload: raw}, []mysqlstore.LiveAction{forged}); !errors.Is(err, gamecore.ErrVerificationFailed) {

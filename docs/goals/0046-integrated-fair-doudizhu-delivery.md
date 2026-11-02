@@ -92,3 +92,9 @@ Do not archive Goal 0046, change the historic Goal 0045 verdicts or request fina
 - Added measured 100/1,000 hand real-MySQL scale profiling: protected seed storage, consistent startup reconstruction, 16 concurrent committers across distinct hands, P50/P95/P99 and post-GC memory delta. The CI now runs both sizes; these are runner baselines, not production SLA validation.
 - Removed the misleading Cocos initialization placeholder message; login/room/table state still comes from authenticated remote server responses.
 - Checkpoint `e9a744861757ad1c2a2bf06ecd7a4d6ad8d1a5e5` passed Doudizhu real-MySQL integration (including 100-hand test), while general CI identified and reported only a gofmt whitespace difference. This next commit fixes that and enables the 1,000-hand CI scenario. Full new-sha CI and independent acceptance must be confirmed before updating the Goal status.
+
+## Implementation review — concurrent exact retries and recovery actor binding
+
+- One bounded 256-stripe command lock is shared by Bid/Play/Pass per hand; the lock covers both receipt lookup and commit/publish, preventing accepted identical concurrent request IDs from receiving spurious version conflicts in the post-COMMIT pre-receipt window. No global lock and no unbounded per-attacker-ID mutex allocations.
+- Protected checkpoint replay now verifies each claimed actor is the actual owner of the replayed seat, even when a forged checkpoint and log claim the same false identity. Added adversarial checkpoint test.
+- Real MySQL integration launches 16 synchronized requests with one stable ID, verifies exactly one durable action and all identical authoritative outcomes, then performs a fenced coordinator takeover and repeats the same ID. This is a server-side concurrency proof, not three physically separate clients or a hardware-qualified WeChat session.
