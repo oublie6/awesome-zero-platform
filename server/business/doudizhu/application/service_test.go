@@ -251,6 +251,12 @@ func (s *testStore) WithinCommand(ctx context.Context, _ domain.AccountID, _ str
 	return nil
 }
 
+func (s *testStore) RoomClientSequence(_ context.Context, id domain.RoomID, actor domain.AccountID) (uint64,error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.state.sequences[testSequenceKey(domain.AggregateRoom, string(id), actor)],nil
+}
+
 func (s *testStore) LoadRoom(_ context.Context, id domain.RoomID) (domain.RoomSnapshot, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
