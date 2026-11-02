@@ -48,18 +48,24 @@ func (j *LiveJournal) PruneArchivedHand(ctx context.Context, id domain.HandID, o
 		return ErrLivePruneNotEligible
 	}
 	tx, err := j.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer tx.Rollback()
 	var committed uint64
 	if err := tx.QueryRowContext(ctx, `SELECT committed_version FROM doudizhu_live_writers
 WHERE hand_id=? FOR UPDATE`, id).Scan(&committed); err != nil {
-		if errors.Is(err, sql.ErrNoRows) { return ErrLivePruneNotEligible }
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrLivePruneNotEligible
+		}
 		return err
 	}
 	var phase string
 	if err := tx.QueryRowContext(ctx, `SELECT phase FROM doudizhu_hands
 WHERE hand_id=? FOR UPDATE`, id).Scan(&phase); err != nil {
-		if errors.Is(err, sql.ErrNoRows) { return ErrLivePruneNotEligible }
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrLivePruneNotEligible
+		}
 		return err
 	}
 	if phase != string(domain.HandCompleted) || committed != final.Version() {
@@ -67,13 +73,19 @@ WHERE hand_id=? FOR UPDATE`, id).Scan(&phase); err != nil {
 	}
 	var actionCount uint64
 	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM doudizhu_live_actions
-WHERE hand_id=?`, id).Scan(&actionCount); err != nil { return err }
-	if actionCount != committed-1 { return ErrLiveReplayIntegrity }
+WHERE hand_id=?`, id).Scan(&actionCount); err != nil {
+		return err
+	}
+	if actionCount != committed-1 {
+		return ErrLiveReplayIntegrity
+	}
 	// The final archive and room/fairness audit remain; remove only redundant
 	// private recovery material and the complete per-hand transition log.
-	for _,table:=range []string{"doudizhu_live_checkpoints","doudizhu_live_actions",
-		"doudizhu_protected_server_seeds","doudizhu_live_writers"} {
-		if _,err:=tx.ExecContext(ctx,"DELETE FROM "+table+" WHERE hand_id=?",id);err!=nil{return fmt.Errorf("prune %s: %w",table,err)}
+	for _, table := range []string{"doudizhu_live_checkpoints", "doudizhu_live_actions",
+		"doudizhu_protected_server_seeds", "doudizhu_live_writers"} {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM "+table+" WHERE hand_id=?", id); err != nil {
+			return fmt.Errorf("prune %s: %w", table, err)
+		}
 	}
 	return tx.Commit()
 }

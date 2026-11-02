@@ -51,6 +51,7 @@ func previousRoots() (string, map[string][]byte, error) {
 }
 
 type maintenanceClock struct{}
+
 func (maintenanceClock) Now() time.Time { return time.Now().UTC() }
 
 func run() error {
@@ -95,7 +96,9 @@ func run() error {
 	switch *mode {
 	case "prune":
 		archive, err := mysqlarchive.New(db, maintenanceClock{})
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 		return journal.PruneArchivedHand(ctx, id, time.Duration(*retention)*24*time.Hour, archive)
 	case "rotate":
 		current, roots, err := previousRoots()

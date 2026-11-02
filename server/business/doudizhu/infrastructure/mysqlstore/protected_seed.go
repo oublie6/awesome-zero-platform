@@ -19,8 +19,8 @@ import (
 const serverSeedDomain = "doudizhu/server-seed/aes256gcm/v1:"
 
 type ProtectedSeedStore struct {
-	sql  sqlx.SqlConn
-	aead cipher.AEAD
+	sql     sqlx.SqlConn
+	aead    cipher.AEAD
 	readers []cipher.AEAD
 }
 

@@ -44,8 +44,8 @@ const (
 )
 
 type LiveJournal struct {
-	db             *sql.DB
-	checkpointAEAD cipher.AEAD
+	db                *sql.DB
+	checkpointAEAD    cipher.AEAD
 	checkpointReaders []cipher.AEAD
 }
 
