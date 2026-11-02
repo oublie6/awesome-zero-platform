@@ -30,7 +30,7 @@ func (s *dealerStoreFixture) HandClientSequence(_ context.Context,id domain.Hand
 }
 type dealerWriterFixture struct{
  store *dealerStoreFixture
- locked,dealt int
+ locked,dealt,aborted int
 }
 func (w *dealerWriterFixture) LockHandBeacon(_ context.Context,actor domain.AccountID,
  cmd application.Command,input application.LockBeaconInput)(application.CommandResult,error){
@@ -43,6 +43,17 @@ func (w *dealerWriterFixture) LockHandBeacon(_ context.Context,actor domain.Acco
  snap.Version++
  w.store.snaps[snap.ID]=snap
  w.store.seq=9
+ return application.CommandResult{Accepted:true},nil
+}
+func (w *dealerWriterFixture) AbortHand(_ context.Context,actor domain.AccountID,
+ cmd application.Command,input application.TerminateHandInput)(application.CommandResult,error){
+ if actor!=lifecycle.SystemActor || input.ReasonCode!="public_beacon_round_expired" ||
+  cmd.Name!=application.CommandHandAbort{panic("untrusted abort")}
+ w.aborted++
+ snap:=w.store.snaps[domain.HandID(cmd.AggregateID)]
+ snap.Phase=domain.HandAborted
+ snap.Version++
+ w.store.snaps[snap.ID]=snap
  return application.CommandResult{Accepted:true},nil
 }
 func (w *dealerWriterFixture) MarkHandDealt(_ context.Context,actor domain.AccountID,
@@ -107,4 +118,20 @@ func TestAutoDealerNoFallbackToForgedBeacon(t *testing.T){
  if _,err:=newFairAutoDealer(s,w,&dealerTrackerFixture{},nil,
   &dealerIDsFixture{},dealerClockFixture{},time.Minute);err==nil{t.Fatal("missing verifier accepted")}
  if !errors.Is(ddzruntime.ErrBeaconNotPublished,ddzruntime.ErrBeaconNotPublished){t.Fatal("bad sentinel")}
+}
+
+func TestAutoDealerAbortsUnfinishedFutureBeaconAfterRoundIsPublished(t *testing.T){
+ s:=&dealerStoreFixture{snaps:map[domain.HandID]domain.HandSnapshot{
+  "expired":{ID:"expired",Phase:domain.HandFairnessCommitting,Version:2,
+   BeaconPlan:domain.BeaconPlan{Provider:ddzruntime.DrandQuicknetProvider,Round:"1000"}},
+ }}
+ w:=&dealerWriterFixture{store:s}
+ d,err:=newFairAutoDealer(s,w,&dealerTrackerFixture{},&dealerBeaconFixture{ready:true},
+  &dealerIDsFixture{},dealerClockFixture{},time.Minute)
+ if err!=nil{t.Fatal(err)}
+ count,err:=d.ProcessOnce(context.Background())
+ if err!=nil || count!=1 || w.aborted!=1 || w.locked!=0 || w.dealt!=0 ||
+  s.snaps["expired"].Phase!=domain.HandAborted{
+  t.Fatalf("expired reveal could bias known beacon: count=%d aborted=%d err=%v",count,w.aborted,err)
+ }
 }
