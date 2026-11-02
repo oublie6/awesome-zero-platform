@@ -34,6 +34,7 @@ func TestRegisteredRoutesMatchGoZeroAPIInventory(t *testing.T) {
 	var sources = []string{
 		"internal/handler/routes.go",
 		"internal/securityhttp/security.go",
+		"internal/securityhttp/wechat.go",
 		"internal/adminhttp/admin.go",
 		"internal/cryptohttp/http.go",
 		"internal/doudizhuapi/http.go",
