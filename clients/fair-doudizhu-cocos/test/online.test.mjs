@@ -8,7 +8,9 @@ function fixture({failLogin=false,roomMember=true}={}) {
   target:'wechat',
   auth:{acquireCode:async()=> 'temporary-wx-code'},
   vault:{load:async()=>null,save:async()=>{},clear:async()=>{}},
-  http:{request:async()=>({code:'OK',data:{roomId:'room-rejoin',version:9,status:'WAITING_PLAYERS',occupied:2,member:roomMember,lastClientSequence:12,seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:true},{position:3,accountId:'',ready:false}]}})},
+  http:{request:async()=>({code:'OK',data:roomMember
+   ? {roomId:'room-rejoin',version:9,status:'WAITING_PLAYERS',occupied:2,member:true,lastClientSequence:12,seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:true},{position:3,accountId:'',ready:false}]}
+   : {roomId:'room-rejoin',version:9,status:'WAITING_PLAYERS',occupied:2,member:false,lastClientSequence:0}})},
   random:{bytes:async n=>new Uint8Array(Array.from({length:n},(_,i)=>i))},
   socket:{connect:async(url,token)=>{auth.push({url,token});return {
    send:async raw=>commands.push(JSON.parse(raw)),close:()=>{},
