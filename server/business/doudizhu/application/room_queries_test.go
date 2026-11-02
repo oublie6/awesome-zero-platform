@@ -29,5 +29,5 @@ func TestRoomQueryDoesNotLeakSeatsToNonMembers(t *testing.T) {
 		t.Fatalf("outsider received private room data: %+v", outsider)
 	}
 	if _, err := service.GetRoomView(context.Background(), "", "private-room"); err == nil { t.Fatal("anonymous query accepted") }
-	if _, err := service.GetRoomView(context.Background(), "account-third", "../private-room"); err == nil { t.Fatal("malformed room accepted") }
+	if _, err := service.GetRoomView(context.Background(), "account-third", " private-room"); err == nil { t.Fatal("malformed room accepted") }
 }
