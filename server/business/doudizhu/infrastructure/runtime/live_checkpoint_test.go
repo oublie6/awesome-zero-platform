@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"crypto/sha256"
+	"time"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -9,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
-	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/bidding"
-	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/carddeck"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/livehand"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/randomizedsetup"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore"
@@ -58,7 +57,8 @@ func newRecoveryCheckpointGame(t *testing.T) *livehand.Game {
 	commitment := decode(vector.ServerCommitment)
 	hand, _, err := domain.NewHand(domain.HandID(vector.HandID), "checkpoint-room", seats,
 		domain.ServerCommitment(commitment), vector.RevealKeyID,
-		domain.BeaconPlan{Provider:vector.BeaconProvider, Round:vector.BeaconRound})
+		domain.BeaconPlan{Provider:vector.BeaconProvider, Round:vector.BeaconRound},
+		domain.RevealKeyBinding{PublicKeySHA256: domain.RevealPublicKeyHash(decode(vector.RevealPublicKeySHA256)),BoundAt:time.Unix(0,0).UTC()})
 	if err != nil {t.Fatal(err)}
 	material := gamecore.FairnessMaterial{
 		Descriptor:randomizedsetup.Descriptor(), InstanceID:gamecore.InstanceID(vector.HandID),
@@ -72,7 +72,7 @@ func newRecoveryCheckpointGame(t *testing.T) *livehand.Game {
 		digest := decode(v.Digest)
 		committed := domain.ComputeClientCommitment(domain.HandID(vector.HandID),domain.Seat(v.Seat),
 			domain.ContributionDigest(digest))
-		if committed != domain.ClientCommitment(decode(v.Commitment)) {t.Fatal("golden commitment mismatch")}
+		if committed != domain.Commitment(decode(v.Commitment)) {t.Fatal("golden commitment mismatch")}
 		material.Participants[i]=gamecore.ParticipantFairness{
 			Position:v.Seat,Contribution:digest,Commitment:decode(v.Commitment)}
 		if _,err:=hand.SubmitCommit(seats[i].AccountID,committed,hand.Snapshot().Version);err!=nil {t.Fatal(err)}
@@ -88,7 +88,6 @@ func newRecoveryCheckpointGame(t *testing.T) *livehand.Game {
 	// Binding the digest is part of the protected genesis and must match
 	// the fairness material used to generate the deterministic deck.
 	snapshot:=hand.Snapshot()
-	snapshot.RevealPublicKeySHA256=domain.RevealPublicKeyHash(decode(vector.RevealPublicKeySHA256))
 	module:=randomizedsetup.NewModule()
 	artifact,err:=module.GenerateSetup(material)
 	if err!=nil {t.Fatal(err)}
@@ -101,8 +100,6 @@ func newRecoveryCheckpointGame(t *testing.T) *livehand.Game {
 func TestRecoveryCheckpointRequiresExactCommittedStateAndPrivateViews(t *testing.T) {
 	original := newRecoveryCheckpointGame(t)
 	genesis := newRecoveryCheckpointGame(t)
-	descriptor := randomizedsetup.NewModule()
-	_ = descriptor
 	start, err := original.View(gamecore.ViewRequest{PublicOnly:true})
 	if err!=nil {t.Fatal(err)}
 	var pub livehand.PublicView
@@ -130,7 +127,7 @@ func TestRecoveryCheckpointRequiresExactCommittedStateAndPrivateViews(t *testing
 	if err!=nil || recovered["bid-id"].outcome.Version!=2 {
 		t.Fatalf("valid checkpoint rejected: %v %#v",err,recovered)
 	}
-	if after,_:=checkpointViewDigests(genesis);after!=pubHash {t.Fatal("restored public state drift")}
+	if after,_,digestErr:=checkpointViewDigests(genesis);digestErr!=nil || after!=pubHash {t.Fatal("restored public state drift")}
 	tampered:=checkpoint
 	tampered.PrivateDigests[0][0]^=1
 	bad,_:=json.Marshal(tampered)
@@ -142,6 +139,4 @@ func TestRecoveryCheckpointRequiresExactCommittedStateAndPrivateViews(t *testing
 	if _,err:=restoreRecoveryCheckpoint(newRecoveryCheckpointGame(t),mysqlstore.LiveCheckpoint{Version:2,Payload:raw},[]mysqlstore.LiveAction{forged});!errors.Is(err,gamecore.ErrVerificationFailed) {
 		t.Fatalf("forged committed result was accepted: %v",err)
 	}
-	_ = carddeck.CardsPerSeat
-	_ = bidding.ScoreThree
 }
