@@ -25,7 +25,7 @@ type FairnessView struct {
 	LastClientSequence    uint64           `json:"lastClientSequence"`
 	BeaconProvider string `json:"beaconProvider"`
 	BeaconRound string `json:"beaconRound"`
-	BeaconReleaseAt time.Time `json:"beaconReleaseAt,omitempty"`
+	BeaconReleaseAt *time.Time `json:"beaconReleaseAt,omitempty"`
 }
 
 // GetFairnessView gives each player only their own contribution status. Do
@@ -63,7 +63,7 @@ func (s *Service) GetFairnessView(ctx context.Context, actor domain.AccountID, i
 	if snapshot.BeaconPlan.Provider=="drand-quicknet" {
 		release,err:=QuicknetRoundPublication(snapshot.BeaconPlan)
 		if err!=nil{return FairnessView{},err}
-		view.BeaconReleaseAt=release
+		view.BeaconReleaseAt=&release
 	}
 	if own.Committed {
 		view.Commitment = hex.EncodeToString(own.Commitment[:])
