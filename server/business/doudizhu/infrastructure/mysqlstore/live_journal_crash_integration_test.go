@@ -5,6 +5,9 @@ package mysqlstore_test
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -80,6 +83,19 @@ func TestLiveJournalSurvivesActualWriterProcessKill(t *testing.T) {
 		t.Fatalf("pre-commit kill created an action: actions=%v err=%v", actions, err)
 	}
 
+	// The worker has inserted an action and advanced the watermark inside
+	// an open transaction, but has not COMMITted. SIGKILL must roll both
+	// changes back together, never exposing a half-accepted operation.
+	killLiveJournalChildAtMarker(t, "during-transaction", id, epoch)
+	actions, err = journal.Read(ctx, id)
+	if err != nil || len(actions) != 0 {
+		t.Fatalf("killed uncommitted transaction leaked action: %+v %v", actions, err)
+	}
+	var uncommittedWatermark uint64
+	if err := db.QueryRowContext(ctx, "SELECT committed_version FROM doudizhu_live_writers WHERE hand_id=?", id).Scan(&uncommittedWatermark); err != nil || uncommittedWatermark != 1 {
+		t.Fatalf("uncommitted watermark survived kill: %d %v", uncommittedWatermark, err)
+	}
+
 	// SIGKILL after Append returned success: a new process must see the exact
 	// persisted operation and fence the dead process's epoch.
 	killLiveJournalChildAtMarker(t, "after-commit", id, epoch)
@@ -142,8 +158,38 @@ func runLiveJournalCrashChild(t *testing.T, mode string) {
 	if err != nil || id == "" {
 		t.Fatal("invalid crash child identity")
 	}
-	if mode != "before-commit" && mode != "after-commit" {
+	if mode != "before-commit" && mode != "during-transaction" && mode != "after-commit" {
 		t.Fatal("invalid crash child mode")
+	}
+	if mode == "during-transaction" {
+		db := openIntegrationDB(t)
+		tx, err := db.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback()
+		var storedEpoch, version uint64
+		if err := tx.QueryRowContext(context.Background(), `SELECT owner_epoch, committed_version FROM doudizhu_live_writers
+WHERE hand_id=? FOR UPDATE`, id).Scan(&storedEpoch, &version); err != nil || storedEpoch != epoch || version != 1 {
+			t.Fatalf("child writer not authoritative: epoch %d version %d err %v", storedEpoch, version, err)
+		}
+		outcome := gamecore.CommandOutcome{Version: 2, Payload: []byte(`{"ok":true}`)}
+		encoded, err := json.Marshal(outcome)
+		if err != nil {
+			t.Fatal(err)
+		}
+		digest := sha256.Sum256(encoded)
+		if _, err := tx.ExecContext(context.Background(), `INSERT INTO doudizhu_live_actions
+(hand_id,state_version,owner_epoch,command_id,actor_account_id,actor_position,
+expected_version,command_payload,result_digest,committed_at)
+VALUES(?,2,?,'uncommitted-command-1','kill-1',1,1,?, ?,UTC_TIMESTAMP(6))`,
+			id, epoch, []byte(`{"v":"doudizhu-live-bid-command-v1","score":1}`), digest[:]); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tx.ExecContext(context.Background(), `UPDATE doudizhu_live_writers
+SET committed_version=2 WHERE hand_id=? AND owner_epoch=? AND committed_version=1`, id, epoch); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if mode == "after-commit" {
 		db := openIntegrationDB(t)
