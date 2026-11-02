@@ -43,7 +43,6 @@ func TestExactAcceptedReceiptDoesNotReplayDuplicateGameplay(t *testing.T) {
 	}
 }
 
-
 func TestArchiveFailureKeepsOnlyCommittedTerminalReceipt(t *testing.T) {
 	c := &LiveHandCoordinator{receipts: make(map[domain.HandID]map[string]liveReceipt)}
 	hand := domain.HandID("hand-terminal-archive")
