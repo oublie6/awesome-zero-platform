@@ -154,13 +154,19 @@ func validateReplayedPhase(persisted domain.HandPhase, replayed string, terminal
 // RecoveredPhases is an immutable phase index for the lifecycle supervisor.
 // All entries here have passed journal consistency and owner fencing.
 func (c *LiveHandCoordinator) RecoveredPhases() map[domain.HandID]string {
-	out:=make(map[domain.HandID]string)
-	if c==nil{return out}
+	out := make(map[domain.HandID]string)
+	if c == nil {
+		return out
+	}
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	for id,game:=range c.games {out[id]=game.Phase()}
-	for id,record:=range c.finalized {
-		if record.Status()==gamecore.FinalStatusCompleted {out[id]=livehand.PhaseCompleted}
+	for id, game := range c.games {
+		out[id] = game.Phase()
+	}
+	for id, record := range c.finalized {
+		if record.Status() == gamecore.FinalStatusCompleted {
+			out[id] = livehand.PhaseCompleted
+		}
 	}
 	return out
 }

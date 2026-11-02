@@ -36,20 +36,24 @@ func (c *LiveHandCoordinator) applyLive(
 	if err != nil {
 		return outcome, err
 	}
-	if next!=nil {
-		game,ok:=next.(*livehand.Game)
-		if !ok {return outcome,fmt.Errorf("%w: invalid committed Doudizhu candidate",gamecore.ErrVerificationFailed)}
+	if next != nil {
+		game, ok := next.(*livehand.Game)
+		if !ok {
+			return outcome, fmt.Errorf("%w: invalid committed Doudizhu candidate", gamecore.ErrVerificationFailed)
+		}
 		if outcome.Terminal {
 			// ApplyCommitted already archived the final record before return.
 			// Dropping the active game here prevents a subsequent domain
 			// CompleteHand from erroneously attempting to abort it.
-			record,err:=gamecore.NewFinalRecord(gamecore.InstanceID(handID),game.Descriptor(),
-				gamecore.FinalStatusCompleted,outcome.Version,outcome.FinalPayload)
-			if err!=nil{return outcome,err}
-			c.finish(handID,record)
-		}else{
+			record, err := gamecore.NewFinalRecord(gamecore.InstanceID(handID), game.Descriptor(),
+				gamecore.FinalStatusCompleted, outcome.Version, outcome.FinalPayload)
+			if err != nil {
+				return outcome, err
+			}
+			c.finish(handID, record)
+		} else {
 			c.mu.Lock()
-			c.games[handID]=game
+			c.games[handID] = game
 			c.mu.Unlock()
 		}
 	}

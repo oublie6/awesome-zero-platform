@@ -154,8 +154,8 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
-	if err:=supervisor.ReconcileRecovered(context.Background(),liveHands.RecoveredPhases());err!=nil{
-		return doudizhuComponents{},fmt.Errorf("reconcile recovered Doudizhu lifecycle: %w",err)
+	if err := supervisor.ReconcileRecovered(context.Background(), liveHands.RecoveredPhases()); err != nil {
+		return doudizhuComponents{}, fmt.Errorf("reconcile recovered Doudizhu lifecycle: %w", err)
 	}
 	apiConfig := doudizhuapi.DefaultConfig()
 	apiConfig.CommandTTL = cfg.Doudizhu.CommandTTL
