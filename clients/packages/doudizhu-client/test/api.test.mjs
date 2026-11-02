@@ -21,3 +21,30 @@ test('private hand path does not accept untrusted query injection',async()=>{
  const client=new DoudizhuHTTPClient({request:async()=>({})},()=> 't')
  await assert.rejects(client.privateHand('x?token=leak'),/invalid hand id/)
 })
+
+test('room GET supplies authoritative version while outsiders receive no seats',async()=>{
+ let actual
+ const client=new DoudizhuHTTPClient({request:async(path,options)=>{
+  actual={path,options}
+  return {code:'OK',data:{roomId:'r-1',version:4,status:'WAITING_PLAYERS',occupied:2,member:false}}
+ }},()=> 'real-token')
+ const room=await client.room('r-1')
+ assert.equal(room.version,4)
+ assert.equal(room.member,false)
+ assert.equal(room.seats,undefined)
+ assert.equal(actual.path,'/v1/doudizhu/rooms/r-1')
+ assert.equal(actual.options.accessToken,'real-token')
+ assert.equal(JSON.stringify(actual).includes('real-token?'),false)
+})
+test('room GET rejects response identity and membership leaks',async()=>{
+ const cases=[
+  {roomId:'other',version:1,status:'READY',occupied:2,member:false},
+  {roomId:'r-1',version:0,status:'READY',occupied:2,member:false},
+  {roomId:'r-1',version:1,status:'READY',occupied:2,member:false,seats:[]},
+  {roomId:'r-1',version:1,status:'READY',occupied:2,member:true,seats:[{position:1,accountId:'a',ready:true}]}
+ ]
+ for(const data of cases) {
+  const client=new DoudizhuHTTPClient({request:async()=>({code:'OK',data})},()=> 'token')
+  await assert.rejects(client.room('r-1'),/room view/)
+ }
+})
