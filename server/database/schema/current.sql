@@ -162,6 +162,19 @@ CREATE TABLE IF NOT EXISTS doudizhu_hands (
 
 -- Server fairness seeds survive process restarts encrypted under a domain-separated AEAD key.
 -- No plaintext seed or other player's cards are stored in this table.
+-- External identities are owned by platform identity, never by a game module.
+-- Store a keyed provider-subject digest, never raw WeChat OpenID/session_key.
+CREATE TABLE IF NOT EXISTS identity_external_subjects (
+    provider VARCHAR(32) NOT NULL,
+    subject_hmac BINARY(32) NOT NULL,
+    account_id CHAR(36) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (provider, subject_hmac),
+    KEY idx_identity_external_account (account_id),
+    CONSTRAINT fk_identity_external_account FOREIGN KEY (account_id)
+        REFERENCES identity_accounts(account_id)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS doudizhu_protected_server_seeds (
     hand_id VARCHAR(128) NOT NULL,
     nonce VARBINARY(12) NOT NULL,
