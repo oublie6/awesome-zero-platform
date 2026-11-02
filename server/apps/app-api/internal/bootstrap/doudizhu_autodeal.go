@@ -20,6 +20,7 @@ type fairDealStore interface {
 type fairDealWriter interface {
  LockHandBeacon(context.Context,domain.AccountID,application.Command,application.LockBeaconInput)(application.CommandResult,error)
  MarkHandDealt(context.Context,domain.AccountID,application.Command)(application.CommandResult,error)
+ AbortHand(context.Context,domain.AccountID,application.Command,application.TerminateHandInput)(application.CommandResult,error)
 }
 type fairDealTracker interface {TrackBidding(context.Context,domain.AccountID,domain.HandID)error}
 type drandReader interface {Fetch(context.Context,domain.BeaconPlan)(domain.BeaconValue,error)}
@@ -65,6 +66,20 @@ func (a *fairAutoDealer) ProcessOnce(ctx context.Context)(int,error){
   snap,err:=a.store.LoadHand(ctx,id)
   if err!=nil{return progressed,err}
   switch snap.Phase {
+  case domain.HandFairnessCommitting, domain.HandFairnessRevealing:
+   if snap.BeaconPlan.Provider!=ddzruntime.DrandQuicknetProvider{continue}
+   publication,err:=application.QuicknetRoundPublication(snap.BeaconPlan)
+   if err!=nil{return progressed,err}
+   if a.clock.Now().Before(publication){continue}
+   // Delayed contributions cannot be accepted after the public round is
+   // visible. Release this hand and let players start a fresh fair round.
+   err=a.issueCommand(ctx,id,snap.Version,application.CommandHandAbort,
+    func(cmd application.Command)(application.CommandResult,error){
+     return a.writer.AbortHand(ctx,lifecycle.SystemActor,cmd,
+      application.TerminateHandInput{ReasonCode:"public_beacon_round_expired"})
+    })
+   if err!=nil{return progressed,err}
+   progressed++
   case domain.HandWaitingPublicBeacon:
    if snap.BeaconPlan.Provider!=ddzruntime.DrandQuicknetProvider {
     // Legacy HMAC proof is never an automatic release-security fallback.
