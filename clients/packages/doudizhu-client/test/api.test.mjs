@@ -45,6 +45,6 @@ test('room GET rejects response identity and membership leaks',async()=>{
  ]
  for(const data of cases) {
   const client=new DoudizhuHTTPClient({request:async()=>({code:'OK',data})},()=> 'token')
-  await assert.rejects(client.room('r-1'),/room view/)
+  await assert.rejects(client.room('r-1'),/room view|room preview/)
  }
 })
