@@ -360,13 +360,18 @@ export class GameBootstrap extends Component {
       this.inputNode.setPosition(0,height*0.015,0)
     }
     const columns=this.screen==='home'||this.screen==='rules'?1:this.screen==='table'?(portrait?5:10):(portrait?3:4)
+    const rows=Math.max(1,Math.ceil(this.buttons.length/columns))
+    // Both a 15-control room lobby and a full 20-card table must fit inside
+    // the safe-area bottom half, including on compact landscape viewports.
+    const rowPitch=Math.min(height*0.106,height*0.34/Math.max(1,rows-1))
+    const buttonHeight=Math.max(28,Math.min(58,rowPitch-6))
     this.buttons.forEach((button,index)=>{
       const transform=button.getComponent(UITransform)!
       const cellWidth=width/columns
-      transform.setContentSize(Math.max(20,cellWidth-8),Math.max(30,Math.min(72,height*0.095)))
+      transform.setContentSize(Math.max(20,cellWidth-8),buttonHeight)
       button.getComponent(Label)!.fontSize=portrait?Math.max(18,Math.min(30,cellWidth*0.16)):Math.max(18,Math.min(26,cellWidth*0.17))
       const col=index%columns,row=Math.floor(index/columns)
-      button.setPosition(-width/2+cellWidth*(col+0.5),-height*(this.screen==='table'?(0.14+row*0.067):(0.13+row*(portrait?0.091:0.12))),0)
+      button.setPosition(-width/2+cellWidth*(col+0.5),-height*0.105-row*rowPitch,0)
     })
   }
   override onDestroy(): void {
