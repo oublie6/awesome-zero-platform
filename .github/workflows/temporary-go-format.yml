@@ -1,4 +1,5 @@
 name: Temporary Go Format for Integrated Goal
+# Final integrated auth, recovery and UI format pass
 on:
   push:
     paths:
