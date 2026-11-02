@@ -26,14 +26,17 @@ export class RoomCoordinator {
   private room: RoomState | null = null
   private lastSequence = new Map<string, number>()
   private inFlight = false
+  private uncertainOutcome = false
   constructor(private readonly api: RoomCommandPort, private readonly ids: CommandIdentity) {}
   get state(): Readonly<RoomState> | null { return this.room ? Object.freeze({...this.room}) : null }
+  get needsReconciliation(): boolean { return this.uncertainOutcome }
 
   /** Adopt only a version from a trusted, authorized server-side room query. */
   restoreTrustedRoom(roomId: string, version: number): void {
     if (!validID(roomId) || !Number.isSafeInteger(version) || version < 1) throw new Error('invalid trusted room')
     if (this.inFlight) throw new Error('cannot replace room while command outstanding')
     this.room = Object.freeze({roomId, version})
+    this.uncertainOutcome = false
   }
 
   create(roomId: string): Promise<RoomState> { return this.perform('room.create', roomId, 0, {}) }
@@ -59,6 +62,7 @@ export class RoomCoordinator {
     if (!validID(roomId) || !Number.isSafeInteger(expectedVersion) || expectedVersion < (type === 'room.create' ? 0 : 1) ||
       (type === 'room.create' && expectedVersion !== 0)) throw new Error('invalid room version or ID')
     if (this.inFlight) throw new Error('room command outstanding; outcome may be unknown')
+    if (this.uncertainOutcome) throw new Error('room outcome unknown; reconcile with an authoritative server room query before continuing')
     if (type === 'room.create' && this.room) throw new Error('already managing a room')
     if (type !== 'room.create' && this.room && this.room.roomId !== roomId) throw new Error('room identity mismatch')
     this.inFlight = true
@@ -67,24 +71,36 @@ export class RoomCoordinator {
       if (!Number.isSafeInteger(seq)) throw new Error('room sequence exhausted')
       // Persist sequence allocation even when the outcome is unknown; never recycle it.
       this.lastSequence.set(roomId, seq)
-      const result = await this.api.command({
-        requestId: this.ids.newRequestId(), type, aggregateId: roomId,
-        clientSeq: seq, expectedVersion, payload
-      })
+      let result: WireCommandResult
+      try {
+        result = await this.api.command({
+          requestId: this.ids.newRequestId(), type, aggregateId: roomId,
+          clientSeq: seq, expectedVersion, payload
+        })
+      } catch (error) {
+        this.uncertainOutcome = true
+        throw error
+      }
       const d = result.durable as Record<string, unknown> | undefined
       if (!d || d.v !== 'fair-doudizhu-command-result-v1' ||
         d.aggregateId !== roomId || d.commandId !== result.requestId ||
         !Number.isSafeInteger(d.aggregateVersion) || (d.aggregateVersion as number) < 0 ||
-        typeof d.accepted !== 'boolean') throw new Error('invalid authoritative room result; outcome unknown')
+        typeof d.accepted !== 'boolean') {
+        this.uncertainOutcome = true
+        throw new Error('invalid authoritative room result; outcome unknown')
+      }
       if (!d.accepted) {
         const failure = d.failure
         if (!record(failure) || typeof failure.code !== 'string' || !failure.code.trim())
-          throw new Error('malformed durable rejection; outcome unknown')
+          { this.uncertainOutcome = true; throw new Error('malformed durable rejection; outcome unknown') }
         throw new DurableRoomRejected(failure.code, Number.isSafeInteger(failure.currentVersion) ? failure.currentVersion as number : undefined)
       }
-      if ((d.aggregateVersion as number) <= expectedVersion) throw new Error('non-monotonic room version; outcome unknown')
-      this.room = Object.freeze({roomId,version:d.aggregateVersion as number})
-      return this.state!
+      if ((d.aggregateVersion as number) <= expectedVersion) {
+        this.uncertainOutcome = true
+        throw new Error('non-monotonic room version; outcome unknown')
+      }
+      this.room = type === 'room.leave' ? null : Object.freeze({roomId,version:d.aggregateVersion as number})
+      return Object.freeze({roomId,version:d.aggregateVersion as number})
     } finally { this.inFlight = false }
   }
 }
