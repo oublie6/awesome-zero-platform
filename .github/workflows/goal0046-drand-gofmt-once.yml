@@ -1,0 +1,30 @@
+name: Goal 0046 One-Time Drand Go Format
+on:
+  push:
+    paths:
+      - '.github/workflows/goal0046-drand-gofmt-once.yml'
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+      - name: Format source and commit only changed Go files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find server -name '*.go' -type f -print0 | xargs -0 gofmt -w
+          if git diff --quiet -- server; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- server
+          git commit -m 'style(go): format drand verification, auto-deal and latency tests'
+          git push origin HEAD:main
