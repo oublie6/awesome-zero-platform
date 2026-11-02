@@ -93,9 +93,12 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
-	liveHands, err := ddzruntime.NewLiveHandCoordinator(seeds, directory)
-	if err != nil {
-		return doudizhuComponents{}, err
+	journal,err:=mysqlstore.NewLiveJournal(mysql.DB())
+	if err!=nil{return doudizhuComponents{},err}
+	liveHands, err := ddzruntime.NewDurableLiveHandCoordinator(seeds, directory,journal)
+	if err != nil { return doudizhuComponents{}, err }
+	if err:=liveHands.RecoverActive(context.Background(),store.LoadHand);err!=nil {
+		return doudizhuComponents{},fmt.Errorf("recover durable Doudizhu live hands: %w",err)
 	}
 	plan := domain.BeaconPlan{Provider: cfg.Doudizhu.BeaconProvider, Round: cfg.Doudizhu.BeaconRound}
 	setups, err := ddzruntime.NewSeededHandSetupProvider(seeds, keys, clock, plan)
