@@ -14,13 +14,19 @@ const quicknetRoundSeconds = int64(3)
 // commitment after its precommitted public beacon becomes predictable.
 // The auto dealer must abort expired unfinished fairness rounds, never use
 // an already-released round as if it were future entropy.
-func checkContributionDeadline(plan domain.BeaconPlan, now time.Time)error{
- if plan.Provider!="drand-quicknet"{return nil}
+func QuicknetRoundPublication(plan domain.BeaconPlan)(time.Time,error){
+ if plan.Provider!="drand-quicknet"{return time.Time{},fmt.Errorf("%w: not a quicknet plan",domain.ErrBeaconMismatch)}
  round,err:=strconv.ParseUint(plan.Round,10,64)
  if err!=nil || round==0 || round>1<<52 || strconv.FormatUint(round,10)!=plan.Round {
-  return fmt.Errorf("%w: invalid committed public beacon round",domain.ErrBeaconMismatch)
+  return time.Time{},fmt.Errorf("%w: invalid committed public beacon round",domain.ErrBeaconMismatch)
  }
  publishedAt:=time.Unix(quicknetGenesisTime+int64(round-1)*quicknetRoundSeconds,0)
+ return publishedAt,nil
+}
+func checkContributionDeadline(plan domain.BeaconPlan,now time.Time)error{
+ if plan.Provider!="drand-quicknet"{return nil}
+ publishedAt,err:=QuicknetRoundPublication(plan)
+ if err!=nil{return err}
  if !now.UTC().Before(publishedAt){
   return fmt.Errorf("%w: public beacon already known; restart fairness hand",domain.ErrBeaconMismatch)
  }
