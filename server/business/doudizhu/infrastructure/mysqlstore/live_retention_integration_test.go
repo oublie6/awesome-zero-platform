@@ -104,8 +104,8 @@ snapshot_json,created_at,updated_at) VALUES(?,?,'COMPLETED',?,REPEAT(0x00,32),1,
 	if err := journal.PruneArchivedHand(ctx, id, 30*24*time.Hour, retentionProof{record: final, archived: time.Now()}); !errors.Is(err, mysqlstore.ErrLivePruneNotEligible) {
 		t.Fatal("young final pruned:", err)
 	}
-	if err := journal.PruneArchivedHand(ctx, id, 30*24*time.Hour, retentionProof{record: gamecore.FinalRecord{}, archived: time.Now().Add(-45 * 24 * time.Hour)}); !errors.Is(err, mysqlstore.ErrLiveReplayIntegrity) {
-		t.Fatal("forged archive pruned:", err)
+	if err := journal.PruneArchivedHand(ctx, id, 30*24*time.Hour, retentionProof{record: gamecore.FinalRecord{}, archived: time.Now().Add(-45 * 24 * time.Hour)}); !errors.Is(err, mysqlstore.ErrLivePruneNotEligible) {
+		t.Fatal("forged archive was not rejected:", err)
 	}
 	if err := journal.PruneArchivedHand(ctx, id, 30*24*time.Hour, archive); !errors.Is(err, mysqlstore.ErrLiveReplayIntegrity) {
 		t.Fatalf("generic but Doudizhu-incomplete archive was allowed to prune: %v", err)
