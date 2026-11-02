@@ -12,6 +12,12 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
 
+func (c *LiveHandCoordinator) BidCommitted(ctx context.Context, handID domain.HandID,
+	actor domain.AccountID, commandID string, expectedVersion uint64, score bidding.Score,
+)(application.LiveHandCommandResult,error){
+	return c.bidInternal(ctx,handID,actor,commandID,expectedVersion,score)
+}
+
 func (c *LiveHandCoordinator) Bid(
 	ctx context.Context,
 	handID domain.HandID,
@@ -19,6 +25,11 @@ func (c *LiveHandCoordinator) Bid(
 	expectedVersion uint64,
 	score bidding.Score,
 ) (application.LiveHandCommandResult, error) {
+	return c.bidInternal(ctx,handID,actor,"",expectedVersion,score)
+}
+func (c *LiveHandCoordinator) bidInternal(ctx context.Context,handID domain.HandID,actor domain.AccountID,
+	commandID string,expectedVersion uint64,score bidding.Score,
+) (application.LiveHandCommandResult,error) {
 	game, err := c.game(ctx, handID)
 	if err != nil {
 		return application.LiveHandCommandResult{}, err
@@ -31,7 +42,7 @@ func (c *LiveHandCoordinator) Bid(
 	if err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("encode Doudizhu bid: %w", err)
 	}
-	outcome, err := c.directory.Apply(gamecore.InstanceID(handID), gamecore.Command{
+	outcome, err := c.applyLive(ctx,handID,actor,commandID,gamecore.Command{
 		ActorPosition:   position,
 		ExpectedVersion: expectedVersion,
 		Payload:         payload,
