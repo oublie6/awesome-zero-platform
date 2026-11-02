@@ -220,26 +220,40 @@ func TestRecoverRejectsGenesisSeatReplacementBeforePrivateView(t *testing.T) {
 	})
 	seed, genesis, persisted := coordinatorCrashFixture(t, id)
 	store, err := mysqlstore.NewProtectedSeedStore(db, coordinatorCrashKey())
-	if err != nil { t.Fatal(err) }
-	if err := store.Save(ctx, id, seed); err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Save(ctx, id, seed); err != nil {
+		t.Fatal(err)
+	}
 	journal, err := mysqlstore.NewLiveJournal(db)
-	if err != nil { t.Fatal(err) }
-	if err := journal.Create(ctx, genesis); err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := journal.Create(ctx, genesis); err != nil {
+		t.Fatal(err)
+	}
 	altered := genesis
 	altered.Seats[0].AccountID, altered.Seats[1].AccountID =
 		altered.Seats[1].AccountID, altered.Seats[0].AccountID
 	encoded, err := json.Marshal(altered)
-	if err != nil { t.Fatal(err) }
-	if _, err := db.ExecContext(ctx, "UPDATE doudizhu_live_writers SET genesis_snapshot=? WHERE hand_id=?", encoded, id); err != nil { t.Fatal(err) }
-	load := func(_ context.Context, target domain.HandID) (domain.HandSnapshot,error) {
-		if target != id { return domain.HandSnapshot{}, application.ErrNotFound }
-		return persisted,nil
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, "UPDATE doudizhu_live_writers SET genesis_snapshot=? WHERE hand_id=?", encoded, id); err != nil {
+		t.Fatal(err)
+	}
+	load := func(_ context.Context, target domain.HandID) (domain.HandSnapshot, error) {
+		if target != id {
+			return domain.HandSnapshot{}, application.ErrNotFound
+		}
+		return persisted, nil
 	}
 	coordinator := newCoordinatorCrashRuntime(t, db)
-	if err := coordinator.RecoverActive(ctx,load); !errors.Is(err,gamecore.ErrVerificationFailed) {
-		t.Fatalf("tampered seat-to-account binding accepted: %v",err)
+	if err := coordinator.RecoverActive(ctx, load); !errors.Is(err, gamecore.ErrVerificationFailed) {
+		t.Fatalf("tampered seat-to-account binding accepted: %v", err)
 	}
-	if _, err := coordinator.PrivateView(ctx,id,persisted.Seats[0].AccountID);err==nil {
+	if _, err := coordinator.PrivateView(ctx, id, persisted.Seats[0].AccountID); err == nil {
 		t.Fatal("private cards were exposed after a failed integrity check")
 	}
 }
