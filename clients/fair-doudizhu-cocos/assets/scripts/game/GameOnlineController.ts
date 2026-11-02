@@ -4,6 +4,7 @@ import { RoomCoordinator, secureRoomCommandIdentity } from '@awesome-zero-platfo
 import { DoudizhuHTTPClient, type RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 import { GameClientShell } from './GameClientShell.ts'
 import { GameHandActions } from './GameHandActions.ts'
+import { GameFairnessActions } from './GameFairnessActions.ts'
 
 /**
  * Real session -> authenticated socket -> server-command composition.
@@ -15,17 +16,20 @@ export class GameOnlineController {
   readonly rooms: RoomCoordinator
   readonly api: DoudizhuHTTPClient
   readonly actions: GameHandActions
+  readonly fairness: GameFairnessActions
   private disposed = false
   constructor(
     private readonly platform: GamePlatform,
     identity: IdentityExchange,
     private readonly socketEndpoint: string,
-    onNotice: (message: string) => void
+    onNotice: (message: string) => void,
+    trustedManifestRoots: Readonly<Record<string,string>> = {}
   ) {
     this.session = new GameSession(platform, identity)
     this.shell = new GameClientShell(onNotice)
     this.actions = new GameHandActions(this.shell, platform.random)
     this.api = new DoudizhuHTTPClient(platform.http, () => this.session.token)
+    this.fairness = new GameFairnessActions(this.api,platform,trustedManifestRoots)
     this.rooms = new RoomCoordinator(
       {command: input => this.shell.submitCommand(input)},
       secureRoomCommandIdentity(platform.random)
@@ -74,6 +78,7 @@ export class GameOnlineController {
     return this.rooms.create(roomId)
   }
   async logout(): Promise<void> {
+    this.fairness.dispose()
     this.shell.dispose()
     await this.session.logout()
   }
@@ -81,6 +86,7 @@ export class GameOnlineController {
     if (this.disposed) return
     this.disposed = true
     this.session.dispose()
+    this.fairness.dispose()
     this.shell.dispose()
   }
 }
