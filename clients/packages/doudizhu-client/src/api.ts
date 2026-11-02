@@ -69,7 +69,7 @@ function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
   if (raw.member) {
     if (!Array.isArray(raw.seats) || raw.seats.length !== 3 ||
         !raw.seats.every(seat => record(seat) &&
-        Number.isSafeInteger(seat.position) && seat.position >= 1 && seat.position <= 3 &&
+        typeof seat.position === 'number' && Number.isSafeInteger(seat.position) && seat.position >= 1 && seat.position <= 3 &&
         typeof seat.accountId === 'string' && typeof seat.ready === 'boolean') ||
         new Set(raw.seats.map(s => s.position)).size !== 3 ||
         (raw.activeHandId !== undefined && typeof raw.activeHandId !== 'string')) {
