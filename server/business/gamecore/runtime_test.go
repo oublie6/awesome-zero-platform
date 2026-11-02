@@ -78,16 +78,18 @@ func newFakeLiveGame(t *testing.T, id string, participants uint8) *fakeLiveGame 
 	}
 }
 
-func (g *fakeLiveGame) CloneCandidate() (gamecore.LiveGame,error) {
+func (g *fakeLiveGame) CloneCandidate() (gamecore.LiveGame, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	clone:=&fakeLiveGame{
-		descriptor:g.descriptor,id:g.id,version:g.version,
-		publicState:append([]byte(nil),g.publicState...),
-		privateState:make(map[uint8][]byte),
+	clone := &fakeLiveGame{
+		descriptor: g.descriptor, id: g.id, version: g.version,
+		publicState:  append([]byte(nil), g.publicState...),
+		privateState: make(map[uint8][]byte),
 	}
-	for k,v:=range g.privateState {clone.privateState[k]=append([]byte(nil),v...)}
-	return clone,nil
+	for k, v := range g.privateState {
+		clone.privateState[k] = append([]byte(nil), v...)
+	}
+	return clone, nil
 }
 
 func (g *fakeLiveGame) Descriptor() gamecore.Descriptor { return g.descriptor }
@@ -423,28 +425,50 @@ func TestConcurrentTerminalCommandsCannotUseRemovedEntry(t *testing.T) {
 }
 
 func TestCommittedRuntimePublishesOnlyAfterDurableAck(t *testing.T) {
-	directory,err:=gamecore.NewLiveDirectory(&memoryArchive{})
-	if err!=nil{t.Fatal(err)}
-	game:=newFakeLiveGame(t,"durable-1",3)
-	if err:=directory.Add(game.Descriptor(),game);err!=nil{t.Fatal(err)}
-	writes:=0
-	outcome,next,err:=directory.ApplyCommitted(game.InstanceID(),gamecore.Command{ActorPosition:1,ExpectedVersion:0,Payload:[]byte("bid")},func(out gamecore.CommandOutcome)error{
+	directory, err := gamecore.NewLiveDirectory(&memoryArchive{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	game := newFakeLiveGame(t, "durable-1", 3)
+	if err := directory.Add(game.Descriptor(), game); err != nil {
+		t.Fatal(err)
+	}
+	writes := 0
+	outcome, next, err := directory.ApplyCommitted(game.InstanceID(), gamecore.Command{ActorPosition: 1, ExpectedVersion: 0, Payload: []byte("bid")}, func(out gamecore.CommandOutcome) error {
 		writes++
-		if out.Version!=1 || game.ApplyCalls()!=0 {t.Fatal("candidate leaked before commit")}
+		if out.Version != 1 || game.ApplyCalls() != 0 {
+			t.Fatal("candidate leaked before commit")
+		}
 		return nil
 	})
-	if err!=nil || outcome.Version!=1 || next==nil || writes!=1 {t.Fatalf("outcome=%+v writes=%d err=%v",outcome,writes,err)}
-	view,err:=directory.View(game.InstanceID(),gamecore.ViewRequest{PublicOnly:true})
-	if err!=nil || view.Version!=1 || game.ApplyCalls()!=0 {t.Fatalf("old game was mutated or view stale: %+v %v",view,err)}
+	if err != nil || outcome.Version != 1 || next == nil || writes != 1 {
+		t.Fatalf("outcome=%+v writes=%d err=%v", outcome, writes, err)
+	}
+	view, err := directory.View(game.InstanceID(), gamecore.ViewRequest{PublicOnly: true})
+	if err != nil || view.Version != 1 || game.ApplyCalls() != 0 {
+		t.Fatalf("old game was mutated or view stale: %+v %v", view, err)
+	}
 }
 func TestCommittedRuntimeQuarantinesAmbiguousWriteAndNeverExposesCandidate(t *testing.T) {
-	directory,err:=gamecore.NewLiveDirectory(&memoryArchive{})
-	if err!=nil{t.Fatal(err)}
-	game:=newFakeLiveGame(t,"durable-2",3)
-	if err:=directory.Add(game.Descriptor(),game);err!=nil{t.Fatal(err)}
-	_,_,err=directory.ApplyCommitted(game.InstanceID(),gamecore.Command{ActorPosition:1,ExpectedVersion:0,Payload:[]byte("bid")},func(gamecore.CommandOutcome)error{return errors.New("unknown COMMIT result")})
-	if err==nil{t.Fatal("unknown commit acknowledged")}
-	if game.ApplyCalls()!=0 {t.Fatal("memory state mutated before commit")}
-	if _,err:=directory.View(game.InstanceID(),gamecore.ViewRequest{PublicOnly:true});err==nil{t.Fatal("ambiguous version visible")}
-	if _,err:=directory.Apply(game.InstanceID(),gamecore.Command{ActorPosition:1,Payload:[]byte("bid")});err==nil{t.Fatal("unfenced operation after ambiguity")}
+	directory, err := gamecore.NewLiveDirectory(&memoryArchive{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	game := newFakeLiveGame(t, "durable-2", 3)
+	if err := directory.Add(game.Descriptor(), game); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = directory.ApplyCommitted(game.InstanceID(), gamecore.Command{ActorPosition: 1, ExpectedVersion: 0, Payload: []byte("bid")}, func(gamecore.CommandOutcome) error { return errors.New("unknown COMMIT result") })
+	if err == nil {
+		t.Fatal("unknown commit acknowledged")
+	}
+	if game.ApplyCalls() != 0 {
+		t.Fatal("memory state mutated before commit")
+	}
+	if _, err := directory.View(game.InstanceID(), gamecore.ViewRequest{PublicOnly: true}); err == nil {
+		t.Fatal("ambiguous version visible")
+	}
+	if _, err := directory.Apply(game.InstanceID(), gamecore.Command{ActorPosition: 1, Payload: []byte("bid")}); err == nil {
+		t.Fatal("unfenced operation after ambiguity")
+	}
 }

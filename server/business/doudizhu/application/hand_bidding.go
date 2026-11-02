@@ -9,9 +9,9 @@ import (
 )
 
 func (s *Service) SubmitLiveHandBidWithID(ctx context.Context, actor domain.AccountID,
-	handID domain.HandID, commandID string, expectedLiveVersion uint64,score bidding.Score,
-)(LiveHandCommandResult,error){
-	return s.submitLiveBid(ctx,actor,handID,commandID,expectedLiveVersion,score)
+	handID domain.HandID, commandID string, expectedLiveVersion uint64, score bidding.Score,
+) (LiveHandCommandResult, error) {
+	return s.submitLiveBid(ctx, actor, handID, commandID, expectedLiveVersion, score)
 }
 
 func (s *Service) SubmitLiveHandBid(
@@ -21,11 +21,11 @@ func (s *Service) SubmitLiveHandBid(
 	expectedLiveVersion uint64,
 	score bidding.Score,
 ) (LiveHandCommandResult, error) {
-	return s.submitLiveBid(ctx,actor,handID,"",expectedLiveVersion,score)
+	return s.submitLiveBid(ctx, actor, handID, "", expectedLiveVersion, score)
 }
-func (s *Service) submitLiveBid(ctx context.Context,actor domain.AccountID,handID domain.HandID,
-	commandID string,expectedLiveVersion uint64,score bidding.Score,
-)(LiveHandCommandResult,error){
+func (s *Service) submitLiveBid(ctx context.Context, actor domain.AccountID, handID domain.HandID,
+	commandID string, expectedLiveVersion uint64, score bidding.Score,
+) (LiveHandCommandResult, error) {
 	snapshot, err := s.authorizeHandViewer(ctx, actor, handID)
 	if err != nil {
 		return LiveHandCommandResult{}, err
@@ -36,15 +36,17 @@ func (s *Service) submitLiveBid(ctx context.Context,actor domain.AccountID,handI
 	if expectedLiveVersion == 0 || !score.Valid() {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: live bid version or score", ErrInvalidCommand)
 	}
-	if durable,ok:=s.liveHands.(interface{BidCommitted(context.Context,domain.HandID,domain.AccountID,string,uint64,bidding.Score)(LiveHandCommandResult,error)});ok {
-		if commandID=="" {
-			if enforce,yes:=s.liveHands.(interface{DurabilityEnforced()bool});yes && enforce.DurabilityEnforced() {
-				return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)
+	if durable, ok := s.liveHands.(interface {
+		BidCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64, bidding.Score) (LiveHandCommandResult, error)
+	}); ok {
+		if commandID == "" {
+			if enforce, yes := s.liveHands.(interface{ DurabilityEnforced() bool }); yes && enforce.DurabilityEnforced() {
+				return LiveHandCommandResult{}, fmt.Errorf("%w: missing durable live command ID", ErrInvalidCommand)
 			}
 			// Legacy in-memory test/runtime adapters never claim B durability.
-			return s.liveHands.Bid(ctx,snapshot.ID,actor,expectedLiveVersion,score)
+			return s.liveHands.Bid(ctx, snapshot.ID, actor, expectedLiveVersion, score)
 		}
-		return durable.BidCommitted(ctx,snapshot.ID,actor,commandID,expectedLiveVersion,score)
+		return durable.BidCommitted(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, score)
 	}
 	return s.liveHands.Bid(ctx, snapshot.ID, actor, expectedLiveVersion, score)
 }

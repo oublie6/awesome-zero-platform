@@ -14,8 +14,8 @@ import (
 
 func (c *LiveHandCoordinator) BidCommitted(ctx context.Context, handID domain.HandID,
 	actor domain.AccountID, commandID string, expectedVersion uint64, score bidding.Score,
-)(application.LiveHandCommandResult,error){
-	return c.bidInternal(ctx,handID,actor,commandID,expectedVersion,score)
+) (application.LiveHandCommandResult, error) {
+	return c.bidInternal(ctx, handID, actor, commandID, expectedVersion, score)
 }
 
 func (c *LiveHandCoordinator) Bid(
@@ -25,11 +25,11 @@ func (c *LiveHandCoordinator) Bid(
 	expectedVersion uint64,
 	score bidding.Score,
 ) (application.LiveHandCommandResult, error) {
-	return c.bidInternal(ctx,handID,actor,"",expectedVersion,score)
+	return c.bidInternal(ctx, handID, actor, "", expectedVersion, score)
 }
-func (c *LiveHandCoordinator) bidInternal(ctx context.Context,handID domain.HandID,actor domain.AccountID,
-	commandID string,expectedVersion uint64,score bidding.Score,
-) (application.LiveHandCommandResult,error) {
+func (c *LiveHandCoordinator) bidInternal(ctx context.Context, handID domain.HandID, actor domain.AccountID,
+	commandID string, expectedVersion uint64, score bidding.Score,
+) (application.LiveHandCommandResult, error) {
 	game, err := c.game(ctx, handID)
 	if err != nil {
 		return application.LiveHandCommandResult{}, err
@@ -42,7 +42,7 @@ func (c *LiveHandCoordinator) bidInternal(ctx context.Context,handID domain.Hand
 	if err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("encode Doudizhu bid: %w", err)
 	}
-	outcome, err := c.applyLive(ctx,handID,actor,commandID,gamecore.Command{
+	outcome, err := c.applyLive(ctx, handID, actor, commandID, gamecore.Command{
 		ActorPosition:   position,
 		ExpectedVersion: expectedVersion,
 		Payload:         payload,

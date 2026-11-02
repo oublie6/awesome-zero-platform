@@ -63,8 +63,8 @@ type Game struct {
 	winnerSeat   uint8
 	settlement   *settlement.Result
 	terminal     bool
-	origin domain.HandSnapshot
-	history []gamecore.Command
+	origin       domain.HandSnapshot
+	history      []gamecore.Command
 }
 
 type BidCommand struct {
@@ -222,7 +222,7 @@ func New(snapshot domain.HandSnapshot, material gamecore.FairnessMaterial, artif
 	}
 	game := &Game{
 		id:         material.InstanceID,
-		origin: snapshot,
+		origin:     snapshot,
 		seats:      snapshot.Seats,
 		phase:      PhaseBidding,
 		version:    1,
@@ -258,31 +258,35 @@ func (g *Game) Apply(command gamecore.Command) (gamecore.CommandOutcome, error) 
 	}
 	if err == nil {
 		g.history = append(g.history, gamecore.Command{
-			ActorPosition:command.ActorPosition,ExpectedVersion:command.ExpectedVersion,
-			Payload:append([]byte(nil),command.Payload...),
+			ActorPosition: command.ActorPosition, ExpectedVersion: command.ExpectedVersion,
+			Payload: append([]byte(nil), command.Payload...),
 		})
 	}
-	return outcome,err
+	return outcome, err
 }
 
 // Fork rebuilds an isolated candidate from verified immutable genesis and
 // successfully applied commands; failed speculative mutations are never
 // published to the authoritative game.
-func (g *Game) CloneCandidate() (gamecore.LiveGame,error) { return g.Fork() }
+func (g *Game) CloneCandidate() (gamecore.LiveGame, error) { return g.Fork() }
 
-func (g *Game) Fork() (*Game,error) {
-	if g==nil || g.terminal {return nil,fmt.Errorf("%w: terminal game cannot be forked",gamecore.ErrInstanceNotFound)}
-	candidate,err:=New(g.origin,g.material.Clone(),g.artifact)
-	if err!=nil{return nil,err}
-	for _,command:=range g.history {
-		if _,err:=candidate.Apply(command);err!=nil {
-			return nil,fmt.Errorf("%w: replay command: %v",gamecore.ErrVerificationFailed,err)
+func (g *Game) Fork() (*Game, error) {
+	if g == nil || g.terminal {
+		return nil, fmt.Errorf("%w: terminal game cannot be forked", gamecore.ErrInstanceNotFound)
+	}
+	candidate, err := New(g.origin, g.material.Clone(), g.artifact)
+	if err != nil {
+		return nil, err
+	}
+	for _, command := range g.history {
+		if _, err := candidate.Apply(command); err != nil {
+			return nil, fmt.Errorf("%w: replay command: %v", gamecore.ErrVerificationFailed, err)
 		}
 	}
-	if candidate.version!=g.version || candidate.phase!=g.phase {
-		return nil,fmt.Errorf("%w: candidate replay diverged",gamecore.ErrVerificationFailed)
+	if candidate.version != g.version || candidate.phase != g.phase {
+		return nil, fmt.Errorf("%w: candidate replay diverged", gamecore.ErrVerificationFailed)
 	}
-	return candidate,nil
+	return candidate, nil
 }
 
 func (g *Game) applyBid(command gamecore.Command) (gamecore.CommandOutcome, error) {

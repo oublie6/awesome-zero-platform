@@ -9,14 +9,20 @@ import (
 
 func TestRoomQueryDoesNotLeakSeatsToNonMembers(t *testing.T) {
 	room, _, err := domain.NewRoom("private-room", "account-owner")
-	if err != nil { t.Fatal(err) }
-	if _, err := room.Join("account-second", room.Snapshot().Version); err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := room.Join("account-second", room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
 	store := newTestStore()
 	store.state.rooms["private-room"] = room.Snapshot()
 	store.state.sequences[testSequenceKey(domain.AggregateRoom, "private-room", "account-second")] = 13
-	service := &Service{store:store}
+	service := &Service{store: store}
 	member, err := service.GetRoomView(context.Background(), "account-second", "private-room")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !member.Member || len(member.Seats) != 3 || member.Occupied != 2 || member.Version != room.Snapshot().Version || member.LastClientSequence != 13 {
 		t.Fatalf("unexpected authorized view: %+v", member)
 	}
@@ -24,11 +30,17 @@ func TestRoomQueryDoesNotLeakSeatsToNonMembers(t *testing.T) {
 		t.Fatalf("wrong member seats: %+v", member.Seats)
 	}
 	outsider, err := service.GetRoomView(context.Background(), "account-third", "private-room")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	if outsider.Member || len(outsider.Seats) != 0 || outsider.ActiveHandID != "" ||
 		outsider.Version != member.Version || outsider.Occupied != 2 || outsider.LastClientSequence != 0 {
 		t.Fatalf("outsider received private room data: %+v", outsider)
 	}
-	if _, err := service.GetRoomView(context.Background(), "", "private-room"); err == nil { t.Fatal("anonymous query accepted") }
-	if _, err := service.GetRoomView(context.Background(), "account-third", " private-room"); err == nil { t.Fatal("malformed room accepted") }
+	if _, err := service.GetRoomView(context.Background(), "", "private-room"); err == nil {
+		t.Fatal("anonymous query accepted")
+	}
+	if _, err := service.GetRoomView(context.Background(), "account-third", " private-room"); err == nil {
+		t.Fatal("malformed room accepted")
+	}
 }

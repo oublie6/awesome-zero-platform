@@ -122,11 +122,11 @@ type FinalRecordArchive interface {
 }
 
 type liveEntry struct {
-	mu         sync.Mutex
-	game       LiveGame
-	descriptor Descriptor
-	pending    *FinalRecord
-	closed     bool
+	mu          sync.Mutex
+	game        LiveGame
+	descriptor  Descriptor
+	pending     *FinalRecord
+	closed      bool
 	quarantined bool
 }
 
@@ -217,59 +217,77 @@ func (d *LiveDirectory) Apply(id InstanceID, command Command) (CommandOutcome, e
 // ApplyCommitted computes an isolated candidate, durably records its accepted
 // transition, and only then publishes it. Any persistence ambiguity quarantines
 // this instance: the caller must use explicit fenced recovery before new writes.
-func (d *LiveDirectory) ApplyCommitted(id InstanceID, command Command, persist func(CommandOutcome) error) (CommandOutcome,LiveGame,error) {
-	if persist==nil{return CommandOutcome{},nil,fmt.Errorf("%w: missing durable commit",ErrInvalidArgument)}
-	entry,err:=d.entry(id)
-	if err!=nil{return CommandOutcome{},nil,err}
+func (d *LiveDirectory) ApplyCommitted(id InstanceID, command Command, persist func(CommandOutcome) error) (CommandOutcome, LiveGame, error) {
+	if persist == nil {
+		return CommandOutcome{}, nil, fmt.Errorf("%w: missing durable commit", ErrInvalidArgument)
+	}
+	entry, err := d.entry(id)
+	if err != nil {
+		return CommandOutcome{}, nil, err
+	}
 	entry.mu.Lock()
 	defer entry.mu.Unlock()
-	if entry.closed || entry.quarantined || entry.pending!=nil {
-		return CommandOutcome{},nil,fmt.Errorf("%w: hand not writable",ErrFinalizationPending)
+	if entry.closed || entry.quarantined || entry.pending != nil {
+		return CommandOutcome{}, nil, fmt.Errorf("%w: hand not writable", ErrFinalizationPending)
 	}
-	if command.ActorPosition<1 || command.ActorPosition>entry.descriptor.ParticipantCount() {
-		return CommandOutcome{},nil,fmt.Errorf("%w: actor position",ErrInvalidArgument)
+	if command.ActorPosition < 1 || command.ActorPosition > entry.descriptor.ParticipantCount() {
+		return CommandOutcome{}, nil, fmt.Errorf("%w: actor position", ErrInvalidArgument)
 	}
-	source,ok:=entry.game.(interface{ CloneCandidate() (LiveGame,error) })
-	if !ok{return CommandOutcome{},nil,fmt.Errorf("%w: immutable candidate required",ErrInvalidArgument)}
-	candidate,err:=source.CloneCandidate()
-	if err!=nil{return CommandOutcome{},nil,err}
-	command.Payload=cloneBytes(command.Payload)
-	outcome,err:=candidate.Apply(command)
-	if err!=nil{return CommandOutcome{},nil,err}
-	outcome.Payload=cloneBytes(outcome.Payload)
-	outcome.FinalPayload=cloneBytes(outcome.FinalPayload)
-	if !outcome.Terminal && len(outcome.FinalPayload)!=0 {
-		return CommandOutcome{},nil,fmt.Errorf("%w: inconsistent candidate terminal result",ErrVerificationFailed)
+	source, ok := entry.game.(interface{ CloneCandidate() (LiveGame, error) })
+	if !ok {
+		return CommandOutcome{}, nil, fmt.Errorf("%w: immutable candidate required", ErrInvalidArgument)
+	}
+	candidate, err := source.CloneCandidate()
+	if err != nil {
+		return CommandOutcome{}, nil, err
+	}
+	command.Payload = cloneBytes(command.Payload)
+	outcome, err := candidate.Apply(command)
+	if err != nil {
+		return CommandOutcome{}, nil, err
+	}
+	outcome.Payload = cloneBytes(outcome.Payload)
+	outcome.FinalPayload = cloneBytes(outcome.FinalPayload)
+	if !outcome.Terminal && len(outcome.FinalPayload) != 0 {
+		return CommandOutcome{}, nil, fmt.Errorf("%w: inconsistent candidate terminal result", ErrVerificationFailed)
 	}
 	var final *FinalRecord
 	if outcome.Terminal {
-		record,err:=NewFinalRecord(id,entry.descriptor,FinalStatusCompleted,outcome.Version,outcome.FinalPayload)
-		if err!=nil{return CommandOutcome{},nil,err}
-		final=&record
+		record, err := NewFinalRecord(id, entry.descriptor, FinalStatusCompleted, outcome.Version, outcome.FinalPayload)
+		if err != nil {
+			return CommandOutcome{}, nil, err
+		}
+		final = &record
 	}
-	if err:=persist(outcome);err!=nil {
-		entry.quarantined=true
-		return CommandOutcome{},nil,errors.Join(ErrVerificationFailed,err)
+	if err := persist(outcome); err != nil {
+		entry.quarantined = true
+		return CommandOutcome{}, nil, errors.Join(ErrVerificationFailed, err)
 	}
-	entry.game=candidate
-	if final!=nil {
-		entry.pending=final
-		if err:=d.archivePendingLocked(id,entry);err!=nil {return outcome,candidate,err}
+	entry.game = candidate
+	if final != nil {
+		entry.pending = final
+		if err := d.archivePendingLocked(id, entry); err != nil {
+			return outcome, candidate, err
+		}
 	}
-	return outcome,candidate,nil
+	return outcome, candidate, nil
 }
 
 // ArchiveRecoveredFinal writes a replay-verified terminal result using the
 // same idempotent final archive as normal completion, without exposing a
 // terminated instance to new commands or clients.
-func (d *LiveDirectory) ArchiveRecoveredFinal(game LiveGame, outcome CommandOutcome) (FinalRecord,error) {
-	if d==nil || d.archive==nil || game==nil || !outcome.Terminal || len(outcome.FinalPayload)==0 {
-		return FinalRecord{},fmt.Errorf("%w: invalid recovered final record",ErrInvalidArgument)
+func (d *LiveDirectory) ArchiveRecoveredFinal(game LiveGame, outcome CommandOutcome) (FinalRecord, error) {
+	if d == nil || d.archive == nil || game == nil || !outcome.Terminal || len(outcome.FinalPayload) == 0 {
+		return FinalRecord{}, fmt.Errorf("%w: invalid recovered final record", ErrInvalidArgument)
 	}
-	record,err:=NewFinalRecord(game.InstanceID(),game.Descriptor(),FinalStatusCompleted,outcome.Version,outcome.FinalPayload)
-	if err!=nil{return FinalRecord{},err}
-	if err:=d.archive.Archive(record);err!=nil{return record,errors.Join(ErrArchiveFailed,err)}
-	return record,nil
+	record, err := NewFinalRecord(game.InstanceID(), game.Descriptor(), FinalStatusCompleted, outcome.Version, outcome.FinalPayload)
+	if err != nil {
+		return FinalRecord{}, err
+	}
+	if err := d.archive.Archive(record); err != nil {
+		return record, errors.Join(ErrArchiveFailed, err)
+	}
+	return record, nil
 }
 
 func (d *LiveDirectory) View(id InstanceID, request ViewRequest) (GameView, error) {

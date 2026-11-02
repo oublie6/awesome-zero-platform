@@ -144,7 +144,7 @@ func (b *backendStub) durable(command application.Command) (application.CommandR
 	return application.CommandResult{Version: application.CommandResultV1, CommandID: command.CommandID, Accepted: true, AggregateType: command.AggregateType, AggregateID: command.AggregateID, AggregateVersion: command.ExpectedVersion + 1, Events: []application.EventRef{}}, nil
 }
 func (b *backendStub) GetRoomView(_ context.Context, actor domain.AccountID, id domain.RoomID) (application.RoomView, error) {
-	return application.RoomView{RoomID:string(id),Version:3,Status:domain.RoomWaitingPlayers,Occupied:1,Member:actor=="account-1"},nil
+	return application.RoomView{RoomID: string(id), Version: 3, Status: domain.RoomWaitingPlayers, Occupied: 1, Member: actor == "account-1"}, nil
 }
 
 func (b *backendStub) CreateRoom(_ context.Context, _ domain.AccountID, c application.Command) (application.CommandResult, error) {

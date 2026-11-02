@@ -3,8 +3,8 @@ package mysqlstore
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
@@ -60,11 +60,17 @@ WHERE room_id = ?`, id); err != nil {
 }
 
 func (s *Store) RoomClientSequence(ctx context.Context, roomID domain.RoomID, actor domain.AccountID) (uint64, error) {
-	var row struct { Sequence uint64 `db:"last_sequence"` }
+	var row struct {
+		Sequence uint64 `db:"last_sequence"`
+	}
 	err := s.goZero.QueryRowCtx(ctx, &row, `
 SELECT last_sequence FROM doudizhu_client_sequences
 WHERE aggregate_type = 'room' AND aggregate_id = ? AND actor_account_id = ?`, string(roomID), string(actor))
-	if errors.Is(err, sql.ErrNoRows) { return 0, nil }
-	if err != nil { return 0, fmt.Errorf("query room client sequence: %w", err) }
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("query room client sequence: %w", err)
+	}
 	return row.Sequence, nil
 }

@@ -11,19 +11,19 @@ import (
 // RoomView is an authenticated, server-authoritative lobby projection.
 // Non-members can see only a limited invite-code preview, never player identities.
 type RoomView struct {
-	RoomID       string           `json:"roomId"`
-	Version      uint64           `json:"version"`
-	Status       domain.RoomStatus `json:"status"`
-	Occupied     int              `json:"occupied"`
-	Member       bool             `json:"member"`
-	LastClientSequence uint64 `json:"lastClientSequence"`
-	Seats        []RoomSeatView   `json:"seats,omitempty"`
-	ActiveHandID string           `json:"activeHandId,omitempty"`
+	RoomID             string            `json:"roomId"`
+	Version            uint64            `json:"version"`
+	Status             domain.RoomStatus `json:"status"`
+	Occupied           int               `json:"occupied"`
+	Member             bool              `json:"member"`
+	LastClientSequence uint64            `json:"lastClientSequence"`
+	Seats              []RoomSeatView    `json:"seats,omitempty"`
+	ActiveHandID       string            `json:"activeHandId,omitempty"`
 }
 type RoomSeatView struct {
-	Position uint8  `json:"position"`
+	Position  uint8  `json:"position"`
 	AccountID string `json:"accountId,omitempty"`
-	Ready bool `json:"ready"`
+	Ready     bool   `json:"ready"`
 }
 
 // GetRoomView is intentionally a read path: it cannot resolve ambiguous writes
@@ -44,7 +44,9 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 		return RoomView{}, fmt.Errorf("%w: room query store unavailable", ErrInvalidCommand)
 	}
 	snapshot, err := reader.LoadRoom(ctx, roomID)
-	if err != nil { return RoomView{}, err }
+	if err != nil {
+		return RoomView{}, err
+	}
 	if snapshot.ID != roomID {
 		return RoomView{}, fmt.Errorf("%w: room identity mismatch", ErrInvalidCommand)
 	}
@@ -52,14 +54,22 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 		return RoomView{}, fmt.Errorf("restore queried room: %w", err)
 	}
 	view := RoomView{RoomID: string(roomID), Version: snapshot.Version, Status: snapshot.Status}
-	seqReader, ok := s.store.(interface { RoomClientSequence(context.Context, domain.RoomID, domain.AccountID) (uint64,error) })
-	if !ok { return RoomView{}, fmt.Errorf("%w: room sequence query unavailable", ErrInvalidCommand) }
+	seqReader, ok := s.store.(interface {
+		RoomClientSequence(context.Context, domain.RoomID, domain.AccountID) (uint64, error)
+	})
+	if !ok {
+		return RoomView{}, fmt.Errorf("%w: room sequence query unavailable", ErrInvalidCommand)
+	}
 	view.LastClientSequence, err = seqReader.RoomClientSequence(ctx, roomID, actor)
-	if err != nil { return RoomView{}, err }
+	if err != nil {
+		return RoomView{}, err
+	}
 	for _, seat := range snapshot.Seats {
 		if seat.AccountID != "" {
 			view.Occupied++
-			if seat.AccountID == actor { view.Member = true }
+			if seat.AccountID == actor {
+				view.Member = true
+			}
 		}
 	}
 	if view.Member {
