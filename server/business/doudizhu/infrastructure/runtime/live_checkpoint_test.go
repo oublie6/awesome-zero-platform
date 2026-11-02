@@ -151,7 +151,7 @@ func TestRecoveryCheckpointRequiresExactCommittedStateAndPrivateViews(t *testing
 	}
 	record := mysqlstore.LiveAction{HandID: checkpoint.HandID, Version: 2, Epoch: 2,
 		CommandID: "bid-id", Actor: checkpoint.Receipts[0].Actor,
-		ActorPosition: first, ExpectedVersion: 1, Payload: command.Payload, ResultDigest: sha256.Sum256(digestInput)}
+		ActorPosition: first, ExpectedVersion: 1, Payload: []byte(`{"score": 3, "v": "doudizhu-live-bid-command-v1"}`), ResultDigest: sha256.Sum256(digestInput)}
 	recovered, err := restoreRecoveryCheckpoint(genesis, mysqlstore.LiveCheckpoint{Version: 2, Payload: raw}, []mysqlstore.LiveAction{record})
 	if err != nil || recovered["bid-id"].outcome.Version != 2 {
 		t.Fatalf("valid checkpoint rejected: %v %#v", err, recovered)
