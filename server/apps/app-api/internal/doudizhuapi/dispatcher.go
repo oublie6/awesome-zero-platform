@@ -269,7 +269,13 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			Score bidding.Score `json:"score"`
 		}
 		if err = decodePayload(request.Payload, &payload); err == nil {
-			live, err = d.backend.SubmitLiveHandBid(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion, payload.Score)
+			if durable,ok:=d.backend.(interface {
+				SubmitLiveHandBidWithID(context.Context,domain.AccountID,domain.HandID,string,uint64,bidding.Score)(application.LiveHandCommandResult,error)
+			});ok {
+				live,err=durable.SubmitLiveHandBidWithID(ctx,actor,domain.HandID(request.AggregateID),request.RequestID,request.ExpectedVersion,payload.Score)
+			} else {
+				live, err = d.backend.SubmitLiveHandBid(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion, payload.Score)
+			}
 			if err == nil {
 				terminal, err = d.lifecycle.AfterBid(ctx, actor, domain.HandID(request.AggregateID), live)
 			}
@@ -279,14 +285,26 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			Cards []string `json:"cards"`
 		}
 		if err = decodePayload(request.Payload, &payload); err == nil {
-			live, err = d.backend.SubmitLiveHandPlay(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion, payload.Cards)
+			if durable,ok:=d.backend.(interface {
+				SubmitLiveHandPlayWithID(context.Context,domain.AccountID,domain.HandID,string,uint64,[]string)(application.LiveHandCommandResult,error)
+			});ok {
+				live,err=durable.SubmitLiveHandPlayWithID(ctx,actor,domain.HandID(request.AggregateID),request.RequestID,request.ExpectedVersion,payload.Cards)
+			} else {
+				live, err = d.backend.SubmitLiveHandPlay(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion, payload.Cards)
+			}
 			if err == nil {
 				err = d.lifecycle.AfterPlay(ctx, actor, domain.HandID(request.AggregateID), live)
 			}
 		}
 	case TypeHandPass:
 		if err = requireEmptyPayload(request.Payload); err == nil {
-			live, err = d.backend.SubmitLiveHandPass(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion)
+			if durable,ok:=d.backend.(interface {
+				SubmitLiveHandPassWithID(context.Context,domain.AccountID,domain.HandID,string,uint64)(application.LiveHandCommandResult,error)
+			});ok {
+				live,err=durable.SubmitLiveHandPassWithID(ctx,actor,domain.HandID(request.AggregateID),request.RequestID,request.ExpectedVersion)
+			} else {
+				live, err = d.backend.SubmitLiveHandPass(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion)
+			}
 			if err == nil {
 				err = d.lifecycle.AfterPlay(ctx, actor, domain.HandID(request.AggregateID), live)
 			}
