@@ -25,6 +25,7 @@ func TestLiveJournalFenceContiguousLogAndProtectedSeedInMySQL(t *testing.T) {
 	ctx := context.Background()
 	id := domain.HandID(fmt.Sprintf("live-journal-%d", time.Now().UnixNano()))
 	defer func() {
+		db.Exec("DELETE FROM doudizhu_live_checkpoints WHERE hand_id=?", id)
 		db.Exec("DELETE FROM doudizhu_live_actions WHERE hand_id=?", id)
 		db.Exec("DELETE FROM doudizhu_live_writers WHERE hand_id=?", id)
 		db.Exec("DELETE FROM doudizhu_protected_server_seeds WHERE hand_id=?", id)
@@ -133,11 +134,46 @@ func TestLiveJournalFenceContiguousLogAndProtectedSeedInMySQL(t *testing.T) {
 			}
 		})
 	}
+	// Authenticated encrypted checkpoint stays recoverable across a new
+	// journal instance, and never persists a private card/seed in cleartext.
+	if err := j.ConfigureCheckpoints(key); err != nil {
+		t.Fatal(err)
+	}
+	private := []byte(`{"v":"doudizhu-live-recovery-checkpoint-v1","private":"S3CRET_CARDS"}`)
+	if err := j.SaveCheckpoint(ctx, id, epoch, 2, private); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := j.LoadCheckpoint(ctx, id)
+	if err != nil || loaded.Version != 2 || !bytes.Equal(loaded.Payload, private) {
+		t.Fatalf("encrypted checkpoint failed round-trip: %+v %v", loaded, err)
+	}
+	var ciphertext []byte
+	if err := db.QueryRowContext(ctx, "SELECT ciphertext FROM doudizhu_live_checkpoints WHERE hand_id=?", id).Scan(&ciphertext); err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(ciphertext, []byte("S3CRET_CARDS")) {
+		t.Fatal("private checkpoint payload persisted in plaintext")
+	}
+	if _, err := db.ExecContext(ctx, "UPDATE doudizhu_live_checkpoints SET ciphertext=REPEAT(0x00,64) WHERE hand_id=?", id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := j.LoadCheckpoint(ctx, id); !errors.Is(err, mysqlstore.ErrLiveReplayIntegrity) {
+		t.Fatalf("tampered checkpoint accepted: %v", err)
+	}
+	if _, err := db.ExecContext(ctx, "UPDATE doudizhu_live_checkpoints SET ciphertext=? WHERE hand_id=?", ciphertext, id); err != nil {
+		t.Fatal(err)
+	}
+	if err := j.SaveCheckpoint(ctx, id, epoch, 3, private); !errors.Is(err, mysqlstore.ErrLiveWatermarkConflict) {
+		t.Fatalf("future checkpoint accepted: %v", err)
+	}
 	newEpoch, watermark, _, err := j.Acquire(ctx, id)
 	if err != nil || newEpoch != 3 || watermark != 2 {
 		t.Fatalf("second owner epoch=%d watermark=%d err=%v", newEpoch, watermark, err)
 	}
 	next := gamecore.Command{ActorPosition: 2, ExpectedVersion: 2, Payload: []byte(`{"v":"doudizhu-live-pass-command-v1"}`)}
+	if err := j.SaveCheckpoint(ctx, id, epoch, 2, private); !errors.Is(err, mysqlstore.ErrLiveWriterFenced) {
+		t.Fatalf("fenced owner overwrote protected checkpoint: %v", err)
+	}
 	if err := j.Append(ctx, id, epoch, "stale", "player-2", next, gamecore.CommandOutcome{Version: 3, Payload: []byte(`{"ok":true}`)}); !errors.Is(err, mysqlstore.ErrLiveWriterFenced) {
 		t.Fatalf("old owner not fenced: %v", err)
 	}
