@@ -30,6 +30,7 @@ test('join from trusted version and do not expose mutable room state',async()=>{
  assert.throws(()=>{old.version=99},TypeError)
  await room.leave()
  assert.equal(calls[1].expectedVersion,6)
+ assert.equal(room.state,null)
 })
 test('explicit durable rejection does not mutate confirmed version',async()=>{
  const {room,api}=fixture()
@@ -48,8 +49,11 @@ test('unknown transport outcome is not converted to confirmed state and sequence
  await assert.rejects(room.create('r'),/network timeout/)
  assert.equal(room.state,null)
  fail=false
- await room.create('r')
+ await assert.rejects(room.create('r'),/reconcile/)
+ room.restoreTrustedRoom('r',1)
+ await room.ready(true)
  assert.equal(calls[1].clientSeq,2)
+ assert.equal(room.state.version,2)
 })
 test('reject mismatched durable confirmation',async()=>{
  const {room,api}=fixture()
