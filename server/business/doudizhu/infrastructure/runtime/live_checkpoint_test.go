@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -138,5 +139,96 @@ func TestRecoveryCheckpointRequiresExactCommittedStateAndPrivateViews(t *testing
 	forged.ResultDigest[0]^=1
 	if _,err:=restoreRecoveryCheckpoint(newRecoveryCheckpointGame(t),mysqlstore.LiveCheckpoint{Version:2,Payload:raw},[]mysqlstore.LiveAction{forged});!errors.Is(err,gamecore.ErrVerificationFailed) {
 		t.Fatalf("forged committed result was accepted: %v",err)
+	}
+}
+
+func TestThreePlayerCheckpointRestoresFullGameAndFinalEvidence(t *testing.T) {
+	live := newRecoveryCheckpointGame(t)
+	restored := newRecoveryCheckpointGame(t)
+	var journal []mysqlstore.LiveAction
+	var receipts []checkpointReceipt
+	var sealedCheckpoint []byte
+	var completed gamecore.CommandOutcome
+
+	for {
+		publicView, err := live.View(gamecore.ViewRequest{PublicOnly: true})
+		if err != nil { t.Fatal(err) }
+		var state livehand.PublicView
+		if err := json.Unmarshal(publicView.Payload, &state); err != nil { t.Fatal(err) }
+		var seat uint8
+		var payload []byte
+		switch state.Phase {
+		case livehand.PhaseBidding:
+			seat = state.Bidding.FirstBidder
+			payload, err = json.Marshal(livehand.BidCommand{Version: livehand.BidCommandVersion, Score: 3})
+		case livehand.PhasePlaying:
+			seat = state.PlayingSeat
+			if seat == state.LandlordSeat {
+				view, viewErr := live.View(gamecore.ViewRequest{ViewerPosition: seat})
+				if viewErr != nil { t.Fatal(viewErr) }
+				var own livehand.PrivateView
+				if err := json.Unmarshal(view.Payload, &own); err != nil { t.Fatal(err) }
+				if len(own.Cards)==0 { t.Fatal("landlord ran out of cards before final action") }
+				payload, err = json.Marshal(livehand.PlayCommand{Version: livehand.PlayCommandVersion, Cards: []string{own.Cards[0]}})
+			} else {
+				payload, err = json.Marshal(livehand.PassCommand{Version: livehand.PassCommandVersion})
+			}
+		default:
+			t.Fatalf("unexpected pre-terminal phase %s", state.Phase)
+		}
+		if err != nil { t.Fatal(err) }
+		if seat < 1 || seat > 3 { t.Fatalf("invalid active seat %d", seat) }
+		command := gamecore.Command{ActorPosition: seat, ExpectedVersion: uint64(len(journal)+1), Payload: payload}
+		outcome, err := live.Apply(command)
+		if err != nil { t.Fatalf("action %d: %v", len(journal), err) }
+		id := fmt.Sprintf("three-player-command-%d", len(journal)+1)
+		actor := domain.AccountID(fmt.Sprintf("player-%d", seat))
+		encoded, err := json.Marshal(outcome)
+		if err != nil { t.Fatal(err) }
+		journal = append(journal, mysqlstore.LiveAction{
+			HandID: domain.HandID(live.InstanceID()), Version: outcome.Version, Epoch: 3,
+			CommandID: id, Actor: actor, ActorPosition: seat,
+			ExpectedVersion: command.ExpectedVersion, Payload: payload,
+			ResultDigest: sha256.Sum256(encoded),
+		})
+		receipts = append(receipts, checkpointReceipt{CommandID:id,Actor:actor,Command:command,Outcome:outcome})
+		if outcome.Version == 33 {
+			pubHash, privHashes, err := checkpointViewDigests(live)
+			if err != nil { t.Fatal(err) }
+			state := recoveryCheckpoint{Version:liveRecoveryCheckpointV1,
+				HandID:domain.HandID(live.InstanceID()),StateVersion:outcome.Version,
+				PublicDigest:pubHash,PrivateDigests:privHashes,
+				Receipts:append([]checkpointReceipt(nil),receipts...)}
+			sealedCheckpoint, err = json.Marshal(state)
+			if err != nil { t.Fatal(err) }
+		}
+		if outcome.Terminal {
+			completed = outcome
+			break
+		}
+		if len(journal)>80 {t.Fatal("three-player game never reached settlement")}
+	}
+	if completed.Version != 60 || len(completed.FinalPayload)==0 || len(sealedCheckpoint)==0 {
+		t.Fatalf("game/backup incomplete: version=%d actions=%d checkpoint=%d",completed.Version,len(journal),len(sealedCheckpoint))
+	}
+	recoveredReceipts, err := restoreRecoveryCheckpoint(restored,
+		mysqlstore.LiveCheckpoint{Version:33, Payload:sealedCheckpoint},journal)
+	if err != nil || len(recoveredReceipts)!=32 {
+		t.Fatalf("checkpoint restore error %v, receipts=%d",err,len(recoveredReceipts))
+	}
+	for _, entry := range journal[32:] {
+		outcome, err := restored.Apply(gamecore.Command{ActorPosition:entry.ActorPosition,
+			ExpectedVersion:entry.ExpectedVersion,Payload:entry.Payload})
+		if err != nil { t.Fatalf("suffix replay version %d: %v",entry.Version,err) }
+		encoded, err := json.Marshal(outcome)
+		if err!=nil || sha256.Sum256(encoded)!=entry.ResultDigest {
+			t.Fatalf("suffix result divergence at version %d: %v", entry.Version,err)
+		}
+		if entry.Version==completed.Version && string(outcome.FinalPayload)!=string(completed.FinalPayload) {
+			t.Fatal("checkpoint recovery changed authoritative terminal evidence")
+		}
+	}
+	if restored.Phase()!=livehand.PhaseCompleted {
+		t.Fatal("replayed terminal hand was not completed")
 	}
 }
