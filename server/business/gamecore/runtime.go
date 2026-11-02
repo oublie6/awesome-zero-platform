@@ -127,6 +127,7 @@ type liveEntry struct {
 	descriptor Descriptor
 	pending    *FinalRecord
 	closed     bool
+	quarantined bool
 }
 
 type LiveDirectory struct {
@@ -179,7 +180,7 @@ func (d *LiveDirectory) Apply(id InstanceID, command Command) (CommandOutcome, e
 	}
 	entry.mu.Lock()
 	defer entry.mu.Unlock()
-	if entry.closed {
+	if entry.closed || entry.quarantined {
 		return CommandOutcome{}, fmt.Errorf("%w: %s", ErrInstanceNotFound, id)
 	}
 	if entry.pending != nil {
@@ -213,6 +214,51 @@ func (d *LiveDirectory) Apply(id InstanceID, command Command) (CommandOutcome, e
 	return outcome, nil
 }
 
+// ApplyCommitted computes an isolated candidate, durably records its accepted
+// transition, and only then publishes it. Any persistence ambiguity quarantines
+// this instance: the caller must use explicit fenced recovery before new writes.
+func (d *LiveDirectory) ApplyCommitted(id InstanceID, command Command, persist func(CommandOutcome) error) (CommandOutcome,LiveGame,error) {
+	if persist==nil{return CommandOutcome{},nil,fmt.Errorf("%w: missing durable commit",ErrInvalidArgument)}
+	entry,err:=d.entry(id)
+	if err!=nil{return CommandOutcome{},nil,err}
+	entry.mu.Lock()
+	defer entry.mu.Unlock()
+	if entry.closed || entry.quarantined || entry.pending!=nil {
+		return CommandOutcome{},nil,fmt.Errorf("%w: hand not writable",ErrFinalizationPending)
+	}
+	if command.ActorPosition<1 || command.ActorPosition>entry.descriptor.ParticipantCount() {
+		return CommandOutcome{},nil,fmt.Errorf("%w: actor position",ErrInvalidArgument)
+	}
+	source,ok:=entry.game.(interface{ CloneCandidate() (LiveGame,error) })
+	if !ok{return CommandOutcome{},nil,fmt.Errorf("%w: immutable candidate required",ErrInvalidArgument)}
+	candidate,err:=source.CloneCandidate()
+	if err!=nil{return CommandOutcome{},nil,err}
+	command.Payload=cloneBytes(command.Payload)
+	outcome,err:=candidate.Apply(command)
+	if err!=nil{return CommandOutcome{},nil,err}
+	outcome.Payload=cloneBytes(outcome.Payload)
+	outcome.FinalPayload=cloneBytes(outcome.FinalPayload)
+	if !outcome.Terminal && len(outcome.FinalPayload)!=0 {
+		return CommandOutcome{},nil,fmt.Errorf("%w: inconsistent candidate terminal result",ErrVerificationFailed)
+	}
+	var final *FinalRecord
+	if outcome.Terminal {
+		record,err:=NewFinalRecord(id,entry.descriptor,FinalStatusCompleted,outcome.Version,outcome.FinalPayload)
+		if err!=nil{return CommandOutcome{},nil,err}
+		final=&record
+	}
+	if err:=persist(outcome);err!=nil {
+		entry.quarantined=true
+		return CommandOutcome{},nil,errors.Join(ErrVerificationFailed,err)
+	}
+	entry.game=candidate
+	if final!=nil {
+		entry.pending=final
+		if err:=d.archivePendingLocked(id,entry);err!=nil {return outcome,candidate,err}
+	}
+	return outcome,candidate,nil
+}
+
 func (d *LiveDirectory) View(id InstanceID, request ViewRequest) (GameView, error) {
 	entry, err := d.entry(id)
 	if err != nil {
@@ -220,7 +266,7 @@ func (d *LiveDirectory) View(id InstanceID, request ViewRequest) (GameView, erro
 	}
 	entry.mu.Lock()
 	defer entry.mu.Unlock()
-	if entry.closed {
+	if entry.closed || entry.quarantined {
 		return GameView{}, fmt.Errorf("%w: %s", ErrInstanceNotFound, id)
 	}
 	if !request.PublicOnly {
