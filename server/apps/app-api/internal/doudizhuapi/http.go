@@ -30,6 +30,7 @@ func Register(server *rest.Server, authService *authn.Service, dispatcher *Dispa
 	server.AddRoutes(rest.WithMiddleware(securityhttp.RequireAuthenticationMiddleware(authService), []rest.Route{
 		{Method: http.MethodPost, Path: "/v1/doudizhu/commands", Handler: commandHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/rooms/:roomId", Handler: roomViewHandler(dispatcher)},
+		{Method: http.MethodPost, Path: "/v1/doudizhu/hands/:handId/reveal-context", Handler: revealContextHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/public", Handler: publicViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/private", Handler: privateViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/evidence", Handler: evidenceHandler(dispatcher)},
@@ -76,6 +77,26 @@ func roomViewHandler(dispatcher *Dispatcher) http.HandlerFunc {
 			return
 		}
 		platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), result))
+	}
+}
+
+// A short-lived server-MACed AAD context is issued only for the authenticated,
+// already-committed seat of a fairness-revealing hand.
+func revealContextHandler(dispatcher *Dispatcher) http.HandlerFunc {
+	return func(w http.ResponseWriter,r *http.Request){
+		actor,ok:=authenticatedActor(r)
+		if !ok {platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("authentication required"));return}
+		handID:=domain.HandID(pathvar.Vars(r)["handId"])
+		if handID=="" || len(handID)>128 || handID!=domain.HandID(strings.TrimSpace(string(handID))) {
+			platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid handId"));return
+		}
+		var request RevealContextRequest
+		if err:=decodeHTTPBody(r,&request);err!=nil {
+			platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid reveal context request").WithCause(err));return
+		}
+		result,err:=dispatcher.IssueRevealContext(r.Context(),actor,handID,request)
+		if err!=nil {platformresponse.WriteError(r.Context(),w,mapHTTPError(err));return}
+		platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),result))
 	}
 }
 
