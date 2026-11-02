@@ -81,8 +81,11 @@ func TestSignedRevealContextMatchesGoAADAndRejectsTamper(t *testing.T) {
 	}
 	wire.RevealContext = &got.Ticket
 	d.clock = fixedClock{now: time.UnixMilli(got.Ticket.Claims.ExpiresAt)}
-	if _, _, err := d.verifyRevealContext("account-1", wire); err == nil {
-		t.Fatal("expired ticket accepted")
+	// The signed context remains authentic after expiry for exact receipt
+	// replay; the application's ClaimCommand/validateFreshness path still
+	// rejects first-time mutations with this expired command timestamp.
+	if _, _, err := d.verifyRevealContext("account-1", wire); err != nil {
+		t.Fatalf("expired exact-replay ticket lost authentication: %v", err)
 	}
 }
 func TestRevealContextMustBeEnabledAndBoundToAuthorizedActor(t *testing.T) {
