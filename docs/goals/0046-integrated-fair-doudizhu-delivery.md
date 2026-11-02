@@ -61,3 +61,26 @@ The current implementation checkpoint includes:
 - Added dedicated metadata/epoch validation unit tests and real-MySQL corruption checks. Tampered log rows must fail closed with `ErrLiveReplayIntegrity`.
 - Added real child-process SIGKILL integration coverage around the journal boundary: kill before append, kill immediately after successful durable append, read committed action after process loss, acquire a higher owner epoch, reject the stale writer and admit the successor. This does **not** yet exercise the complete Cocos/Go three-player gameplay recovery or every COMMIT ambiguity.
 - Source checkpoint `f6e9b65fd3cb664a69f9eba230ef1010e59c91aa`; automated CI is still to be confirmed on this exact revision. No Codex final product acceptance has been requested. Goal remains **in_progress**.
+
+
+## Development checkpoint — 2026-11-02 full encrypted recovery prefix and reconnect integration (final CI pending)
+
+This checkpoint supersedes the older statements above describing checkpoints, accepted request-ID receipts and server-issued reveal AAD as *unimplemented*. Those statements are preserved as historical snapshots, not today's source status.
+
+**Implemented in source (not independently accepted):**
+- `doudizhu_live_checkpoints` schema and independently derived AES-256-GCM key; hand/version-bound AAD, protected private views, ciphertext/plaintext size limits, SHA-256 integrity, epoch-fenced monotonic save against the authoritative MySQL journal watermark.
+- Bounded asynchronous checkpoint writing (32-accepted-action interval, 8 concurrent checkpoint writes globally per process, 3-second bounded storage calls); a failed optional checkpoint cannot undo or falsely acknowledge a committed live action. Genesis+journal fallback remains available if no checkpoint exists; a corrupt checkpoint is rejected.
+- Versioned encrypted replay-prefix checkpoint with exact accepted command identities/results plus public and each seat's private-view digests. Recovery validates checkpoint rows against *every* committed MySQL action, replays the sealed prefix and ordered suffix, verifies deterministic outputs, and publishes no receipt until the full hand validates. This is an event-sourced **replayable checkpoint**, not an O(1) materialized in-memory-state restoration.
+- Real MySQL integration cases for encrypted payload non-disclosure, tampering, stale owner fences and future checkpoint watermark rejection. SIGKILL process tests cover pre-transaction, open uncommitted transaction, post-COMMIT survival, new owner acquisition and stale writer rejection. The open-transaction case demonstrates atomic rollback, not an arbitrary network-failure COMMIT outcome.
+- Real deterministic 3-player **Go rules** fixture: bidding to terminal version 60, protecting the midpoint version 33 and replaying through final settlement with exactly matching final evidence and private views. These are not three independently authenticated production clients.
+- Client authenticated reconnect and authoritative room-version/sequence and hand resync, with negative membership test. Cocos exposes explicit reconnect and exact pending fairness request retry. Room/table layout was adjusted for the expanded controls.
+
+**Open acceptance / not proven:**
+- End-to-end process-kill/restart of the entire app and actual three independently authenticated HTTPS/WSS clients, including lost reply immediately around COMMIT, stale/fenced owners, reconnect and complete fairness/settlement flows; existing process-kill proof is limited to the journal's MySQL transaction boundary.
+- Measured 100/1,000 active hands, real MySQL commit and checkpoint/recovery percentiles under stated hardware and security/operational resource budgets; the original journal sample is not a production SLA.
+- WeChat official domain/AppID credentials, TLS/WSS real-device interaction and release evidence; Douyin runtime/device qualification cannot be claimed from source or build checks.
+- Normal client contribution recovery after the app itself is terminated mid-fairness remains fail closed; platform hardware-backed protected storage or an explicit authorized re-contribution protocol would need separate design and qualification.
+- Checkpoint encryption root rotation/re-encryption and operational retention/compaction need deliberate deployment review. The current journal is the full durable history.
+- Source commit on this checkpoint must pass general CI, Doudizhu CI, Creator smoke and final Codex independent whole-product acceptance before the Goal can be marked complete.
+
+Do not archive Goal 0046, change the historic Goal 0045 verdicts or request final Codex acceptance until these release/verification gates are actually met.
