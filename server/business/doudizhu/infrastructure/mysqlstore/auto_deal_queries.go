@@ -15,7 +15,7 @@ func (s *Store) PendingDeals(ctx context.Context,limit int)([]domain.HandID,erro
  if limit<1 || limit>256{return nil,fmt.Errorf("invalid pending deal scan limit")}
  rows,err:=s.database.DB().QueryContext(ctx,`
 SELECT hand_id FROM doudizhu_hands
-WHERE phase IN ('WAITING_PUBLIC_BEACON','DEALING')
+WHERE phase IN ('FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING')
 ORDER BY updated_at ASC,hand_id ASC
 LIMIT ?`,limit)
  if err!=nil{return nil,fmt.Errorf("scan pending fair deals: %w",err)}
