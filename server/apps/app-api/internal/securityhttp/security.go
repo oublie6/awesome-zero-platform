@@ -56,6 +56,7 @@ func Register(server *rest.Server, serverCtx *svc.ServiceContext) {
 	}
 	server.AddRoutes(routes[:2])
 	server.AddRoutes(rest.WithMiddleware(RequireAuthenticationMiddleware(serverCtx.Authn), routes[2:]...))
+	registerWeChatCodeLogin(server,serverCtx)
 }
 
 func loginHandler(serverCtx *svc.ServiceContext) http.HandlerFunc {
