@@ -172,6 +172,36 @@ CREATE TABLE IF NOT EXISTS doudizhu_protected_server_seeds (
     CONSTRAINT chk_doudizhu_server_seed_ciphertext CHECK (OCTET_LENGTH(ciphertext) = 48)
 ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Authoritative per-hand writer fencing and contiguous committed gameplay log.
+-- Seeds are encrypted separately; private hands are reconstructed, not logged.
+CREATE TABLE IF NOT EXISTS doudizhu_live_writers (
+    hand_id VARCHAR(128) NOT NULL,
+    owner_epoch BIGINT UNSIGNED NOT NULL DEFAULT 1,
+    committed_version BIGINT UNSIGNED NOT NULL DEFAULT 1,
+    genesis_snapshot JSON NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (hand_id),
+    CONSTRAINT chk_doudizhu_live_epoch CHECK (owner_epoch >= 1),
+    CONSTRAINT chk_doudizhu_live_watermark CHECK (committed_version >= 1)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS doudizhu_live_actions (
+    hand_id VARCHAR(128) NOT NULL,
+    state_version BIGINT UNSIGNED NOT NULL,
+    owner_epoch BIGINT UNSIGNED NOT NULL,
+    command_id VARCHAR(128) NOT NULL,
+    actor_account_id VARCHAR(128) NOT NULL,
+    actor_position TINYINT UNSIGNED NOT NULL,
+    expected_version BIGINT UNSIGNED NOT NULL,
+    command_payload JSON NOT NULL,
+    result_digest BINARY(32) NOT NULL,
+    committed_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (hand_id, state_version),
+    UNIQUE KEY uq_doudizhu_live_command (hand_id, command_id),
+    KEY idx_doudizhu_live_actor (actor_account_id, committed_at),
+    CONSTRAINT chk_doudizhu_live_position CHECK (actor_position BETWEEN 1 AND 3)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS doudizhu_command_results (
     actor_account_id VARCHAR(128) NOT NULL,
     command_id VARCHAR(128) NOT NULL,
