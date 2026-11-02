@@ -267,7 +267,9 @@ export class GameBootstrap extends Component {
       const online=this.requireOnline()
       if(!this.handID)throw new Error('尚未开始牌局，请刷新房间')
       const view=await online.api.fairness(this.handID)
-      this.notice(`洗牌阶段 ${view.phase} · 座位${view.seat} · 版本${view.version} · ${view.committed?'承诺已确认':'待承诺'} / ${view.revealed?'贡献已确认':'待提交贡献'}`)
+      const remaining=view.beaconReleaseAt ? Math.max(0,Math.ceil((Date.parse(view.beaconReleaseAt)-Date.now())/1000)) : null
+      const cutoff=remaining!==null ? ` · 公共随机数公布前剩余 ${remaining} 秒` : ''
+      this.notice(`洗牌阶段 ${view.phase} · 座位${view.seat} · 版本${view.version} · ${view.committed?'承诺已确认':'待承诺'} / ${view.revealed?'贡献已确认':'待提交贡献'}${cutoff}`)
       if(view.phase==='BIDDING'||view.phase==='PLAYING')await online.shell.syncHand(this.handID)
     }catch(error){this.notice('公平阶段查询失败：'+this.message(error))}
   }
