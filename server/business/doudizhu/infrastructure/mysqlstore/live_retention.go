@@ -39,14 +39,14 @@ func (j *LiveJournal) PruneArchivedHand(ctx context.Context, id domain.HandID, o
 	if err != nil {
 		return ErrLivePruneNotEligible
 	}
-	if _, err := livehand.VerifyFinalRecord(final); err != nil {
-		return ErrLiveReplayIntegrity
-	}
 	if final.InstanceID() != gamecore.InstanceID(id) ||
 		final.Status() != gamecore.FinalStatusCompleted ||
 		final.Version() < 2 ||
 		archived.After(time.Now().UTC().Add(-olderThan)) {
 		return ErrLivePruneNotEligible
+	}
+	if _, err := livehand.VerifyFinalRecord(final); err != nil {
+		return ErrLiveReplayIntegrity
 	}
 	tx, err := j.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
