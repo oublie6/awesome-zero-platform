@@ -85,23 +85,23 @@ func DefaultConfig() Config {
 }
 
 type Dispatcher struct {
-	backend   Backend
-	evidence  Evidence
-	lifecycle Lifecycle
-	clock     Clock
-	config    Config
-	replay    *ReplayCache
+	backend       Backend
+	evidence      Evidence
+	lifecycle     Lifecycle
+	clock         Clock
+	config        Config
+	replay        *ReplayCache
 	revealTickets *revealTicketIssuer
 }
 
 type CommandRequest struct {
-	Version         string          `json:"v"`
-	RequestID       string          `json:"requestId"`
-	Type            string          `json:"type"`
-	AggregateID     string          `json:"aggregateId"`
-	ClientSeq       uint64          `json:"clientSeq"`
-	ExpectedVersion uint64          `json:"expectedVersion"`
-	Payload         json.RawMessage `json:"payload,omitempty"`
+	Version         string               `json:"v"`
+	RequestID       string               `json:"requestId"`
+	Type            string               `json:"type"`
+	AggregateID     string               `json:"aggregateId"`
+	ClientSeq       uint64               `json:"clientSeq"`
+	ExpectedVersion uint64               `json:"expectedVersion"`
+	Payload         json.RawMessage      `json:"payload,omitempty"`
 	RevealContext   *SignedRevealContext `json:"revealContext,omitempty"`
 }
 
@@ -142,9 +142,11 @@ func (d *Dispatcher) Execute(ctx context.Context, actor domain.AccountID, reques
 		return CommandResponse{}, err
 	}
 	if request.Type == TypeHandReveal {
-		if _,_,err:=d.verifyRevealContext(actor,request);err!=nil{return CommandResponse{},err}
-	} else if request.RevealContext!=nil {
-		return CommandResponse{},ErrInvalidRequest
+		if _, _, err := d.verifyRevealContext(actor, request); err != nil {
+			return CommandResponse{}, err
+		}
+	} else if request.RevealContext != nil {
+		return CommandResponse{}, ErrInvalidRequest
 	}
 	digest, err := digestRequest(request)
 	if err != nil {
@@ -157,11 +159,13 @@ func (d *Dispatcher) Execute(ctx context.Context, actor domain.AccountID, reques
 	return d.execute(ctx, actor, request)
 }
 
-func (d *Dispatcher) FairnessView(ctx context.Context, actor domain.AccountID, id domain.HandID) (application.FairnessView,error) {
-	if view,ok:=d.backend.(interface{
-		GetFairnessView(context.Context,domain.AccountID,domain.HandID)(application.FairnessView,error)
-	});ok{return view.GetFairnessView(ctx,actor,id)}
-	return application.FairnessView{},ErrInvalidRequest
+func (d *Dispatcher) FairnessView(ctx context.Context, actor domain.AccountID, id domain.HandID) (application.FairnessView, error) {
+	if view, ok := d.backend.(interface {
+		GetFairnessView(context.Context, domain.AccountID, domain.HandID) (application.FairnessView, error)
+	}); ok {
+		return view.GetFairnessView(ctx, actor, id)
+	}
+	return application.FairnessView{}, ErrInvalidRequest
 }
 
 func (d *Dispatcher) RoomView(ctx context.Context, actor domain.AccountID, roomID domain.RoomID) (application.RoomView, error) {
@@ -191,9 +195,11 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 	command := application.Command{Version: application.CommandProtocolV1, CommandID: request.RequestID, AggregateID: request.AggregateID, ClientSeq: request.ClientSeq, ExpectedVersion: request.ExpectedVersion, IssuedAt: d.clock.Now().UTC().Truncate(time.Millisecond)}
 	command.ExpiresAt = command.IssuedAt.Add(d.config.CommandTTL)
 	if request.Type == TypeHandReveal {
-		issued,expires,err:=d.verifyRevealContext(actor,request)
-		if err!=nil {return CommandResponse{},err}
-		command.IssuedAt,command.ExpiresAt=issued,expires
+		issued, expires, err := d.verifyRevealContext(actor, request)
+		if err != nil {
+			return CommandResponse{}, err
+		}
+		command.IssuedAt, command.ExpiresAt = issued, expires
 	}
 	var durable application.CommandResult
 	var live application.LiveHandCommandResult

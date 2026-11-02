@@ -84,34 +84,49 @@ func roomViewHandler(dispatcher *Dispatcher) http.HandlerFunc {
 // A short-lived server-MACed AAD context is issued only for the authenticated,
 // already-committed seat of a fairness-revealing hand.
 func fairnessViewHandler(dispatcher *Dispatcher) http.HandlerFunc {
-	return func(w http.ResponseWriter,r *http.Request){
-		actor,ok:=authenticatedActor(r)
-		if !ok{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("authentication required"));return}
-		id:=domain.HandID(pathvar.Vars(r)["handId"])
-		if id=="" || len(id)>128 || id!=domain.HandID(strings.TrimSpace(string(id))){
-			platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid handId"));return
+	return func(w http.ResponseWriter, r *http.Request) {
+		actor, ok := authenticatedActor(r)
+		if !ok {
+			platformresponse.WriteError(r.Context(), w, apperrors.Unauthorized("authentication required"))
+			return
 		}
-		result,err:=dispatcher.FairnessView(r.Context(),actor,id)
-		if err!=nil{platformresponse.WriteError(r.Context(),w,mapHTTPError(err));return}
-		platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),result))
+		id := domain.HandID(pathvar.Vars(r)["handId"])
+		if id == "" || len(id) > 128 || id != domain.HandID(strings.TrimSpace(string(id))) {
+			platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("invalid handId"))
+			return
+		}
+		result, err := dispatcher.FairnessView(r.Context(), actor, id)
+		if err != nil {
+			platformresponse.WriteError(r.Context(), w, mapHTTPError(err))
+			return
+		}
+		platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), result))
 	}
 }
 
 func revealContextHandler(dispatcher *Dispatcher) http.HandlerFunc {
-	return func(w http.ResponseWriter,r *http.Request){
-		actor,ok:=authenticatedActor(r)
-		if !ok {platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("authentication required"));return}
-		handID:=domain.HandID(pathvar.Vars(r)["handId"])
-		if handID=="" || len(handID)>128 || handID!=domain.HandID(strings.TrimSpace(string(handID))) {
-			platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid handId"));return
+	return func(w http.ResponseWriter, r *http.Request) {
+		actor, ok := authenticatedActor(r)
+		if !ok {
+			platformresponse.WriteError(r.Context(), w, apperrors.Unauthorized("authentication required"))
+			return
+		}
+		handID := domain.HandID(pathvar.Vars(r)["handId"])
+		if handID == "" || len(handID) > 128 || handID != domain.HandID(strings.TrimSpace(string(handID))) {
+			platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("invalid handId"))
+			return
 		}
 		var request RevealContextRequest
-		if err:=decodeHTTPBody(r,&request);err!=nil {
-			platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid reveal context request").WithCause(err));return
+		if err := decodeHTTPBody(r, &request); err != nil {
+			platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("invalid reveal context request").WithCause(err))
+			return
 		}
-		result,err:=dispatcher.IssueRevealContext(r.Context(),actor,handID,request)
-		if err!=nil {platformresponse.WriteError(r.Context(),w,mapHTTPError(err));return}
-		platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),result))
+		result, err := dispatcher.IssueRevealContext(r.Context(), actor, handID, request)
+		if err != nil {
+			platformresponse.WriteError(r.Context(), w, mapHTTPError(err))
+			return
+		}
+		platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), result))
 	}
 }
 
