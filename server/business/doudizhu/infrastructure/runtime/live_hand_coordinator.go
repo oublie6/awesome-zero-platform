@@ -294,6 +294,14 @@ func (c *LiveHandCoordinator) finish(handID domain.HandID, record gamecore.Final
 	delete(c.games, handID)
 	c.finalized[handID] = record
 	c.mu.Unlock()
+	// The live action commit and domain HandCompleted transaction are separate.
+	// Do not erase the encrypted genesis seed after a live terminal result
+	// while the durable hand can still be BIDDING/PLAYING/SETTLING: restart
+	// must reproduce the exact archive and all acknowledged actions.
+	// Durable retention is handled only after final domain/evidence commit.
+	if c.journal != nil {
+		return
+	}
 	if err := c.seeds.Release(handID); err != nil && !errors.Is(err, ErrSeedNotFound) {
 		return
 	}
