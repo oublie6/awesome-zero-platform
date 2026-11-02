@@ -8,6 +8,7 @@ function fixture({failLogin=false}={}) {
   target:'wechat',
   auth:{acquireCode:async()=> 'temporary-wx-code'},
   vault:{load:async()=>null,save:async()=>{},clear:async()=>{}},
+  http:{request:async()=>({code:'OK',data:{roomId:'room-rejoin',version:9,status:'WAITING_PLAYERS',occupied:2,member:true,lastClientSequence:12,seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:true},{position:3,accountId:'',ready:false}]}})},
   random:{bytes:async n=>new Uint8Array(Array.from({length:n},(_,i)=>i))},
   socket:{connect:async(url,token)=>{auth.push({url,token});return {
    send:async raw=>commands.push(JSON.parse(raw)),close:()=>{},
@@ -48,5 +49,24 @@ test('failed server identity exchange cannot create socket or local room',async(
  await assert.rejects(online.loginAndConnect(),/exchange failed/)
  assert.equal(f.auth.length,0)
  assert.equal(online.rooms.state,null)
+ online.dispose()
+})
+
+test('authenticated room query restores version and monotonic sequence for rejoin',async()=>{
+ const f=fixture()
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const room=await online.joinRoom('room-rejoin')
+ assert.deepEqual(room,{roomId:'room-rejoin',version:9})
+ const pending=online.rooms.ready(true)
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(f.commands[0].payload.clientSeq,13)
+ assert.equal(f.commands[0].payload.expectedVersion,9)
+ const req=f.commands[0].payload
+ for(const cb of f.messages) cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+  v:'doudizhu-api-command-result-v1',requestId:req.requestId,type:'room.ready',
+  durable:{v:'fair-doudizhu-command-result-v1',commandId:req.requestId,aggregateId:'room-rejoin',aggregateVersion:10,accepted:true}
+ }}))
+ assert.equal((await pending).version,10)
  online.dispose()
 })
