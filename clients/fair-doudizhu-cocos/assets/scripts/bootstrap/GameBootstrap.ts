@@ -110,30 +110,43 @@ export class GameBootstrap extends Component {
         {name:'CommitFairness',caption:'提交洗牌承诺',action:()=>void this.commitFairness()},
         {name:'RevealFairness',caption:'加密提交随机贡献',action:()=>void this.revealFairness()},
         {name:'RefreshFairness',caption:'刷新洗牌阶段',action:()=>void this.refreshFairness()},
+        {name:'RoomEvidence',caption:'查看结算证据',action:()=>void this.showEvidence()},
         {name:'OpenTable',caption:'查看牌桌',action:()=>this.renderScreen('table')},
         {name:'BackHome',caption:'返回首页',action:()=>this.renderScreen('home')}
       ])
     } else if (screen === 'table') {
-      this.title!.string = '公平斗地主 · 牌桌'
       const snapshot=this.online?.shell.hand.snapshot
+      const pub=snapshot?.view.public
+      const me=snapshot?.view.position
+      this.title!.string = pub?.phase==='BIDDING' ? '公平斗地主 · 叫地主' :
+        pub?.phase==='PLAYING' ? '公平斗地主 · 出牌中' :
+        pub?.phase==='COMPLETED' ? '公平斗地主 · 已结算' : '公平斗地主 · 牌桌'
+      const seatInfo=pub?.seats?.map(seat=>`座位${seat.position}${seat.position===me?'（我）':''} ${seat.remainingCards}张`).join(' / ')
       this.status!.string = snapshot
-        ? `牌局 ${snapshot.handId} · ${snapshot.phase} · 版本 ${snapshot.version}`
+        ? `牌局 ${snapshot.handId} · 版本${snapshot.version}\n${seatInfo??''}\n${pub?.phase==='BIDDING'?'等待当前玩家叫地主':pub?.phase==='PLAYING'?('轮到座位'+String(pub.playingSeat??'?')):'等待服务端状态'}`
         : '等待服务端权威私有牌局快照，不展示模拟手牌'
       const cards=Array.isArray(snapshot?.view.cards) ? snapshot!.view.cards as string[] : []
+      for(const selected of this.selectedCards)if(!cards.includes(selected))this.selectedCards.delete(selected)
       for (const card of cards) {
         this.addMenu([{name:'Card_'+card,caption:(this.selectedCards.has(card)?'✓ ':'')+card,
           action:()=>{if(this.selectedCards.has(card))this.selectedCards.delete(card);else this.selectedCards.add(card);this.renderScreen('table')}}])
       }
-      this.addMenu([
-        {name:'BidZero',caption:'不叫',action:()=>void this.bid(0)},
-        {name:'BidOne',caption:'叫 1 分',action:()=>void this.bid(1)},
-        {name:'BidTwo',caption:'叫 2 分',action:()=>void this.bid(2)},
-        {name:'BidThree',caption:'叫 3 分',action:()=>void this.bid(3)},
-        {name:'PlayCards',caption:'出牌',action:()=>void this.play()},
-        {name:'PassTurn',caption:'不出',action:()=>void this.pass()},
+      const controls:MenuAction[]=[]
+      if(pub?.phase==='BIDDING'){
+        controls.push(
+          {name:'BidZero',caption:'不叫',action:()=>void this.bid(0)},
+          {name:'BidOne',caption:'叫 1 分',action:()=>void this.bid(1)},
+          {name:'BidTwo',caption:'叫 2 分',action:()=>void this.bid(2)},
+          {name:'BidThree',caption:'叫 3 分',action:()=>void this.bid(3)})
+      }else if(pub?.phase==='PLAYING'){
+        controls.push({name:'PlayCards',caption:'出牌',action:()=>void this.play()},
+                      {name:'PassTurn',caption:'不出',action:()=>void this.pass()})
+      }
+      controls.push(
         {name:'RefreshHand',caption:'同步牌局',action:()=>void this.refreshHand()},
-        {name:'BackRooms',caption:'返回房间',action:()=>this.renderScreen('rooms')}
-      ])
+        {name:'FinalEvidence',caption:'核验结算',action:()=>void this.showEvidence()},
+        {name:'BackRooms',caption:'返回房间',action:()=>this.renderScreen('rooms')})
+      this.addMenu(controls)
     } else {
       this.title!.string = '玩法介绍'
       this.status!.string = '三人一桌，服务端执行公平洗牌、叫地主、出牌和结算；客户端只显示权威状态。'
@@ -271,6 +284,15 @@ export class GameBootstrap extends Component {
       await this.refreshFairness()
     }catch(error){this.notice('加密随机贡献失败：'+this.message(error))}
   }
+  private async showEvidence():Promise<void>{
+    try{
+      if(!this.handID)throw new Error('尚未创建牌局')
+      const data=await this.requireOnline().api.finalEvidence(this.handID)
+      const verified=data.verification
+      const winner=verified.winnerSeat?('获胜座位'+verified.winnerSeat):'已终止'
+      this.notice(`已核验归档 · ${winner} · 积分${verified.seatPoints.join('/') } · 版本${data.finalVersion}\n校验摘要：${verified.recordDigest.slice(0,24)}…`)
+    }catch(error){this.notice('结算证据暂不可用：'+this.message(error))}
+  }
   private async refreshHand():Promise<void> {
     try {
       const snapshot=this.requireOnline().shell.hand.snapshot
@@ -314,14 +336,14 @@ export class GameBootstrap extends Component {
       this.inputNode.getComponent(UITransform)!.setContentSize(Math.min(width,460),Math.max(48,height*0.075))
       this.inputNode.setPosition(0,height*0.015,0)
     }
-    const columns=this.screen==='home'||this.screen==='rules'?1:(portrait?3:4)
+    const columns=this.screen==='home'||this.screen==='rules'?1:this.screen==='table'?(portrait?5:10):(portrait?3:4)
     this.buttons.forEach((button,index)=>{
       const transform=button.getComponent(UITransform)!
       const cellWidth=width/columns
       transform.setContentSize(Math.max(20,cellWidth-8),Math.max(30,Math.min(72,height*0.095)))
       button.getComponent(Label)!.fontSize=portrait?Math.max(18,Math.min(30,cellWidth*0.16)):Math.max(18,Math.min(26,cellWidth*0.17))
       const col=index%columns,row=Math.floor(index/columns)
-      button.setPosition(-width/2+cellWidth*(col+0.5),-height*(0.13+row*(portrait?0.091:0.12)),0)
+      button.setPosition(-width/2+cellWidth*(col+0.5),-height*(this.screen==='table'?(0.14+row*0.067):(0.13+row*(portrait?0.091:0.12))),0)
     })
   }
   override onDestroy(): void {
