@@ -32,6 +32,15 @@ export class DoudizhuHTTPClient {
     })
     return parseWireResult(unwrap(raw), request)
   }
+  /** Authenticated room read: only members receive account seats or activeHandId. */
+  async room(roomId: string): Promise<RoomRead> {
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(roomId)) throw new Error('invalid room id')
+    const raw = await this.transport.request<unknown>(
+      '/v1/doudizhu/rooms/' + encodeURIComponent(roomId),
+      {accessToken:this.token()}
+    )
+    return parseRoomRead(unwrap(raw), roomId)
+  }
   async privateHand(handId: string): Promise<{version: number; view: PrivateHandProjection}> {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(handId)) throw new Error('invalid hand id')
     const raw = await this.transport.request<unknown>(
@@ -40,4 +49,38 @@ export class DoudizhuHTTPClient {
     )
     return parsePrivateViewResult(unwrap(raw))
   }
+}
+
+export interface RoomRead {
+  roomId: string
+  version: number
+  status: 'WAITING_PLAYERS'|'READY'|'HAND_ACTIVE'|'CLOSED'
+  occupied: number
+  member: boolean
+  seats?: ReadonlyArray<{position:number;accountId:string;ready:boolean}>
+  activeHandId?: string
+}
+function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
+  if (!record(raw) || raw.roomId !== expectedID ||
+      !Number.isSafeInteger(raw.version) || (raw.version as number) < 1 ||
+      !['WAITING_PLAYERS','READY','HAND_ACTIVE','CLOSED'].includes(raw.status as string) ||
+      !Number.isSafeInteger(raw.occupied) || (raw.occupied as number) < 0 || (raw.occupied as number) > 3 ||
+      typeof raw.member !== 'boolean') throw new Error('invalid authoritative room view')
+  if (raw.member) {
+    if (!Array.isArray(raw.seats) || raw.seats.length !== 3 ||
+        !raw.seats.every(seat => record(seat) &&
+        Number.isSafeInteger(seat.position) && seat.position >= 1 && seat.position <= 3 &&
+        typeof seat.accountId === 'string' && typeof seat.ready === 'boolean') ||
+        new Set(raw.seats.map(s => s.position)).size !== 3 ||
+        (raw.activeHandId !== undefined && typeof raw.activeHandId !== 'string')) {
+      throw new Error('invalid member room view')
+    }
+    if (raw.seats.filter(s => s.accountId !== '').length !== raw.occupied ||
+        new Set(raw.seats.filter(s => s.accountId !== '').map(s=>s.accountId)).size !== raw.occupied) {
+      throw new Error('invalid room seat ownership')
+    }
+  } else if (raw.seats !== undefined || raw.activeHandId !== undefined) {
+    throw new Error('room preview leaked private membership fields')
+  }
+  return JSON.parse(JSON.stringify(raw)) as RoomRead
 }
