@@ -198,6 +198,19 @@ CREATE TABLE IF NOT EXISTS doudizhu_live_writers (
     CONSTRAINT chk_doudizhu_live_watermark CHECK (committed_version >= 1)
 ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Encrypted and authenticated bounded recovery snapshots. The live writers
+-- watermark and append-only action log remain authoritative.
+CREATE TABLE IF NOT EXISTS doudizhu_live_checkpoints (
+    hand_id VARCHAR(128) NOT NULL,
+    checkpoint_version BIGINT UNSIGNED NOT NULL,
+    nonce VARBINARY(12) NOT NULL,
+    ciphertext MEDIUMBLOB NOT NULL,
+    state_digest BINARY(32) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (hand_id),
+    CONSTRAINT chk_doudizhu_checkpoint_version CHECK (checkpoint_version >= 2)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS doudizhu_live_actions (
     hand_id VARCHAR(128) NOT NULL,
     state_version BIGINT UNSIGNED NOT NULL,
