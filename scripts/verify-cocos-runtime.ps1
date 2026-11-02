@@ -30,6 +30,11 @@ try {
     $report.exitCode = $process.ExitCode
     # Creator documents 36 as success; treating ordinary process exit 0 as build success is incorrect.
     if ($process.ExitCode -ne 36) { throw "Creator build exited $($process.ExitCode), expected 36" }
+    # Cocos 3.8's exponent plugin rewrites BigInt ** into Math.pow(BigInt),
+    # which crashes @noble crypto modules before the scene is initialized.
+    # Run the strictly allowlisted post-build repair for every target.
+    & node (Join-Path $repoRoot 'scripts/fix-cocos-bigint-power.cjs') (Join-Path $OutputRoot $Platform)
+    if ($LASTEXITCODE -ne 0) { throw 'Creator generated unsupported BigInt exponent code' }
     $entry = if ($Platform -eq 'web-desktop') { 'index.html' } else { 'game.js' }
     if (-not (Test-Path (Join-Path $OutputRoot "$Platform/$entry"))) { throw "Creator did not produce $Platform/$entry" }
     if ($Platform -ne 'web-desktop') {
