@@ -84,7 +84,7 @@ export class RoomCoordinator {
         throw error
       }
       const d = result?.durable as Record<string, unknown> | undefined
-      if (result.v !== 'doudizhu-api-command-result-v1' || result.type !== type || !d || d.v !== 'fair-doudizhu-command-result-v1' ||
+      if (result?.v !== 'doudizhu-api-command-result-v1' || result.type !== type || !d || d.v !== 'fair-doudizhu-command-result-v1' ||
         d.aggregateId !== roomId || d.commandId !== result.requestId ||
         !Number.isSafeInteger(d.aggregateVersion) || (d.aggregateVersion as number) < 0 ||
         typeof d.accepted !== 'boolean') {
