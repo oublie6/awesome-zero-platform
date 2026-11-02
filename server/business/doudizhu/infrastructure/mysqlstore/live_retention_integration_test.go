@@ -5,6 +5,7 @@ package mysqlstore_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -24,9 +25,10 @@ func (c retentionClock) Now() time.Time { return c.at }
 type retentionProof struct {
 	record gamecore.FinalRecord
 	archived time.Time
+	err error
 }
 func (r retentionProof) LoadFinalRecord(context.Context, gamecore.InstanceID) (gamecore.FinalRecord, time.Time, error) {
-	return r.record, r.archived, nil
+	return r.record, r.archived, r.err
 }
 
 func TestLiveArchivePruningRequiresVerifiedFinalAndThirtyDayRetention(t *testing.T) {
@@ -55,7 +57,7 @@ func TestLiveArchivePruningRequiresVerifiedFinalAndThirtyDayRetention(t *testing
 		Payload:[]byte(`{"v":"doudizhu-live-bid-command-v1","score":3}`)}
 	result:=gamecore.CommandOutcome{Version:2,Payload:[]byte(`{"stateVersion":2}`)}
 	if err:=journal.Append(ctx,id,owner,"prune-final-action","crash-player-1",command,result);err!=nil{t.Fatal(err)}
-	if err:=journal.PruneArchivedHand(ctx,id,30*24*time.Hour,retentionProof{});!errors.Is(err,mysqlstore.ErrLivePruneNotEligible){
+	if err:=journal.PruneArchivedHand(ctx,id,30*24*time.Hour,retentionProof{err:sql.ErrNoRows});!errors.Is(err,mysqlstore.ErrLivePruneNotEligible){
 		t.Fatalf("live hand pruned: %v",err)
 	}
 	if err:=journal.PruneArchivedHand(ctx,id,24*time.Hour,retentionProof{});!errors.Is(err,mysqlstore.ErrLivePruneNotEligible){
