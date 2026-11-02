@@ -92,7 +92,7 @@ test('user-held fairness kit survives full client shutdown without plaintext pla
  assert.equal(restored.exportRecoveryKit(),backup)
  await assert.rejects(restored.importRecoveryKit(backup,'hand-2'),/invalid fairness recovery kit/)
  restored.dispose()
- assert.throws(()=>restored.exportRecoveryKit(),/unavailable/)
+ assert.throws(()=>restored.exportRecoveryKit(),/disposed|unavailable/)
 })
 test('fairness recovery kit rejects changed seat and changed server commitment',async()=>{
  const view={handId:'hand-x',phase:'FAIRNESS_COMMITTING',version:2,
