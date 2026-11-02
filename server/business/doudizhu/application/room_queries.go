@@ -16,6 +16,7 @@ type RoomView struct {
 	Status       domain.RoomStatus `json:"status"`
 	Occupied     int              `json:"occupied"`
 	Member       bool             `json:"member"`
+	LastClientSequence uint64 `json:"lastClientSequence"`
 	Seats        []RoomSeatView   `json:"seats,omitempty"`
 	ActiveHandID string           `json:"activeHandId,omitempty"`
 }
@@ -51,6 +52,10 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 		return RoomView{}, fmt.Errorf("restore queried room: %w", err)
 	}
 	view := RoomView{RoomID: string(roomID), Version: snapshot.Version, Status: snapshot.Status}
+	seqReader, ok := s.store.(interface { RoomClientSequence(context.Context, domain.RoomID, domain.AccountID) (uint64,error) })
+	if !ok { return RoomView{}, fmt.Errorf("%w: room sequence query unavailable", ErrInvalidCommand) }
+	view.LastClientSequence, err = seqReader.RoomClientSequence(ctx, roomID, actor)
+	if err != nil { return RoomView{}, err }
 	for _, seat := range snapshot.Seats {
 		if seat.AccountID != "" {
 			view.Occupied++
