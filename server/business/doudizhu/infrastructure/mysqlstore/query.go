@@ -74,3 +74,13 @@ WHERE aggregate_type = 'room' AND aggregate_id = ? AND actor_account_id = ?`, st
 	}
 	return row.Sequence, nil
 }
+
+func (s *Store) HandClientSequence(ctx context.Context, handID domain.HandID, actor domain.AccountID) (uint64, error) {
+	var row struct { Sequence uint64 `db:"last_sequence"` }
+	err := s.goZero.QueryRowCtx(ctx, &row, `
+SELECT last_sequence FROM doudizhu_client_sequences
+WHERE aggregate_type = 'hand' AND aggregate_id = ? AND actor_account_id = ?`, string(handID),string(actor))
+	if errors.Is(err,sql.ErrNoRows){return 0,nil}
+	if err!=nil{return 0,fmt.Errorf("query hand client sequence: %w",err)}
+	return row.Sequence,nil
+}
