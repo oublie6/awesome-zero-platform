@@ -8,6 +8,17 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
 )
 
+func (s *Service) SubmitLiveHandPlayWithID(ctx context.Context,actor domain.AccountID,handID domain.HandID,
+	commandID string,expectedLiveVersion uint64,cards []string,
+)(LiveHandCommandResult,error){
+	return s.submitLivePlay(ctx,actor,handID,commandID,expectedLiveVersion,cards)
+}
+func (s *Service) SubmitLiveHandPassWithID(ctx context.Context,actor domain.AccountID,handID domain.HandID,
+	commandID string,expectedLiveVersion uint64,
+)(LiveHandCommandResult,error){
+	return s.submitLivePass(ctx,actor,handID,commandID,expectedLiveVersion)
+}
+
 func (s *Service) SubmitLiveHandPlay(
 	ctx context.Context,
 	actor domain.AccountID,
@@ -15,6 +26,11 @@ func (s *Service) SubmitLiveHandPlay(
 	expectedLiveVersion uint64,
 	cards []string,
 ) (LiveHandCommandResult, error) {
+	return s.submitLivePlay(ctx,actor,handID,"",expectedLiveVersion,cards)
+}
+func (s *Service) submitLivePlay(ctx context.Context,actor domain.AccountID,handID domain.HandID,
+	commandID string,expectedLiveVersion uint64,cards []string,
+)(LiveHandCommandResult,error){
 	snapshot, err := s.authorizeHandViewer(ctx, actor, handID)
 	if err != nil {
 		return LiveHandCommandResult{}, err
@@ -32,6 +48,10 @@ func (s *Service) SubmitLiveHandPlay(
 		}
 		copied[index] = code
 	}
+	if durable,ok:=s.liveHands.(interface{PlayCommitted(context.Context,domain.HandID,domain.AccountID,string,uint64,[]string)(LiveHandCommandResult,error)});ok {
+		if commandID=="" {return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)}
+		return durable.PlayCommitted(ctx,snapshot.ID,actor,commandID,expectedLiveVersion,copied)
+	}
 	return s.liveHands.Play(ctx, snapshot.ID, actor, expectedLiveVersion, copied)
 }
 
@@ -41,6 +61,11 @@ func (s *Service) SubmitLiveHandPass(
 	handID domain.HandID,
 	expectedLiveVersion uint64,
 ) (LiveHandCommandResult, error) {
+	return s.submitLivePass(ctx,actor,handID,"",expectedLiveVersion)
+}
+func (s *Service) submitLivePass(ctx context.Context,actor domain.AccountID,handID domain.HandID,
+	commandID string,expectedLiveVersion uint64,
+)(LiveHandCommandResult,error){
 	snapshot, err := s.authorizeHandViewer(ctx, actor, handID)
 	if err != nil {
 		return LiveHandCommandResult{}, err
@@ -50,6 +75,10 @@ func (s *Service) SubmitLiveHandPass(
 	}
 	if expectedLiveVersion == 0 {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: live pass version", ErrInvalidCommand)
+	}
+	if durable,ok:=s.liveHands.(interface{PassCommitted(context.Context,domain.HandID,domain.AccountID,string,uint64)(LiveHandCommandResult,error)});ok {
+		if commandID=="" {return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)}
+		return durable.PassCommitted(ctx,snapshot.ID,actor,commandID,expectedLiveVersion)
 	}
 	return s.liveHands.Pass(ctx, snapshot.ID, actor, expectedLiveVersion)
 }
