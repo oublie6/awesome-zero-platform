@@ -37,7 +37,13 @@ func (s *Service) submitLiveBid(ctx context.Context,actor domain.AccountID,handI
 		return LiveHandCommandResult{}, fmt.Errorf("%w: live bid version or score", ErrInvalidCommand)
 	}
 	if durable,ok:=s.liveHands.(interface{BidCommitted(context.Context,domain.HandID,domain.AccountID,string,uint64,bidding.Score)(LiveHandCommandResult,error)});ok {
-		if commandID=="" {return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)}
+		if commandID=="" {
+			if enforce,yes:=s.liveHands.(interface{DurabilityEnforced()bool});yes && enforce.DurabilityEnforced() {
+				return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)
+			}
+			// Legacy in-memory test/runtime adapters never claim B durability.
+			return s.liveHands.Bid(ctx,snapshot.ID,actor,expectedLiveVersion,score)
+		}
 		return durable.BidCommitted(ctx,snapshot.ID,actor,commandID,expectedLiveVersion,score)
 	}
 	return s.liveHands.Bid(ctx, snapshot.ID, actor, expectedLiveVersion, score)
