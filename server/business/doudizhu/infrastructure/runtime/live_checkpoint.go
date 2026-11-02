@@ -159,7 +159,7 @@ func restoreRecoveryCheckpoint(
 		if record.CommandID == "" || record.CommandID != log.CommandID ||
 			record.Actor != log.Actor || record.Command.ActorPosition != log.ActorPosition ||
 			record.Command.ExpectedVersion != log.ExpectedVersion ||
-			!bytes.Equal(record.Command.Payload, log.Payload) ||
+			!sameJSONCommandPayload(record.Command.Payload, log.Payload) ||
 			record.Outcome.Version != log.Version {
 			return nil, gamecore.ErrVerificationFailed
 		}
