@@ -26,7 +26,7 @@ test('room GET supplies authoritative version while outsiders receive no seats',
  let actual
  const client=new DoudizhuHTTPClient({request:async(path,options)=>{
   actual={path,options}
-  return {code:'OK',data:{roomId:'r-1',version:4,status:'WAITING_PLAYERS',occupied:2,member:false}}
+  return {code:'OK',data:{roomId:'r-1',version:4,status:'WAITING_PLAYERS',occupied:2,member:false,lastClientSequence:0}}
  }},()=> 'real-token')
  const room=await client.room('r-1')
  assert.equal(room.version,4)
@@ -40,8 +40,8 @@ test('room GET rejects response identity and membership leaks',async()=>{
  const cases=[
   {roomId:'other',version:1,status:'READY',occupied:2,member:false},
   {roomId:'r-1',version:0,status:'READY',occupied:2,member:false},
-  {roomId:'r-1',version:1,status:'READY',occupied:2,member:false,seats:[]},
-  {roomId:'r-1',version:1,status:'READY',occupied:2,member:true,seats:[{position:1,accountId:'a',ready:true}]}
+  {roomId:'r-1',version:1,status:'READY',occupied:2,member:false,lastClientSequence:0,seats:[]},
+  {roomId:'r-1',version:1,status:'READY',occupied:2,member:true,lastClientSequence:0,seats:[{position:1,accountId:'a',ready:true}]}
  ]
  for(const data of cases) {
   const client=new DoudizhuHTTPClient({request:async()=>({code:'OK',data})},()=> 'token')
