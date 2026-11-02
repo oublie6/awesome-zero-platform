@@ -33,3 +33,8 @@ in_progress — authorized by user 2026-11-02. **This is a development plan, not
 - Existing Cocos entry has a menu and placeholder rooms; authenticated production login, playable table, fair reveal, and on-device full game are **not yet wired**.
 - `clients/packages/doudizhu-client/src/room.ts` is an initial checkpoint with versioned durable room command coordination; integration and final acceptance outstanding.
 - Plan: implement auth/room UI composition, complete fairness, add live action persistence/replay, build playable table, verify three-player + fault/latency, then hand off final SHA.
+
+## Development checkpoint — 2026-11-02 (pending CI/independent acceptance)
+- Added `secureRoomCommandIdentity`: cryptographically sourced 128-bit injected entropy, asynchronous platform port, fail-closed on missing/wrong-length random bytes. Room coordinator validates both transport and durable versioned Go response envelopes; unknown outcome requires authoritative reconciliation. Source tests added for entropy and malformed acknowledgments.
+- Added `GameOnlineController` at `clients/fair-doudizhu-cocos/assets/scripts/game/`, composing trusted `GameSession` platform-code exchange, authenticated WSS `GameClientShell`, and secure real `RoomCoordinator` command forwarding. Added a socket-level integration fixture that verifies actual versioned room.create, correlation and source of authentication; negative test forbids connection on failed identity exchange.
+- These are **integration foundations only**, not a working production identity endpoint, actual configured WeChat SDK login, visible room/game table, complete fairness workflow, or B-grade crash recovery. CI and independent Codex acceptance are not claimed at this checkpoint.
