@@ -142,6 +142,18 @@ func (s *Service) Login(ctx context.Context, identifier, password string) (Authe
 		return Authentication{}, TokenPair{}, err
 	}
 
+	return s.issueVerifiedPrincipal(ctx,principal)
+}
+
+// IssueVerifiedAccount is for a server-side identity that has already been
+// bound to a trusted external identity. Never pass a client-supplied account ID.
+func (s *Service) IssueVerifiedAccount(ctx context.Context, accountID string) (Authentication,TokenPair,error) {
+	principal,err:=s.identity.ResolveActive(ctx,accountID)
+	if err!=nil{return Authentication{},TokenPair{},err}
+	if err:=validatePrincipal(principal);err!=nil{return Authentication{},TokenPair{},err}
+	return s.issueVerifiedPrincipal(ctx,principal)
+}
+func (s *Service) issueVerifiedPrincipal(ctx context.Context,principal Principal) (Authentication,TokenPair,error) {
 	sessionID, err := newSessionID()
 	if err != nil {
 		return Authentication{}, TokenPair{}, fmt.Errorf("generate session id: %w", err)
