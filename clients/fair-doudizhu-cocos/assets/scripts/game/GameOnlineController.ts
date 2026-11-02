@@ -51,6 +51,22 @@ export class GameOnlineController {
     await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
     return true
   }
+  /** Re-establish authenticated transport, then trust only server-owned
+   * membership/version and private hand state. Never synthesize a successful
+   * result for commands whose response was lost on the old connection. */
+  async reconnectAndResync(roomId?: string): Promise<RoomRead | null> {
+    if (this.disposed || !this.session.authenticated) throw new Error('authenticated session required')
+    await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
+    const target = roomId || this.rooms.state?.roomId
+    if (!target) return null
+    const room = await this.api.room(target)
+    if (!room.member) throw new Error('room membership not confirmed after reconnect')
+    this.rooms.restoreTrustedRoom(room.roomId, room.version, room.lastClientSequence)
+    if (room.activeHandId) {
+      await this.shell.syncHand(room.activeHandId)
+    }
+    return room
+  }
   async roomInfo(roomId: string): Promise<RoomRead> {
     if (this.disposed) throw new Error('online controller disposed')
     return this.api.room(roomId)
