@@ -44,6 +44,7 @@ var (
 )
 
 type Backend interface {
+	GetRoomView(context.Context, domain.AccountID, domain.RoomID) (application.RoomView, error)
 	CreateRoom(context.Context, domain.AccountID, application.Command) (application.CommandResult, error)
 	JoinRoom(context.Context, domain.AccountID, application.Command) (application.CommandResult, error)
 	LeaveRoom(context.Context, domain.AccountID, application.Command) (application.CommandResult, error)
@@ -147,6 +148,10 @@ func (d *Dispatcher) Execute(ctx context.Context, actor domain.AccountID, reques
 		return d.replay.Do(ctx, key, digest, func() (CommandResponse, error) { return d.execute(ctx, actor, request) })
 	}
 	return d.execute(ctx, actor, request)
+}
+
+func (d *Dispatcher) RoomView(ctx context.Context, actor domain.AccountID, roomID domain.RoomID) (application.RoomView, error) {
+	return d.backend.GetRoomView(ctx, actor, roomID)
 }
 
 func (d *Dispatcher) PublicView(ctx context.Context, actor domain.AccountID, handID domain.HandID) (ViewResult, error) {
