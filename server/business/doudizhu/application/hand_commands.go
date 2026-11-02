@@ -17,6 +17,7 @@ type TerminateHandInput struct{ ReasonCode string }
 
 func (s *Service) SubmitHandCommit(ctx context.Context, actor domain.AccountID, command Command, input SubmitCommitInput) (CommandResult, error) {
 	return s.mutateHand(ctx, actor, command, CommandHandCommitSubmit, input, func(hand *domain.Hand) ([]domain.Event, error) {
+		if err:=checkContributionDeadline(hand.Snapshot().BeaconPlan,s.clock.Now());err!=nil{return nil,err}
 		return hand.SubmitCommit(actor, input.Commitment, command.ExpectedVersion)
 	})
 }
@@ -31,6 +32,9 @@ func (s *Service) SubmitHandReveal(ctx context.Context, actor domain.AccountID, 
 			hand, err := domain.RestoreHand(snapshot)
 			if err != nil {
 				return mutationOutcome{}, wrapInfrastructure("restore hand snapshot", err)
+			}
+			if err:=checkContributionDeadline(snapshot.BeaconPlan,now);err!=nil{
+				return mutationOutcome{},&aggregateMutationError{cause:err,currentVersion:snapshot.Version}
 			}
 			seat, contribution, err := resolveHandContribution(snapshot, actor)
 			if err != nil {
