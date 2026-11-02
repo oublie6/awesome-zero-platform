@@ -47,7 +47,7 @@ func TestThreeSeatGameFromBiddingThroughFinalSettlement(t *testing.T){
    t.Fatalf("round %d lost playing phase",round)
   }
  }
- if game.Phase()!=PhaseCompleted || game.version!=61{
+ if game.Phase()!=PhaseCompleted || game.version!=60{
   t.Fatalf("expected 1 bid + 20 plays + 38 passes; phase=%s version=%d",game.Phase(),game.version)
  }
  if len(game.current[0])!=0 || len(game.current[1])!=17 || len(game.current[2])!=17{
