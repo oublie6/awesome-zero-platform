@@ -157,6 +157,13 @@ func (d *Dispatcher) Execute(ctx context.Context, actor domain.AccountID, reques
 	return d.execute(ctx, actor, request)
 }
 
+func (d *Dispatcher) FairnessView(ctx context.Context, actor domain.AccountID, id domain.HandID) (application.FairnessView,error) {
+	if view,ok:=d.backend.(interface{
+		GetFairnessView(context.Context,domain.AccountID,domain.HandID)(application.FairnessView,error)
+	});ok{return view.GetFairnessView(ctx,actor,id)}
+	return application.FairnessView{},ErrInvalidRequest
+}
+
 func (d *Dispatcher) RoomView(ctx context.Context, actor domain.AccountID, roomID domain.RoomID) (application.RoomView, error) {
 	return d.backend.GetRoomView(ctx, actor, roomID)
 }
