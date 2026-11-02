@@ -163,6 +163,10 @@ service main-api {
     @handler route_post_auth_logout
     post /auth/logout
 
+    @doc "POST /auth/wechat/code"
+    @handler route_post_auth_wechat_code
+    post /auth/wechat/code
+
     @doc "GET /auth/session"
     @handler route_get_auth_session
     get /auth/session
@@ -174,6 +178,10 @@ service main-api {
     @doc "GET /api/v1/crypto/reveal-keys/:keyId"
     @handler route_get_api_v1_crypto_reveal_keys_keyId
     get /api/v1/crypto/reveal-keys/:keyId
+
+    @doc "GET /v1/doudizhu/rooms/:roomId"
+    @handler route_get_v1_doudizhu_rooms_roomId
+    get /v1/doudizhu/rooms/:roomId
 
     @doc "POST /v1/doudizhu/commands"
     @handler route_post_v1_doudizhu_commands
