@@ -9,6 +9,8 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
 
+func (c *LiveHandCoordinator) DurabilityEnforced() bool { return c!=nil && c.journal!=nil }
+
 // applyLive requires a stable command ID for every durably acknowledged live
 // mutation. The durable path uses a clone, an epoch-fenced MySQL transaction,
 // then publishes the committed candidate. A failed/ambiguous commit quarantines
