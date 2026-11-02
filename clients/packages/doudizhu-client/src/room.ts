@@ -32,15 +32,20 @@ export class RoomCoordinator {
   get needsReconciliation(): boolean { return this.uncertainOutcome }
 
   /** Adopt only a version from a trusted, authorized server-side room query. */
-  restoreTrustedRoom(roomId: string, version: number): void {
-    if (!validID(roomId) || !Number.isSafeInteger(version) || version < 1) throw new Error('invalid trusted room')
+  restoreTrustedRoom(roomId: string, version: number, lastClientSequence = 0): void {
+    if (!validID(roomId) || !Number.isSafeInteger(version) || version < 1 ||
+        !Number.isSafeInteger(lastClientSequence) || lastClientSequence < 0) throw new Error('invalid trusted room')
     if (this.inFlight) throw new Error('cannot replace room while command outstanding')
     this.room = Object.freeze({roomId, version})
+    this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, lastClientSequence))
     this.uncertainOutcome = false
   }
 
   create(roomId: string): Promise<RoomState> { return this.perform('room.create', roomId, 0, {}) }
-  join(roomId: string, expectedVersion: number): Promise<RoomState> {
+  join(roomId: string, expectedVersion: number, lastClientSequence = 0): Promise<RoomState> {
+    if (!Number.isSafeInteger(lastClientSequence) || lastClientSequence < 0)
+      return Promise.reject(new Error('invalid client sequence'))
+    this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, lastClientSequence))
     return this.perform('room.join', roomId, expectedVersion, {})
   }
   ready(ready: boolean): Promise<RoomState> {
