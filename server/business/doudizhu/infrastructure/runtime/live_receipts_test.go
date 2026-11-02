@@ -42,3 +42,37 @@ func TestExactAcceptedReceiptDoesNotReplayDuplicateGameplay(t *testing.T) {
 		t.Fatalf("unknown request treated as accepted: found=%v err=%v", found, err)
 	}
 }
+
+
+func TestArchiveFailureKeepsOnlyCommittedTerminalReceipt(t *testing.T) {
+	c := &LiveHandCoordinator{receipts: make(map[domain.HandID]map[string]liveReceipt)}
+	hand := domain.HandID("hand-terminal-archive")
+	command := gamecore.Command{ActorPosition: 1, ExpectedVersion: 40, Payload: []byte(`{"v":"doudizhu-live-play-command-v1"}`)}
+	terminal := gamecore.CommandOutcome{
+		Version: 41, Terminal: true,
+		Payload: []byte(`{"result":"finished"}`), FinalPayload: []byte(`{"evidence":"committed"}`),
+	}
+	errArchive := errors.Join(gamecore.ErrArchiveFailed, errors.New("archive database unavailable"))
+	if !c.retainArchivedFailureReceipt(hand, "player-1", "terminal-commit", command, terminal, errArchive) {
+		t.Fatal("durably committed terminal action lost its retry receipt")
+	}
+	got, found, err := c.loadReceipt(context.Background(), hand, "player-1", "terminal-commit", command)
+	if err != nil || !found || got.Version != terminal.Version || string(got.FinalPayload) != string(terminal.FinalPayload) {
+		t.Fatalf("retry lost accepted terminal result: outcome=%+v found=%v err=%v", got, found, err)
+	}
+	for _, tt := range []struct {
+		name string
+		result gamecore.CommandOutcome
+		err error
+	}{
+		{"uncommitted database failure", terminal, errors.New("ambiguous transaction commit")},
+		{"nonterminal archive failure", gamecore.CommandOutcome{Version: 41, Payload: terminal.Payload}, errArchive},
+		{"missing final evidence", gamecore.CommandOutcome{Version: 41, Terminal: true}, errArchive},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if c.retainArchivedFailureReceipt(hand, "player-1", "unsafe-"+tt.name, command, tt.result, tt.err) {
+				t.Fatal("unconfirmed outcome became an accepted receipt")
+			}
+		})
+	}
+}
