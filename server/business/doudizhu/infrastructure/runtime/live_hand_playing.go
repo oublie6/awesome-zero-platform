@@ -13,6 +13,17 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
 
+func (c *LiveHandCoordinator) PlayCommitted(ctx context.Context,handID domain.HandID,
+	actor domain.AccountID,commandID string,expectedVersion uint64,cards []string,
+)(application.LiveHandCommandResult,error){
+	return c.playInternal(ctx,handID,actor,commandID,expectedVersion,cards)
+}
+func (c *LiveHandCoordinator) PassCommitted(ctx context.Context,handID domain.HandID,
+	actor domain.AccountID,commandID string,expectedVersion uint64,
+)(application.LiveHandCommandResult,error){
+	return c.passInternal(ctx,handID,actor,commandID,expectedVersion)
+}
+
 func (c *LiveHandCoordinator) Play(
 	ctx context.Context,
 	handID domain.HandID,
@@ -20,6 +31,11 @@ func (c *LiveHandCoordinator) Play(
 	expectedVersion uint64,
 	cards []string,
 ) (application.LiveHandCommandResult, error) {
+	return c.playInternal(ctx,handID,actor,"",expectedVersion,cards)
+}
+func (c *LiveHandCoordinator) playInternal(ctx context.Context,handID domain.HandID,actor domain.AccountID,
+	commandID string,expectedVersion uint64,cards []string,
+)(application.LiveHandCommandResult,error) {
 	payload, err := json.Marshal(livehand.PlayCommand{
 		Version: livehand.PlayCommandVersion,
 		Cards:   append([]string(nil), cards...),
@@ -27,7 +43,7 @@ func (c *LiveHandCoordinator) Play(
 	if err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("encode Doudizhu play: %w", err)
 	}
-	return c.applyPlayingCommand(ctx, handID, actor, expectedVersion, payload)
+	return c.applyPlayingCommand(ctx, handID, actor, commandID, expectedVersion, payload)
 }
 
 func (c *LiveHandCoordinator) Pass(
@@ -36,6 +52,11 @@ func (c *LiveHandCoordinator) Pass(
 	actor domain.AccountID,
 	expectedVersion uint64,
 ) (application.LiveHandCommandResult, error) {
+	return c.passInternal(ctx,handID,actor,"",expectedVersion)
+}
+func (c *LiveHandCoordinator) passInternal(ctx context.Context,handID domain.HandID,actor domain.AccountID,
+	commandID string,expectedVersion uint64,
+)(application.LiveHandCommandResult,error) {
 	payload, err := json.Marshal(livehand.PassCommand{Version: livehand.PassCommandVersion})
 	if err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("encode Doudizhu pass: %w", err)
@@ -47,6 +68,7 @@ func (c *LiveHandCoordinator) applyPlayingCommand(
 	ctx context.Context,
 	handID domain.HandID,
 	actor domain.AccountID,
+	commandID string,
 	expectedVersion uint64,
 	payload []byte,
 ) (application.LiveHandCommandResult, error) {
@@ -58,7 +80,7 @@ func (c *LiveHandCoordinator) applyPlayingCommand(
 	if err != nil {
 		return application.LiveHandCommandResult{}, err
 	}
-	outcome, err := c.directory.Apply(gamecore.InstanceID(handID), gamecore.Command{
+	outcome, err := c.applyLive(ctx,handID,actor,commandID,gamecore.Command{
 		ActorPosition:   position,
 		ExpectedVersion: expectedVersion,
 		Payload:         append([]byte(nil), payload...),
