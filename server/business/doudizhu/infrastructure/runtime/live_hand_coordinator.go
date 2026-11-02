@@ -23,6 +23,7 @@ type LiveHandCoordinator struct {
 	finalized map[domain.HandID]gamecore.FinalRecord
 	journal   *mysqlstore.LiveJournal
 	epochs    map[domain.HandID]uint64
+	receipts  map[domain.HandID]map[string]liveReceipt
 }
 
 func NewLiveHandCoordinator(seeds *SeedVault, directory *gamecore.LiveDirectory) (*LiveHandCoordinator, error) {
@@ -33,6 +34,7 @@ func NewLiveHandCoordinator(seeds *SeedVault, directory *gamecore.LiveDirectory)
 		seeds: seeds, directory: directory, module: randomizedsetup.NewModule(),
 		games: make(map[domain.HandID]*livehand.Game), finalized: make(map[domain.HandID]gamecore.FinalRecord),
 		epochs: make(map[domain.HandID]uint64),
+		receipts:make(map[domain.HandID]map[string]liveReceipt),
 	}, nil
 }
 
@@ -112,6 +114,7 @@ func (c *LiveHandCoordinator) RollbackStart(ctx context.Context, handID domain.H
 	c.mu.Lock()
 	delete(c.games, handID)
 	delete(c.epochs, handID)
+	delete(c.receipts,handID)
 	c.mu.Unlock()
 	return err
 }
