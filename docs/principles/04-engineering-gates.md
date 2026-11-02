@@ -26,6 +26,10 @@
 - **Acceptance cannot be self-declared:** a Goal is complete only after all applicable required checks, CI and Codex independent acceptance are green for the same source revision. If hardware/credentials/platforms prevent verification, document the specific blocker; do not call it a pass.
 - **Controlled handoff:** one writer at a time on `main`, no feature branches or concurrent competing changes; include commit SHA, acceptance checklist, applicable principle pages, reproducible commands, and expected evidence. See `AGENTS.md` for the normative full process.
 
+## Integrated product development gate
+
+For a user-authorized whole-product Goal, use a **single final Codex acceptance handoff**, not a new handoff after every component. ChatGPT implements all authorized backend and frontend features, adds meaningful unit, integration, race, fault and recovery coverage, inspects CI continuously, and resolves failures before freezing an identifiable source SHA. Normal checkpoint commits and automated CI remain required during development but do not constitute final acceptance. Codex then independently checks the *whole* playable product and recovery contract against that one source revision. FAIL returns defects to ChatGPT for correction and consolidated re-verification. Physical-device and credential-dependent claims require real evidence; otherwise record BLOCKED explicitly. Existing incomplete Goals and prior FAIL history must not be silently marked completed.
+
 ## Proof and acceptance
 
 - CI: narrow unit/contract/typecheck/import-boundary tests; schema/API compatibility; builds per qualified target; race/benchmark/fault tests where supported. Tests should fail for the relevant regression, not simply reassert a mock.
