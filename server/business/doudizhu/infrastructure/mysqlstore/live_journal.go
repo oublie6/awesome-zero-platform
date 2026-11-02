@@ -2,6 +2,7 @@ package mysqlstore
 
 import (
 	"context"
+	"crypto/cipher"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
@@ -42,7 +43,10 @@ const (
 	maxLiveActionPayloadBytes = 16 << 10
 )
 
-type LiveJournal struct{ db *sql.DB }
+type LiveJournal struct {
+	db *sql.DB
+	checkpointAEAD cipher.AEAD
+}
 
 func NewLiveJournal(db *sql.DB) (*LiveJournal, error) {
 	if db == nil {
