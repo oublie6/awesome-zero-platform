@@ -2,13 +2,13 @@ import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {GameOnlineController} from '../dist/game/GameOnlineController.js'
 
-function fixture({failLogin=false}={}) {
+function fixture({failLogin=false,roomMember=true}={}) {
  const commands=[], messages=new Set(), closes=new Set(), auth=[]
  const platform={
   target:'wechat',
   auth:{acquireCode:async()=> 'temporary-wx-code'},
   vault:{load:async()=>null,save:async()=>{},clear:async()=>{}},
-  http:{request:async()=>({code:'OK',data:{roomId:'room-rejoin',version:9,status:'WAITING_PLAYERS',occupied:2,member:true,lastClientSequence:12,seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:true},{position:3,accountId:'',ready:false}]}})},
+  http:{request:async()=>({code:'OK',data:{roomId:'room-rejoin',version:9,status:'WAITING_PLAYERS',occupied:2,member:roomMember,lastClientSequence:12,seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:true},{position:3,accountId:'',ready:false}]}})},
   random:{bytes:async n=>new Uint8Array(Array.from({length:n},(_,i)=>i))},
   socket:{connect:async(url,token)=>{auth.push({url,token});return {
    send:async raw=>commands.push(JSON.parse(raw)),close:()=>{},
@@ -68,5 +68,37 @@ test('authenticated room query restores version and monotonic sequence for rejoi
   durable:{v:'fair-doudizhu-command-result-v1',commandId:req.requestId,aggregateId:'room-rejoin',aggregateVersion:10,accepted:true}
  }}))
  assert.equal((await pending).version,10)
+ online.dispose()
+})
+
+test('reconnect reauthenticates the transport and fetches authoritative room version',async()=>{
+ const f=fixture()
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await online.joinRoom('room-rejoin')
+ const latest=await online.reconnectAndResync()
+ assert.equal(f.auth.length,2)
+ assert.equal(f.auth[1].token,'server-validated-token')
+ assert.equal(latest.roomId,'room-rejoin')
+ assert.equal(online.rooms.state.version,9)
+ assert.equal(f.commands.length,0)
+ const pending=online.rooms.ready(true)
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(f.commands[0].payload.clientSeq,13)
+ assert.equal(f.commands[0].payload.expectedVersion,9)
+ const request=f.commands[0].payload
+ for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+   v:'doudizhu-api-command-result-v1',requestId:request.requestId,type:'room.ready',
+   durable:{v:'fair-doudizhu-command-result-v1',commandId:request.requestId,aggregateId:'room-rejoin',aggregateVersion:10,accepted:true}
+ }}))
+ assert.equal((await pending).version,10)
+ online.dispose()
+})
+test('reconnect cannot silently restore an unconfirmed room membership',async()=>{
+ const f=fixture({roomMember:false})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await assert.rejects(online.reconnectAndResync('room-rejoin'),/membership not confirmed/)
+ assert.equal(online.rooms.state,null)
  online.dispose()
 })
