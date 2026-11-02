@@ -27,6 +27,10 @@
     "./api": {
       "types": "./dist/api.d.ts",
       "import": "./dist/api.js"
+    },
+    "./room": {
+      "types": "./dist/room.d.ts",
+      "import": "./dist/room.js"
     }
   }
 }
