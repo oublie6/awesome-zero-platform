@@ -53,3 +53,11 @@ The current implementation checkpoint includes:
 - Client fairness commitment/reveal HPKE path needs a server-issued signed AAD context. The current hand.reveal command correctly remains fail-closed; consequently a complete three-player fair game cannot yet be played from this UI.
 - Complete scoring/evidence UI, verified three-person end-to-end, real WeChat mobile SDK/domain/TLS credentials/devices and Douyin runtime qualification.
 - All checks must be rerun on one final source SHA; intermediate CI green/failure/cancellation is not a completed Goal. Codex has **not** been asked to perform final acceptance.
+
+
+## Development checkpoint — 2026-11-02 bounded recovery and process-crash tests (CI pending)
+
+- The live MySQL journal now rejects overlarge action payloads (16 KiB), more than 512 actions per hand, invalid/empty command or actor identities, invalid or backwards owner epochs, missing versions, invalid JSON and incorrect digest lengths before replay can build its in-memory receipt index. The 512-action cap deliberately exceeds a legal 54-card game's possible turns; if rules evolve, review this limit before release. This is a bounded **genesis-log replay**, **not** the encrypted checkpoint feature still required by this Goal.
+- Added dedicated metadata/epoch validation unit tests and real-MySQL corruption checks. Tampered log rows must fail closed with `ErrLiveReplayIntegrity`.
+- Added real child-process SIGKILL integration coverage around the journal boundary: kill before append, kill immediately after successful durable append, read committed action after process loss, acquire a higher owner epoch, reject the stale writer and admit the successor. This does **not** yet exercise the complete Cocos/Go three-player gameplay recovery or every COMMIT ambiguity.
+- Source checkpoint `f6e9b65fd3cb664a69f9eba230ef1010e59c91aa`; automated CI is still to be confirmed on this exact revision. No Codex final product acceptance has been requested. Goal remains **in_progress**.
