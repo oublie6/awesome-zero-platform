@@ -18,7 +18,7 @@ type liveReceipt struct {
  outcome gamecore.CommandOutcome
 }
 func duplicateCommandReceipt(old, current gamecore.Command, previousActor,actor domain.AccountID)bool{
- return previousActor==actor && old.ActorPosition==current.ActorPosition &&
+ return previousActor==actor && (current.ActorPosition==0 || old.ActorPosition==current.ActorPosition) &&
   old.ExpectedVersion==current.ExpectedVersion && bytes.Equal(old.Payload,current.Payload)
 }
 func cloneLiveOutcome(v gamecore.CommandOutcome)gamecore.CommandOutcome{
