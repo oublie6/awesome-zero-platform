@@ -67,6 +67,10 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 			return fmt.Errorf("%w: live watermark disagrees with replay log for %s", gamecore.ErrVerificationFailed, id)
 		}
 		var finalOutcome gamecore.CommandOutcome
+		// Do not expose even an exact historical request receipt until the
+		// entire log, final state and durable lifecycle phase validate.
+		// A later corrupt action must quarantine the whole hand.
+		recoveredReceipts := make(map[string]liveReceipt, len(actions))
 		for _, item := range actions {
 			position, err := game.PositionForAccount(item.Actor)
 			if err != nil || position != item.ActorPosition {
@@ -85,10 +89,13 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 			if outcome.Version != item.Version || digest != item.ResultDigest {
 				return fmt.Errorf("%w: divergent live result for %s/%d", gamecore.ErrVerificationFailed, id, item.Version)
 			}
-			c.storeReceipt(id, item.Actor, item.CommandID, gamecore.Command{
-				ActorPosition: item.ActorPosition, ExpectedVersion: item.ExpectedVersion,
-				Payload: append([]byte(nil), item.Payload...),
-			}, outcome)
+			if _, exists := recoveredReceipts[item.CommandID]; exists {
+				return fmt.Errorf("%w: duplicate live command identity for %s", gamecore.ErrVerificationFailed, id)
+			}
+			recoveredReceipts[item.CommandID] = liveReceipt{actor: item.Actor,
+				command: gamecore.Command{ActorPosition: item.ActorPosition, ExpectedVersion: item.ExpectedVersion,
+					Payload: append([]byte(nil), item.Payload...)},
+				outcome: cloneLiveOutcome(outcome)}
 			if outcome.Terminal {
 				finalOutcome = outcome
 			}
@@ -102,6 +109,9 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 				return fmt.Errorf("archive recovered game completion %s: %w", id, err)
 			}
 			c.finish(id, record)
+			c.mu.Lock()
+			c.receipts[id] = recoveredReceipts
+			c.mu.Unlock()
 			continue
 		}
 		if err := c.directory.Add(game.Descriptor(), game); err != nil {
@@ -110,6 +120,7 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 		c.mu.Lock()
 		c.games[id] = game
 		c.epochs[id] = epoch
+		c.receipts[id] = recoveredReceipts
 		c.mu.Unlock()
 	}
 	return nil
