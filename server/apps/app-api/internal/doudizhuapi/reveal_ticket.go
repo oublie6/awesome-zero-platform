@@ -158,9 +158,13 @@ func (d *Dispatcher) verifyRevealContext(actor domain.AccountID, request Command
 	}
 	issued, expires := time.UnixMilli(c.IssuedAt).UTC(), time.UnixMilli(c.ExpiresAt).UTC()
 	now := d.clock.Now().UTC()
+	// Preserve signed context verification for exact already-committed retries
+	// after the ticket expires. The application transaction checks stored
+	// command identity before freshness; uncommitted expired requests still
+	// fail inside MySQL, without changing an acknowledged contribution.
 	if expires.Sub(issued) != d.revealTickets.ttl || now.Before(issued.Add(-5*time.Second)) ||
-		!now.Before(expires) || expires.Sub(now) > d.revealTickets.ttl+5*time.Second {
-		return time.Time{}, time.Time{}, errors.Join(ErrInvalidRequest, errors.New("reveal context expired or not yet valid"))
+		expires.Sub(now) > d.revealTickets.ttl+5*time.Second {
+		return time.Time{}, time.Time{}, errors.Join(ErrInvalidRequest, errors.New("invalid signed reveal context time window"))
 	}
 	return issued, expires, nil
 }
