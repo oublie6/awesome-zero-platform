@@ -69,7 +69,7 @@ export class GameFairnessActions {
   private secret:PendingSecret|null=null
   private inFlight=false
   private pending:Omit<WireCommand,'v'>|null=null
-  constructor(private readonly api:DoudizhuHTTPClient,platform:GamePlatform,
+  constructor(private readonly api:DoudizhuHTTPClient,private readonly platform:GamePlatform,
     private readonly trustedManifestRoots:Readonly<Record<string,string>>) {
     this.ids=secureRoomCommandIdentity(platform.random)
     this.sealer=new SecureEnvelopeSealer({randomSource:platform.random})
@@ -168,12 +168,10 @@ export class GameFairnessActions {
     }finally{this.inFlight=false}
   }
   private async sealerRandom(n:number):Promise<Uint8Array>{
-    const v=await this.platformRandom.bytes(n)
+    const v=await this.platform.random.bytes(n)
     if(!(v instanceof Uint8Array)||v.length!==n)throw new Error('secure random unavailable')
     return v
   }
-  private get platformRandom():GamePlatform['random']{return this.random}
-  private random:GamePlatform['random']=undefined as never
   private clearSecret():void {
     this.secret?.random.fill(0)
     this.secret=null
