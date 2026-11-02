@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {RoomCoordinator,DurableRoomRejected} from '../dist/room.js'
+import {RoomCoordinator,DurableRoomRejected,secureRoomCommandIdentity} from '../dist/room.js'
 
 function fixture() {
  let n=0
@@ -35,7 +35,7 @@ test('join from trusted version and do not expose mutable room state',async()=>{
 test('explicit durable rejection does not mutate confirmed version',async()=>{
  const {room,api}=fixture()
  room.restoreTrustedRoom('r',3)
- api.command=async c=>({requestId:c.requestId,type:c.type,durable:{
+ api.command=async c=>({v:'doudizhu-api-command-result-v1',requestId:c.requestId,type:c.type,durable:{
   v:'fair-doudizhu-command-result-v1',commandId:c.requestId,aggregateId:'r',aggregateVersion:3,
   accepted:false,failure:{code:'CONFLICT',currentVersion:5}}})
  await assert.rejects(room.ready(true),e=>e instanceof DurableRoomRejected && e.code==='CONFLICT' && e.currentVersion===5)
@@ -69,7 +69,26 @@ test('one in-flight room operation per coordinator',async()=>{
  api.command=()=>new Promise(r=>{resolve=r})
  const first=room.create('r')
  await assert.rejects(room.create('r'),/outstanding/)
- resolve({requestId:'secure-id-1',type:'room.create',durable:{
+ resolve({v:'doudizhu-api-command-result-v1',requestId:'secure-id-1',type:'room.create',durable:{
   v:'fair-doudizhu-command-result-v1',commandId:'secure-id-1',aggregateId:'r',aggregateVersion:1,accepted:true}})
  await first
+})
+
+test('secure IDs use injected entropy, reject missing or short entropy without a fake fallback',async()=>{
+ let calls=0
+ const identity=secureRoomCommandIdentity({bytes:async n=>{calls++;assert.equal(n,16);return new Uint8Array(Array.from({length:n},(_,i)=>i))}})
+ assert.equal(await identity.newRequestId(),'cmd-000102030405060708090a0b0c0d0e0f')
+ assert.equal(calls,1)
+ await assert.rejects(secureRoomCommandIdentity({bytes:async()=>new Uint8Array(8)}).newRequestId(),/entropy unavailable/)
+})
+test('room coordinator supports asynchronous secure identities and validates top-level envelope',async()=>{
+ const {room,api}=fixture()
+ let calls=0
+ const secure=new RoomCoordinator(api,{newRequestId:async()=>{calls++;return 'async-secure-id'}})
+ await secure.create('room-async')
+ assert.equal(calls,1)
+ api.command=async c=>({v:'wrong-version',requestId:c.requestId,type:c.type,durable:{
+  v:'fair-doudizhu-command-result-v1',commandId:c.requestId,aggregateId:c.aggregateId,aggregateVersion:1,accepted:true}})
+ await assert.rejects(room.create('room-invalid'),/invalid authoritative room result/)
+ assert.equal(room.needsReconciliation,true)
 })
