@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"time"
+	"log"
 
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/config"
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/doudizhuapi"
@@ -113,9 +114,20 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
-	proofs, err := ddzruntime.NewHMACBeaconProofVerifier([]byte(cfg.Doudizhu.BeaconProofSecret))
-	if err != nil {
-		return doudizhuComponents{}, err
+	var proofs ddzruntime.BeaconProofVerifier
+	var drand *ddzruntime.DrandQuicknet
+	if cfg.Doudizhu.BeaconProvider == ddzruntime.DrandQuicknetProvider {
+		if cfg.Doudizhu.BeaconRound != "auto" {
+			return doudizhuComponents{},fmt.Errorf("drand Quicknet must pin an auto-selected future round")
+		}
+		drand,err=ddzruntime.NewDrandQuicknet(cfg.Doudizhu.BeaconPublicKeyHex)
+		if err!=nil{return doudizhuComponents{},err}
+		proofs=drand
+	} else {
+		// Only legacy or deliberately isolated test deployments may use HMAC.
+		// It is never considered an independently verifiable public beacon.
+		proofs,err=ddzruntime.NewHMACBeaconProofVerifier([]byte(cfg.Doudizhu.BeaconProofSecret))
+		if err!=nil{return doudizhuComponents{},err}
 	}
 	beacons, err := ddzruntime.NewBeaconVerifier(proofs)
 	if err != nil {
@@ -168,7 +180,30 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err := dispatcher.ConfigureRevealTickets(contributionKey); err != nil {
 		return doudizhuComponents{}, fmt.Errorf("configure bound reveal AAD: %w", err)
 	}
+	var autoDealer *fairAutoDealer
+	if drand!=nil {
+		autoDealer,err=newFairAutoDealer(store,service,supervisor,drand,ids,clock,cfg.Doudizhu.CommandTTL)
+		if err!=nil{return doudizhuComponents{},err}
+	}
 	ctx, cancel := context.WithCancel(context.Background())
+	if autoDealer!=nil {
+		go func(){
+			ticker:=time.NewTicker(cfg.Doudizhu.SweepInterval)
+			defer ticker.Stop()
+			for {
+				select{
+				case <-ctx.Done():return
+				case <-ticker.C:
+					scanCtx,done:=context.WithTimeout(ctx,10*time.Second)
+					_,processErr:=autoDealer.ProcessOnce(scanCtx)
+					done()
+					if processErr!=nil && ctx.Err()==nil {
+						log.Printf("fair drand auto-deal retry after verification/transaction error: %v",processErr)
+					}
+				}
+			}
+		}()
+	}
 	go func() {
 		for ctx.Err() == nil {
 			if err := supervisor.Run(ctx); err != nil && ctx.Err() == nil {
