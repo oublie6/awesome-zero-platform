@@ -30,7 +30,7 @@ func TestNoLandlordTerminationRetriesTheSameCommand(t *testing.T) {
 	}
 	first := terminal.abortCalls[0]
 	if first.actor != SystemActor || first.command.Name != application.CommandHandAbort ||
-		first.command.ExpectedVersion != 8 || first.command.ClientSeq != 1 || first.reason != ReasonNoLandlord {
+		first.command.ExpectedVersion != 8 || first.command.ClientSeq != 8 || first.reason != ReasonNoLandlord {
 		t.Fatalf("first=%#v", first)
 	}
 
