@@ -84,6 +84,14 @@ This directory is the normative source for these decisions. Keep `AGENTS.md` com
 - Commit goal-related checkpoints directly to `main` and push with `git push origin main`. Never force push.
 - ChatGPT–Codex handoffs use sequential commits on `main`; agents must not modify the same files concurrently.
 
+## Integrated delivery cadence (user-authorized, 2026-11-02)
+
+- For the Fair Doudizhu playable-product Goal, **ChatGPT completes the entire authorized feature scope** (authentication, room-to-hand lifecycle, fairness, playable Cocos flows, B-level recovery, crash/reconnect tests, and integration) before requesting **one consolidated Codex product acceptance**. Do not artificially split handoffs after each class, bug fix, or commit.
+- Commit and push incremental, reviewable implementation checkpoints to `main` with normal CI; ChatGPT owns reviewing failing checks and fixing them continuously. Intermediate green CI is **not** independent Goal acceptance, and intermediate commits are not product delivery.
+- Once the feature scope is implemented and ChatGPT's comprehensive self-tests pass, freeze an exact source SHA for independent Codex review. Codex evaluates the integrated product and all Goal requirements. If FAIL, ChatGPT fixes the defects and Codex reruns affected and full regression gates; never relabel incomplete features as PASS.
+- The earlier Goal 0045 client foundation remains **open / not archived** until its own acceptance requirements are discharged. A later integrated Goal may be created and developed without asserting that Goal 0045 is completed. Preserve all historical evidence.
+- Requirements relying on platform-owned credentials, production domains, actual mobile hardware or controlled crash-test infrastructure remain explicitly BLOCKED until real evidence exists. Never substitute mocks or simulator passes for those checks.
+
 ## Goal workflow
 
 Supported goal states are:
