@@ -95,6 +95,7 @@ func (a *fairAutoDealer) ProcessOnce(ctx context.Context)(int,error){
    if err!=nil{return progressed,err}
    progressed++
   case domain.HandDealing:
+   if snap.BeaconPlan.Provider!=ddzruntime.DrandQuicknetProvider{continue}
    // Domain.MarkHandDealt creates the durably journalled live state and
    // compensates if its transaction fails; after a crash the same phase
    // is retried by a fresh instance, not replaced with a different deal.
