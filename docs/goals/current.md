@@ -1,5 +1,7 @@
 # Goal 0045: Cross-platform Fair Doudizhu client foundation
 
+> Integrated delivery update (2026-11-02): the user authorized an end-to-end implementation cadence with continuous ChatGPT development and one final Codex product handoff. See [`Goal 0046 integrated delivery`](0046-integrated-fair-doudizhu-delivery.md). Goal 0045 remains separately **in_progress**; its original requirements and independent checkpoint evidence are preserved below. Goal 0046 is being developed concurrently by explicit authorization, not silently interpreted as Goal 0045 completion.
+
 ## Status
 
 - State: in_progress
