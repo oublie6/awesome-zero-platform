@@ -259,6 +259,19 @@ func (d *LiveDirectory) ApplyCommitted(id InstanceID, command Command, persist f
 	return outcome,candidate,nil
 }
 
+// ArchiveRecoveredFinal writes a replay-verified terminal result using the
+// same idempotent final archive as normal completion, without exposing a
+// terminated instance to new commands or clients.
+func (d *LiveDirectory) ArchiveRecoveredFinal(game LiveGame, outcome CommandOutcome) (FinalRecord,error) {
+	if d==nil || d.archive==nil || game==nil || !outcome.Terminal || len(outcome.FinalPayload)==0 {
+		return FinalRecord{},fmt.Errorf("%w: invalid recovered final record",ErrInvalidArgument)
+	}
+	record,err:=NewFinalRecord(game.InstanceID(),game.Descriptor(),FinalStatusCompleted,outcome.Version,outcome.FinalPayload)
+	if err!=nil{return FinalRecord{},err}
+	if err:=d.archive.Archive(record);err!=nil{return record,errors.Join(ErrArchiveFailed,err)}
+	return record,nil
+}
+
 func (d *LiveDirectory) View(id InstanceID, request ViewRequest) (GameView, error) {
 	entry, err := d.entry(id)
 	if err != nil {
