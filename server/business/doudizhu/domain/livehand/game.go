@@ -63,6 +63,8 @@ type Game struct {
 	winnerSeat   uint8
 	settlement   *settlement.Result
 	terminal     bool
+	origin domain.HandSnapshot
+	history []gamecore.Command
 }
 
 type BidCommand struct {
@@ -220,6 +222,7 @@ func New(snapshot domain.HandSnapshot, material gamecore.FairnessMaterial, artif
 	}
 	game := &Game{
 		id:         material.InstanceID,
+		origin: snapshot,
 		seats:      snapshot.Seats,
 		phase:      PhaseBidding,
 		version:    1,
@@ -246,10 +249,38 @@ func (g *Game) Apply(command gamecore.Command) (gamecore.CommandOutcome, error) 
 	if command.ExpectedVersion != g.version {
 		return gamecore.CommandOutcome{}, fmt.Errorf("%w: got %d want %d", ErrVersionConflict, command.ExpectedVersion, g.version)
 	}
+	var outcome gamecore.CommandOutcome
+	var err error
 	if g.phase == PhasePlaying {
-		return g.applyPlaying(command)
+		outcome, err = g.applyPlaying(command)
+	} else {
+		outcome, err = g.applyBid(command)
 	}
-	return g.applyBid(command)
+	if err == nil {
+		g.history = append(g.history, gamecore.Command{
+			ActorPosition:command.ActorPosition,ExpectedVersion:command.ExpectedVersion,
+			Payload:append([]byte(nil),command.Payload...),
+		})
+	}
+	return outcome,err
+}
+
+// Fork rebuilds an isolated candidate from verified immutable genesis and
+// successfully applied commands; failed speculative mutations are never
+// published to the authoritative game.
+func (g *Game) Fork() (*Game,error) {
+	if g==nil || g.terminal {return nil,fmt.Errorf("%w: terminal game cannot be forked",gamecore.ErrInstanceNotFound)}
+	candidate,err:=New(g.origin,g.material.Clone(),g.artifact)
+	if err!=nil{return nil,err}
+	for _,command:=range g.history {
+		if _,err:=candidate.Apply(command);err!=nil {
+			return nil,fmt.Errorf("%w: replay command: %v",gamecore.ErrVerificationFailed,err)
+		}
+	}
+	if candidate.version!=g.version || candidate.phase!=g.phase {
+		return nil,fmt.Errorf("%w: candidate replay diverged",gamecore.ErrVerificationFailed)
+	}
+	return candidate,nil
 }
 
 func (g *Game) applyBid(command gamecore.Command) (gamecore.CommandOutcome, error) {
