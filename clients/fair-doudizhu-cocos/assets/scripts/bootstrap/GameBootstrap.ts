@@ -11,7 +11,7 @@ const { ccclass } = _decorator
 type Screen = 'home' | 'rooms' | 'rules' | 'table'
 interface MenuAction { name: string; caption: string; action: () => void }
 
-type PublicConfig = { apiBase: string; socketEndpoint: string }
+type PublicConfig = { apiBase: string; socketEndpoint: string; revealManifestRoots: Record<string,string> }
 function publicConfig(): PublicConfig | null {
   const env=globalThis as typeof globalThis & {__FAIR_DOUDIZHU_CONFIG__?:unknown}
   const config=env.__FAIR_DOUDIZHU_CONFIG__
@@ -19,7 +19,13 @@ function publicConfig(): PublicConfig | null {
   const raw=config as Record<string,unknown>
   if (typeof raw.apiBase !== 'string' || !/^https:\/\/[^\s@/]+/.test(raw.apiBase) ||
       typeof raw.socketEndpoint !== 'string' || !/^wss:\/\/[^\s@/]+/.test(raw.socketEndpoint)) return null
-  return {apiBase:raw.apiBase,socketEndpoint:raw.socketEndpoint}
+  const roots:Record<string,string>={}
+  if(raw.revealManifestRoots && typeof raw.revealManifestRoots==='object' && !Array.isArray(raw.revealManifestRoots)){
+    for(const [key,value] of Object.entries(raw.revealManifestRoots)){
+      if(/^[A-Za-z0-9_-]{1,128}$/.test(key) && typeof value==='string' && /^[A-Za-z0-9_-]+$/.test(value))roots[key]=value
+    }
+  }
+  return {apiBase:raw.apiBase,socketEndpoint:raw.socketEndpoint,revealManifestRoots:roots}
 }
 
 /**
@@ -42,6 +48,7 @@ export class GameBootstrap extends Component {
   private screen: Screen = 'home'
   private selectedCards = new Set<string>()
   private roomID = ''
+  private handID = ''
   private requestGeneration = 0
 
   override start(): void {
@@ -100,6 +107,9 @@ export class GameBootstrap extends Component {
         {name:'ReadyRoom',caption:'准备',action:()=>void this.readyRoom()},
         {name:'StartHand',caption:'开始本局',action:()=>void this.startHand()},
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
+        {name:'CommitFairness',caption:'提交洗牌承诺',action:()=>void this.commitFairness()},
+        {name:'RevealFairness',caption:'加密提交随机贡献',action:()=>void this.revealFairness()},
+        {name:'RefreshFairness',caption:'刷新洗牌阶段',action:()=>void this.refreshFairness()},
         {name:'OpenTable',caption:'查看牌桌',action:()=>this.renderScreen('table')},
         {name:'BackHome',caption:'返回首页',action:()=>this.renderScreen('home')}
       ])
@@ -171,7 +181,7 @@ export class GameBootstrap extends Component {
       if(!globals.wx)throw new Error('当前尚未配置网页账号登录，请使用微信小游戏')
       const platform=createPlatform({apiBase:cfg.apiBase,sdk:globals.wx})
       const online=new GameOnlineController(platform,createWeChatIdentityExchange(platform),cfg.socketEndpoint,
-        text=>this.notice(text))
+        text=>this.notice(text),cfg.revealManifestRoots)
       this.platform=platform
       this.online?.dispose()
       this.online=online
@@ -227,8 +237,39 @@ export class GameBootstrap extends Component {
       if(this.screen==='rooms')this.renderScreen('rooms')
       const seats=(info.seats||[]).map(s=>s.accountId ? `座位${s.position} ${s.ready?'已准备':'未准备'}`:`座位${s.position} 空`).join(' / ')
       this.notice(`房间版本 ${info.version} · ${seats}`)
-      if(info.activeHandId)await online.shell.syncHand(info.activeHandId)
+      if(info.activeHandId){
+        this.handID=info.activeHandId
+        const fairness=await online.api.fairness(info.activeHandId)
+        if(fairness.phase==='BIDDING' || fairness.phase==='PLAYING' || fairness.phase==='SETTLING'){
+          await online.shell.syncHand(info.activeHandId)
+        } else {
+          this.notice(`公平洗牌阶段：${fairness.phase} · 座位${fairness.seat} · ${fairness.committed?'已承诺':'待承诺'} / ${fairness.revealed?'已贡献':'待贡献'}`)
+        }
+      }
     }catch(error){this.notice('刷新失败：'+this.message(error))}
+  }
+  private async refreshFairness():Promise<void>{
+    try {
+      const online=this.requireOnline()
+      if(!this.handID)throw new Error('尚未开始牌局，请刷新房间')
+      const view=await online.api.fairness(this.handID)
+      this.notice(`洗牌阶段 ${view.phase} · 座位${view.seat} · 版本${view.version} · ${view.committed?'承诺已确认':'待承诺'} / ${view.revealed?'贡献已确认':'待提交贡献'}`)
+      if(view.phase==='BIDDING'||view.phase==='PLAYING')await online.shell.syncHand(this.handID)
+    }catch(error){this.notice('公平阶段查询失败：'+this.message(error))}
+  }
+  private async commitFairness():Promise<void>{
+    try{
+      if(!this.handID)throw new Error('尚未开始牌局')
+      await this.requireOnline().fairness.commit(this.handID)
+      await this.refreshFairness()
+    }catch(error){this.notice('公平承诺失败：'+this.message(error))}
+  }
+  private async revealFairness():Promise<void>{
+    try{
+      if(!this.handID)throw new Error('尚未开始牌局')
+      await this.requireOnline().fairness.reveal(this.handID)
+      await this.refreshFairness()
+    }catch(error){this.notice('加密随机贡献失败：'+this.message(error))}
   }
   private async refreshHand():Promise<void> {
     try {
