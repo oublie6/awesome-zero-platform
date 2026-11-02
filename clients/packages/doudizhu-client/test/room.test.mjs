@@ -1,0 +1,71 @@
+import {test} from 'node:test'
+import assert from 'node:assert/strict'
+import {RoomCoordinator,DurableRoomRejected} from '../dist/room.js'
+
+function fixture() {
+ let n=0
+ const calls=[]
+ const api={async command(cmd){
+   calls.push(cmd)
+   return {v:'doudizhu-api-command-result-v1',requestId:cmd.requestId,type:cmd.type,
+     durable:{v:'fair-doudizhu-command-result-v1',commandId:cmd.requestId,accepted:true,aggregateId:cmd.aggregateId,aggregateVersion:cmd.expectedVersion+1}}
+ }}
+ return {calls,api,room:new RoomCoordinator(api,{newRequestId:()=> 'secure-id-'+(++n)})}
+}
+test('create, ready and start use actual Go DTO and advance only on confirmed durable results',async()=>{
+ const {room,calls}=fixture()
+ assert.deepEqual(await room.create('room-one'),{roomId:'room-one',version:1})
+ assert.deepEqual(await room.ready(true),{roomId:'room-one',version:2})
+ assert.deepEqual(await room.startHand('hand-new'),{roomId:'room-one',version:3})
+ assert.deepEqual(calls.map(c=>[c.type,c.clientSeq,c.expectedVersion]),[
+  ['room.create',1,0],['room.ready',2,1],['room.hand.start',3,2]])
+ assert.deepEqual(calls[1].payload,{ready:true})
+ assert.deepEqual(calls[2].payload,{handId:'hand-new'})
+})
+test('join from trusted version and do not expose mutable room state',async()=>{
+ const {room,calls}=fixture()
+ await room.join('room-one',5)
+ assert.deepEqual(room.state,{roomId:'room-one',version:6})
+ const old=room.state
+ assert.throws(()=>{old.version=99},TypeError)
+ await room.leave()
+ assert.equal(calls[1].expectedVersion,6)
+})
+test('explicit durable rejection does not mutate confirmed version',async()=>{
+ const {room,api}=fixture()
+ room.restoreTrustedRoom('r',3)
+ api.command=async c=>({requestId:c.requestId,type:c.type,durable:{
+  v:'fair-doudizhu-command-result-v1',commandId:c.requestId,aggregateId:'r',aggregateVersion:3,
+  accepted:false,failure:{code:'CONFLICT',currentVersion:5}}})
+ await assert.rejects(room.ready(true),e=>e instanceof DurableRoomRejected && e.code==='CONFLICT' && e.currentVersion===5)
+ assert.equal(room.state.version,3)
+})
+test('unknown transport outcome is not converted to confirmed state and sequence is not reused',async()=>{
+ const {room,api,calls}=fixture()
+ let fail=true
+ const base=api.command
+ api.command=async cmd=>{if(fail){calls.push(cmd);throw Error('network timeout')}return base(cmd)}
+ await assert.rejects(room.create('r'),/network timeout/)
+ assert.equal(room.state,null)
+ fail=false
+ await room.create('r')
+ assert.equal(calls[1].clientSeq,2)
+})
+test('reject mismatched durable confirmation',async()=>{
+ const {room,api}=fixture()
+ api.command=async c=>({requestId:c.requestId,type:c.type,durable:{
+ v:'fair-doudizhu-command-result-v1',commandId:'another-command',aggregateId:c.aggregateId,
+ aggregateVersion:1,accepted:true}})
+ await assert.rejects(room.create('r'),/invalid authoritative room result/)
+ assert.equal(room.state,null)
+})
+test('one in-flight room operation per coordinator',async()=>{
+ const {room,api}=fixture()
+ let resolve
+ api.command=()=>new Promise(r=>{resolve=r})
+ const first=room.create('r')
+ await assert.rejects(room.create('r'),/outstanding/)
+ resolve({requestId:'secure-id-1',type:'room.create',durable:{
+  v:'fair-doudizhu-command-result-v1',commandId:'secure-id-1',aggregateId:'r',aggregateVersion:1,accepted:true}})
+ await first
+})
