@@ -48,3 +48,39 @@ test('room GET rejects response identity and membership leaks',async()=>{
   await assert.rejects(client.room('r-1'),/room view|room preview/)
  }
 })
+
+test('fairness GET returns only the authenticated seat commitment and sequence',async()=>{
+ let observed
+ const client=new DoudizhuHTTPClient({request:async(path,options)=>{
+  observed={path,options}
+  return {code:'OK',data:{
+   handId:'hand-1',phase:'FAIRNESS_REVEALING',version:5,seat:2,committed:true,revealed:false,
+   lastClientSequence:7,commitment:'01'.repeat(32),serverCommitment:'02'.repeat(32),
+   revealKeyId:'key-1',revealPublicKeySha256:'03'.repeat(32),
+   revealKeyBoundAt:'2026-11-02T06:00:00Z'
+  }}
+ }},()=> 'server-auth-token')
+ const view=await client.fairness('hand-1')
+ assert.equal(view.lastClientSequence,7)
+ assert.equal(view.seat,2)
+ assert.equal(observed.path,'/v1/doudizhu/hands/hand-1/fairness')
+ assert.equal(observed.options.accessToken,'server-auth-token')
+})
+test('client refuses malformed or mismatched server-signed reveal AAD context',async()=>{
+ const request={requestId:'secure-id',clientSeq:3,expectedVersion:5}
+ const expected={v:'doudizhu-reveal-context-v1',ticket:{
+  mac:'a'.repeat(64),claims:{v:'doudizhu-reveal-context-v1',actor:'account',handId:'hand-1',
+   requestId:'secure-id',clientSeq:3,expectedVersion:5,seat:1,commitment:'01'.repeat(32),
+   keyId:'reveal-key',publicKeySha256:'02'.repeat(32),issuedAt:100000,expiresAt:160000}
+ },aad:'YWJj'}
+ const client=new DoudizhuHTTPClient({request:async()=>({code:'OK',data:expected})},()=> 'server-token')
+ assert.equal((await client.revealContext('hand-1',request)).ticket.claims.requestId,'secure-id')
+ const malicious=new DoudizhuHTTPClient({request:async()=>({code:'OK',data:{
+  ...expected,ticket:{...expected.ticket,claims:{...expected.ticket.claims,seat:4}}
+ }})},()=> 'server-token')
+ await assert.rejects(malicious.revealContext('hand-1',request),/mismatched/)
+ const wrongHand=new DoudizhuHTTPClient({request:async()=>({code:'OK',data:{
+  ...expected,ticket:{...expected.ticket,claims:{...expected.ticket.claims,handId:'another'}}
+ }})},()=> 'server-token')
+ await assert.rejects(wrongHand.revealContext('hand-1',request),/mismatched/)
+})
