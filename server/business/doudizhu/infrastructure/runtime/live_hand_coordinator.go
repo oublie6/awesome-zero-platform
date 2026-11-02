@@ -23,7 +23,8 @@ type LiveHandCoordinator struct {
 	finalized map[domain.HandID]gamecore.FinalRecord
 	journal   *mysqlstore.LiveJournal
 	epochs    map[domain.HandID]uint64
-	receipts  map[domain.HandID]map[string]liveReceipt
+	receipts        map[domain.HandID]map[string]liveReceipt
+	checkpointSlots chan struct{}
 }
 
 func NewLiveHandCoordinator(seeds *SeedVault, directory *gamecore.LiveDirectory) (*LiveHandCoordinator, error) {
@@ -35,6 +36,7 @@ func NewLiveHandCoordinator(seeds *SeedVault, directory *gamecore.LiveDirectory)
 		games: make(map[domain.HandID]*livehand.Game), finalized: make(map[domain.HandID]gamecore.FinalRecord),
 		epochs:   make(map[domain.HandID]uint64),
 		receipts: make(map[domain.HandID]map[string]liveReceipt),
+		checkpointSlots: make(chan struct{}, 8),
 	}, nil
 }
 
