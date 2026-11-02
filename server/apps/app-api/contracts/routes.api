@@ -187,6 +187,10 @@ service main-api {
     @handler route_post_v1_doudizhu_commands
     post /v1/doudizhu/commands
 
+    @doc "POST /v1/doudizhu/hands/:handId/reveal-context"
+    @handler route_post_v1_doudizhu_hands_handId_reveal_context
+    post /v1/doudizhu/hands/:handId/reveal-context
+
     @doc "GET /v1/doudizhu/hands/:handId/public"
     @handler route_get_v1_doudizhu_hands_handId_public
     get /v1/doudizhu/hands/:handId/public
