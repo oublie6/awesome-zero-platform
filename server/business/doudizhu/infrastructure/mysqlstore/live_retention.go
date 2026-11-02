@@ -1,7 +1,6 @@
 package mysqlstore
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -24,8 +23,28 @@ const MinimumLiveArchiveRetention = 30 * 24 * time.Hour
 // Call only during an authorized maintenance window. The caller must ensure
 // external forensic/retention obligations allow deletion; final game evidence,
 // durable room/fairness command results and the audit outbox are preserved.
-func (j *LiveJournal) PruneArchivedHand(ctx context.Context, id domain.HandID, olderThan time.Duration) error {
-	if j == nil || j.db == nil || id == "" || len(id) > 128 || olderThan < MinimumLiveArchiveRetention {
+// FinalArchiveReader is owned and implemented by gamecore. The Doudizhu
+// persistence adapter is not permitted to query gamecore's database tables.
+type FinalArchiveReader interface {
+	LoadFinalRecord(context.Context, gamecore.InstanceID) (gamecore.FinalRecord, time.Time, error)
+}
+
+func (j *LiveJournal) PruneArchivedHand(ctx context.Context, id domain.HandID, olderThan time.Duration, archive FinalArchiveReader) error {
+	if j == nil || j.db == nil || archive == nil || id == "" || len(id) > 128 ||
+		olderThan < MinimumLiveArchiveRetention {
+		return ErrLivePruneNotEligible
+	}
+	final, archived, err := archive.LoadFinalRecord(ctx, gamecore.InstanceID(id))
+	if err != nil {
+		return ErrLivePruneNotEligible
+	}
+	if err := final.Validate(); err != nil {
+		return ErrLiveReplayIntegrity
+	}
+	if final.InstanceID() != gamecore.InstanceID(id) ||
+		final.Status() != gamecore.FinalStatusCompleted ||
+		final.Version() < 2 ||
+		archived.After(time.Now().UTC().Add(-olderThan)) {
 		return ErrLivePruneNotEligible
 	}
 	tx, err := j.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
@@ -33,30 +52,19 @@ func (j *LiveJournal) PruneArchivedHand(ctx context.Context, id domain.HandID, o
 	defer tx.Rollback()
 	var committed uint64
 	if err := tx.QueryRowContext(ctx, `SELECT committed_version FROM doudizhu_live_writers
-WHERE hand_id=? FOR UPDATE`, id).Scan(&committed); err != nil { return err }
+WHERE hand_id=? FOR UPDATE`, id).Scan(&committed); err != nil {
+		if errors.Is(err, sql.ErrNoRows) { return ErrLivePruneNotEligible }
+		return err
+	}
 	var phase string
 	if err := tx.QueryRowContext(ctx, `SELECT phase FROM doudizhu_hands
-WHERE hand_id=? FOR UPDATE`, id).Scan(&phase); err != nil { return err }
-	if phase != string(domain.HandCompleted) { return ErrLivePruneNotEligible }
-	var gameID,ruleset,module,fairness,status string
-	var participants uint8
-	var finalVersion uint64
-	var payload,digest []byte
-	var archived time.Time
-	if err := tx.QueryRowContext(ctx, `SELECT game_id,ruleset_version,module_version,
-fairness_suite_id,participant_count,final_status,final_version,payload,record_digest,archived_at
-FROM game_final_records WHERE instance_id=? FOR UPDATE`,id).Scan(&gameID,&ruleset,&module,
-		&fairness,&participants,&status,&finalVersion,&payload,&digest,&archived); err != nil { return err }
-	if status != string(gamecore.FinalStatusCompleted) || committed < 2 || finalVersion != committed ||
-		archived.After(time.Now().UTC().Add(-olderThan)) { return ErrLivePruneNotEligible }
-	desc,err:=gamecore.NewDescriptor(gamecore.GameID(gameID),gamecore.RulesetVersion(ruleset),
-		gamecore.ModuleVersion(module),gamecore.FairnessSuiteID(fairness),participants)
-	if err != nil { return ErrLiveReplayIntegrity }
-	record,err:=gamecore.NewFinalRecord(gamecore.InstanceID(id),desc,
-		gamecore.FinalStatus(status),finalVersion,payload)
-	if err != nil { return ErrLiveReplayIntegrity }
-	actual:=record.Digest()
-	if !bytes.Equal(actual[:],digest) { return ErrLiveReplayIntegrity }
+WHERE hand_id=? FOR UPDATE`, id).Scan(&phase); err != nil {
+		if errors.Is(err, sql.ErrNoRows) { return ErrLivePruneNotEligible }
+		return err
+	}
+	if phase != string(domain.HandCompleted) || committed != final.Version() {
+		return ErrLivePruneNotEligible
+	}
 	var actionCount uint64
 	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM doudizhu_live_actions
 WHERE hand_id=?`, id).Scan(&actionCount); err != nil { return err }

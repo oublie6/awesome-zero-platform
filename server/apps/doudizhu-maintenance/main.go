@@ -16,6 +16,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore"
+	"github.com/oublie6/awesome-zero-platform/server/business/gamecore/infrastructure/mysqlarchive"
 )
 
 var safeHand = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
@@ -48,6 +49,9 @@ func previousRoots() (string, map[string][]byte, error) {
 	}
 	return current, result, nil
 }
+
+type maintenanceClock struct{}
+func (maintenanceClock) Now() time.Time { return time.Now().UTC() }
 
 func run() error {
 	mode := flag.String("mode", "", "rotate or prune")
@@ -90,7 +94,9 @@ func run() error {
 	id := domain.HandID(*hand)
 	switch *mode {
 	case "prune":
-		return journal.PruneArchivedHand(ctx, id, time.Duration(*retention)*24*time.Hour)
+		archive, err := mysqlarchive.New(db, maintenanceClock{})
+		if err != nil { return err }
+		return journal.PruneArchivedHand(ctx, id, time.Duration(*retention)*24*time.Hour, archive)
 	case "rotate":
 		current, roots, err := previousRoots()
 		if err != nil {

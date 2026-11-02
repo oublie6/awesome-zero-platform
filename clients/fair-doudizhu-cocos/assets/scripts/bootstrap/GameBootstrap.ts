@@ -170,7 +170,9 @@ export class GameBootstrap extends Component {
     node.addComponent(UITransform)
     this.content!.addChild(node)
     const input=node.addComponent(EditBox)
-    input.maxLength=128
+    // The same field also accepts the explicit, user-held 2048-character
+    // fairness recovery kit. Room IDs are validated independently by API.
+    input.maxLength=2048
     input.string=this.roomID
     const labelNode=new Node('RoomCodeText')
     labelNode.layer=Layers.Enum.UI_2D
