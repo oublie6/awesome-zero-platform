@@ -60,11 +60,13 @@ func (p *SeededHandSetupProvider) PrepareHand(ctx context.Context, room domain.R
 		// Lock an objectively future round before any client commits, with no
 		// fallback to a relay-picked latest beacon or operator-chosen old round.
 		if plan.Round != "auto" {
-			return application.HandSetup{},fmt.Errorf("%w: drand round must be auto",domain.ErrInvalidArgument)
+			return application.HandSetup{}, fmt.Errorf("%w: drand round must be auto", domain.ErrInvalidArgument)
 		}
-		round,err:=DrandFutureRound(p.clock.Now())
-		if err!=nil{return application.HandSetup{},err}
-		plan.Round=round
+		round, err := DrandFutureRound(p.clock.Now())
+		if err != nil {
+			return application.HandSetup{}, err
+		}
+		plan.Round = round
 	}
 	prepared, err := p.seeds.Prepare(handID)
 	if err != nil {

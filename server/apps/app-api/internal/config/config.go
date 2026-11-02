@@ -111,7 +111,7 @@ type DoudizhuConfig struct {
 	BeaconProvider     string        `json:",optional"`
 	BeaconRound        string        `json:",optional"`
 	BeaconProofSecret  string        `json:",optional,env=APP_DOUDIZHU_BEACON_PROOF_SECRET"`
-	BeaconPublicKeyHex string `json:",optional,env=APP_DOUDIZHU_DRAND_QUICKNET_PUBLIC_KEY_HEX"`
+	BeaconPublicKeyHex string        `json:",optional,env=APP_DOUDIZHU_DRAND_QUICKNET_PUBLIC_KEY_HEX"`
 	ContributionKeyID  string        `json:",optional"`
 	ContributionKeyHex string        `json:",optional,env=APP_DOUDIZHU_CONTRIBUTION_KEY_HEX"`
 	BiddingTimeout     time.Duration `json:",default=45s"`
