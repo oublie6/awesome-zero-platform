@@ -6,6 +6,7 @@ import { createPlatform } from '../platform/createPlatform.ts'
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
+import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
 
 const { ccclass } = _decorator
 type Screen = 'home' | 'rooms' | 'rules' | 'table'
@@ -116,7 +117,7 @@ export class GameBootstrap extends Component {
       ])
     } else if (screen === 'table') {
       const snapshot=this.online?.shell.hand.snapshot
-      const pub=snapshot?.view.public
+      const pub=(snapshot?.view as PrivateHandProjection | undefined)?.public
       const me=snapshot?.view.position
       this.title!.string = pub?.phase==='BIDDING' ? '公平斗地主 · 叫地主' :
         pub?.phase==='PLAYING' ? '公平斗地主 · 出牌中' :
