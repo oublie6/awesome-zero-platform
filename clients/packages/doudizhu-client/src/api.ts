@@ -177,6 +177,9 @@ export interface FairnessRead {
  revealPublicKeySha256:string
  revealKeyBoundAt:string
  lastClientSequence:number
+ beaconProvider?:string
+ beaconRound?:string
+ beaconReleaseAt?:string
 }
 export interface RevealContextInput {requestId:string;clientSeq:number;expectedVersion:number}
 export interface RevealContextRead {
