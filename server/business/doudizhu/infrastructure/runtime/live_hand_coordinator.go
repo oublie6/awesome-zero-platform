@@ -9,6 +9,7 @@ import (
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/application"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/livehand"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/randomizedsetup"
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
@@ -20,6 +21,8 @@ type LiveHandCoordinator struct {
 	module    randomizedsetup.Module
 	games     map[domain.HandID]*livehand.Game
 	finalized map[domain.HandID]gamecore.FinalRecord
+	journal *mysqlstore.LiveJournal
+	epochs map[domain.HandID]uint64
 }
 
 func NewLiveHandCoordinator(seeds *SeedVault, directory *gamecore.LiveDirectory) (*LiveHandCoordinator, error) {
@@ -29,7 +32,16 @@ func NewLiveHandCoordinator(seeds *SeedVault, directory *gamecore.LiveDirectory)
 	return &LiveHandCoordinator{
 		seeds: seeds, directory: directory, module: randomizedsetup.NewModule(),
 		games: make(map[domain.HandID]*livehand.Game), finalized: make(map[domain.HandID]gamecore.FinalRecord),
+		epochs:make(map[domain.HandID]uint64),
 	}, nil
+}
+
+func NewDurableLiveHandCoordinator(seeds *SeedVault,directory *gamecore.LiveDirectory,journal *mysqlstore.LiveJournal)(*LiveHandCoordinator,error) {
+	if journal==nil {return nil,fmt.Errorf("%w: durable journal required",domain.ErrInvalidArgument)}
+	c,err:=NewLiveHandCoordinator(seeds,directory)
+	if err!=nil{return nil,err}
+	c.journal=journal
+	return c,nil
 }
 
 func (c *LiveHandCoordinator) Start(ctx context.Context, snapshot domain.HandSnapshot) error {
@@ -54,16 +66,22 @@ func (c *LiveHandCoordinator) Start(ctx context.Context, snapshot domain.HandSna
 	if err != nil {
 		return fmt.Errorf("construct Doudizhu live hand: %w", err)
 	}
+	if c.journal != nil {
+		if err:=c.journal.Create(ctx,snapshot);err!=nil{return fmt.Errorf("create live genesis journal: %w",err)}
+	}
 	if err := c.directory.Add(randomizedsetup.Descriptor(), game); err != nil {
+		if c.journal!=nil {_=c.journal.DeleteUnused(context.Background(),snapshot.ID)}
 		return err
 	}
 	c.mu.Lock()
 	if _, exists := c.games[snapshot.ID]; exists {
 		c.mu.Unlock()
 		_ = c.directory.RemoveForCompensation(gamecore.InstanceID(snapshot.ID))
+		if c.journal!=nil {_=c.journal.DeleteUnused(context.Background(),snapshot.ID)}
 		return fmt.Errorf("%w: duplicate Doudizhu live hand %s", gamecore.ErrInstanceExists, snapshot.ID)
 	}
 	c.games[snapshot.ID] = game
+	if c.journal!=nil {c.epochs[snapshot.ID]=1}
 	c.mu.Unlock()
 	return nil
 }
@@ -76,8 +94,10 @@ func (c *LiveHandCoordinator) RollbackStart(ctx context.Context, handID domain.H
 		return err
 	}
 	err := c.directory.RemoveForCompensation(gamecore.InstanceID(handID))
+	if c.journal!=nil {err=errors.Join(err,c.journal.DeleteUnused(ctx,handID))}
 	c.mu.Lock()
 	delete(c.games, handID)
+	delete(c.epochs,handID)
 	c.mu.Unlock()
 	return err
 }
