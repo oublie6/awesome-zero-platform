@@ -251,6 +251,12 @@ func (s *testStore) WithinCommand(ctx context.Context, _ domain.AccountID, _ str
 	return nil
 }
 
+func (s *testStore) HandClientSequence(_ context.Context,id domain.HandID,actor domain.AccountID)(uint64,error){
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.state.sequences[testSequenceKey(domain.AggregateHand,string(id),actor)],nil
+}
+
 func (s *testStore) RoomClientSequence(_ context.Context, id domain.RoomID, actor domain.AccountID) (uint64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
