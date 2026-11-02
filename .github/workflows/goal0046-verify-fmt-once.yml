@@ -1,0 +1,29 @@
+name: Goal 0046 Finish Go Format
+on:
+  push:
+    paths: ['.github/workflows/goal0046-verify-fmt-once.yml']
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+      - name: Apply gofmt to all Go source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find server -name '*.go' -type f -print0 | xargs -0 gofmt -w
+          if git diff --quiet -- server; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- server
+          git commit -m 'style(go): gofmt protected live checkpoint and three-player replay'
+          git push origin HEAD:main
