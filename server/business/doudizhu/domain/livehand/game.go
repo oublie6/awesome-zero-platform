@@ -273,28 +273,29 @@ func (g *Game) Apply(command gamecore.Command) (gamecore.CommandOutcome, error) 
 	return outcome, err
 }
 
-// Fork rebuilds an isolated candidate from verified immutable genesis and
-// successfully applied commands; failed speculative mutations are never
-// published to the authoritative game.
+// CloneCandidate isolates every mutable part of the already verified live
+// state. The previous implementation regenerated the shuffle and replayed
+// every command for *every* bid/play/pass; a long hand thus repeatedly paid
+// for all historical turns. Replay is reserved for startup recovery, where
+// each authoritative MySQL action and digest is checked.
 func (g *Game) CloneCandidate() (gamecore.LiveGame, error) { return g.Fork() }
 
 func (g *Game) Fork() (*Game, error) {
 	if g == nil || g.terminal {
 		return nil, fmt.Errorf("%w: terminal game cannot be forked", gamecore.ErrInstanceNotFound)
 	}
-	candidate, err := New(g.origin, g.material.Clone(), g.artifact)
-	if err != nil {
-		return nil, err
+	candidate := *g
+	candidate.material = g.material.Clone()
+	candidate.auction = g.auction.Clone()
+	candidate.play = g.play.Clone()
+	candidate.current = cloneHands(g.current)
+	candidate.settlement = cloneSettlement(g.settlement)
+	candidate.history = make([]gamecore.Command, len(g.history))
+	for i, command := range g.history {
+		command.Payload = append([]byte(nil), command.Payload...)
+		candidate.history[i] = command
 	}
-	for _, command := range g.history {
-		if _, err := candidate.Apply(command); err != nil {
-			return nil, fmt.Errorf("%w: replay command: %v", gamecore.ErrVerificationFailed, err)
-		}
-	}
-	if candidate.version != g.version || candidate.phase != g.phase {
-		return nil, fmt.Errorf("%w: candidate replay diverged", gamecore.ErrVerificationFailed)
-	}
-	return candidate, nil
+	return &candidate, nil
 }
 
 func (g *Game) applyBid(command gamecore.Command) (gamecore.CommandOutcome, error) {

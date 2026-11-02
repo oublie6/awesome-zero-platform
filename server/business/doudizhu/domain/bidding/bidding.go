@@ -65,6 +65,16 @@ type State struct {
 	landlord      uint8
 }
 
+// Clone isolates a fixed-size auction state so candidate bids cannot mutate
+// the authoritative hand before the durable commit completes.
+func (s *State) Clone() *State {
+	if s == nil {
+		return nil
+	}
+	copy := *s
+	return &copy
+}
+
 func New(dealDigest carddeck.DealDigest) (*State, error) {
 	first, err := DeriveFirstBidder(dealDigest)
 	if err != nil {
