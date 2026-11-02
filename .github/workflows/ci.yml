@@ -24,7 +24,21 @@ jobs:
           go-version: 1.25.8
           cache-dependency-path: server/go.sum
       - name: Install goctl
-        run: go install github.com/zeromicro/go-zero/tools/goctl@v1.10.1
+        # Keep upstream module checks enabled; the public Go sumdb sometimes
+        # resets an HTTP/2 stream while fetching goctl's indirect modules.
+        # A bounded retry handles transient transport failure without
+        # switching to GOSUMDB=off or accepting an unverified binary.
+        run: |
+          for attempt in 1 2 3; do
+            if go install github.com/zeromicro/go-zero/tools/goctl@v1.10.1; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "goctl install failed after three verified attempts" >&2
+              exit 1
+            fi
+            sleep "$((attempt * 10))"
+          done
       - name: Verify module files
         id: module-files
         working-directory: server
