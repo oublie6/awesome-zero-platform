@@ -106,6 +106,33 @@ func TestLiveJournalFenceContiguousLogAndProtectedSeedInMySQL(t *testing.T) {
 	if err != nil || len(actions) != 1 || actions[0].Version != 2 || actions[0].CommandID != "act1" {
 		t.Fatalf("log=%+v err=%v", actions, err)
 	}
+	// Replay must refuse tampered metadata, even when the recorded result
+	// digest has not been changed. Restore each row before the next test.
+	for _, mutation := range []struct {
+		name     string
+		column   string
+		corrupt  any
+		restored any
+	}{
+		{"zero owner epoch", "owner_epoch", uint64(0), epoch},
+		{"empty command identity", "command_id", "", "act1"},
+		{"empty actor", "actor_account_id", "", "player-1"},
+	} {
+		t.Run(mutation.name, func(t *testing.T) {
+			query := fmt.Sprintf("UPDATE doudizhu_live_actions SET %s=? WHERE hand_id=? AND state_version=2", mutation.column)
+			if _, err := db.ExecContext(ctx, query, mutation.corrupt, id); err != nil {
+				t.Fatal(err)
+			}
+			defer func() {
+				if _, err := db.ExecContext(ctx, query, mutation.restored, id); err != nil {
+					t.Error(err)
+				}
+			}()
+			if _, err := j.Read(ctx, id); !errors.Is(err, mysqlstore.ErrLiveReplayIntegrity) {
+				t.Fatalf("tampered live journal metadata accepted: %v", err)
+			}
+		})
+	}
 	newEpoch, watermark, _, err := j.Acquire(ctx, id)
 	if err != nil || newEpoch != 3 || watermark != 2 {
 		t.Fatalf("second owner epoch=%d watermark=%d err=%v", newEpoch, watermark, err)
