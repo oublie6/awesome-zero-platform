@@ -98,6 +98,26 @@ export class DoudizhuHTTPClient {
       {accessToken:this.token()})
     return unwrap(raw)
   }
+  /** Authenticated final archive; all seat points come from Go verification. */
+  async finalEvidence(handId:string):Promise<FinalEvidenceRead> {
+    if(!/^[A-Za-z0-9_-]{1,128}$/.test(handId))throw new Error('invalid final evidence hand')
+    const raw=await this.transport.request<unknown>(
+      '/v1/doudizhu/hands/'+encodeURIComponent(handId)+'/evidence',{accessToken:this.token()})
+    const data=unwrap(raw)
+    if(!record(data)||data.handId!==handId || !record(data.verification) ||
+      !Number.isSafeInteger(data.finalVersion)||(data.finalVersion as number)<1 ||
+      data.verification.handId!==handId ||
+      data.verification.finalVersion!==data.finalVersion ||
+      !['completed','aborted','COMPLETED','ABORTED'].includes(String(data.status)) ||
+      !Array.isArray(data.verification.seatPoints) ||
+      data.verification.seatPoints.length!==3 ||
+      !data.verification.seatPoints.every(value=>typeof value==='number'&&Number.isSafeInteger(value)) ||
+      typeof data.verification.recordDigest!=='string' ||
+      !/^[0-9a-f]{64}$/.test(data.verification.recordDigest)) {
+      throw new Error('invalid verified final game evidence')
+    }
+    return JSON.parse(JSON.stringify(data)) as FinalEvidenceRead
+  }
   async privateHand(handId: string): Promise<{version: number; view: PrivateHandProjection}> {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(handId)) throw new Error('invalid hand id')
     const raw = await this.transport.request<unknown>(
@@ -178,5 +198,22 @@ export interface RevealContextRead {
    issuedAt:number
    expiresAt:number
   }
+ }
+}
+
+export interface FinalEvidenceRead {
+ handId:string
+ status:string
+ finalVersion:number
+ verification:{
+  handId:string
+  finalVersion:number
+  completed:boolean
+  winnerSeat?:number
+  landlordSeat?:number
+  seatPoints:[number,number,number]
+  recordDigest:string
+  setupDigest:string
+  transcriptDigest:string
  }
 }
