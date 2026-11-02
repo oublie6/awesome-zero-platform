@@ -138,7 +138,7 @@ func validateReplayedPhase(persisted domain.HandPhase, replayed string, terminal
 		// Domain phase transitions are distinct from live actions; a committed
 		// last bid can put the replayed hand into PLAYING before the outbox's
 		// matching lifecycle command has advanced the domain snapshot.
-		if replayed == livehand.PhaseBidding || replayed == livehand.PhasePlaying {
+		if replayed == livehand.PhaseBidding || replayed == livehand.PhasePlaying || replayed == livehand.PhaseNoLandlord {
 			return nil
 		}
 	case domain.HandPlaying:
@@ -149,4 +149,18 @@ func validateReplayedPhase(persisted domain.HandPhase, replayed string, terminal
 	// An unfinished live hand must never be exposed under SETTLING or an
 	// incompatible domain phase: a repair/reconciliation is needed instead.
 	return gamecore.ErrVerificationFailed
+}
+
+// RecoveredPhases is an immutable phase index for the lifecycle supervisor.
+// All entries here have passed journal consistency and owner fencing.
+func (c *LiveHandCoordinator) RecoveredPhases() map[domain.HandID]string {
+	out:=make(map[domain.HandID]string)
+	if c==nil{return out}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	for id,game:=range c.games {out[id]=game.Phase()}
+	for id,record:=range c.finalized {
+		if record.Status()==gamecore.FinalStatusCompleted {out[id]=livehand.PhaseCompleted}
+	}
+	return out
 }
