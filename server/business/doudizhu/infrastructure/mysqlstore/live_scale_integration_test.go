@@ -164,7 +164,7 @@ func profileDurableHands(t *testing.T, db *sql.DB, count int) {
 	}
 	sort.Slice(latencies, func(i, j int) bool { return latencies[i] < latencies[j] })
 	pick := func(percent int) time.Duration {
-		index := (len(latencies)-1)*percent/100
+		index := (len(latencies) - 1) * percent / 100
 		return latencies[index]
 	}
 	// GC noise and SQL pool contention make this only a reproducible baseline,

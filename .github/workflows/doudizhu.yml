@@ -111,6 +111,7 @@ jobs:
         working-directory: server
         env:
           APP_API_INTEGRATION: "1"
+          DOUDIZHU_SCALE_PROFILE: "1"
         run: go test -count=1 -p 1 -parallel 1 -tags=integration ./business/doudizhu/infrastructure/mysqlstore
       - name: Stop dependencies
         if: always()

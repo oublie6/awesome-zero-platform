@@ -84,3 +84,11 @@ This checkpoint supersedes the older statements above describing checkpoints, ac
 - Source commit on this checkpoint must pass general CI, Doudizhu CI, Creator smoke and final Codex independent whole-product acceptance before the Goal can be marked complete.
 
 Do not archive Goal 0046, change the historic Goal 0045 verdicts or request final Codex acceptance until these release/verification gates are actually met.
+
+## Development checkpoint — 2026-11-02 real-MySQL three-seat and scale delivery (final CI pending)
+
+- Replaced quadratic speculative candidate replay with a deep clone of the already verified authoritative game, bidding and playing state, private card arrays, command history and material. A candidate cannot leak uncommitted bottom cards or a speculative turn to the live game. Durable commit-before-publish and full journal verification at startup are unchanged.
+- Added a complete, deterministic **59-action / three distinct server-account** real-MySQL game test: bidding, legal play/pass, complete settlement, authenticated checkpoint at version 33, fenced owner takeover, stale-writer rejection, exact prior command replay, final restart, final record integrity and terminal lost-response duplicate replay. This does not substitute for three physically independent authenticated HTTPS/WSS devices.
+- Added measured 100/1,000 hand real-MySQL scale profiling: protected seed storage, consistent startup reconstruction, 16 concurrent committers across distinct hands, P50/P95/P99 and post-GC memory delta. The CI now runs both sizes; these are runner baselines, not production SLA validation.
+- Removed the misleading Cocos initialization placeholder message; login/room/table state still comes from authenticated remote server responses.
+- Checkpoint `e9a744861757ad1c2a2bf06ecd7a4d6ad8d1a5e5` passed Doudizhu real-MySQL integration (including 100-hand test), while general CI identified and reported only a gofmt whitespace difference. This next commit fixes that and enables the 1,000-hand CI scenario. Full new-sha CI and independent acceptance must be confirmed before updating the Goal status.
