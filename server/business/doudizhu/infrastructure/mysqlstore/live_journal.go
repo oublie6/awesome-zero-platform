@@ -142,3 +142,16 @@ FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC`,id)
 	if err:=rows.Err();err!=nil{return nil,err}
 	return out,nil
 }
+
+func (j *LiveJournal) List(ctx context.Context)([]domain.HandID,error){
+	rows,err:=j.db.QueryContext(ctx,`SELECT hand_id FROM doudizhu_live_writers ORDER BY hand_id`)
+	if err!=nil{return nil,err}
+	defer rows.Close()
+	out:=make([]domain.HandID,0,64)
+	for rows.Next(){
+		var id domain.HandID
+		if err:=rows.Scan(&id);err!=nil{return nil,err}
+		out=append(out,id)
+	}
+	return out,rows.Err()
+}
