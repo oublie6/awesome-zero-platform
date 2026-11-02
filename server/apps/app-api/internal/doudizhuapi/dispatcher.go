@@ -91,6 +91,7 @@ type Dispatcher struct {
 	clock     Clock
 	config    Config
 	replay    *ReplayCache
+	revealTickets *revealTicketIssuer
 }
 
 type CommandRequest struct {
@@ -101,6 +102,7 @@ type CommandRequest struct {
 	ClientSeq       uint64          `json:"clientSeq"`
 	ExpectedVersion uint64          `json:"expectedVersion"`
 	Payload         json.RawMessage `json:"payload,omitempty"`
+	RevealContext   *SignedRevealContext `json:"revealContext,omitempty"`
 }
 
 type CommandResponse struct {
@@ -139,6 +141,11 @@ func (d *Dispatcher) Execute(ctx context.Context, actor domain.AccountID, reques
 	if err := validateRequest(actor, request); err != nil {
 		return CommandResponse{}, err
 	}
+	if request.Type == TypeHandReveal {
+		if _,_,err:=d.verifyRevealContext(actor,request);err!=nil{return CommandResponse{},err}
+	} else if request.RevealContext!=nil {
+		return CommandResponse{},ErrInvalidRequest
+	}
 	digest, err := digestRequest(request)
 	if err != nil {
 		return CommandResponse{}, err
@@ -176,6 +183,11 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 	response := CommandResponse{Version: CommandResponseV1, RequestID: request.RequestID, Type: request.Type}
 	command := application.Command{Version: application.CommandProtocolV1, CommandID: request.RequestID, AggregateID: request.AggregateID, ClientSeq: request.ClientSeq, ExpectedVersion: request.ExpectedVersion, IssuedAt: d.clock.Now().UTC().Truncate(time.Millisecond)}
 	command.ExpiresAt = command.IssuedAt.Add(d.config.CommandTTL)
+	if request.Type == TypeHandReveal {
+		issued,expires,err:=d.verifyRevealContext(actor,request)
+		if err!=nil {return CommandResponse{},err}
+		command.IssuedAt,command.ExpiresAt=issued,expires
+	}
 	var durable application.CommandResult
 	var live application.LiveHandCommandResult
 	var terminal lifecycle.Outcome
