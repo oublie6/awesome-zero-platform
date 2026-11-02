@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
@@ -53,7 +54,7 @@ func (c *LiveHandCoordinator) checkpointAfterCommit(id domain.HandID, epoch uint
 	c.mu.RLock()
 	saved := c.receipts[id]
 	byVersion := make([]checkpointReceipt, outcome.Version-1)
-	for _, receipt := range saved {
+	for commandID, receipt := range saved {
 		version := receipt.outcome.Version
 		if version <= 1 || version > outcome.Version {
 			continue
@@ -63,7 +64,7 @@ func (c *LiveHandCoordinator) checkpointAfterCommit(id domain.HandID, epoch uint
 			return
 		}
 		byVersion[version-2] = checkpointReceipt{
-			CommandID: receiptCommandID(saved, receipt),
+			CommandID: commandID,
 			Actor: receipt.actor, Command: receipt.command, Outcome: receipt.outcome,
 		}
 	}
@@ -86,23 +87,20 @@ func (c *LiveHandCoordinator) checkpointAfterCommit(id domain.HandID, epoch uint
 	if err != nil {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	// This is post-commit auxiliary durable state: a checkpoint write error
-	// cannot roll back or negate an already acknowledged action. Recovery
-	// can always fall back to the complete committed action journal.
-	_ = c.journal.SaveCheckpoint(ctx, id, epoch, outcome.Version, payload)
-}
-
-// Map iteration cannot supply command identity. Retain it explicitly while
-// building the snapshot rather than infer it from mutable command fields.
-func receiptCommandID(saved map[string]liveReceipt, target liveReceipt) string {
-	for id, item := range saved {
-		if item.outcome.Version == target.outcome.Version && item.actor == target.actor {
-			return id
-		}
+	// A checkpoint is auxiliary to an already committed command. Never block
+	// live gameplay on disk I/O, and never allocate unbounded workers under
+	// high room concurrency. If all slots are busy, the next checkpoint
+	// interval can retry; full genesis replay remains the fallback.
+	select {
+	case c.checkpointSlots <- struct{}{}:
+		go func() {
+			defer func() { <-c.checkpointSlots }()
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			_ = c.journal.SaveCheckpoint(ctx, id, epoch, outcome.Version, payload)
+		}()
+	default:
 	}
-	return ""
 }
 
 func checkpointViewDigests(game *livehand.Game) ([32]byte, [3][32]byte, error) {
@@ -144,7 +142,11 @@ func restoreRecoveryCheckpoint(
 	if err := decoder.Decode(&cp); err != nil {
 		return nil, fmt.Errorf("%w: decode protected checkpoint: %v", gamecore.ErrVerificationFailed, err)
 	}
-	if decoder.More() || cp.Version != liveRecoveryCheckpointV1 ||
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		return nil, gamecore.ErrVerificationFailed
+	}
+	if cp.Version != liveRecoveryCheckpointV1 ||
 		cp.HandID != domain.HandID(game.InstanceID()) ||
 		cp.StateVersion != checkpoint.Version ||
 		len(cp.Receipts) != int(checkpoint.Version-1) ||
