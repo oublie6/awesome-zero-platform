@@ -35,7 +35,7 @@ func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, ha
 	if err != nil {
 		return LiveHandCommandResult{}, err
 	}
-	if snapshot.Phase != domain.HandBidding {
+	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
 	}
 	if expectedLiveVersion == 0 || len(cards) == 0 || len(cards) > 20 {
@@ -78,7 +78,7 @@ func (s *Service) submitLivePass(ctx context.Context, actor domain.AccountID, ha
 	if err != nil {
 		return LiveHandCommandResult{}, err
 	}
-	if snapshot.Phase != domain.HandBidding {
+	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
 	}
 	if expectedLiveVersion == 0 {
