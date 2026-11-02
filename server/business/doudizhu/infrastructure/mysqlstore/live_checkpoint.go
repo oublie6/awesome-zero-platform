@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	liveCheckpointDomain = "doudizhu/live-checkpoint/aes256gcm/v1:"
+	liveCheckpointDomain  = "doudizhu/live-checkpoint/aes256gcm/v1:"
 	maxLiveCheckpointSize = 512 << 10
 )
 

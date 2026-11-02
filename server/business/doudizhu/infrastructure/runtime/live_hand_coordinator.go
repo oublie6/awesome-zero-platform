@@ -15,14 +15,14 @@ import (
 )
 
 type LiveHandCoordinator struct {
-	mu        sync.RWMutex
-	seeds     *SeedVault
-	directory *gamecore.LiveDirectory
-	module    randomizedsetup.Module
-	games     map[domain.HandID]*livehand.Game
-	finalized map[domain.HandID]gamecore.FinalRecord
-	journal   *mysqlstore.LiveJournal
-	epochs    map[domain.HandID]uint64
+	mu              sync.RWMutex
+	seeds           *SeedVault
+	directory       *gamecore.LiveDirectory
+	module          randomizedsetup.Module
+	games           map[domain.HandID]*livehand.Game
+	finalized       map[domain.HandID]gamecore.FinalRecord
+	journal         *mysqlstore.LiveJournal
+	epochs          map[domain.HandID]uint64
 	receipts        map[domain.HandID]map[string]liveReceipt
 	checkpointSlots chan struct{}
 }
@@ -34,8 +34,8 @@ func NewLiveHandCoordinator(seeds *SeedVault, directory *gamecore.LiveDirectory)
 	return &LiveHandCoordinator{
 		seeds: seeds, directory: directory, module: randomizedsetup.NewModule(),
 		games: make(map[domain.HandID]*livehand.Game), finalized: make(map[domain.HandID]gamecore.FinalRecord),
-		epochs:   make(map[domain.HandID]uint64),
-		receipts: make(map[domain.HandID]map[string]liveReceipt),
+		epochs:          make(map[domain.HandID]uint64),
+		receipts:        make(map[domain.HandID]map[string]liveReceipt),
 		checkpointSlots: make(chan struct{}, 8),
 	}, nil
 }

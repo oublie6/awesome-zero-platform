@@ -65,7 +65,7 @@ func (c *LiveHandCoordinator) checkpointAfterCommit(id domain.HandID, epoch uint
 		}
 		byVersion[version-2] = checkpointReceipt{
 			CommandID: commandID,
-			Actor: receipt.actor, Command: receipt.command, Outcome: receipt.outcome,
+			Actor:     receipt.actor, Command: receipt.command, Outcome: receipt.outcome,
 		}
 	}
 	c.mu.RUnlock()
