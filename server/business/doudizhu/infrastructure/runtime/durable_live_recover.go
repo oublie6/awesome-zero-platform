@@ -66,12 +66,27 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 		if watermark != uint64(len(actions))+1 {
 			return fmt.Errorf("%w: live watermark disagrees with replay log for %s", gamecore.ErrVerificationFailed, id)
 		}
+		// Verify the authenticated checkpoint and every matching database
+		// action before restoring its result index. All later actions are then
+		// replayed from the same committed version. Missing checkpoint falls
+		// back to genesis replay; corrupt checkpoints fail closed.
+		checkpoint, err := c.journal.LoadCheckpoint(ctx, id)
+		if err != nil {
+			return fmt.Errorf("load protected live checkpoint %s: %w", id, err)
+		}
+		if checkpoint.Version > watermark {
+			return fmt.Errorf("%w: checkpoint exceeds watermark for %s", gamecore.ErrVerificationFailed, id)
+		}
 		var finalOutcome gamecore.CommandOutcome
-		// Do not expose even an exact historical request receipt until the
-		// entire log, final state and durable lifecycle phase validate.
-		// A later corrupt action must quarantine the whole hand.
+		// Publish receipts only after the entire recovered hand validates.
 		recoveredReceipts := make(map[string]liveReceipt, len(actions))
-		for _, item := range actions {
+		if checkpoint.Version != 0 {
+			recoveredReceipts, err = restoreRecoveryCheckpoint(game, checkpoint, actions)
+			if err != nil {
+				return fmt.Errorf("restore protected checkpoint %s: %w", id, err)
+			}
+		}
+		for _, item := range actions[int(checkpoint.Version)-checkpointStartOffset(checkpoint.Version):] {
 			position, err := game.PositionForAccount(item.Actor)
 			if err != nil || position != item.ActorPosition {
 				return fmt.Errorf("%w: forged or changed live actor for %s", gamecore.ErrVerificationFailed, id)
@@ -180,4 +195,11 @@ func (c *LiveHandCoordinator) RecoveredPhases() map[domain.HandID]string {
 		}
 	}
 	return out
+}
+
+func checkpointStartOffset(version uint64) int {
+	if version == 0 {
+		return 0
+	}
+	return 1
 }
