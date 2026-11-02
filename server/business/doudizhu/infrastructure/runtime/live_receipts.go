@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"bytes"
+	"encoding/json"
+	"io"
 	"context"
 	"fmt"
 
@@ -20,7 +22,7 @@ type liveReceipt struct {
 
 func duplicateCommandReceipt(old, current gamecore.Command, previousActor, actor domain.AccountID) bool {
 	return previousActor == actor && (current.ActorPosition == 0 || old.ActorPosition == current.ActorPosition) &&
-		old.ExpectedVersion == current.ExpectedVersion && bytes.Equal(old.Payload, current.Payload)
+		old.ExpectedVersion == current.ExpectedVersion && sameJSONCommandPayload(old.Payload, current.Payload)
 }
 func cloneLiveOutcome(v gamecore.CommandOutcome) gamecore.CommandOutcome {
 	v.Payload = append([]byte(nil), v.Payload...)
@@ -58,4 +60,35 @@ func (c *LiveHandCoordinator) storeReceipt(id domain.HandID, actor domain.Accoun
 	}
 	command.Payload = append([]byte(nil), command.Payload...)
 	c.receipts[id][commandID] = liveReceipt{actor: actor, command: command, outcome: cloneLiveOutcome(outcome)}
+}
+
+// MySQL JSON columns normalize object-key order and insignificant whitespace.
+// Live request DTOs are marshalled from typed Go commands; recovery must bind
+// exact semantic values rather than the database's byte-level presentation.
+// UseNumber preserves the actual numeric lexical representation and avoids
+// converting large JSON integers through float64 on duplicate retries.
+func sameJSONCommandPayload(left, right []byte) bool {
+	if bytes.Equal(left, right) {
+		return true
+	}
+	canonical := func(raw []byte) ([]byte, bool) {
+		decoder := json.NewDecoder(bytes.NewReader(raw))
+		decoder.UseNumber()
+		var value any
+		if decoder.Decode(&value) != nil {
+			return nil, false
+		}
+		var trailing any
+		if decoder.Decode(&trailing) != io.EOF {
+			return nil, false
+		}
+		encoded, err := json.Marshal(value)
+		return encoded, err == nil
+	}
+	a, ok := canonical(left)
+	if !ok {
+		return false
+	}
+	b, ok := canonical(right)
+	return ok && bytes.Equal(a, b)
 }
