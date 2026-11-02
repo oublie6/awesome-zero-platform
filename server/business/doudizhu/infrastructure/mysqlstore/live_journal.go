@@ -38,7 +38,7 @@ type LiveAction struct {
 // Leave generous room for protocol evolution while preventing a corrupt or
 // malicious journal from exhausting memory during startup replay.
 const (
-	maxLiveActionsPerHand = 512
+	maxLiveActionsPerHand     = 512
 	maxLiveActionPayloadBytes = 16 << 10
 )
 
