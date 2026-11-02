@@ -160,6 +160,18 @@ CREATE TABLE IF NOT EXISTS doudizhu_hands (
     KEY idx_doudizhu_hands_phase_updated (phase, updated_at)
 ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Server fairness seeds survive process restarts encrypted under a domain-separated AEAD key.
+-- No plaintext seed or other player's cards are stored in this table.
+CREATE TABLE IF NOT EXISTS doudizhu_protected_server_seeds (
+    hand_id VARCHAR(128) NOT NULL,
+    nonce VARBINARY(12) NOT NULL,
+    ciphertext VARBINARY(48) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (hand_id),
+    CONSTRAINT chk_doudizhu_server_seed_nonce CHECK (OCTET_LENGTH(nonce) = 12),
+    CONSTRAINT chk_doudizhu_server_seed_ciphertext CHECK (OCTET_LENGTH(ciphertext) = 48)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS doudizhu_command_results (
     actor_account_id VARCHAR(128) NOT NULL,
     command_id VARCHAR(128) NOT NULL,
@@ -264,7 +276,7 @@ INSERT IGNORE INTO authorization_policy_state (policy_key, version)
 VALUES ('global', 1);
 
 INSERT INTO foundation_schema_meta (meta_key, meta_value)
-VALUES ('schema_version', '0011')
+VALUES ('schema_version', '0012')
 ON DUPLICATE KEY UPDATE
     meta_value = VALUES(meta_value),
     updated_at = CURRENT_TIMESTAMP(6);
