@@ -92,10 +92,10 @@ func (c *LiveHandCoordinator) ReleasePrepared(ctx context.Context, handID domain
 	if c.Contains(handID) {
 		return fmt.Errorf("%w: live hand %s still active", domain.ErrHandActive, handID)
 	}
-	if !c.seeds.Contains(handID) {
-		return nil
-	}
-	return c.seeds.Release(handID)
+	// Never turn a transient durable-store outage into a successful cleanup.
+	err := c.seeds.Release(handID)
+	if errors.Is(err, ErrSeedNotFound) { return nil }
+	return err
 }
 
 func (c *LiveHandCoordinator) PublicView(ctx context.Context, handID domain.HandID, actor domain.AccountID) (application.LiveHandView, error) {
