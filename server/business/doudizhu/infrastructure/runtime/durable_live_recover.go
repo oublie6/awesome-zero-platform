@@ -35,9 +35,9 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 		if err != nil {
 			return fmt.Errorf("load authoritative hand %s: %w", id, err)
 		}
-		if snapshot.Phase != domain.HandBidding {
-			// Completed/cancelled hands are driven by durable domain state and
-			// final evidence. Never resurrect them as active executors.
+		if !recoveryPhaseNeedsReplay(snapshot.Phase) {
+			// Terminal hands are owned by durable lifecycle records; never
+			// resurrect a finished game as an active executor.
 			continue
 		}
 		epoch, watermark, genesis, err := c.journal.Acquire(ctx, id)
@@ -89,6 +89,9 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 				finalOutcome = outcome
 			}
 		}
+		if err := validateReplayedPhase(snapshot.Phase, game.Phase(), finalOutcome.Terminal); err != nil {
+			return fmt.Errorf("replay phase mismatch for %s: %w", id, err)
+		}
 		if finalOutcome.Terminal {
 			record, err := c.directory.ArchiveRecoveredFinal(game, finalOutcome)
 			if err != nil {
@@ -106,4 +109,40 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 		c.mu.Unlock()
 	}
 	return nil
+}
+
+// Bidding, playing and settling are all crash-recoverable stages. Excluding
+// PLAYING used to silently abandon already acknowledged card actions.
+func recoveryPhaseNeedsReplay(phase domain.HandPhase) bool {
+	switch phase {
+	case domain.HandBidding, domain.HandPlaying, domain.HandSettling:
+		return true
+	default:
+		return false
+	}
+}
+
+func validateReplayedPhase(persisted domain.HandPhase, replayed string, terminal bool) error {
+	if terminal {
+		if replayed != livehand.PhaseCompleted || !recoveryPhaseNeedsReplay(persisted) {
+			return gamecore.ErrVerificationFailed
+		}
+		return nil
+	}
+	switch persisted {
+	case domain.HandBidding:
+		// Domain phase transitions are distinct from live actions; a committed
+		// last bid can put the replayed hand into PLAYING before the outbox's
+		// matching lifecycle command has advanced the domain snapshot.
+		if replayed == livehand.PhaseBidding || replayed == livehand.PhasePlaying {
+			return nil
+		}
+	case domain.HandPlaying:
+		if replayed == livehand.PhasePlaying {
+			return nil
+		}
+	}
+	// An unfinished live hand must never be exposed under SETTLING or an
+	// incompatible domain phase: a repair/reconciliation is needed instead.
+	return gamecore.ErrVerificationFailed
 }
