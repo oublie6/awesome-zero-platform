@@ -38,3 +38,18 @@ in_progress — authorized by user 2026-11-02. **This is a development plan, not
 - Added `secureRoomCommandIdentity`: cryptographically sourced 128-bit injected entropy, asynchronous platform port, fail-closed on missing/wrong-length random bytes. Room coordinator validates both transport and durable versioned Go response envelopes; unknown outcome requires authoritative reconciliation. Source tests added for entropy and malformed acknowledgments.
 - Added `GameOnlineController` at `clients/fair-doudizhu-cocos/assets/scripts/game/`, composing trusted `GameSession` platform-code exchange, authenticated WSS `GameClientShell`, and secure real `RoomCoordinator` command forwarding. Added a socket-level integration fixture that verifies actual versioned room.create, correlation and source of authentication; negative test forbids connection on failed identity exchange.
 - These are **integration foundations only**, not a working production identity endpoint, actual configured WeChat SDK login, visible room/game table, complete fairness workflow, or B-grade crash recovery. CI and independent Codex acceptance are not claimed at this checkpoint.
+
+## Development checkpoint — 2026-11-02 integrated implementation (not final acceptance)
+
+The current implementation checkpoint includes:
+- Authenticated, member-scoped durable room GET /v1/doudizhu/rooms/:roomId, caller-specific lastClientSequence and client recovery from trustworthy room reads.
+- Optional encrypted persistence of server fairness seeds, wired to the production bootstrap; restart can load the same key-bound seed instead of silently choosing a new deck.
+- MySQL live writer epoch and contiguous action journal, with genesis, writer takeover, conflict checks and action/result digests. The runtime uses clone → commit → publish and quarantines ambiguous commits. Startup recovery replays the journal and checks every result digest before admitting a hand. A preliminary real-MySQL journal/seed/fencing integration test has been added.
+- WeChat wx.login code exchange over the official HTTPS endpoint with server-only app credentials, HMAC-hashed OpenID account binding and normal revocable platform sessions. The endpoint requires APP_WECHAT_APP_ID, APP_WECHAT_APP_SECRET and APP_WECHAT_SUBJECT_HMAC_KEY_HEX; absent credentials fail closed.
+- Cocos entry now provides real login, room create/join/ready/start/refresh and a versioned private-hand action table; production HTTPS/WSS public configuration must be injected by the operator. No fake players/hand/cards are generated.
+
+**Still not complete and not eligible for final Codex acceptance:**
+- B-grade exact request-ID replay receipts after failover, a bounded protected checkpoint/snapshot, full crash/kill and wrong-epoch fault matrix, realistic latency/throughput measurements. Existing recovery tests do not establish all B-level invariants yet.
+- Client fairness commitment/reveal HPKE path needs a server-issued signed AAD context. The current hand.reveal command correctly remains fail-closed; consequently a complete three-player fair game cannot yet be played from this UI.
+- Complete scoring/evidence UI, verified three-person end-to-end, real WeChat mobile SDK/domain/TLS credentials/devices and Douyin runtime qualification.
+- All checks must be rerun on one final source SHA; intermediate CI green/failure/cancellation is not a completed Goal. Codex has **not** been asked to perform final acceptance.
