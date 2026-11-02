@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
@@ -34,6 +35,11 @@ func (c *LiveHandCoordinator) applyLive(
 		return c.journal.Append(ctx, handID, epoch, commandID, actor, command, result)
 	})
 	if err != nil {
+		// A terminal gameplay action has already committed to MySQL when
+		// only the subsequent final archive fails. Preserve its exact
+		// accepted receipt for retries while archive recovery is pending.
+		// Storage/COMMIT ambiguity must never create a receipt.
+		c.retainArchivedFailureReceipt(handID, actor, commandID, command, outcome, err)
 		return outcome, err
 	}
 	if next != nil {
@@ -59,4 +65,16 @@ func (c *LiveHandCoordinator) applyLive(
 	}
 	c.storeReceipt(handID, actor, commandID, command, outcome)
 	return outcome, nil
+}
+
+func (c *LiveHandCoordinator) retainArchivedFailureReceipt(
+	handID domain.HandID, actor domain.AccountID, commandID string, command gamecore.Command,
+	outcome gamecore.CommandOutcome, err error,
+) bool {
+	if !errors.Is(err, gamecore.ErrArchiveFailed) || !outcome.Terminal ||
+		outcome.Version == 0 || len(outcome.FinalPayload) == 0 || commandID == "" {
+		return false
+	}
+	c.storeReceipt(handID, actor, commandID, command, outcome)
+	return true
 }
