@@ -143,6 +143,10 @@ func (b *backendStub) durable(command application.Command) (application.CommandR
 	b.mu.Unlock()
 	return application.CommandResult{Version: application.CommandResultV1, CommandID: command.CommandID, Accepted: true, AggregateType: command.AggregateType, AggregateID: command.AggregateID, AggregateVersion: command.ExpectedVersion + 1, Events: []application.EventRef{}}, nil
 }
+func (b *backendStub) GetRoomView(_ context.Context, actor domain.AccountID, id domain.RoomID) (application.RoomView, error) {
+	return application.RoomView{RoomID:string(id),Version:3,Status:domain.RoomWaitingPlayers,Occupied:1,Member:actor=="account-1"},nil
+}
+
 func (b *backendStub) CreateRoom(_ context.Context, _ domain.AccountID, c application.Command) (application.CommandResult, error) {
 	return b.durable(c)
 }
@@ -213,5 +217,13 @@ func TestViewsExposeRawJSONAndCopyPayload(t *testing.T) {
 	view.Payload[0] ^= 0xff
 	if string(backend.publicView.Payload) != `{"phase":"PLAYING"}` {
 		t.Fatal("dispatcher leaked mutable backend payload")
+	}
+}
+
+func TestDispatcherRoomViewIsScopedToBackendActor(t *testing.T) {
+	d := newDispatcherForTest(t, &backendStub{}, &lifecycleStub{})
+	view, err := d.RoomView(context.Background(), "account-1", "room-query")
+	if err != nil || !view.Member || view.RoomID != "room-query" || view.Version != 3 {
+		t.Fatalf("room view=%+v err=%v", view, err)
 	}
 }
