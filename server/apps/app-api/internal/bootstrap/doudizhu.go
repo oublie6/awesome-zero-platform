@@ -84,7 +84,12 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
-	seeds, err := ddzruntime.NewSeedVault(nil)
+	contributionKey, err := hex.DecodeString(cfg.Doudizhu.ContributionKeyHex)
+	if err != nil { return doudizhuComponents{}, err }
+	defer clear(contributionKey)
+	seedStore, err := mysqlstore.NewProtectedSeedStore(mysql.DB(), contributionKey)
+	if err != nil { return doudizhuComponents{}, err }
+	seeds, err := ddzruntime.NewPersistentSeedVault(nil, seedStore)
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
@@ -113,12 +118,7 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
-	contributionKey, err := hex.DecodeString(cfg.Doudizhu.ContributionKeyHex)
-	if err != nil {
-		return doudizhuComponents{}, err
-	}
 	keyring, err := protection.NewStaticKeyring(cfg.Doudizhu.ContributionKeyID, map[string][]byte{cfg.Doudizhu.ContributionKeyID: contributionKey})
-	clear(contributionKey)
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
