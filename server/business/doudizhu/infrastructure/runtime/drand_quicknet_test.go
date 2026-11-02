@@ -77,3 +77,21 @@ func TestQuicknetRoundIsAlwaysFutureAndLockedBeforeCommit(t *testing.T){
   if _,err:=quicknetRound(value);err==nil{t.Fatalf("invalid quicknet round accepted: %s",value)}
  }
 }
+
+func TestPublishedQuicknetRound1000AgainstPinnedPublicKey(t *testing.T){
+ // Captured independent public-chain verification vector; unlike an
+ // internally generated key, it also detects a drand/CIRCL scheme mismatch.
+ const publicKey="83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a"
+ const signature="b44679b9a59af2ec876b1a6b1ad52ea9b1615fc3982b19576350f93447cb1125e342b73a8dd2bacbe47e4b6b63ed5e39"
+ p,err:=NewDrandQuicknet(publicKey)
+ if err!=nil{t.Fatal(err)}
+ sig,err:=hex.DecodeString(signature)
+ if err!=nil{t.Fatal(err)}
+ digest:=sha256.Sum256(sig)
+ plan:=domain.BeaconPlan{Provider:DrandQuicknetProvider,Round:"1000"}
+ value:=domain.BeaconValue{Provider:plan.Provider,Round:plan.Round,
+  Digest:domain.BeaconDigest(digest),ProofRef:drandQuicknetProofPrefix+signature}
+ if err:=p.Verify(context.Background(),plan,value);err!=nil{
+  t.Fatalf("published drand Quicknet signature rejected: %v",err)
+ }
+}
