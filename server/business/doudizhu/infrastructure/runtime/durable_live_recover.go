@@ -85,10 +85,10 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 			if outcome.Version != item.Version || digest != item.ResultDigest {
 				return fmt.Errorf("%w: divergent live result for %s/%d", gamecore.ErrVerificationFailed, id, item.Version)
 			}
-			c.storeReceipt(id,item.Actor,item.CommandID,gamecore.Command{
-				ActorPosition:item.ActorPosition,ExpectedVersion:item.ExpectedVersion,
-				Payload:append([]byte(nil),item.Payload...),
-			},outcome)
+			c.storeReceipt(id, item.Actor, item.CommandID, gamecore.Command{
+				ActorPosition: item.ActorPosition, ExpectedVersion: item.ExpectedVersion,
+				Payload: append([]byte(nil), item.Payload...),
+			}, outcome)
 			if outcome.Terminal {
 				finalOutcome = outcome
 			}

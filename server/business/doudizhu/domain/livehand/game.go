@@ -238,8 +238,14 @@ func New(snapshot domain.HandSnapshot, material gamecore.FairnessMaterial, artif
 
 func (g *Game) Descriptor() gamecore.Descriptor { return randomizedsetup.Descriptor() }
 func (g *Game) InstanceID() gamecore.InstanceID { return g.id }
+
 // Phase is a read-only replay verification hint, not an authorization boundary.
-func (g *Game) Phase() string { if g==nil{return ""};return g.phase }
+func (g *Game) Phase() string {
+	if g == nil {
+		return ""
+	}
+	return g.phase
+}
 
 func (g *Game) Apply(command gamecore.Command) (gamecore.CommandOutcome, error) {
 	if g == nil || g.terminal {

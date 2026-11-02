@@ -45,6 +45,6 @@ func (c *LiveHandCoordinator) applyLive(
 		c.games[handID] = game
 		c.mu.Unlock()
 	}
-	c.storeReceipt(handID,actor,commandID,command,outcome)
+	c.storeReceipt(handID, actor, commandID, command, outcome)
 	return outcome, nil
 }

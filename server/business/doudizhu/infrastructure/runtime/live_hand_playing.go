@@ -72,23 +72,29 @@ func (c *LiveHandCoordinator) applyPlayingCommand(
 	expectedVersion uint64,
 	payload []byte,
 ) (application.LiveHandCommandResult, error) {
-	known:=gamecore.Command{ExpectedVersion:expectedVersion,Payload:append([]byte(nil),payload...)}
-	if outcome,found,err:=c.loadReceipt(ctx,handID,actor,commandID,known);err!=nil {
-		return application.LiveHandCommandResult{},err
+	known := gamecore.Command{ExpectedVersion: expectedVersion, Payload: append([]byte(nil), payload...)}
+	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known); err != nil {
+		return application.LiveHandCommandResult{}, err
 	} else if found {
-		return checkedPlayResult(handID,outcome)
+		return checkedPlayResult(handID, outcome)
 	}
-	game,err:=c.game(ctx,handID)
-	if err!=nil{return application.LiveHandCommandResult{},err}
-	position,err:=game.PositionForAccount(actor)
-	if err!=nil{return application.LiveHandCommandResult{},err}
-	known.ActorPosition=position
-	outcome,err:=c.applyLive(ctx,handID,actor,commandID,known)
-	if err!=nil{return application.LiveHandCommandResult{},err}
-	return checkedPlayResult(handID,outcome)
+	game, err := c.game(ctx, handID)
+	if err != nil {
+		return application.LiveHandCommandResult{}, err
+	}
+	position, err := game.PositionForAccount(actor)
+	if err != nil {
+		return application.LiveHandCommandResult{}, err
+	}
+	known.ActorPosition = position
+	outcome, err := c.applyLive(ctx, handID, actor, commandID, known)
+	if err != nil {
+		return application.LiveHandCommandResult{}, err
+	}
+	return checkedPlayResult(handID, outcome)
 }
 
-func checkedPlayResult(handID domain.HandID,outcome gamecore.CommandOutcome)(application.LiveHandCommandResult,error){
+func checkedPlayResult(handID domain.HandID, outcome gamecore.CommandOutcome) (application.LiveHandCommandResult, error) {
 	var result livehand.PlayResult
 	if err := json.Unmarshal(outcome.Payload, &result); err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("decode Doudizhu play result: %w", err)

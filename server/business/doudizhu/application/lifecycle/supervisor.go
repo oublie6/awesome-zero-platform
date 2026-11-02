@@ -142,7 +142,9 @@ func (s *Supervisor) AfterBid(
 	case livehand.PhaseBidding:
 		s.schedule(handID, actor, phaseBidding, s.config.BiddingTimeout)
 	case livehand.PhasePlaying:
-		if err:=s.advanceLiveHand(ctx,handID,false);err!=nil{return Outcome{},err}
+		if err := s.advanceLiveHand(ctx, handID, false); err != nil {
+			return Outcome{}, err
+		}
 		s.schedule(handID, actor, phasePlaying, s.config.PlayingTimeout)
 	default:
 		return Outcome{}, fmt.Errorf("lifecycle bid phase %q is invalid", bid.Phase)
@@ -167,7 +169,9 @@ func (s *Supervisor) AfterPlay(
 	case livehand.PhasePlaying:
 		s.schedule(handID, actor, phasePlaying, s.config.PlayingTimeout)
 	case livehand.PhaseCompleted:
-		if err:=s.advanceLiveHand(ctx,handID,true);err!=nil{return err}
+		if err := s.advanceLiveHand(ctx, handID, true); err != nil {
+			return err
+		}
 		s.Forget(handID)
 	default:
 		return fmt.Errorf("lifecycle play phase %q is invalid", play.Phase)

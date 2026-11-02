@@ -34,22 +34,28 @@ func (c *LiveHandCoordinator) bidInternal(ctx context.Context, handID domain.Han
 	if err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("encode Doudizhu bid: %w", err)
 	}
-	known := gamecore.Command{ExpectedVersion:expectedVersion,Payload:payload}
-	if outcome, found, err := c.loadReceipt(ctx,handID,actor,commandID,known); err!=nil {
-		return application.LiveHandCommandResult{},err
+	known := gamecore.Command{ExpectedVersion: expectedVersion, Payload: payload}
+	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known); err != nil {
+		return application.LiveHandCommandResult{}, err
 	} else if found {
-		return checkedBidResult(handID,outcome)
+		return checkedBidResult(handID, outcome)
 	}
-	game, err := c.game(ctx,handID)
-	if err!=nil{return application.LiveHandCommandResult{},err}
-	position,err:=game.PositionForAccount(actor)
-	if err!=nil{return application.LiveHandCommandResult{},err}
-	known.ActorPosition=position
-	outcome,err:=c.applyLive(ctx,handID,actor,commandID,known)
-	if err!=nil{return application.LiveHandCommandResult{},err}
-	return checkedBidResult(handID,outcome)
+	game, err := c.game(ctx, handID)
+	if err != nil {
+		return application.LiveHandCommandResult{}, err
+	}
+	position, err := game.PositionForAccount(actor)
+	if err != nil {
+		return application.LiveHandCommandResult{}, err
+	}
+	known.ActorPosition = position
+	outcome, err := c.applyLive(ctx, handID, actor, commandID, known)
+	if err != nil {
+		return application.LiveHandCommandResult{}, err
+	}
+	return checkedBidResult(handID, outcome)
 }
-func checkedBidResult(handID domain.HandID,outcome gamecore.CommandOutcome)(application.LiveHandCommandResult,error){
+func checkedBidResult(handID domain.HandID, outcome gamecore.CommandOutcome) (application.LiveHandCommandResult, error) {
 	var result livehand.BidResult
 	if err := json.Unmarshal(outcome.Payload, &result); err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("decode Doudizhu bid result: %w", err)
