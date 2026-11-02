@@ -268,6 +268,8 @@ func (g *Game) Apply(command gamecore.Command) (gamecore.CommandOutcome, error) 
 // Fork rebuilds an isolated candidate from verified immutable genesis and
 // successfully applied commands; failed speculative mutations are never
 // published to the authoritative game.
+func (g *Game) CloneCandidate() (gamecore.LiveGame,error) { return g.Fork() }
+
 func (g *Game) Fork() (*Game,error) {
 	if g==nil || g.terminal {return nil,fmt.Errorf("%w: terminal game cannot be forked",gamecore.ErrInstanceNotFound)}
 	candidate,err:=New(g.origin,g.material.Clone(),g.artifact)
