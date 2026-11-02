@@ -18,6 +18,24 @@ export interface WireCommand {
   clientSeq: number
   expectedVersion: number
   payload?: Readonly<Record<string, unknown>>
+  revealContext?: Readonly<SignedRevealContext>
+}
+export interface SignedRevealContext {
+ claims:{
+  v:'doudizhu-reveal-context-v1'
+  actor:string
+  handId:string
+  requestId:string
+  clientSeq:number
+  expectedVersion:number
+  seat:number
+  commitment:string
+  keyId:string
+  publicKeySha256:string
+  issuedAt:number
+  expiresAt:number
+ }
+ mac:string
 }
 export interface WireCommandResult {
   v: typeof WIRE_RESULT_VERSION
@@ -54,6 +72,8 @@ export function createWireCommand(input: Omit<WireCommand, 'v'>): WireCommand {
     (input.type === 'room.create' && input.expectedVersion !== 0)) {
     throw new Error('invalid Go dispatcher command')
   }
+  if (input.type !== 'hand.reveal' && input.revealContext !== undefined)
+    throw new Error('unexpected reveal ticket on command')
   const payload = input.payload ?? {}
   if (!object(payload)) throw new Error('invalid command payload')
   const keys = Object.keys(payload)
@@ -84,10 +104,31 @@ export function createWireCommand(input: Omit<WireCommand, 'v'>): WireCommand {
           card.trim() === card && card.length > 0 && card.length <= 3))
         throw new Error('invalid play cards')
       break
-    case 'hand.reveal':
-      // Reveal requires the server-generated AAD issuedAt/expiresAt context, not
-      // exposed by current dispatcher. Refuse to fabricate a valid request.
-      throw new Error('hand reveal requires verified server AAD context; not enabled')
+    case 'hand.reveal': {
+      const ticket=input.revealContext
+      const claims=ticket?.claims
+      if(!ticket || !object(claims) || claims.v!=='doudizhu-reveal-context-v1' ||
+        typeof ticket.mac!=='string' || !/^[0-9a-f]{64}$/.test(ticket.mac) ||
+        claims.handId!==input.aggregateId || claims.requestId!==input.requestId ||
+        claims.clientSeq!==input.clientSeq || claims.expectedVersion!==input.expectedVersion ||
+        typeof claims.actor!=='string' || !id(claims.actor) ||
+        !integer(claims.seat,1) || claims.seat>3 ||
+        typeof claims.keyId!=='string' || !id(claims.keyId) ||
+        typeof claims.commitment!=='string' || !/^[0-9a-f]{64}$/.test(claims.commitment) ||
+        typeof claims.publicKeySha256!=='string' || !/^[0-9a-f]{64}$/.test(claims.publicKeySha256) ||
+        !integer(claims.issuedAt,0) || !integer(claims.expiresAt,1) ||
+        claims.expiresAt<=claims.issuedAt)
+        throw new Error('verified server reveal context required')
+      if(!exactKeys(['envelope']) || !object(payload.envelope))throw new Error('missing HPKE envelope')
+      const e=payload.envelope
+      if(Object.keys(e).length!==5 ||
+        e.v!=='secure-envelope-v1' || e.keyId!==claims.keyId ||
+        e.suite!=='hpke-x25519-hkdf-sha256-aes-256-gcm' ||
+        typeof e.encapsulatedKey!=='string' || !/^[A-Za-z0-9_-]+$/.test(e.encapsulatedKey) ||
+        typeof e.ciphertext!=='string' || !/^[A-Za-z0-9_-]+$/.test(e.ciphertext))
+        throw new Error('invalid bound HPKE reveal envelope')
+      break
+    }
   }
   return Object.freeze({
     v: WIRE_REQUEST_VERSION,
@@ -96,7 +137,8 @@ export function createWireCommand(input: Omit<WireCommand, 'v'>): WireCommand {
     aggregateId: input.aggregateId,
     clientSeq: input.clientSeq,
     expectedVersion: input.expectedVersion,
-    payload: JSON.parse(JSON.stringify(payload)) as Readonly<Record<string, unknown>>
+    payload: JSON.parse(JSON.stringify(payload)) as Readonly<Record<string, unknown>>,
+    ...(input.revealContext === undefined ? {} : {revealContext:JSON.parse(JSON.stringify(input.revealContext)) as SignedRevealContext})
   })
 }
 
