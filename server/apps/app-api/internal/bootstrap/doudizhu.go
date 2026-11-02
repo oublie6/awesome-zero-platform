@@ -162,6 +162,9 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
+	if err := dispatcher.ConfigureRevealTickets(contributionKey); err != nil {
+		return doudizhuComponents{},fmt.Errorf("configure bound reveal AAD: %w",err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		for ctx.Err() == nil {
