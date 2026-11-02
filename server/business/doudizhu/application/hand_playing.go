@@ -49,7 +49,13 @@ func (s *Service) submitLivePlay(ctx context.Context,actor domain.AccountID,hand
 		copied[index] = code
 	}
 	if durable,ok:=s.liveHands.(interface{PlayCommitted(context.Context,domain.HandID,domain.AccountID,string,uint64,[]string)(LiveHandCommandResult,error)});ok {
-		if commandID=="" {return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)}
+		if commandID=="" {
+			if enforce,yes:=s.liveHands.(interface{DurabilityEnforced()bool});yes && enforce.DurabilityEnforced() {
+				return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)
+			}
+			// Legacy in-memory test/runtime adapters never claim B durability.
+			return s.liveHands.Play(ctx,snapshot.ID,actor,expectedLiveVersion,copied)
+		}
 		return durable.PlayCommitted(ctx,snapshot.ID,actor,commandID,expectedLiveVersion,copied)
 	}
 	return s.liveHands.Play(ctx, snapshot.ID, actor, expectedLiveVersion, copied)
@@ -77,7 +83,13 @@ func (s *Service) submitLivePass(ctx context.Context,actor domain.AccountID,hand
 		return LiveHandCommandResult{}, fmt.Errorf("%w: live pass version", ErrInvalidCommand)
 	}
 	if durable,ok:=s.liveHands.(interface{PassCommitted(context.Context,domain.HandID,domain.AccountID,string,uint64)(LiveHandCommandResult,error)});ok {
-		if commandID=="" {return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)}
+		if commandID=="" {
+			if enforce,yes:=s.liveHands.(interface{DurabilityEnforced()bool});yes && enforce.DurabilityEnforced() {
+				return LiveHandCommandResult{},fmt.Errorf("%w: missing durable live command ID",ErrInvalidCommand)
+			}
+			// Legacy in-memory test/runtime adapters never claim B durability.
+			return s.liveHands.Pass(ctx,snapshot.ID,actor,expectedLiveVersion)
+		}
 		return durable.PassCommitted(ctx,snapshot.ID,actor,commandID,expectedLiveVersion)
 	}
 	return s.liveHands.Pass(ctx, snapshot.ID, actor, expectedLiveVersion)
