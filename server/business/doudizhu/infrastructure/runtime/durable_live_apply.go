@@ -64,6 +64,7 @@ func (c *LiveHandCoordinator) applyLive(
 		}
 	}
 	c.storeReceipt(handID, actor, commandID, command, outcome)
+	c.checkpointAfterCommit(handID, epoch, outcome, next)
 	return outcome, nil
 }
 
