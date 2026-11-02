@@ -21,6 +21,7 @@ const serverSeedDomain = "doudizhu/server-seed/aes256gcm/v1:"
 type ProtectedSeedStore struct {
 	sql  sqlx.SqlConn
 	aead cipher.AEAD
+	readers []cipher.AEAD
 }
 
 func NewProtectedSeedStore(db *sql.DB, rootKey []byte) (*ProtectedSeedStore, error) {
@@ -74,7 +75,7 @@ func (s *ProtectedSeedStore) Load(ctx context.Context, id domain.HandID) (cardde
 	if len(row.Nonce) != s.aead.NonceSize() {
 		return seed, fmt.Errorf("invalid protected seed nonce")
 	}
-	plaintext, err := s.aead.Open(nil, row.Nonce, row.Ciphertext, []byte(serverSeedDomain+string(id)))
+	plaintext, err := s.openSeed(row.Nonce, row.Ciphertext, []byte(serverSeedDomain+string(id)))
 	if err != nil {
 		return seed, fmt.Errorf("protected server seed authentication failed")
 	}

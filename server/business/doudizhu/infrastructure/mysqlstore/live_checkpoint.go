@@ -46,6 +46,7 @@ func (j *LiveJournal) ConfigureCheckpoints(rootKey []byte) error {
 		return err
 	}
 	j.checkpointAEAD = aead
+	j.checkpointReaders = nil
 	return nil
 }
 
@@ -138,7 +139,7 @@ FROM doudizhu_live_checkpoints WHERE hand_id=?`, id).Scan(&version, &nonce, &cip
 		len(digest) != sha256.Size {
 		return LiveCheckpoint{}, ErrLiveReplayIntegrity
 	}
-	plaintext, err := j.checkpointAEAD.Open(nil, nonce, ciphertext, checkpointAAD(id, version))
+	plaintext, err := j.openCheckpoint(nonce, ciphertext, checkpointAAD(id, version))
 	if err != nil {
 		return LiveCheckpoint{}, ErrLiveReplayIntegrity
 	}

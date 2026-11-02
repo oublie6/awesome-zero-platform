@@ -46,6 +46,7 @@ const (
 type LiveJournal struct {
 	db             *sql.DB
 	checkpointAEAD cipher.AEAD
+	checkpointReaders []cipher.AEAD
 }
 
 func NewLiveJournal(db *sql.DB) (*LiveJournal, error) {

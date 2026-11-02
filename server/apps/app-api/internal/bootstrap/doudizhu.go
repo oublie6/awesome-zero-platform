@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -90,7 +91,34 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 		return doudizhuComponents{}, err
 	}
 	defer clear(contributionKey)
-	seedStore, err := mysqlstore.NewProtectedSeedStore(mysql.DB(), contributionKey)
+	// A bounded set of prior encryption roots allows existing acknowledged
+	// hands and contribution records to remain decryptable during rotation.
+	allRoots := map[string][]byte{cfg.Doudizhu.ContributionKeyID: contributionKey}
+	if cfg.Doudizhu.PreviousKeysJSON != "" {
+		var previous map[string]string
+		if err := json.Unmarshal([]byte(cfg.Doudizhu.PreviousKeysJSON), &previous); err != nil {
+			return doudizhuComponents{}, fmt.Errorf("decode previous Doudizhu keyring: %w", err)
+		}
+		if len(previous) > 7 {
+			return doudizhuComponents{}, fmt.Errorf("too many previous Doudizhu encryption keys")
+		}
+		for id, encoded := range previous {
+			if id == "" || len(id) > 128 || id == cfg.Doudizhu.ContributionKeyID {
+				return doudizhuComponents{}, fmt.Errorf("invalid previous Doudizhu key ID")
+			}
+			old, err := hex.DecodeString(encoded)
+			if err != nil || len(old) != 32 {
+				return doudizhuComponents{}, fmt.Errorf("invalid previous Doudizhu 256-bit key")
+			}
+			allRoots[id] = old
+		}
+	}
+	defer func() {
+		for _, key := range allRoots {
+			clear(key)
+		}
+	}()
+	seedStore, err := mysqlstore.NewProtectedSeedStoreKeyring(mysql.DB(), cfg.Doudizhu.ContributionKeyID, allRoots)
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
@@ -102,7 +130,7 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
-	if err := journal.ConfigureCheckpoints(contributionKey); err != nil {
+	if err := journal.ConfigureCheckpointKeyring(cfg.Doudizhu.ContributionKeyID, allRoots); err != nil {
 		return doudizhuComponents{}, fmt.Errorf("configure protected live checkpoints: %w", err)
 	}
 	liveHands, err := ddzruntime.NewDurableLiveHandCoordinator(seeds, directory, journal)
@@ -148,7 +176,7 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
-	keyring, err := protection.NewStaticKeyring(cfg.Doudizhu.ContributionKeyID, map[string][]byte{cfg.Doudizhu.ContributionKeyID: contributionKey})
+	keyring, err := protection.NewStaticKeyring(cfg.Doudizhu.ContributionKeyID, allRoots)
 	if err != nil {
 		return doudizhuComponents{}, err
 	}

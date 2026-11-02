@@ -65,3 +65,44 @@ test('unknown commit outcome is not retried under a new ID and does not lose sec
  assert.deepEqual(commands[0],commands[1])
  flow.dispose()
 })
+
+test('user-held fairness kit survives full client shutdown without plaintext platform storage',async()=>{
+ const sent=[]
+ const commitmentView={handId:'hand-1',phase:'FAIRNESS_COMMITTING',version:3,
+   seat:2,committed:false,revealed:false,lastClientSequence:4}
+ let current=commitmentView
+ const api={fairness:async()=>current,command:async c=>{
+   sent.push(c)
+   return {v:'doudizhu-api-command-result-v1',requestId:c.requestId,type:c.type,
+     durable:{v:'fair-doudizhu-command-result-v1',commandId:c.requestId,accepted:true}}
+ }}
+ const platform={random:{bytes:async n=>new Uint8Array(n).fill(7)}}
+ const first=new GameFairnessActions(api,platform,{})
+ const backup=await first.prepareRecoveryKit('hand-1','human backed phrase')
+ assert.ok(backup.length>48)
+ await first.commit('hand-1')
+ assert.equal(sent.length,1)
+ const acceptedCommitment=sent[0].payload.commitment
+ first.dispose()
+ current={...commitmentView,phase:'FAIRNESS_REVEALING',version:4,
+   committed:true,commitment:acceptedCommitment}
+ const restored=new GameFairnessActions(api,platform,{})
+ await restored.importRecoveryKit(backup,'hand-1')
+ assert.equal(restored.hasRecoverySecret,true)
+ assert.equal(restored.exportRecoveryKit(),backup)
+ await assert.rejects(restored.importRecoveryKit(backup,'hand-2'),/invalid fairness recovery kit/)
+ restored.dispose()
+ assert.throws(()=>restored.exportRecoveryKit(),/unavailable/)
+})
+test('fairness recovery kit rejects changed seat and changed server commitment',async()=>{
+ const view={handId:'hand-x',phase:'FAIRNESS_COMMITTING',version:2,
+   seat:1,committed:false,revealed:false,lastClientSequence:0}
+ const api={fairness:async()=>view}
+ const platform={random:{bytes:async n=>new Uint8Array(n).fill(13)}}
+ const initial=new GameFairnessActions(api,platform,{})
+ const kit=await initial.prepareRecoveryKit('hand-x')
+ initial.dispose()
+ const mismatch=new GameFairnessActions({fairness:async()=>({...view,seat:2})},platform,{})
+ await assert.rejects(mismatch.importRecoveryKit(kit,'hand-x'),/does not match/)
+ assert.equal(mismatch.hasRecoverySecret,false)
+})

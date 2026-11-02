@@ -114,6 +114,7 @@ type DoudizhuConfig struct {
 	BeaconPublicKeyHex string        `json:",optional,env=APP_DOUDIZHU_DRAND_QUICKNET_PUBLIC_KEY_HEX"`
 	ContributionKeyID  string        `json:",optional"`
 	ContributionKeyHex string        `json:",optional,env=APP_DOUDIZHU_CONTRIBUTION_KEY_HEX"`
+	PreviousKeysJSON   string        `json:",optional,env=APP_DOUDIZHU_PREVIOUS_KEYS_JSON"`
 	BiddingTimeout     time.Duration `json:",default=45s"`
 	PlayingTimeout     time.Duration `json:",default=60s"`
 	SweepInterval      time.Duration `json:",default=1s"`

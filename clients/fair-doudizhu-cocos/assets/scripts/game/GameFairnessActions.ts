@@ -11,6 +11,7 @@ const text = new TextEncoder()
 const contributionDomain='fair-doudizhu/contribution/v1'
 const commitDomain='fair-doudizhu/client-commit/v1'
 const ticketVersion='doudizhu-reveal-context-v1'
+const kitVersion='doudizhu-local-fairness-recovery-v1'
 function hex(value: Uint8Array): string {return Array.from(value,b=>b.toString(16).padStart(2,'0')).join('')}
 function encodeLength(value:Uint8Array):Uint8Array {
   const b=new Uint8Array(4+value.length)
@@ -67,6 +68,7 @@ export class GameFairnessActions {
   private readonly sealer
   private readonly manifestVersions=new InMemoryManifestVersionStore()
   private secret:PendingSecret|null=null
+  private prepared=false
   private inFlight=false
   private pending:Omit<WireCommand,'v'>|null=null
   constructor(private readonly api:DoudizhuHTTPClient,private readonly platform:GamePlatform,
@@ -75,6 +77,82 @@ export class GameFairnessActions {
     this.sealer=new SecureEnvelopeSealer({randomSource:platform.random})
   }
   get needsReconciliation():boolean{return this.pending!==null}
+  get hasRecoverySecret():boolean{return this.secret!==null}
+  get recoveryKitPrepared():boolean{return this.prepared}
+
+  /** Recovery material is never written into platform-local plaintext storage.
+   * The user must explicitly save this high-entropy secret OUTSIDE the game
+   * before sending the corresponding irreversible public commitment. */
+  exportRecoveryKit():string {
+    if(!this.secret)throw new Error('fairness recovery secret unavailable')
+    const secret=this.secret
+    const raw=JSON.stringify({v:kitVersion,handId:secret.handId,seat:secret.seat,
+      random:encodeBase64Url(secret.random),phrase:secret.phrase,commitment:secret.commitment})
+    if(raw.length>1024)throw new Error('fairness recovery kit exceeds size bound')
+    return encodeBase64Url(text.encode(raw))
+  }
+
+  async prepareRecoveryKit(handId:string,phrase?:string):Promise<string>{
+    this.assertAvailable()
+    this.inFlight=true
+    try{
+      const view=await this.api.fairness(handId)
+      if(view.phase!=='FAIRNESS_COMMITTING'||view.committed)
+        throw new Error('fairness preparation phase unavailable')
+      if(this.secret && this.secret.handId!==handId)
+        throw new Error('unrevealed contribution for a different hand')
+      if(!this.secret){
+        const random=await this.sealerRandom(32)
+        const chosenPhrase=phrase??encodeBase64Url(await this.sealerRandom(24))
+        const commitment=computeCommitment(handId,view.seat,random,chosenPhrase)
+        this.secret={handId,seat:view.seat,random,phrase:chosenPhrase,commitment}
+      }
+      if(this.secret.seat!==view.seat)throw new Error('fairness seat changed')
+      this.prepared=true
+      return this.exportRecoveryKit()
+    }finally{this.inFlight=false}
+  }
+
+  /** Import requires an authenticated current server projection and an exact
+   * commitment match; changing seat/hand or a forged kit fails closed. */
+  async importRecoveryKit(encoded:string,expectedHandId:string):Promise<void>{
+    this.assertAvailable()
+    if(typeof encoded!=='string'||encoded.length<48||encoded.length>2048)
+      throw new Error('invalid fairness recovery kit')
+    let raw:unknown
+    try{raw=JSON.parse(new TextDecoder().decode(decodeBase64Url(encoded)))}catch{
+      throw new Error('invalid fairness recovery kit')
+    }
+    if(!raw||typeof raw!=='object'||Array.isArray(raw))
+      throw new Error('invalid fairness recovery kit')
+    const kit=raw as Record<string,unknown>
+    if(kit.v!==kitVersion||kit.handId!==expectedHandId||
+      typeof kit.handId!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(kit.handId)||
+      !Number.isInteger(kit.seat)||Number(kit.seat)<1||Number(kit.seat)>3||
+      typeof kit.random!=='string'||typeof kit.phrase!=='string'||
+      kit.phrase.length<1||kit.phrase.length>256||
+      typeof kit.commitment!=='string'||!/^[0-9a-f]{64}$/.test(kit.commitment))
+      throw new Error('invalid fairness recovery kit')
+    let random:Uint8Array
+    try{random=decodeBase64Url(kit.random)}catch{throw new Error('invalid fairness recovery kit')}
+    if(random.length!==32){random.fill(0);throw new Error('invalid fairness recovery kit')}
+    this.inFlight=true
+    try{
+      const commitment=computeCommitment(expectedHandId,Number(kit.seat),random,kit.phrase)
+      if(commitment!==kit.commitment)throw new Error('fairness recovery digest mismatch')
+      const view=await this.api.fairness(expectedHandId)
+      if(view.seat!==kit.seat||view.revealed||
+        (view.committed ? view.commitment!==commitment :
+          view.phase!=='FAIRNESS_COMMITTING')||
+        !['FAIRNESS_COMMITTING','FAIRNESS_REVEALING'].includes(view.phase))
+        throw new Error('recovery kit does not match authenticated server commitment')
+      this.clearSecret()
+      this.secret={handId:expectedHandId,seat:Number(kit.seat),random,
+        phrase:kit.phrase,commitment}
+      this.prepared=true
+    }catch(error){random.fill(0);throw error}
+    finally{this.inFlight=false}
+  }
   /** A network timeout must be retried with exactly the same signed request and payload. */
   async retryUnknown():Promise<WireCommandResult> {
     if(!this.pending || this.inFlight)throw new Error('no pending fairness request')
@@ -98,11 +176,16 @@ export class GameFairnessActions {
       const view=await this.api.fairness(handId)
       if(view.phase!=='FAIRNESS_COMMITTING' || view.committed)throw new Error('fairness commit phase unavailable')
       if(this.secret && this.secret.handId!==handId)throw new Error('unrevealed contribution for a different hand')
-      const random=await this.sealerRandom(32)
-      const chosenPhrase=phrase??encodeBase64Url(await this.sealerRandom(24))
-      const commitment=computeCommitment(handId,view.seat,random,chosenPhrase)
-      this.clearSecret()
-      this.secret={handId,seat:view.seat,random,phrase:chosenPhrase,commitment}
+      if(!this.secret){
+        const random=await this.sealerRandom(32)
+        const chosenPhrase=phrase??encodeBase64Url(await this.sealerRandom(24))
+        const commitment=computeCommitment(handId,view.seat,random,chosenPhrase)
+        this.secret={handId,seat:view.seat,random,phrase:chosenPhrase,commitment}
+      }
+      if(this.secret.seat!==view.seat ||
+        (phrase!==undefined && phrase!==this.secret.phrase))
+        throw new Error('prepared contribution does not match authenticated seat')
+      const commitment=this.secret.commitment
       const command:Omit<WireCommand,'v'>={
         requestId:await this.ids.newRequestId(),type:'hand.commit',aggregateId:handId,
         clientSeq:view.lastClientSequence+1,expectedVersion:view.version,payload:{commitment}
@@ -175,6 +258,7 @@ export class GameFairnessActions {
   private clearSecret():void {
     this.secret?.random.fill(0)
     this.secret=null
+    this.prepared=false
   }
   dispose():void{this.clearSecret();this.pending=null}
 }
