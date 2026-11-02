@@ -29,6 +29,7 @@ func Register(server *rest.Server, authService *authn.Service, dispatcher *Dispa
 	}
 	server.AddRoutes(rest.WithMiddleware(securityhttp.RequireAuthenticationMiddleware(authService), []rest.Route{
 		{Method: http.MethodPost, Path: "/v1/doudizhu/commands", Handler: commandHandler(dispatcher)},
+		{Method: http.MethodGet, Path: "/v1/doudizhu/rooms/:roomId", Handler: roomViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/public", Handler: publicViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/private", Handler: privateViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/evidence", Handler: evidenceHandler(dispatcher)},
@@ -48,6 +49,28 @@ func commandHandler(dispatcher *Dispatcher) http.HandlerFunc {
 			return
 		}
 		result, err := dispatcher.Execute(r.Context(), actor, request)
+		if err != nil {
+			platformresponse.WriteError(r.Context(), w, mapHTTPError(err))
+			return
+		}
+		platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), result))
+	}
+}
+
+// Authenticated lobby read is required for version-based join and uncertain-write reconciliation.
+func roomViewHandler(dispatcher *Dispatcher) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		actor, ok := authenticatedActor(r)
+		if !ok {
+			platformresponse.WriteError(r.Context(), w, apperrors.Unauthorized("authentication required"))
+			return
+		}
+		roomID := domain.RoomID(pathvar.Vars(r)["roomId"])
+		if roomID == "" || roomID != domain.RoomID(strings.TrimSpace(string(roomID))) || len(roomID) > 128 {
+			platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("invalid roomId"))
+			return
+		}
+		result, err := dispatcher.RoomView(r.Context(), actor, roomID)
 		if err != nil {
 			platformresponse.WriteError(r.Context(), w, mapHTTPError(err))
 			return
