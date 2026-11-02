@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"context"
+	"time"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -22,10 +24,19 @@ type PreparedSeed struct {
 	Commitment domain.ServerCommitment
 }
 
+type SeedPersistence interface {
+	Save(context.Context, domain.HandID, carddeck.Seed) error
+	Load(context.Context, domain.HandID) (carddeck.Seed,error)
+	Delete(context.Context, domain.HandID) error
+}
+
+// Persist seeds before the preparation command can be acknowledged; the
+// persistence adapter owns encryption and integrity checks.
 type SeedVault struct {
 	mu      sync.RWMutex
 	entropy io.Reader
 	seeds   map[domain.HandID]carddeck.Seed
+	persistent SeedPersistence
 }
 
 func NewSeedVault(entropy io.Reader) (*SeedVault, error) {
@@ -33,6 +44,18 @@ func NewSeedVault(entropy io.Reader) (*SeedVault, error) {
 		entropy = rand.Reader
 	}
 	return &SeedVault{entropy: entropy, seeds: make(map[domain.HandID]carddeck.Seed)}, nil
+}
+
+func NewPersistentSeedVault(entropy io.Reader, store SeedPersistence) (*SeedVault,error) {
+	if store == nil { return nil, fmt.Errorf("%w: missing seed persistence",domain.ErrInvalidArgument) }
+	v,err := NewSeedVault(entropy)
+	if err != nil {return nil,err}
+	v.persistent=store
+	return v,nil
+}
+
+func (v *SeedVault) storageContext() (context.Context,context.CancelFunc) {
+	return context.WithTimeout(context.Background(),5*time.Second)
 }
 
 func (v *SeedVault) Prepare(handID domain.HandID) (PreparedSeed, error) {
@@ -57,6 +80,12 @@ func (v *SeedVault) Prepare(handID domain.HandID) (PreparedSeed, error) {
 		clear(seed[:])
 		return PreparedSeed{}, err
 	}
+	if v.persistent != nil {
+		ctx,cancel:=v.storageContext()
+		err:=v.persistent.Save(ctx,handID,seed)
+		cancel()
+		if err!=nil {clear(seed[:]);return PreparedSeed{},fmt.Errorf("persist protected server seed: %w",err)}
+	}
 	v.seeds[handID] = seed
 	clear(seed[:])
 	return PreparedSeed{HandID: handID, Commitment: domain.ServerCommitment(commitment)}, nil
@@ -70,7 +99,10 @@ func (v *SeedVault) Read(handID domain.HandID) (carddeck.Seed, error) {
 	seed, ok := v.seeds[handID]
 	v.mu.RUnlock()
 	if !ok {
-		return carddeck.Seed{}, fmt.Errorf("%w: %s", ErrSeedNotFound, handID)
+		if v.persistent == nil {return carddeck.Seed{},fmt.Errorf("%w: %s",ErrSeedNotFound,handID)}
+		ctx,cancel:=v.storageContext()
+		defer cancel()
+		return v.persistent.Load(ctx,handID)
 	}
 	return seed, nil
 }
@@ -82,8 +114,12 @@ func (v *SeedVault) Release(handID domain.HandID) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	seed, ok := v.seeds[handID]
-	if !ok {
-		return fmt.Errorf("%w: %s", ErrSeedNotFound, handID)
+	if !ok && v.persistent == nil {return fmt.Errorf("%w: %s",ErrSeedNotFound,handID)}
+	if v.persistent != nil {
+		ctx,cancel:=v.storageContext()
+		err:=v.persistent.Delete(ctx,handID)
+		cancel()
+		if err!=nil {return fmt.Errorf("remove protected server seed: %w",err)}
 	}
 	clear(seed[:])
 	v.seeds[handID] = seed
@@ -98,7 +134,10 @@ func (v *SeedVault) Contains(handID domain.HandID) bool {
 	v.mu.RLock()
 	_, ok := v.seeds[handID]
 	v.mu.RUnlock()
-	return ok
+	if ok {return true}
+	if v.persistent == nil {return false}
+	_,err:=v.Read(handID)
+	return err==nil
 }
 
 func (v *SeedVault) Count() int {
