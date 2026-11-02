@@ -76,7 +76,6 @@ func TestArchiveFailureKeepsOnlyCommittedTerminalReceipt(t *testing.T) {
 	}
 }
 
-
 func TestMySQLJSONNormalizationDoesNotRejectLegitimateRequestRetry(t *testing.T) {
 	c := &LiveHandCoordinator{receipts: make(map[domain.HandID]map[string]liveReceipt)}
 	id := domain.HandID("json-normalization-hand")
