@@ -118,7 +118,7 @@ export function createWireCommand(input: Omit<WireCommand, 'v'>): WireCommand {
         typeof claims.publicKeySha256!=='string' || !/^[0-9a-f]{64}$/.test(claims.publicKeySha256) ||
         !integer(claims.issuedAt,0) || !integer(claims.expiresAt,1) ||
         claims.expiresAt<=claims.issuedAt)
-        throw new Error('verified server reveal context required')
+        throw new Error('verified server AAD reveal context required')
       if(!exactKeys(['envelope']) || !object(payload.envelope))throw new Error('missing HPKE envelope')
       const e=payload.envelope
       if(Object.keys(e).length!==5 ||
