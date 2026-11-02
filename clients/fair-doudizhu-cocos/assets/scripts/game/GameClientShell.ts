@@ -5,12 +5,14 @@ import { ConnectionManager, type SocketTransport } from '@awesome-zero-platform/
 
 /** UI orchestration over confirmed server messages. No generated fake game state. */
 const MAX_PENDING_COMMANDS = 32
+const SERVER_ERROR_CODES = new Set(['INVALID_REQUEST', 'CONFLICT', 'FORBIDDEN', 'NOT_FOUND', 'INTERNAL'])
 export class GameClientShell {
   readonly hand = new HandStore()
   readonly events = new GameMessageRouter()
   private connection: ConnectionManager | null = null
   private disposed = false
   private initialized = false
+  private transportReady = false
   private generation = 0
   private syncSequence = 0
   private pendingCommands = new Map<string, { request: WireCommand; resolve: (value: WireCommandResult) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>()
@@ -79,7 +81,7 @@ export class GameClientShell {
     this.events.on('doudizhu.error', payload => {
       if (this.disposed) return
       const event = payload as {requestId?: unknown; code?: unknown}
-      if (typeof event.requestId === 'string' && typeof event.code === 'string') {
+      if (typeof event.requestId === 'string' && SERVER_ERROR_CODES.has(event.code as string)) {
         const pending = this.pendingCommands.get(event.requestId)
         if (pending) {
           this.pendingCommands.delete(event.requestId)
@@ -93,6 +95,7 @@ export class GameClientShell {
   async connect(socket: SocketTransport, endpoint: string, token: string): Promise<void> {
     if (this.disposed) throw new Error('client disposed')
     const generation = ++this.generation
+    this.transportReady = false
     this.rejectPending('connection replaced; command outcome unknown')
     this.connection?.close()
     if (this.hand.status !== 'disconnected') this.hand.setStatus('disconnected')
@@ -102,12 +105,14 @@ export class GameClientShell {
     try {
       await connection.open(endpoint, token,
         raw => { try { this.events.receive(raw) } catch { this.notify('收到不合法的服务器消息') } },
-        () => { if (!this.disposed && generation === this.generation) { this.rejectPending('connection lost; command outcome unknown'); this.hand.setStatus('disconnected'); this.notify('连接中断，请重连') } })
+        () => { if (!this.disposed && generation === this.generation) { this.transportReady = false; this.rejectPending('connection lost; command outcome unknown'); this.hand.setStatus('disconnected'); this.notify('连接中断，请重连') } })
       if (this.disposed || generation !== this.generation) return
+      this.transportReady = true
       this.hand.setStatus('synchronizing')
       this.notify('已连接，等待房间或牌局状态同步')
     } catch (error) {
       if (this.disposed || generation !== this.generation) return
+      this.transportReady = false
       this.hand.setStatus('disconnected')
       throw error
     }
@@ -133,7 +138,7 @@ export class GameClientShell {
   }
   /** Transmit only actual Go dispatcher commands; timeout is an unknown outcome, never a proof of failure. */
   async submitCommand(input: Omit<WireCommand, 'v'>): Promise<WireCommandResult> {
-    if (this.disposed || !this.connection || this.hand.status !== 'connected') throw new Error('game connection not ready')
+    if (this.disposed || !this.connection || !this.transportReady) throw new Error('game connection not ready')
     const request = createWireCommand(input)
     if (request.type.startsWith('hand.')) {
       if (!this.hand.canSubmit || this.hand.snapshot?.handId !== request.aggregateId ||
@@ -170,6 +175,7 @@ export class GameClientShell {
     if (this.disposed) return
     this.disposed = true
     this.generation++
+    this.transportReady = false
     this.rejectPending('client disposed; command outcome unknown')
     this.connection?.close()
     this.events.clear()
