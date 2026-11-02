@@ -102,6 +102,9 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
+	if err := journal.ConfigureCheckpoints(contributionKey); err != nil {
+		return doudizhuComponents{}, fmt.Errorf("configure protected live checkpoints: %w", err)
+	}
 	liveHands, err := ddzruntime.NewDurableLiveHandCoordinator(seeds, directory, journal)
 	if err != nil {
 		return doudizhuComponents{}, err
