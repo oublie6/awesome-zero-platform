@@ -1,0 +1,79 @@
+package runtime
+
+import (
+ "context"
+ "crypto/sha256"
+ "encoding/binary"
+ "encoding/hex"
+ "encoding/json"
+ "errors"
+ "net/http"
+ "net/http/httptest"
+ "strings"
+ "testing"
+ "time"
+
+ "github.com/cloudflare/circl/sign/bls"
+ "github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
+)
+
+func TestDrandQuicknetValidatesIndependentBLSSignatureAndRejectsTampering(t *testing.T){
+ private,err:=bls.KeyGen[bls.G2]([]byte(strings.Repeat("k",32)),nil,nil)
+ if err!=nil{t.Fatal(err)}
+ pub,err:=private.PublicKey().MarshalBinary()
+ if err!=nil{t.Fatal(err)}
+ provider,err:=NewDrandQuicknet(hex.EncodeToString(pub))
+ if err!=nil{t.Fatal(err)}
+ plan:=domain.BeaconPlan{Provider:DrandQuicknetProvider,Round:"1234567"}
+ var round [8]byte
+ binary.BigEndian.PutUint64(round[:],1234567)
+ msg:=sha256.Sum256(round[:])
+ sig:=bls.Sign(private,msg[:])
+ if len(sig)!=48{t.Fatalf("unexpected G1 signature size %d",len(sig))}
+ digest:=sha256.Sum256(sig)
+ value:=domain.BeaconValue{Provider:plan.Provider,Round:plan.Round,
+  Digest:domain.BeaconDigest(digest),ProofRef:drandQuicknetProofPrefix+hex.EncodeToString(sig)}
+ if err:=provider.Verify(context.Background(),plan,value);err!=nil{t.Fatal(err)}
+ changed:=value
+ changed.Round="1234568"
+ if !errors.Is(provider.Verify(context.Background(),plan,changed),ErrUnverifiedBeacon){t.Fatal("accepted changed round")}
+ changed=value
+ changed.Digest[0]^=0x7f
+ if !errors.Is(provider.Verify(context.Background(),plan,changed),ErrUnverifiedBeacon){t.Fatal("accepted changed digest")}
+ changed=value
+ changed.ProofRef=drandQuicknetProofPrefix+strings.Repeat("f",96)
+ if !errors.Is(provider.Verify(context.Background(),plan,changed),ErrUnverifiedBeacon){t.Fatal("accepted forged BLS signature")}
+ if _,err:=NewDrandQuicknet("invalid");!errors.Is(err,ErrUnverifiedBeacon){t.Fatal("accepted unpinned root")}
+ server:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  if !strings.HasSuffix(r.URL.Path,"/1234567") {t.Errorf("incorrect fixed round URL %s",r.URL.Path)}
+  _=json.NewEncoder(w).Encode(map[string]any{"round":1234567,"signature":hex.EncodeToString(sig)})
+ }))
+ defer server.Close()
+ // Keep host pinned in production; test response transport without changing
+ // the requested destination or the production verifier.
+ provider.client.Transport=redirectTransport{url:server.URL,base:http.DefaultTransport}
+ fetched,err:=provider.Fetch(context.Background(),plan)
+ if err!=nil || fetched!=value {t.Fatalf("fetch=%+v err=%v",fetched,err)}
+}
+type redirectTransport struct {
+ url string
+ base http.RoundTripper
+}
+func (rt redirectTransport) RoundTrip(r *http.Request)(*http.Response,error){
+ copy:=r.Clone(r.Context())
+ copy.URL.Scheme="http"
+ copy.URL.Host=strings.TrimPrefix(rt.url,"http://")
+ return rt.base.RoundTrip(copy)
+}
+func TestQuicknetRoundIsAlwaysFutureAndLockedBeforeCommit(t *testing.T){
+ now:=time.Unix(DrandQuicknetGenesisUnix+3000,0).UTC()
+ round,err:=DrandFutureRound(now)
+ if err!=nil{t.Fatal(err)}
+ parsed,err:=quicknetRound(round)
+ if err!=nil{t.Fatal(err)}
+ emitted:=DrandQuicknetGenesisUnix+int64(parsed-1)*3
+ if emitted<=now.Unix()+60 {t.Fatalf("round %d not strictly future at %d",parsed,now.Unix())}
+ for _,value:=range []string{"","0","01","a","-1","99999999999999999999999"} {
+  if _,err:=quicknetRound(value);err==nil{t.Fatalf("invalid quicknet round accepted: %s",value)}
+ }
+}
