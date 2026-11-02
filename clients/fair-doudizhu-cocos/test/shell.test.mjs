@@ -136,3 +136,40 @@ test('P2 outstanding commands have finite capacity',async()=>{
  s.dispose()
  await Promise.all(pendings.map(p=>assert.rejects(p,/outcome unknown/)))
 })
+
+test('R1 malformed empty error code cannot consume a valid pending operation',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const opening=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await opening
+ s.acceptVerifiedSnapshot(snapshot)
+ const input={requestId:'r1',type:'hand.pass',aggregateId:'hand-1',clientSeq:1,expectedVersion:7}
+ const pending=s.submitCommand(input);await tick()
+ const deliver=(type,payload)=>{for(const cb of t.tasks[0].c.messages)cb(JSON.stringify({type,payload}))}
+ deliver('doudizhu.error',{v:'doudizhu-realtime-event-v1',requestId:'r1',code:'',message:'invalid'})
+ deliver('doudizhu.command.result',{v:'doudizhu-api-command-result-v1',requestId:'r1',type:'hand.pass',live:{version:8,payload:{},requiresTermination:false}})
+ assert.equal((await pending).live.version,8)
+ s.dispose()
+})
+test('R2 fresh lobby can create room without any hand snapshot',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const opening=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await opening
+ assert.equal(s.hand.snapshot,null);assert.equal(s.hand.status,'synchronizing')
+ const pending=s.submitCommand({requestId:'room-first',type:'room.create',aggregateId:'room-new',clientSeq:1,expectedVersion:0})
+ await tick()
+ assert.equal(t.tasks[0].c.sent.length,1)
+ assert.equal(t.tasks[0].c.sent[0].payload.type,'room.create')
+ for(const cb of t.tasks[0].c.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{v:'doudizhu-api-command-result-v1',requestId:'room-first',type:'room.create',durable:{accepted:true}}}))
+ assert.equal((await pending).durable.accepted,true)
+ await assert.rejects(s.submitCommand({requestId:'illegal-hand',type:'hand.pass',aggregateId:'hand-1',clientSeq:2,expectedVersion:7}),/not eligible/)
+ s.dispose()
+})
+test('R2 socket not ready or disconnected still refuses lobby commands',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+ const input={requestId:'early',type:'room.create',aggregateId:'room-new',clientSeq:1,expectedVersion:0}
+ await assert.rejects(s.submitCommand(input),/not ready/)
+ const opening=s.connect(t,'wss://example.org/ws','token')
+ await assert.rejects(s.submitCommand(input),/not ready/)
+ t.tasks[0].resolve();await opening
+ for(const cb of t.tasks[0].c.closes)cb()
+ await assert.rejects(s.submitCommand(input),/not ready/)
+ s.dispose()
+})
