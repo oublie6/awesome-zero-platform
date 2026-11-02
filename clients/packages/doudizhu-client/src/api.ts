@@ -168,8 +168,9 @@ function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
     throw new Error('room preview leaked private membership fields')
   }
   if (raw.member) {
-    const seats=raw.seats.map(s=>({position:s.position,accountId:s.accountId??'',ready:s.ready}))
-    return {...raw,seats} as RoomRead
+    const seats=(raw.seats as Array<{position:number;accountId?:string;ready:boolean}>)
+      .map(s=>({position:s.position,accountId:s.accountId??'',ready:s.ready}))
+    return {...(JSON.parse(JSON.stringify(raw)) as RoomRead),seats}
   }
   return JSON.parse(JSON.stringify(raw)) as RoomRead
 }
