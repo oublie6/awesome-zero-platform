@@ -61,9 +61,9 @@ func TestArchiveFailureKeepsOnlyCommittedTerminalReceipt(t *testing.T) {
 		t.Fatalf("retry lost accepted terminal result: outcome=%+v found=%v err=%v", got, found, err)
 	}
 	for _, tt := range []struct {
-		name string
+		name   string
 		result gamecore.CommandOutcome
-		err error
+		err    error
 	}{
 		{"uncommitted database failure", terminal, errors.New("ambiguous transaction commit")},
 		{"nonterminal archive failure", gamecore.CommandOutcome{Version: 41, Payload: terminal.Payload}, errArchive},
