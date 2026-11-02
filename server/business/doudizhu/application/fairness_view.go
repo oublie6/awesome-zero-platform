@@ -23,9 +23,9 @@ type FairnessView struct {
 	RevealPublicKeySHA256 string           `json:"revealPublicKeySha256"`
 	RevealKeyBoundAt      time.Time        `json:"revealKeyBoundAt"`
 	LastClientSequence    uint64           `json:"lastClientSequence"`
-	BeaconProvider string `json:"beaconProvider"`
-	BeaconRound string `json:"beaconRound"`
-	BeaconReleaseAt *time.Time `json:"beaconReleaseAt,omitempty"`
+	BeaconProvider        string           `json:"beaconProvider"`
+	BeaconRound           string           `json:"beaconRound"`
+	BeaconReleaseAt       *time.Time       `json:"beaconReleaseAt,omitempty"`
 }
 
 // GetFairnessView gives each player only their own contribution status. Do
@@ -55,15 +55,17 @@ func (s *Service) GetFairnessView(ctx context.Context, actor domain.AccountID, i
 	}
 	view := FairnessView{HandID: string(id), Phase: snapshot.Phase, Version: snapshot.Version, Seat: uint8(seat),
 		Committed: own.Committed, Revealed: own.Revealed, LastClientSequence: last,
-		BeaconProvider: snapshot.BeaconPlan.Provider,
-		BeaconRound: snapshot.BeaconPlan.Round,
+		BeaconProvider:   snapshot.BeaconPlan.Provider,
+		BeaconRound:      snapshot.BeaconPlan.Round,
 		ServerCommitment: hex.EncodeToString(snapshot.ServerCommitment[:]),
 		RevealKeyID:      snapshot.RevealKeyID, RevealPublicKeySHA256: hex.EncodeToString(snapshot.RevealPublicKeySHA256[:]),
 		RevealKeyBoundAt: snapshot.RevealKeyBoundAt}
-	if snapshot.BeaconPlan.Provider=="drand-quicknet" {
-		release,err:=QuicknetRoundPublication(snapshot.BeaconPlan)
-		if err!=nil{return FairnessView{},err}
-		view.BeaconReleaseAt=&release
+	if snapshot.BeaconPlan.Provider == "drand-quicknet" {
+		release, err := QuicknetRoundPublication(snapshot.BeaconPlan)
+		if err != nil {
+			return FairnessView{}, err
+		}
+		view.BeaconReleaseAt = &release
 	}
 	if own.Committed {
 		view.Commitment = hex.EncodeToString(own.Commitment[:])
