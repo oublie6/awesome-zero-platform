@@ -31,6 +31,7 @@ func Register(server *rest.Server, authService *authn.Service, dispatcher *Dispa
 		{Method: http.MethodPost, Path: "/v1/doudizhu/commands", Handler: commandHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/rooms/:roomId", Handler: roomViewHandler(dispatcher)},
 		{Method: http.MethodPost, Path: "/v1/doudizhu/hands/:handId/reveal-context", Handler: revealContextHandler(dispatcher)},
+		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/fairness", Handler: fairnessViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/public", Handler: publicViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/private", Handler: privateViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/evidence", Handler: evidenceHandler(dispatcher)},
@@ -82,6 +83,20 @@ func roomViewHandler(dispatcher *Dispatcher) http.HandlerFunc {
 
 // A short-lived server-MACed AAD context is issued only for the authenticated,
 // already-committed seat of a fairness-revealing hand.
+func fairnessViewHandler(dispatcher *Dispatcher) http.HandlerFunc {
+	return func(w http.ResponseWriter,r *http.Request){
+		actor,ok:=authenticatedActor(r)
+		if !ok{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("authentication required"));return}
+		id:=domain.HandID(pathvar.Vars(r)["handId"])
+		if id=="" || len(id)>128 || id!=domain.HandID(strings.TrimSpace(string(id))){
+			platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid handId"));return
+		}
+		result,err:=dispatcher.FairnessView(r.Context(),actor,id)
+		if err!=nil{platformresponse.WriteError(r.Context(),w,mapHTTPError(err));return}
+		platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),result))
+	}
+}
+
 func revealContextHandler(dispatcher *Dispatcher) http.HandlerFunc {
 	return func(w http.ResponseWriter,r *http.Request){
 		actor,ok:=authenticatedActor(r)
