@@ -64,7 +64,7 @@ async function main() {
       assert.ok(state.canvasPixels.width > 0 && state.canvasPixels.height > 0)
       assert.ok(Math.abs((state.canvasPixels.width/state.canvasPixels.height)/(state.canvasRect.width/state.canvasRect.height)-1) < 0.01, 'framebuffer must match the displayed aspect ratio')
       assert.equal(state.title,'公平斗地主')
-      assert.equal(state.status,'游戏功能正在开发，暂未开放房间操作')
+      assert.equal(state.status,'连接模块就绪，请登录并同步服务端房间状态')
       assert.ok(state.titleFontPixels >= 18 && state.statusFontPixels >= 12, 'entry text must remain readable after resizing')
       assert.ok(state.active && state.bootstrap, 'actual scene/bootstrap must be active')
       for (const rect of [state.titleBounds,state.statusBounds]) {
