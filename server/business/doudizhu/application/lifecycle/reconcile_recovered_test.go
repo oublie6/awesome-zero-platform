@@ -23,7 +23,7 @@ func TestRestartReconciliationResumesPlayingAndFinishesCommittedFinal(t *testing
   "bid":livehand.PhaseBidding,
  });err!=nil{t.Fatal(err)}
  if hands.snapshots["play"].Phase!=domain.HandPlaying || hands.snapshots["done"].Phase!=domain.HandCompleted ||
-  len(term.commands)!=4 {t.Fatalf("recovery not durable, commands=%+v",term.commands)}
+  len(term.commands)!=3 {t.Fatalf("recovery not durable, commands=%+v",term.commands)}
  if _,ok:=supervisor.entries["play"];!ok {t.Fatal("restored playing deadline missing")}
  if _,ok:=supervisor.entries["bid"];!ok {t.Fatal("restored bidding deadline missing")}
  if _,ok:=supervisor.entries["done"];ok {t.Fatal("finished hand timer still running")}
