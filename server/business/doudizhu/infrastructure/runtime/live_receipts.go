@@ -28,7 +28,7 @@ func cloneLiveOutcome(v gamecore.CommandOutcome)gamecore.CommandOutcome{
 }
 func (c *LiveHandCoordinator) loadReceipt(ctx context.Context,id domain.HandID,actor domain.AccountID,
  commandID string,command gamecore.Command)(gamecore.CommandOutcome,bool,error){
- if c==nil || c.journal==nil || commandID==""{return gamecore.CommandOutcome{},false,nil}
+ if c==nil || commandID==""{return gamecore.CommandOutcome{},false,nil}
  if err:=ctx.Err();err!=nil{return gamecore.CommandOutcome{},false,err}
  c.mu.RLock()
  receipt,found:=c.receipts[id][commandID]
