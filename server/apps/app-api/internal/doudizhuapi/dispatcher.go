@@ -308,8 +308,8 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			if err == nil {
 				if live.Historical {
 					reconciler, ok := d.lifecycle.(interface {
-					AfterHistoricalBid(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
-				})
+						AfterHistoricalBid(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
+					})
 					if !ok {
 						return CommandResponse{}, fmt.Errorf("%w: historical bid reconciliation unavailable", ErrInvalidRequest)
 					}
@@ -338,8 +338,8 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			if err == nil {
 				if live.Historical {
 					reconciler, ok := d.lifecycle.(interface {
-					AfterHistoricalPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
-				})
+						AfterHistoricalPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
+					})
 					if !ok {
 						return CommandResponse{}, fmt.Errorf("%w: historical play reconciliation unavailable", ErrInvalidRequest)
 					}
@@ -365,8 +365,8 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			if err == nil {
 				if live.Historical {
 					reconciler, ok := d.lifecycle.(interface {
-					AfterHistoricalPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
-				})
+						AfterHistoricalPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
+					})
 					if !ok {
 						return CommandResponse{}, fmt.Errorf("%w: historical play reconciliation unavailable", ErrInvalidRequest)
 					}

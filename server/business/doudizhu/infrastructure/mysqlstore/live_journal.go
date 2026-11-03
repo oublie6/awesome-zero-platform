@@ -1,8 +1,8 @@
 package mysqlstore
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -26,16 +26,16 @@ var (
 // hands. Those must be reconstructed from the separate protected seed and
 // authoritative genesis snapshot.
 type LiveAction struct {
-	HandID          domain.HandID
-	Version         uint64
-	Epoch           uint64
-	CommandID       string
-	Actor           domain.AccountID
-	ActorPosition   uint8
-	ExpectedVersion uint64
-	ClientSeq       uint64
-	Payload         []byte
-	ResultDigest    [32]byte
+	HandID           domain.HandID
+	Version          uint64
+	Epoch            uint64
+	CommandID        string
+	Actor            domain.AccountID
+	ActorPosition    uint8
+	ExpectedVersion  uint64
+	ClientSeq        uint64
+	Payload          []byte
+	ResultDigest     [32]byte
 	IntegrityVersion uint8
 	IntegrityTag     [32]byte
 }
@@ -284,17 +284,17 @@ func liveActionIntegrityTag(action LiveAction, key []byte) ([32]byte, error) {
 		return [32]byte{}, err
 	}
 	binding, err := json.Marshal(struct {
-		Domain string
-		HandID domain.HandID
-		Version uint64
-		Epoch uint64
-		CommandID string
-		Actor domain.AccountID
-		ActorPosition uint8
+		Domain          string
+		HandID          domain.HandID
+		Version         uint64
+		Epoch           uint64
+		CommandID       string
+		Actor           domain.AccountID
+		ActorPosition   uint8
 		ExpectedVersion uint64
-		ClientSeq uint64
-		Payload json.RawMessage
-		ResultDigest [32]byte
+		ClientSeq       uint64
+		Payload         json.RawMessage
+		ResultDigest    [32]byte
 	}{
 		Domain: liveActionIntegrityDomain,
 		HandID: action.HandID, Version: action.Version, Epoch: action.Epoch,
