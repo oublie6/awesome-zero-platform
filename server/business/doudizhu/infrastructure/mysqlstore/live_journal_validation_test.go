@@ -154,8 +154,8 @@ func TestAuthenticatedLiveJournalRejectsLegacyVersionDowngrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, journal := range map[string]*LiveJournal{
-		"active root": authenticated,
-		"active and retained roots": {integrityKey: root, integrityReaders: [][]byte{bytes.Repeat([]byte{3}, 32)}},
+		"active root":                  authenticated,
+		"active and retained roots":    {integrityKey: root, integrityReaders: [][]byte{bytes.Repeat([]byte{3}, 32)}},
 		"retained root without active": {integrityReaders: [][]byte{root}},
 	} {
 		t.Run(name, func(t *testing.T) {
