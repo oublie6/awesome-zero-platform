@@ -322,8 +322,14 @@ func (j *LiveJournal) verifyLiveActionIntegrity(action LiveAction, stored []byte
 	var keys [][]byte
 	switch action.IntegrityVersion {
 	case 1:
-		if action.ClientSeq != 0 {
-			return ErrLiveReplayIntegrity // public request must not accept unkeyed tags
+		// A keyed journal can only trust authenticated v2 records. The row's
+		// version and client sequence are not trusted provenance: accepting an
+		// unsigned v1/zero-sequence row here permits a v2 history downgrade.
+		// Legacy v1 can only be read in explicitly unconfigured, keyless
+		// internal environments. Operators must drain/reconcile legacy hands
+		// before enabling authenticated recovery; never silently retag them.
+		if j == nil || len(j.integrityKey) != 0 || len(j.integrityReaders) != 0 || action.ClientSeq != 0 {
+			return ErrLiveReplayIntegrity
 		}
 		keys = [][]byte{nil}
 	case 2:

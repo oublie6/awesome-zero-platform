@@ -313,3 +313,24 @@ retagging or production migration was performed. This is implementation only,
 NOT a CI PASS or independent Codex acceptance.
 
 Formatted Round 4 repair checkpoint: `f3f8e66b7bcaf45939dd49a310acc01fd1453f8d`. The one-shot formatter removed itself after applying gofmt. This documentation commit triggers ordinary Actions on that formatted source; successful CI or independent Round 5 acceptance must be established separately.
+
+## Round 5 R5-N05/P2 remediation candidate — pending CI and independent Round 6
+
+The Round 5 independent report confirms the original R3-N02 lifecycle races,
+SETTLING in-process compensation, and R4-N04 client-sequence corruption
+regressions now PASS. It identifies a separate authenticated-log recovery
+policy gap: an untrusted journal row could choose the unkeyed legacy v1
+verification path in a keyed runtime. The MySQL journal now rejects every
+v1 row when an active or retained authentication key is configured, regardless
+of the row's claimed sequence. Authenticated internal zero-sequence operations
+continue to use and verify keyed v2 records; explicitly keyless legacy-only
+internal environments still support v1. Pre-existing unsigned v1 rows are
+NOT silently authenticated or migrated. A deployment enabling protection must
+first drain or reconcile such active hands under an operator-approved plan.
+
+This code-only recovery-policy change adds no SQL, RPC, schema, or gameplay
+behavior changes to normal authenticated v2 operations, and adds unit plus
+real-MySQL regression coverage including cold coordinator recovery. Product
+implementation and tests are staged for CI; **no CI success, independent
+acceptance, or Goal completion is claimed by this note**. Round 5 FAIL remains
+the latest authoritative acceptance verdict until the next Codex review.

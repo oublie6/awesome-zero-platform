@@ -6,6 +6,8 @@
 
 - Latest Goal 0046 Round 5 independent acceptance: **FAIL**, source `797a7bad4ebdf9bcab26c3fdd797bac55e6009f0`. Original R3-N02 timers/SETTLING compensation and original R4-N04 sequence-only corruption pass; new R5-N05/P2 authenticated-journal legacy downgrade remains. Matrix92PASS/4FAIL/18BLOCKED. Internal/release FAIL, external BLOCKED, sealing NO. [Full report](0046-round5-independent-acceptance.md). Goals0045/0046 remain `in_progress`.
 
+- ChatGPT Round 5 R5-N05/P2 remediation candidate: authenticated journals reject unkeyed v1 recovery even when the row presents zero clientSeq. Explicitly keyless internal legacy remains supported; legacy active hands require controlled drain/reconciliation before configuring an authenticated root. Regression unit/MySQL tests added. **Implementation pending exact-SHA CI and Codex independent Round 6**; Round 5 FAIL above remains authoritative.
+
 - ChatGPT Round 4 repair candidate for R3-N02 and R4-N04 staged: historical lifecycle wiring and authenticated durable request identity. Exact-SHA CI and Codex Round 5 remain required; the Round 4 FAIL verdict below stays authoritative.
 
 - Latest Goal 0046 Round 4 independent acceptance: **FAIL**, source `cb161cf6adae490db0a4703c85125e00202019ee`. R3-N02/P1 remains; R3-N03 normal replay binding passes, but new R4-N04/P2 journal sequence integrity fails. Original F01–F11/N01 pass. Internal/release FAIL, external BLOCKED, sealing NO. [Full 114-item report](0046-round4-independent-acceptance.md).

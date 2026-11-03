@@ -121,3 +121,53 @@ func TestLiveActionHMACBindsAcceptedRequestIdentity(t *testing.T) {
 		t.Fatal("public request accepted unkeyed tag")
 	}
 }
+
+func TestAuthenticatedLiveJournalRejectsLegacyVersionDowngrade(t *testing.T) {
+	root := deriveLiveActionIntegrityKey(bytes.Repeat([]byte{0x71}, 32))
+	authenticated := &LiveJournal{integrityKey: root}
+	action := LiveAction{
+		HandID: "r5-hand", Version: 2, Epoch: 3, CommandID: "accepted-bid",
+		Actor: "player-1", ActorPosition: 1, ExpectedVersion: 1,
+		ClientSeq: 91, Payload: []byte(`{"v":"doudizhu-live-bid-command-v1","score":3}`),
+		ResultDigest: [32]byte{1}, IntegrityVersion: 2,
+	}
+	tag, err := liveActionIntegrityTag(action, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := authenticated.verifyLiveActionIntegrity(action, tag[:]); err != nil {
+		t.Fatalf("authenticated v2 rejected: %v", err)
+	}
+	internal := action
+	internal.ClientSeq = 0
+	internal.IntegrityVersion = 2
+	internalTag, err := liveActionIntegrityTag(internal, root)
+	if err != nil || authenticated.verifyLiveActionIntegrity(internal, internalTag[:]) != nil {
+		t.Fatalf("authenticated internal zero-sequence rejected: %v", err)
+	}
+	legacy := action
+	legacy.ClientSeq = 0
+	legacy.CommandID = "relabelled-legacy-bid"
+	legacy.IntegrityVersion = 1
+	legacyTag, err := liveActionIntegrityTag(legacy, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, journal := range map[string]*LiveJournal{
+		"active root": authenticated,
+		"active and retained roots": {integrityKey: root, integrityReaders: [][]byte{bytes.Repeat([]byte{3}, 32)}},
+		"retained root without active": {integrityReaders: [][]byte{root}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := journal.verifyLiveActionIntegrity(legacy, legacyTag[:]); !errors.Is(err, ErrLiveReplayIntegrity) {
+				t.Fatalf("unauthenticated legacy downgrade accepted: %v", err)
+			}
+		})
+	}
+	if err := (&LiveJournal{}).verifyLiveActionIntegrity(legacy, legacyTag[:]); err != nil {
+		t.Fatalf("explicitly keyless internal v1 compatibility rejected: %v", err)
+	}
+	if err := (*LiveJournal)(nil).verifyLiveActionIntegrity(legacy, legacyTag[:]); !errors.Is(err, ErrLiveReplayIntegrity) {
+		t.Fatalf("nil journal accepted legacy row: %v", err)
+	}
+}
