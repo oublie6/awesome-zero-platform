@@ -35,15 +35,19 @@ func (c *LiveHandCoordinator) Play(
 }
 func (c *LiveHandCoordinator) PlayCommittedWithSequence(ctx context.Context, id domain.HandID,
 	actor domain.AccountID, commandID string, version uint64, cards []string, clientSeq uint64,
-) (application.LiveHandCommandResult,error) {
-	if clientSeq == 0 || commandID == "" { return application.LiveHandCommandResult{}, fmt.Errorf("sequenced play identity required") }
-	return c.playInternal(ctx,id,actor,commandID,version,cards,clientSeq)
+) (application.LiveHandCommandResult, error) {
+	if clientSeq == 0 || commandID == "" {
+		return application.LiveHandCommandResult{}, fmt.Errorf("sequenced play identity required")
+	}
+	return c.playInternal(ctx, id, actor, commandID, version, cards, clientSeq)
 }
 func (c *LiveHandCoordinator) PassCommittedWithSequence(ctx context.Context, id domain.HandID,
 	actor domain.AccountID, commandID string, version uint64, clientSeq uint64,
-) (application.LiveHandCommandResult,error) {
-	if clientSeq == 0 || commandID == "" { return application.LiveHandCommandResult{}, fmt.Errorf("sequenced pass identity required") }
-	return c.passInternal(ctx,id,actor,commandID,version,clientSeq)
+) (application.LiveHandCommandResult, error) {
+	if clientSeq == 0 || commandID == "" {
+		return application.LiveHandCommandResult{}, fmt.Errorf("sequenced pass identity required")
+	}
+	return c.passInternal(ctx, id, actor, commandID, version, clientSeq)
 }
 func (c *LiveHandCoordinator) playInternal(ctx context.Context, handID domain.HandID, actor domain.AccountID,
 	commandID string, expectedVersion uint64, cards []string, clientSeq uint64,

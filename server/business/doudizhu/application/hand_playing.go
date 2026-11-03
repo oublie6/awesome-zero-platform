@@ -31,13 +31,17 @@ func (s *Service) SubmitLiveHandPlay(
 func (s *Service) SubmitLiveHandPlayWithSequence(ctx context.Context, actor domain.AccountID, handID domain.HandID,
 	commandID string, expectedLiveVersion uint64, cards []string, clientSeq uint64,
 ) (LiveHandCommandResult, error) {
-	if clientSeq == 0 || commandID == "" { return LiveHandCommandResult{}, ErrInvalidCommand }
+	if clientSeq == 0 || commandID == "" {
+		return LiveHandCommandResult{}, ErrInvalidCommand
+	}
 	return s.submitLivePlay(ctx, actor, handID, commandID, expectedLiveVersion, cards, clientSeq)
 }
 func (s *Service) SubmitLiveHandPassWithSequence(ctx context.Context, actor domain.AccountID, handID domain.HandID,
 	commandID string, expectedLiveVersion uint64, clientSeq uint64,
 ) (LiveHandCommandResult, error) {
-	if clientSeq == 0 || commandID == "" { return LiveHandCommandResult{}, ErrInvalidCommand }
+	if clientSeq == 0 || commandID == "" {
+		return LiveHandCommandResult{}, ErrInvalidCommand
+	}
 	return s.submitLivePass(ctx, actor, handID, commandID, expectedLiveVersion, clientSeq)
 }
 func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, handID domain.HandID,

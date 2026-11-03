@@ -107,19 +107,23 @@ func TestMySQLJSONNormalizationDoesNotRejectLegitimateRequestRetry(t *testing.T)
 }
 
 func TestLiveReceiptClientSequenceIsBoundAndCopied(t *testing.T) {
-	c:=&LiveHandCoordinator{receipts:make(map[domain.HandID]map[string]liveReceipt)}
-	id:=domain.HandID("seq-bound")
-	action:=gamecore.Command{ActorPosition:2,ExpectedVersion:7,
-		Payload:[]byte(`{"v":"doudizhu-live-bid-command-v1","score":3}`)}
-	c.storeReceipt(id,"account-2","confirmed",action,
-		gamecore.CommandOutcome{Version:8,Payload:[]byte(`{"stateVersion":8}`)},91)
-	probe:=gamecore.Command{ExpectedVersion:7,Payload:action.Payload}
-	if got,found,err:=c.loadReceipt(context.Background(),id,"account-2","confirmed",probe,91);
-		err!=nil||!found||got.Version!=8{t.Fatalf("original seq lost %+v found=%v err=%v",got,found,err)}
-	if _,found,err:=c.loadReceipt(context.Background(),id,"account-2","confirmed",probe,92);
-		!found||!errors.Is(err,gamecore.ErrVerificationFailed){t.Fatalf("changed seq accepted: found=%v err=%v",found,err)}
-	if _,found,err:=c.loadReceipt(context.Background(),id,"account-2","confirmed",probe);
-		!found||!errors.Is(err,gamecore.ErrVerificationFailed){t.Fatalf("unsequenced bypass accepted: found=%v err=%v",found,err)}
-	if got,found,err:=c.loadReceipt(context.Background(),id,"account-2","confirmed",probe,91);
-		err!=nil||!found||got.Version!=8{t.Fatalf("rejected probe contaminated exact identity: %+v found=%v err=%v",got,found,err)}
+	c := &LiveHandCoordinator{receipts: make(map[domain.HandID]map[string]liveReceipt)}
+	id := domain.HandID("seq-bound")
+	action := gamecore.Command{ActorPosition: 2, ExpectedVersion: 7,
+		Payload: []byte(`{"v":"doudizhu-live-bid-command-v1","score":3}`)}
+	c.storeReceipt(id, "account-2", "confirmed", action,
+		gamecore.CommandOutcome{Version: 8, Payload: []byte(`{"stateVersion":8}`)}, 91)
+	probe := gamecore.Command{ExpectedVersion: 7, Payload: action.Payload}
+	if got, found, err := c.loadReceipt(context.Background(), id, "account-2", "confirmed", probe, 91); err != nil || !found || got.Version != 8 {
+		t.Fatalf("original seq lost %+v found=%v err=%v", got, found, err)
+	}
+	if _, found, err := c.loadReceipt(context.Background(), id, "account-2", "confirmed", probe, 92); !found || !errors.Is(err, gamecore.ErrVerificationFailed) {
+		t.Fatalf("changed seq accepted: found=%v err=%v", found, err)
+	}
+	if _, found, err := c.loadReceipt(context.Background(), id, "account-2", "confirmed", probe); !found || !errors.Is(err, gamecore.ErrVerificationFailed) {
+		t.Fatalf("unsequenced bypass accepted: found=%v err=%v", found, err)
+	}
+	if got, found, err := c.loadReceipt(context.Background(), id, "account-2", "confirmed", probe, 91); err != nil || !found || got.Version != 8 {
+		t.Fatalf("rejected probe contaminated exact identity: %+v found=%v err=%v", got, found, err)
+	}
 }

@@ -22,7 +22,7 @@ const (
 )
 
 type checkpointReceipt struct {
-	ClientSeq uint64 `json:"clientSeq"`
+	ClientSeq uint64                  `json:"clientSeq"`
 	CommandID string                  `json:"commandId"`
 	Actor     domain.AccountID        `json:"actor"`
 	Command   gamecore.Command        `json:"command"`
@@ -66,7 +66,7 @@ func (c *LiveHandCoordinator) checkpointAfterCommit(id domain.HandID, epoch uint
 		}
 		byVersion[version-2] = checkpointReceipt{
 			CommandID: commandID, ClientSeq: receipt.clientSeq,
-			Actor:     receipt.actor, Command: receipt.command, Outcome: receipt.outcome,
+			Actor: receipt.actor, Command: receipt.command, Outcome: receipt.outcome,
 		}
 	}
 	c.mu.RUnlock()

@@ -16,9 +16,9 @@ import (
 // authoritative result rather than executing an action twice.
 type liveReceipt struct {
 	clientSeq uint64
-	actor   domain.AccountID
-	command gamecore.Command
-	outcome gamecore.CommandOutcome
+	actor     domain.AccountID
+	command   gamecore.Command
+	outcome   gamecore.CommandOutcome
 }
 
 func duplicateCommandReceipt(old, current gamecore.Command, previousActor, actor domain.AccountID) bool {
@@ -45,7 +45,9 @@ func (c *LiveHandCoordinator) loadReceipt(ctx context.Context, id domain.HandID,
 		return gamecore.CommandOutcome{}, false, nil
 	}
 	var seq uint64
-	if len(clientSeq) > 0 { seq = clientSeq[0] }
+	if len(clientSeq) > 0 {
+		seq = clientSeq[0]
+	}
 	if receipt.clientSeq != seq || !duplicateCommandReceipt(receipt.command, command, receipt.actor, actor) {
 		return gamecore.CommandOutcome{}, true, fmt.Errorf("%w: command ID bound to different live request", gamecore.ErrVerificationFailed)
 	}
@@ -63,7 +65,9 @@ func (c *LiveHandCoordinator) storeReceipt(id domain.HandID, actor domain.Accoun
 	}
 	command.Payload = append([]byte(nil), command.Payload...)
 	var seq uint64
-	if len(clientSeq) > 0 { seq = clientSeq[0] }
+	if len(clientSeq) > 0 {
+		seq = clientSeq[0]
+	}
 	c.receipts[id][commandID] = liveReceipt{actor: actor, clientSeq: seq, command: command, outcome: cloneLiveOutcome(outcome)}
 }
 

@@ -23,6 +23,7 @@ func (s *Service) SubmitLiveHandBid(
 ) (LiveHandCommandResult, error) {
 	return s.submitLiveBid(ctx, actor, handID, "", expectedLiveVersion, score, 0)
 }
+
 // SubmitLiveHandBidWithSequence is used only by authenticated public live
 // requests. The sequence is part of the persisted exact command identity.
 func (s *Service) SubmitLiveHandBidWithSequence(ctx context.Context, actor domain.AccountID,

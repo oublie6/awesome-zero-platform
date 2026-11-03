@@ -29,9 +29,11 @@ func (c *LiveHandCoordinator) Bid(
 }
 func (c *LiveHandCoordinator) BidCommittedWithSequence(ctx context.Context, id domain.HandID,
 	actor domain.AccountID, commandID string, expectedVersion uint64, score bidding.Score, clientSeq uint64,
-) (application.LiveHandCommandResult,error) {
-	if clientSeq == 0 || commandID == "" { return application.LiveHandCommandResult{}, fmt.Errorf("sequenced bid identity required") }
-	return c.bidInternal(ctx,id,actor,commandID,expectedVersion,score,clientSeq)
+) (application.LiveHandCommandResult, error) {
+	if clientSeq == 0 || commandID == "" {
+		return application.LiveHandCommandResult{}, fmt.Errorf("sequenced bid identity required")
+	}
+	return c.bidInternal(ctx, id, actor, commandID, expectedVersion, score, clientSeq)
 }
 func (c *LiveHandCoordinator) bidInternal(ctx context.Context, handID domain.HandID, actor domain.AccountID,
 	commandID string, expectedVersion uint64, score bidding.Score, clientSeq uint64,

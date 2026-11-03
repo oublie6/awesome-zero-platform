@@ -31,7 +31,7 @@ type LiveAction struct {
 	Actor           domain.AccountID
 	ActorPosition   uint8
 	ExpectedVersion uint64
-	ClientSeq uint64
+	ClientSeq       uint64
 	Payload         []byte
 	ResultDigest    [32]byte
 }
@@ -131,7 +131,9 @@ WHERE hand_id=? FOR UPDATE`, id).Scan(&epoch, &version, &raw); err != nil {
 }
 func (j *LiveJournal) Append(ctx context.Context, id domain.HandID, epoch uint64, commandID string, actor domain.AccountID, command gamecore.Command, outcome gamecore.CommandOutcome, clientSeq ...uint64) error {
 	var sequence uint64
-	if len(clientSeq)>0 { sequence=clientSeq[0] }
+	if len(clientSeq) > 0 {
+		sequence = clientSeq[0]
+	}
 	if j == nil || j.db == nil || id == "" || epoch == 0 || commandID == "" || len(commandID) > 128 ||
 		actor == "" || len(actor) > 128 || command.ActorPosition < 1 || command.ActorPosition > 3 ||
 		outcome.Version == 0 || outcome.Version != command.ExpectedVersion+1 ||
