@@ -194,3 +194,10 @@ receipts. Rollback is the prior verified commit; no database migration exists.
 of the original N01 scenario, adversarial payload/actor checks and Codex
 Round 3 independent acceptance still gate closure. Until then Goal 0046
 remains in_progress.
+
+N01 implementation checkpoint: the new real-MySQL recovery regression and
+Doudizhu client/manifest jobs passed on source `39c2c08f`; a one-shot
+workflow formatted Go sources and removed itself in `cc90e1a6`.
+The pre-format CI's gofmt gate failed as expected. The follow-on exact
+formatted-source CI is the authoritative build gate; do not interpret
+a successful pre-format integration job as complete acceptance.
