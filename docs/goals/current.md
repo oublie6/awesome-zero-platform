@@ -4,6 +4,7 @@
 
 ## Status
 
+- Latest Goal 0046 Round 3 independent acceptance: **FAIL**, source `04da095c269509a2e4061901ee3f45c92d885d22`. Original N01 and F01–F11 reproducers PASS; R3-N02/P1 lifecycle timer race and R3-N03/P2 post-restart clientSeq binding remain. Internal/release FAIL, external qualification BLOCKED, sealing NO; report below.
 - ChatGPT N01/P1 repair candidate is under verification; the previous Round 2 FAIL below remains authoritative until an exact-SHA CI run and independent Codex Round 3 acceptance pass. Cross-phase historical bid receipt read, lifecycle-once handling and real-MySQL regressions have been added; do not seal Goal 0046 yet.
 - Latest Goal 0046 Round 2 acceptance: **FAIL**, source `da0ed72fc9b49ffc0546589ac649ad83c9510001`; original F01–F11 reproducers pass, but F02 has an expanded P1 historical-bid replay residual N01. Code/release FAIL, external qualifications BLOCKED, no sealing or Goal completion.
 - Latest integrated Goal 0046 acceptance: **FAIL**, source `0cc90a5d8639c9a1dfd892e1034bb92067182794`; 114-item matrix, 5 P1/6 P2 findings and actual MySQL/three-client/fault evidence below. External qualification remains BLOCKED; neither Goal is completed.
@@ -92,6 +93,8 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### In progress
 
+- 2026-11-03 Round 3 independent acceptance completed at `04da095`: original N01 MySQL/WSS restart passes; historical same-phase lifecycle timer/phase race and post-restart clientSeq identity binding fail. Codex changed reporting only. ChatGPT owns fixes and a new consolidated candidate; Goals0045/0046 remain in_progress.
+
 - 2026-11-03 consolidated Round 2 independent verification finished at `da0ed72`: original terminal recovery, real fairness/full game, active process kills and deployment runtime pass; PLAYING historical bid retry remains P1/N01. Codex changes reporting only; ChatGPT owns correction and the next consolidated candidate.
 
 - 2026-11-02 consolidated independent Goal 0046 acceptance completed as a verification assignment: **FAIL**, not product completion. Codex changed reporting only; ChatGPT owns all F01–F11 fixes and a consolidated re-verification candidate. Real backend full-game/active-crash controls pass, original Cocos room/reveal and terminal recovery do not.
@@ -129,6 +132,105 @@ Single primary implementer; use subagents only for independent review or API doc
 - Continue planned protocol integration in Goal 0046: separate durable envelope from current doudizhu-api-command-v1 request DTO, implement mapping, per-account/aggregate sequence/ID allocation and safe retries, private snapshot and terminal-evidence mapping. Do not submit the durable CommandEnvelope directly as a wire request or infer game state from notifications.
 
 ### Verification status
+
+#### Goal 0046 Round 3 — N01 最终独立验收，2026-11-03
+
+**结论：FAIL。原始 N01 跨阶段重启复现已修复并实际通过，但专项扩展发现 R3-N02/P1 生命周期副作用/计时器竞态、R3-N03/P2 重启后 clientSeq 绑定丢失；N01 专项不能整体 PASS。F01–F11 原始回归 PASS；内部代码验收 FAIL；生产发布验收 FAIL（外部平台资格另 BLOCKED）；封版 NO。** Goal0045/0046 保持 `in_progress`，不归档。以下报告完成独立验收任务，不是产品交付完成；所有历史 FAIL 和原始验收要求保留。
+
+固定及实际执行源码 `04da095c269509a2e4061901ee3f45c92d885d22`。干净 `main` 经 `git pull --ff-only` 确认为此 SHA。已阅读完整 AGENTS/current、Goal0046、规范四页和 Round1/Round2 原始报告/脚本；逐个审查 `da0ed72..04da095` 全部12文件（含生产、测试、报告）及现有恢复/生命周期路径。生产实现归属 Doudizhu application/runtime，Dispatcher 为组合适配；本轮只编辑 current.md 允许的状态、工作记录、验收报告。私有 Go overlay/故障脚本不改变仓库生产、测试、schema 或部署文件，不修复产品。原理文档内“尚未实现”是历史/目标表述；实际 journal/recovery 已存在，结论以当前代码/行为为准。
+
+##### 环境、证据与恢复工作记录
+
+`E=/root/.config/awesome-zero-platform/acceptance-0046-r3-04da095` 保存 objective、原始脚本、源码前报告、`runs.jsonl`、原始失败与最终日志、JSON、性能和摘要/哈希清单。0700目录/0600文件，二进制及必要可执行文件0700；凭证、JWT、密钥、备份套件、截图、数据库内容和二进制不提交。压缩中断后重新核对真实进程/容器和日志，原测试均已有终态退出码，未把进度文件当作活跃进程或盲目重跑整套；新 supervisor 显式启动，所有后续故障指向本轮隔离进程。
+
+Linux x86_64、约7.8GiB RAM/无swap；Go1.25.8、Node22.23.4/npm10.9.9，`GOMAXPROCS=2`，Go `-p 1 -parallel 1`；构建/重型测试顺序运行。独立 Docker项目 codex0046r3，磁盘 MySQL5.7.44/Redis8.8.0；数据库 `awesome_zero_platform` 用于集成，`codex0046r3_product` 用于真实账号/WSS产品链路。MySQL 1.5CPU/768MiB、64MiB buffer、`innodb_flush_log_at_trx_commit=1`、无binlog、pool24，规模并发16。故障不指向生产集群，历史R1/R2卷不改动。
+
+实际原生Go服务、正常管理员创建的4个独立账号/正常密码认证与可撤销会话，3个实际认证WSS玩家，Nginx本地HTTPS/WSS和受信任自签SAN证书；不是伪造JWT或wx身份。真实随机贡献、原客户端签名Manifest/AAD/HPKE、未来drand Quicknet/BLS，未配置旧HMAC密钥、未制造牌。公平恢复套件在公开承诺前私存，原客户端在新Node进程导入后揭示。bid/play超时延长为5分钟便于故障观测，公平截止时间未延长；受控计时器overlay另用虚拟时钟，明确区别真实服务与受控端口。
+
+##### A. N01 专项验收矩阵
+
+| 项目 | 结论 | 本轮独立证据 |
+|---|---|---|
+| N01-01 真实跨阶段竞叫重启 | **PASS** | 原 `bid-phase-probe-original.mjs`：3认证玩家/房间/commit+HPKE reveal/drand发牌，原seq91、expectedVersion1、score3请求成功v2；直接SQL确认PLAYING、1动作；SIGKILL真实Go进程，新Owner重启，新WSS原请求返回同一v2，无新日志。`bid-phase-probe.json`/`original-n01-repro.log`；原三客户端harness继续58动作到v60，摘要 `d65e0c72626095209f1d97698fd98d166d48c6e68acbb624f9b66a5a19f207c8`。未用Coordinator单测替代。 |
+| N01-02 各生命周期精确历史回执 | **PASS（回执值/阶段准入范围）** | `active-lifecycle-matrix-final.log`：BIDDING低分已确认bid原结果重放，PLAYING后两bid/play/pass均同原结果。`settling-recovery.json`：真实完成UPDATE受控暂停，SQL已提交SETTLING，旧Bid/Play/Pass原结果一致、新ID各类型拒绝；无日志/Outbox变化。SETTLING→SIGKILL→COMPLETED后同请求仍一致。`completed-history.json`：另一个60动作/v61终局验证6条历史命令、全部三类型，9类负例。生命周期副作用不在本行冒充PASS，见N01-04。 |
+| N01-03 身份/参数绑定及损坏恢复 | **FAIL，R3-N03/P2** | requestId/账号/版本/score/cards/type/aggregate/非本局玩家拒绝且无写入；包含MySQL腐坏/缺日志/Genesis/checkpoint负例的42项补充测试通过，损坏控制fail closed。**clientSeq进程内改变被CONFLICT；重启后改变却成功v2，随后原seq被热缓存CONFLICT**，最终完整真实牌局复现。`active-lifecycle-matrix.json`。`restart-binding-negatives.json`/log：六类变更各自SIGKILL后作为第一个请求拒绝、原请求仍成功、无写入，exit0/22.165s；冷路径均INTERNAL，区别于热缓存CONFLICT，仍有错误分类限制，不能混为一个保证。 |
+| N01-04 Dispatcher生命周期一次性 | **FAIL，R3-N02/P1** | 新历史标记仅按授权时的domain phase赋值。同阶段旧回执仍AfterBid/AfterPlay；受控Service+真实Dispatcher/Supervisor overlay Race：5s期限、4s查询旧bid、6s Sweep未到期；另一确定性交错将domain推进PLAYING后旧BIDDING回执仍AfterBid，6s发起bidding_timeout而非30s playing期限。Bid两例FAIL/1新操作PASS，`lifecycle-adversarial-final.log`；补充Play/Pass同阶段反例也各FAIL（31s仍未到原30s期限），`lifecycle-adversarial-expanded.log`。正控制：live已COMMIT但阶段未COMMIT时SIGKILL，重启补PLAYING一次（commands8→9/outbox12→13）；SETTLING未完成时恢复补COMPLETED一次（10→11/14→15）；无永久漏推进。 |
+| N01-05 并发/Owner Epoch | **FAIL（生命周期竞态），提交与fencing控制PASS** | 16同ID请求经3额外WSS（每账号总4连接）结果一致、无新动作；历史查询与新pass并发仅一次推进；不同ID同版本并发仅一个提交；真实SIGKILL新epoch接管；完整MySQL套件含16并发/旧writer fencing/完整性，Go全目录Race通过。R3-N02是有锁下的逻辑竞态，不会被Race detector自动发现；不能据Race绿而PASS。 |
+
+原始N01流程的请求ID/actor/seq/版本/参数未改；与Round2脚本的差别仅本轮证据路径/项目/源码标签。成功回执沿原公开协议返回，内部Historical未序列化到wire。原脚本断言type/version/count，扩展真实low-bid跨阶段重启另逐项deepEqual完整payload，终局也deepEqual原result；完整三人游戏/最终摘要保持；这证明原WrongPhase/INTERNAL问题已关闭，不能抵消扩展缺陷。
+
+##### B. 实现与新增测试审查
+
+- application依赖自己定义的 `LiveHandReceiptReader` port，授权在查询前；runtime在固定256条stripe中同步transition/receipt发布后只读有界map，校验actor、typed type/payload、expectedVersion，复制返回payload，无获取新epoch/执行新动作/额外SQL扫描。恢复先检验完整journal/checkpoint、actor/seat、摘要和domain immutable Genesis，再发布回执；失败手不暴露私牌。新interface仍在业务模块内，无跨模块私表读取，foundation/platform无Doudizhu依赖；全目录架构/表归属测试通过。
+- 正常提交仍candidate→fenced MySQL COMMIT→内存发布→回执；reader没有削弱此顺序。历史读可由旧owner返回已确认结果，新的写入仍须durable epoch校验；没有把本地epoch缓存当作数据库fencing。没有新无界锁/后台goroutine/DB热点。每手512日志上限已有；跨房间长期累计内存回收/生产SLA并未因此被证明。
+- **缺口在Historical语义**：`found`本来代表历史，却按查询前snapshot phase重新分类；应用阶段读取和receipt stripe不是同一临界区。`checkedBidResult/checkedPlayResult`也不记录receipt来源。普通新操作第一次lookup miss、第二次mutation内lookup期间若被另一请求抢先提交，也可能作为fresh结果返回。报告只将已确定复现的同阶段计时器/阶段交错路径列为缺陷，未声称所有可能交错已真实复现。
+- 新 `live_receipt_replay_test.go` 用端口stub覆盖phase与权限/参数，明确把同阶段Historical=false当预期，无法发现R3-N02；新Dispatcher测试直接stub Historical=true，仅证明if分支，未覆盖Service赋值/阶段交错。新真实MySQL测试恢复后检查三类型/version/cross-type拒绝，增强了archive覆盖，但不证明全Service/Dispatcher/WSS和clientSeq绑定。上述独立原复现、真实SETTLING、并发和虚拟时钟检查补足了这些空白，未修改仓库测试。
+- 新WrongPhase→CONFLICT映射和wire回归合理；其他账号对已存在回执得到INTERNAL但被拒绝，未发现私牌泄漏或重复提交；此错误分类只作限制记录，不夸大为新的越权问题。没有P0成立，也不声明普遍无缺陷。
+
+##### C. 回归矩阵、命令和运行结果
+
+以下都是本轮在固定源码执行的记录；原argv/cwd/UTC/耗时/退出码在 `E/runs.jsonl`。Go父子测试和不同套件重叠，计数不能相加为独立案例；1个interop缺省skip已另设vector实际执行。
+
+| 检查 | 命令/过程 | 结果 |
+|---|---|---|
+| 客户端/类型/边界 | `bash scripts/verify-client-foundation.sh` | exit0，32.827s；30core+37Doudizhu+35Cocos=102测试，严格类型/构建/边界PASS |
+| Go单元/架构 | `cd server; go test -json -count=1 -p 1 -parallel 1 ./...` | exit0，60.212s；44测试包，540通过/1skip，架构/表归属/协议均在其中 |
+| 全Go Race | 同上加 `-race` | exit0，135.174s；44包、540通过/1skip；不包含独立overlay的逻辑竞态PASS声明 |
+| Vet/fmt/原生构建 | `go vet -p 1 ./...`；`make fmt-check`；低并发CGO_ENABLED=0 `go build -trimpath` app-api/maintenance | exit0；7.401/.397/9.342/2.672s；新二进制用于真实故障 |
+| 真MySQL/scale全回归 | `APP_API_INTEGRATION=1 DOUDIZHU_SCALE_PROFILE=1 go test -json -count=1 -p 1 -parallel 1 -tags=integration ./...` | exit0，84.162s；44包、575通过/1skip；checkpoint、journal、owner、真实子进程kill、并发与100/1000局 |
+| 原F02/F03/F04等扩展 | `go test -json -count=1 -p 1 -parallel 1 -tags=integration -overlay E/overlay.json -run '^TestCodex(Completed\|IncompleteArchive\|Genesis\|Rotation\|Keyring\|Candidate\|RealPrune\|Provider\|StockEnvironment)' ...` | exit0，8.826s；42测试/3包：真实终局clone攻击、12类Genesis完整性、7类prune、轮换中途SIGKILL/新旧根/候选复制、全新进程环境 |
+| 原F06/F07+Manifest | `node --test E/client-adversarial.test.mjs`；`node --test E/client-lifetime-matrix.test.mjs` | exit0，3/3及11/11，.591/2.849s；受控协议端口/真实Manifest和HPKE，不冒充微信设备 |
+| 安全/互操作 | `npm --prefix clients/packages/secure-envelope test`；`python3 E/crypto-regressions.py` | exit0；9测试4.238s，TS vector→Go / Go signed manifest→TS四项均实际执行 |
+| F01/F05/F09实际公平准备 | `prepare-game.mjs commit[-reuse]`、独立新进程 `reveal`，共三局 | exit0；真实1/2/3人房、退出重入准备开局、账号与座位/51张私牌互斥、outsider403；原Manifest/HPKE/drand无HMAC全链路成功 |
+| F11房间断线 | `node E/room-unknown.mjs`；`node E/room-before-send-loss.mjs` | exit0，15.791/.788s；真实commit后丢回复自动同步；发送前断线→GET404→原ID/locator/seq/version/payload精确重发 |
+| F10开发配置 | `python3 E/default-start.py` | exit0，1.305s；未改原main-api.yaml，实际启动health200，只隔离host/port |
+| F04真实CLI事务 | `python3 E/prune-process.py` | exit0，8.447s；默认dryrun无DB、29天拒绝、真实delete事务中SIGKILL回滚，四恢复表[1,59,1,1]不变 |
+| 原N01+完整对局 | 原bid-phase-probe + 原three-client harness | exit0，1.095/2.804s；PLAYING重启bid原v2，继续58步/v60，详见A |
+| 活跃COMMIT前后全进程kill | `node E/active-process-fault-record.mjs` | exit0，7.697s；SQL INSERT事务marker前kill回滚0行→原请求重试1行；真实回复接收端丢弃后kill→同v4/仅1行；三WSS见断链，改payload/actor拒绝 |
+| 生命周期COMMIT缺口 | active matrix + `node E/settling-recovery.mjs` | 后者exit0，14.292s；SETTLING已提交、完成尚未提交→历史三类型成功/新请求拒绝→kill→Owner新epoch/COMPLETED补交一次，59日志/1归档；被kill的harness exit1是预期注入，不当完整正常PASS |
+| 终局真实回复丢失 | 60动作/v61局，原harness接收端drop→ `node E/terminal-recovery.mjs` | 注入harness exit1预期；恢复exit0，1.816s，完整原结果相同，60动作/1归档/摘要 `fd8f753012ffc7eadd692cc20a4a6971b8a51a75d6a50b8c29d417189bc137c0` 不变 |
+| 历史/负例/并发 | active matrix、completed-history、restart-binding-negatives | 旧值/无写入控制PASS，clientSeq真实FAIL；最终命令与冷缓存负例结果附E；与热缓存的拒绝保证分开 |
+| 生命周期独立Race overlay | `go test -json -race -count=1 -p 1 -parallel 1 -overlay E/overlay.json -run '^TestCodex(Historical\|NewBid)' ./apps/app-api/internal/doudizhuapi` | **exit1，6.834s；Bid两确定性FAIL，一fresh操作PASS；最终扩展7.166s，四个反例叶测试FAIL、一fresh PASS（含失败父测试计5fail）**；无Race detector报告不等于逻辑正确 |
+| 生产Compose / Web | `bash E/runtime-isolated.sh`；`node scripts/verify-cocos-browser.cjs <retained-web> E/web-runtime`（完整argv见runs） | 生产Compose最终exit0，148.882s，原Go/Admin Dockerfile实际构建，原HTTP/WS/HTTPS/WSS/安全断言均通过。私有脚本仅隔离project/输出/host端口、build.network=host适应本机DNS，未改仓库；首次314.784s因本轮夹具已占28443失败，改私有TLS端口29443后重跑，失败日志保留。Web原冒烟本轮exit0，8.511s，三尺寸/生命周期/销毁；截图人工复核，debug HUD/竖屏小字不当真机可读性PASS。 |
+
+F01–F11 **原始复现均PASS**：F01原manifest、F02原终局精确回执、F03不可变Genesis、F04证据语义/30天/原子清理、F05空座、F06明确拒绝、F07dispose、F08容器env与配置、F09provider、F10原YAML、F11未知建房全部有本轮证据。F02扩展原N01已修复，但不能把“原始11项PASS”扩展为生命周期/请求绑定完全PASS。
+
+CI与本地执行分开：固定SHA的 [Fair Doudizhu 41569389042](https://github.com/oublie6/awesome-zero-platform/actions/runs/41569389042) 和 [CI 41569389105](https://github.com/oublie6/awesome-zero-platform/actions/runs/41569389105) 均success；本轮保存实际run/jobs/step元数据，包含unit、secure、admin、integration、runtime、client、manifest、MySQL。独立测试没有继承CI结果作PASS。没有新Creator原生构建宣称。实际Web来自原生Creator3.8.8 source `06733a93d614b68f897a796b9eb7684a79a4dbf9` 的已保留产物；artifact13189389701、原ZIP SHA256 `63de80f989d965a033a9129cb83e754c4e26c56ab9e1ea945e925830bd6e2502`。本轮 `git diff 06733a9 HEAD -- clients scripts .github/workflows` 为空，明确只是同客户端/构建输入，不是exact04da原生重建。此次Web冒烟已实际重跑；WeChat/Douyin原生重建、当前SDK/设备未运行则BLOCKED，不继承旧PASS。
+
+##### D. 性能与资源实测
+
+`TestCodexReceiptScaleProfile` 为本轮私有overlay真实MySQL，100/1000手每手先真实bid/play/pass三提交，再新coordinator恢复并查三类历史；receipt查询不增加原3*N动作。以下各数值为P50/P95/P99；延迟包括序列化/返回复制和锁等待，非网络WSS延迟。
+
+| 测量 | 100手 | 1000手 |
+|---|---|---|
+| 新Bid提交 |6.953/11.204/12.998ms|7.184/16.750/36.934ms（max286.141ms）|
+| 新Play提交 |7.146/10.327/11.528ms|7.193/15.291/28.501ms（max474.745ms）|
+| 新Pass提交 |6.923/11.020/14.678ms|7.205/16.353/27.171ms（max62.757ms）|
+| 历史Bid查询 |31.659/49.933/62.673µs|41.438/58.617/92.976µs|
+| 历史Play查询 |26.384/37.586/46.776µs|33.155/143.167/299.998µs|
+| 历史Pass查询 |25.400/47.673/225.196µs|52.633/76.919/133.766µs|
+| 同ID16worker/1600查询 |44.900µs/1.564/2.468ms；24903次/s|41.425µs/1.282/1.782ms；26203次/s，max8.696ms|
+| 3动作/手恢复总耗时及GC后heap增量 |1.501s /682744B|12.943s /6796408B|
+
+Bid/Play/Pass查询各57/78/60 allocations/query；同ID并发前后goroutineDelta0；不是长期泄漏证明。正常全套另测16worker真实提交：100手11.562/23.693/25.428ms、恢复1.183s；1000手12.704/53.826/368.389ms、max374.902ms、恢复12.897s；80commit样本6.217/9.237/9.380ms。不可隐藏1000手P99尾延迟，也不能把恢复总时长当每手P95。候选fork1000次prefix0/58分别2416/13416allocatedB，goroutineDelta0，相关原始日志保留。
+
+与Round2同主机、数据库参数和16worker规模条件可作受限比较：原1000手P99 54.952ms，本轮368.389ms，P95 51.242→53.826ms；不是严格隔离A/B，时间段/存储和后台负载不同，尚不能归因于N01或断言无明显尾延迟退化。新reader接口旧版本不存在，不能伪造历史查询“旧基线”；正常mutation每次增加一次有限receipt lookup，未见新DB扫描或无界锁。查询本身测得sub-ms，竞争串行等待可到数ms。另100手独立采样exit0/11.731s，保留mutex/block/mem原始pprof和top；mutex累计等待624.90ms，其中FindBidReceipt/findVerifiedReceipt栈601.99ms（96.33%），为故意同ID16worker竞争下所有goroutine累计值，不是单次或墙钟延迟；内存profile含setup/恢复/查询，不冒充每请求bytes。此结果提供实际成本与尾部风险，不是生产P99<50ms/SLA或千台设备稳定性PASS。未为无证据问题重构。
+
+##### E. 新问题，交回 ChatGPT 修复
+
+**R3-N02 / P1 — 历史来源标记依赖旧domain phase，重复生命周期并可倒退超时阶段。** 位置 `application/hand_bidding.go:47`、`hand_playing.go:55,103`；Dispatcher `dispatcher.go:304,320,333`；`lifecycle/supervisor.go:143,170,264`。条件：合法已确认旧命令、热ReplayCache未覆盖（重启/过期/驱逐），或授权snapshot与receipt查询之间发生合法阶段推进。步骤1：真实Service走只读receipt port、snapshot BIDDING、旧bid为非终止低分；先TrackBidding(5s)，4s精确重试，6s Sweep。实际AfterBid=1、expire=0，旧操作重置期限；预期历史读无副作用、原期限应到。步骤2：用确定性交错在receipt查找期间完成另一合法高分bid/PLAYING监督（30s），旧请求返回原BIDDING回执；实际又AfterBid=1，6s向终止port发起bidding_timeout；预期保持PLAYING期限、不发该终止。受控port负责已确认回执/阶段交错，Service、Dispatcher、Supervisor为实际生产代码，虚拟时钟与终止端口非真实MySQL终止落库，**没有声称真实手机/持久化误终止已发生**。代码domain.Expire允许非终局过期，故该错误不是仅多一次无害函数调用。overlay Race两例稳定FAIL，新bid控制PASS，完整命令/输出见C。建议：以已提交回执来源稳定标识历史，不能用旧snapshot推断；把缺失必要阶段推进作为单独的当前权威状态协调，保证单调、幂等和版本排序，保留恢复补交。覆盖same-phase Bid/Play/Pass、cache失效、阶段交错和commit/lifecycle缺口；不要只无条件跳过所有历史而丢必要工作。
+
+**R3-N03 / P2 — clientSeq仅热缓存绑定，重启后改seq冒充旧请求并污染原请求缓存。** 位置 `dispatcher.go:145-159,298-300`、`live_receipts.go:23-25`、`durable_live_recover.go:119`；公开request的clientSeq进入digest，但WithID端口/journal/receipt没有该字段。步骤：真实BIDDING低分bid确认，seq91；进程内seq92重试CONFLICT；SIGKILL→新Owner/新WSS，先以同账号/ID/版本/score仅改seq92请求，实际成功原v2；马上原seq91返回CONFLICT，因为热cache绑定了92。重启再原91仍成功，无追加动作或私牌越权。完整真实牌局 `active-lifecycle-matrix.json` 和最终log复现。预期已绑定字段改变应明确拒绝，不能占据旧请求身份导致原重试失败。原绑定要求必须分别说明进程内/重启后，本轮不能把缓存拒绝当durable保证。此类此前已存在，不宣称是新reader引入；但属于本轮N01-03验收范围。建议由ChatGPT明确并持久化完整稳定命令身份（版本/type/seq/actor/参数等）及恢复校验，或在用户明确批准的协议修订中重新定义绑定；不能静默缩窄“精确请求”。涉及schema/兼容性时另行按原则设计，本轮不代改。
+
+##### F. 外部资格、报告自检与最终交接
+
+真实WeChat code→Go业务账号、服务器AppSecret、正式批准HTTPS/WSS域名/白名单/生产TLS、三微信用户真机与生命周期/分享/安全区、Douyin平台SDK/设备/熵、生产KMS/完整密钥迁移退休库存、生产硬件长期稳定性继续 **BLOCKED**；本轮没有新真实证据，不继承旧模拟器/桌面首页为PASS。操作员现有AppID/登录并非不存在，也不等于上述资格。当前wx工具本轮不再启动，不能把上一轮编译崩溃记录说成本轮新运行；真机/平台资格仍未执行。
+
+报告第二遍**自检**：将目标每条映射至真实日志/源码，检查原N01完整身份重放、所有阶段、回执来源/授权/锁次序、epoch、完整性、计时器竞态、必要生命周期补交、冷/热缓存字段绑定、未知结果和终局摘要；审阅新增测试是否只stub flag并误设同阶段期望；区分真实MySQL/WSS、受控接口/虚拟时钟、CI与本地、当前源码与等价客户端产物，保留所有失败和无证据项。首次active matrix超过每账号4连接限制导致WSS关闭，是夹具错误：保留原log，改16请求分布在3额外socket后所有控制执行完毕、只因真正seq缺陷exit1；没有放宽产品连接限制。首次补充Go回归漏CODEX_EVIDENCE导致路径缺失，补齐本轮证据路径后42/42通过，失败日志保留；未改产品/断言。注入末回复丢弃/kill的harness exit1明确预期，不能当正常全局PASS。早期overlay夹具构建错误与最终真实FAIL均保留，未把前者当产品缺陷。文档自检与Codex独立产品验收角色不同，不冒充额外独立审阅者。
+
+已停止本轮Go/supervisor、TLS/MySQL/Redis容器和浏览器探针；runtime脚本清理其项目/卷，独立复现数据库卷保留。相关19227/28888/28889/28999/28443/28080/28081/8888/3306/6379/29443/29081无监听。本机约4.65GiB可用内存/无swap，root/data47%/55%；两个K8s节点Ready，kubelet/containerd active，无关learn-xray与HK操作员桌面未动。20个本轮私密凭证值对53份top-level日志/拟公开报告的限定扫描无命中；不是对全部图像/内存/JSON的无泄露证明。E/summary.json SHA256 `c4903b87bfc7ade4d40aae6886eda0b5d2e1aa82c1846f6a0aedc8dd7538fe17`，完整sha256清单私存；公开报告不含密钥、JWT或恢复套件。
+
+最终：**N01专项 FAIL（原始复现PASS）；F01–F11原始回归 PASS；Goal0046内部代码 FAIL；生产发布 FAIL，外部资格 BLOCKED；封版 NO。** ChatGPT应修复R3-N02、R3-N03并自审/执行完整相关测试、直接main提交推送，再由Codex独立重验同一候选；不得以CI绿、原始N01通过或本轮报告已提交而完成整个Goal。没有生产代码修复/协议修订/新部署。报告提交与推送SHA由关闭回复提供，文档提交不充当重新构建的产品来源。
 
 #### Goal 0046 Round 2 — 独立复验，2026-11-03
 
@@ -637,6 +739,8 @@ No P0 or P3 finding was established. Positive fault controls passed: unrelated-h
 - Mandatory self-review completed: SDK timing, cancellation/deadlines, stale callbacks, duplicate full-snapshot confirmation, Go phase/TTL compatibility, version/identity boundaries, secret handling and cleanup. Reproduced regressions before correction; additional runtime self-review found and fixed false-ready polling, cropped/stretched canvas, small portrait text and retained UI; engine parent-destruction order and Web host initialization/page lifetime were checked against actual 3.8.8 source. Remaining interactive editor/SDK/device and long-term memory uncertainty is explicitly recorded in the phase report.
 
 ## Completion Report
+
+2026-11-03 Goal0046 Round3 at `04da095c269509a2e4061901ee3f45c92d885d22`: **FAIL**. Original N01 and all F01–F11 reproductions pass; expanded exact-request and lifecycle acceptance fail R3-N02/P1 and R3-N03/P2. Actual MySQL/HTTPS/WSS/full games, pre/post-COMMIT and SETTLING kills, terminal receipts, unit/Race/client/crypto/deployment and bounded performance checks are recorded above. Internal/release FAIL, external BLOCKED, sealing NO; no production fixes, Goals0045/0046 remain in_progress.
 
 2026-11-03 Goal0046 Round2 at `da0ed72fc9b49ffc0546589ac649ad83c9510001`: **FAIL**. Original F01–F11 reproductions now pass; the integrated fix matrix is10PASS/1FAIL because F02 retains a P1 cross-phase historical-bid replay failure N01. Full Go unit/Race, real MySQL, cryptography, three actual authenticated clients/fairness/full games, terminal response-loss restart, Creator-equivalent builds/Web and standard production Docker runtime passed within documented scope. External platform/device/KMS qualification remains BLOCKED. Only report sections changed; no production fixes. Internal code/release FAIL, sealing NO, Goals0045/0046 remain in_progress. ChatGPT must fix N01 and push for consolidated independent re-verification.
 
