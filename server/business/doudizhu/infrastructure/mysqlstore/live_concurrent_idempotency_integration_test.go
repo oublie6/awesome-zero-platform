@@ -46,6 +46,9 @@ func TestConcurrentIdenticalLiveRequestRemainsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := journal.ConfigureCheckpoints(coordinatorCrashKey()); err != nil {
+		t.Fatal(err)
+	}
 	if err := journal.Create(ctx, genesis); err != nil {
 		t.Fatal(err)
 	}

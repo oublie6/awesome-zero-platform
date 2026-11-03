@@ -185,9 +185,10 @@ func TestLiveJournalFenceContiguousLogAndProtectedSeedInMySQL(t *testing.T) {
 	}
 	// The loader returns hashes, and recovery must validate them against
 	// deterministic Go Apply output before exposing a hand.
-	tampered, err := j.Read(ctx, id)
-	if err != nil || len(tampered) != 1 || tampered[0].ResultDigest == actions[0].ResultDigest {
-		t.Fatal("tamper was not observable to replay verifier")
+	// The authenticated request identity now includes the outcome digest;
+	// any field mutation fails closed before receipt reconstruction.
+	if _, err := j.Read(ctx, id); !errors.Is(err, mysqlstore.ErrLiveReplayIntegrity) {
+		t.Fatalf("tampered result digest was accepted: %v", err)
 	}
 	if _, err := db.Exec("UPDATE doudizhu_protected_server_seeds SET ciphertext=REPEAT(0x00,48) WHERE hand_id=?", id); err != nil {
 		t.Fatal(err)
