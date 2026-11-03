@@ -334,3 +334,5 @@ real-MySQL regression coverage including cold coordinator recovery. Product
 implementation and tests are staged for CI; **no CI success, independent
 acceptance, or Goal completion is claimed by this note**. Round 5 FAIL remains
 the latest authoritative acceptance verdict until the next Codex review.
+
+Formatted R5-N05 implementation checkpoint: `3f14b15cdfc8528cfd89b5290fdf4b486934bd06`. The one-shot gofmt job succeeded and removed itself. This documentation-only commit requests the ordinary exact-SHA CI/Fair Doudizhu workflows on the formatted source; do not claim their success until results are verified.
