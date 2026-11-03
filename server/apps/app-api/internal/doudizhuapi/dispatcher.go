@@ -301,7 +301,7 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			} else {
 				live, err = d.backend.SubmitLiveHandBid(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion, payload.Score)
 			}
-			if err == nil {
+			if err == nil && !live.Historical {
 				terminal, err = d.lifecycle.AfterBid(ctx, actor, domain.HandID(request.AggregateID), live)
 			}
 		}
@@ -317,7 +317,7 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			} else {
 				live, err = d.backend.SubmitLiveHandPlay(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion, payload.Cards)
 			}
-			if err == nil {
+			if err == nil && !live.Historical {
 				err = d.lifecycle.AfterPlay(ctx, actor, domain.HandID(request.AggregateID), live)
 			}
 		}
@@ -330,7 +330,7 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			} else {
 				live, err = d.backend.SubmitLiveHandPass(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion)
 			}
-			if err == nil {
+			if err == nil && !live.Historical {
 				err = d.lifecycle.AfterPlay(ctx, actor, domain.HandID(request.AggregateID), live)
 			}
 		}

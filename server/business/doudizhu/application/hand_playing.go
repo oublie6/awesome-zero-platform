@@ -35,16 +35,6 @@ func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, ha
 	if err != nil {
 		return LiveHandCommandResult{}, err
 	}
-	if snapshot.Phase == domain.HandCompleted && commandID != "" {
-		if durable, ok := s.liveHands.(interface {
-			PlayCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64, []string) (LiveHandCommandResult, error)
-		}); ok {
-			return durable.PlayCommitted(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, cards)
-		}
-	}
-	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
-		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
-	}
 	if expectedLiveVersion == 0 || len(cards) == 0 || len(cards) > 20 {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: live play version or card count", ErrInvalidCommand)
 	}
@@ -54,6 +44,21 @@ func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, ha
 			return LiveHandCommandResult{}, fmt.Errorf("%w: live play card %d", ErrInvalidCommand, index)
 		}
 		copied[index] = code
+	}
+	if commandID != "" {
+		if receipts, ok := s.liveHands.(LiveHandReceiptReader); ok {
+			result, found, err := receipts.FindPlayReceipt(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, copied)
+			if err != nil {
+				return LiveHandCommandResult{}, err
+			}
+			if found {
+				result.Historical = snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying
+				return result, nil
+			}
+		}
+	}
+	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
+		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
 	}
 	if durable, ok := s.liveHands.(interface {
 		PlayCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64, []string) (LiveHandCommandResult, error)
@@ -85,18 +90,23 @@ func (s *Service) submitLivePass(ctx context.Context, actor domain.AccountID, ha
 	if err != nil {
 		return LiveHandCommandResult{}, err
 	}
-	if snapshot.Phase == domain.HandCompleted && commandID != "" {
-		if durable, ok := s.liveHands.(interface {
-			PassCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64) (LiveHandCommandResult, error)
-		}); ok {
-			return durable.PassCommitted(ctx, snapshot.ID, actor, commandID, expectedLiveVersion)
+	if expectedLiveVersion == 0 {
+		return LiveHandCommandResult{}, fmt.Errorf("%w: live pass version", ErrInvalidCommand)
+	}
+	if commandID != "" {
+		if receipts, ok := s.liveHands.(LiveHandReceiptReader); ok {
+			result, found, err := receipts.FindPassReceipt(ctx, snapshot.ID, actor, commandID, expectedLiveVersion)
+			if err != nil {
+				return LiveHandCommandResult{}, err
+			}
+			if found {
+				result.Historical = snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying
+				return result, nil
+			}
 		}
 	}
 	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
-	}
-	if expectedLiveVersion == 0 {
-		return LiveHandCommandResult{}, fmt.Errorf("%w: live pass version", ErrInvalidCommand)
 	}
 	if durable, ok := s.liveHands.(interface {
 		PassCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64) (LiveHandCommandResult, error)

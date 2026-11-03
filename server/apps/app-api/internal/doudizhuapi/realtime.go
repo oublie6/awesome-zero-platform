@@ -219,7 +219,7 @@ func realtimeError(err error) (string, string) {
 		return "INVALID_REQUEST", "Doudizhu request is invalid"
 	case errors.Is(err, ErrReplayConflict), errors.Is(err, application.ErrOptimisticConflict), errors.Is(err, application.ErrSequenceConflict),
 		errors.Is(err, domain.ErrVersionConflict), errors.Is(err, livehand.ErrVersionConflict), errors.Is(err, gamecore.ErrInstanceExists),
-		errors.Is(err, gamecore.ErrFinalizationPending), errors.Is(err, bidding.ErrWrongTurn), errors.Is(err, bidding.ErrBidNotHigher),
+		errors.Is(err, gamecore.ErrFinalizationPending), errors.Is(err, domain.ErrWrongPhase), errors.Is(err, bidding.ErrWrongTurn), errors.Is(err, bidding.ErrBidNotHigher),
 		errors.Is(err, bidding.ErrBiddingComplete), errors.Is(err, playing.ErrWrongTurn), errors.Is(err, playing.ErrCannotPass),
 		errors.Is(err, playing.ErrDoesNotBeat), errors.Is(err, playing.ErrPlayingComplete):
 		return "CONFLICT", "Doudizhu state conflict"

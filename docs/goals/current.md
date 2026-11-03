@@ -4,6 +4,7 @@
 
 ## Status
 
+- ChatGPT N01/P1 repair candidate is under verification; the previous Round 2 FAIL below remains authoritative until an exact-SHA CI run and independent Codex Round 3 acceptance pass. Cross-phase historical bid receipt read, lifecycle-once handling and real-MySQL regressions have been added; do not seal Goal 0046 yet.
 - Latest Goal 0046 Round 2 acceptance: **FAIL**, source `da0ed72fc9b49ffc0546589ac649ad83c9510001`; original F01–F11 reproducers pass, but F02 has an expanded P1 historical-bid replay residual N01. Code/release FAIL, external qualifications BLOCKED, no sealing or Goal completion.
 - Latest integrated Goal 0046 acceptance: **FAIL**, source `0cc90a5d8639c9a1dfd892e1034bb92067182794`; 114-item matrix, 5 P1/6 P2 findings and actual MySQL/three-client/fault evidence below. External qualification remains BLOCKED; neither Goal is completed.
 - State: in_progress

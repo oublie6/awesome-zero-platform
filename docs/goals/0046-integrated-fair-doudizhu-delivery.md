@@ -153,3 +153,44 @@ test; rejection of incomplete archival material; provider config test.
 reproducers, authenticated end-to-end web/UI and final Codex acceptance must
 be rerun on the final commit. Never change Goal 0046 to completed while
 critical findings or platform qualifications remain open.
+
+
+## Round 2 N01/P1 historical bid replay fix candidate (awaiting CI/Codex Round 3)
+
+The 2026-11-03 Codex Round 2 at `da0ed72fc9b49ffc0546589ac649ad83c9510001`
+remains **FAIL**: original F01–F11 reproducers passed, but a bid acknowledged
+under BIDDING could not be confirmed after the durable hand advanced to PLAYING
+and the process restarted. The immutable original report is in
+`docs/goals/current.md`. The original acceptance verdict is not changed here.
+
+The single-owner repair uses a read-only `LiveHandReceiptReader` application
+port implemented by the verified `LiveHandCoordinator` replay index. After
+authorizing the current seated participant and validating command shape, the
+application resolves exact previous Bid/Play/Pass receipts BEFORE rejecting a
+request for an incompatible current lifecycle phase. The index checks original
+actor, request ID, exact typed command payload and original expected live
+version. An unknown ID is not executed in the wrong phase; an inconsistent ID
+fails closed. In-phase commands still use the original owner-fenced durable
+mutation path.
+
+For out-of-phase accepted historical requests only, an internal
+`LiveHandCommandResult.Historical` flag suppresses duplicate Dispatcher
+lifecycle side effects. The public wire response format is unchanged. An
+unrelated new bid after PLAYING must still fail with a conflict, not succeed or
+generate an INTERNAL error. Normal phase advancement remains driven by fresh
+accepted commands and in-phase reconciliation.
+
+Regression scope: application-phase matrix and authorization/changed-request
+negatives, Dispatcher lifecycle-once test, runtime archived Bid/Play/Pass
+receipt inspection, and real MySQL end-to-end Service+Coordinator recovery from
+BIDDING to PLAYING (with request replay and no duplicate durable action).
+There are no schema, migration, client API or deployment changes. Extra
+lookups are bounded in-memory receipt-map reads, synchronized with each hand's
+fixed-stripe command mutex; no per-retry database scan is added. MySQL owns
+durable evidence and fencing, which startup replay verifies before exposing
+receipts. Rollback is the prior verified commit; no database migration exists.
+
+**Not self-accepted:** new CI, exact-SHA process SIGKILL/three-WSS replication
+of the original N01 scenario, adversarial payload/actor checks and Codex
+Round 3 independent acceptance still gate closure. Until then Goal 0046
+remains in_progress.
