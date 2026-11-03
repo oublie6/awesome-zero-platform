@@ -311,3 +311,5 @@ current complete-schema SQL is not a migration. An old root cannot be retired
 while journal tags signed under that root remain. No automatic live journal
 retagging or production migration was performed. This is implementation only,
 NOT a CI PASS or independent Codex acceptance.
+
+Formatted Round 4 repair checkpoint: `f3f8e66b7bcaf45939dd49a310acc01fd1453f8d`. The one-shot formatter removed itself after applying gofmt. This documentation commit triggers ordinary Actions on that formatted source; successful CI or independent Round 5 acceptance must be established separately.
