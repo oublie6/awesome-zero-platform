@@ -276,3 +276,10 @@ and missing lifecycle stage repair controls. The exact post-format source
 must pass CI and independent Codex Round 4 with the original R3 evidence
 before Goal 0046 can be considered internally accepted. External WeChat
 credentials, devices, domains and release qualifications remain BLOCKED.
+
+Formatted implementation checkpoint: `f8abaac531a4af6eca9900dc9e12da21019434e9`
+(one-shot gofmt succeeded and removed itself). A subsequent documentation-only
+commit triggers the authoritative GitHub Actions on the formatted source,
+since the GitHub Actions token's own formatting push does not start ordinary
+push-triggered CI. No acceptance is asserted until those exact-source
+workflows complete, and the independent Codex reproducers still gate closure.
