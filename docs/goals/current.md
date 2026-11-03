@@ -4,6 +4,7 @@
 
 ## Status
 
+- Latest Goal 0046 Round 4 independent acceptance: **FAIL**, source `cb161cf6adae490db0a4703c85125e00202019ee`. R3-N02/P1 remains; R3-N03 normal replay binding passes, but new R4-N04/P2 journal sequence integrity fails. Original F01–F11/N01 pass. Internal/release FAIL, external BLOCKED, sealing NO. [Full 114-item report](0046-round4-independent-acceptance.md).
 - ChatGPT R3-N02/N03 repair candidate is under verification. The Round 3 FAIL verdict below remains authoritative. Added source-verified historical lifecycle semantics, durable clientSeq identity and real-MySQL/virtual-clock regressions; schema upgrade and independent Round 4 remain required before sealing.
 - Latest Goal 0046 Round 3 independent acceptance: **FAIL**, source `04da095c269509a2e4061901ee3f45c92d885d22`. Original N01 and F01–F11 reproducers PASS; R3-N02/P1 lifecycle timer race and R3-N03/P2 post-restart clientSeq binding remain. Internal/release FAIL, external qualification BLOCKED, sealing NO; report below.
 - ChatGPT N01/P1 repair candidate is under verification; the previous Round 2 FAIL below remains authoritative until an exact-SHA CI run and independent Codex Round 3 acceptance pass. Cross-phase historical bid receipt read, lifecycle-once handling and real-MySQL regressions have been added; do not seal Goal 0046 yet.
@@ -94,6 +95,8 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### In progress
 
+- 2026-11-03 Round 4 full independent acceptance finished at `cb161cf`: original timer/phase races still fail, real SETTLING retry fails to reconcile until restart, normal MySQL/WSS sequence binding and isolated legacy fail-closed controls pass; sequence-only journal corruption can rebind history. Full report/114-item matrix: [Round 4](0046-round4-independent-acceptance.md). Report-only Codex changes; ChatGPT owns fixes.
+
 - 2026-11-03 Round 3 independent acceptance completed at `04da095`: original N01 MySQL/WSS restart passes; historical same-phase lifecycle timer/phase race and post-restart clientSeq identity binding fail. Codex changed reporting only. ChatGPT owns fixes and a new consolidated candidate; Goals0045/0046 remain in_progress.
 
 - 2026-11-03 consolidated Round 2 independent verification finished at `da0ed72`: original terminal recovery, real fairness/full game, active process kills and deployment runtime pass; PLAYING historical bid retry remains P1/N01. Codex changes reporting only; ChatGPT owns correction and the next consolidated candidate.
@@ -133,6 +136,10 @@ Single primary implementer; use subagents only for independent review or API doc
 - Continue planned protocol integration in Goal 0046: separate durable envelope from current doudizhu-api-command-v1 request DTO, implement mapping, per-account/aggregate sequence/ID allocation and safe retries, private snapshot and terminal-evidence mapping. Do not submit the durable CommandEnvelope directly as a wire request or infer game state from notifications.
 
 ### Verification status
+
+#### Goal 0046 Round 4 — 2026-11-03
+
+**FAIL**, source `cb161cf6adae490db0a4703c85125e00202019ee`. [Complete independent report, all114 original requirements, commands, defects and blockers](0046-round4-independent-acceptance.md). R3-N02/P1 remains open; R3-N03/P2 original normal-storage binding is fixed, expanded recovery integrity fails new R4-N04/P2. Original F01–F11/N01 re-executed and passed. Internal/release FAIL, external qualification BLOCKED, sealing NO. Goals0045/0046 remain in_progress. All historical reports below are preserved.
 
 #### Goal 0046 Round 3 — N01 最终独立验收，2026-11-03
 
@@ -740,6 +747,8 @@ No P0 or P3 finding was established. Positive fault controls passed: unrelated-h
 - Mandatory self-review completed: SDK timing, cancellation/deadlines, stale callbacks, duplicate full-snapshot confirmation, Go phase/TTL compatibility, version/identity boundaries, secret handling and cleanup. Reproduced regressions before correction; additional runtime self-review found and fixed false-ready polling, cropped/stretched canvas, small portrait text and retained UI; engine parent-destruction order and Web host initialization/page lifetime were checked against actual 3.8.8 source. Remaining interactive editor/SDK/device and long-term memory uncertainty is explicitly recorded in the phase report.
 
 ## Completion Report
+
+2026-11-03 Goal0046 Round4 at `cb161cf6adae490db0a4703c85125e00202019ee`: **FAIL**. Full 114-item matrix:91PASS/7FAIL/16BLOCKED within stated evidence scopes, not a completion percentage. Original F01–F11/N01 pass; R3-N02 lifecycle timer/phase/reconciliation remains P1; normal R3-N03 binding passes but new R4-N04/P2 permits identity rebinding after sequence-only journal corruption. [Report](0046-round4-independent-acceptance.md). Real MySQL/WSS/full games/fault/replay/legacy/schema/scale, Go/Race/client/crypto and production Compose rerun; exact native/platform/device/KMS/long-soak gaps explicit. Internal/release FAIL, external BLOCKED, no sealing; no production fixes.
 
 2026-11-03 Goal0046 Round3 at `04da095c269509a2e4061901ee3f45c92d885d22`: **FAIL**. Original N01 and all F01–F11 reproductions pass; expanded exact-request and lifecycle acceptance fail R3-N02/P1 and R3-N03/P2. Actual MySQL/HTTPS/WSS/full games, pre/post-COMMIT and SETTLING kills, terminal receipts, unit/Race/client/crypto/deployment and bounded performance checks are recorded above. Internal/release FAIL, external BLOCKED, sealing NO; no production fixes, Goals0045/0046 remain in_progress.
 
