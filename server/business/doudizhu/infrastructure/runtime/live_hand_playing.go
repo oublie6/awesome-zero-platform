@@ -77,7 +77,7 @@ func (c *LiveHandCoordinator) passInternal(ctx context.Context, handID domain.Ha
 	if err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("encode Doudizhu pass: %w", err)
 	}
-	return c.applyPlayingCommand(ctx, handID, actor, commandID, expectedVersion, payload)
+	return c.applyPlayingCommand(ctx, handID, actor, commandID, expectedVersion, payload, clientSeq)
 }
 
 func (c *LiveHandCoordinator) applyPlayingCommand(
