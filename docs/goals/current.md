@@ -4,6 +4,7 @@
 
 ## Status
 
+- Latest Goal 0046 Round 2 acceptance: **FAIL**, source `da0ed72fc9b49ffc0546589ac649ad83c9510001`; original F01–F11 reproducers pass, but F02 has an expanded P1 historical-bid replay residual N01. Code/release FAIL, external qualifications BLOCKED, no sealing or Goal completion.
 - Latest integrated Goal 0046 acceptance: **FAIL**, source `0cc90a5d8639c9a1dfd892e1034bb92067182794`; 114-item matrix, 5 P1/6 P2 findings and actual MySQL/three-client/fault evidence below. External qualification remains BLOCKED; neither Goal is completed.
 - State: in_progress
 - Started: 2026-10-31
@@ -90,6 +91,8 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### In progress
 
+- 2026-11-03 consolidated Round 2 independent verification finished at `da0ed72`: original terminal recovery, real fairness/full game, active process kills and deployment runtime pass; PLAYING historical bid retry remains P1/N01. Codex changes reporting only; ChatGPT owns correction and the next consolidated candidate.
+
 - 2026-11-02 consolidated independent Goal 0046 acceptance completed as a verification assignment: **FAIL**, not product completion. Codex changed reporting only; ChatGPT owns all F01–F11 fixes and a consolidated re-verification candidate. Real backend full-game/active-crash controls pass, original Cocos room/reveal and terminal recovery do not.
 
 - 2026-11-02 ChatGPT follow-on development checkpoint: introduced `clients/packages/doudizhu-client/src/room.ts`, a platform-neutral coordinator for actual Go durable room.create/join/leave/ready/hand.start DTOs. It advances room versions only from validated, accepted server `CommandResult`, serializes per-coordinator room mutations and assigns monotonic per-room client sequences through an injected secure request-ID source. Network/uncertain outcomes block unsafe new-ID retries until authoritative server reconciliation; a confirmed leave clears active room context. Added `test/room.test.mjs` with positive and fault paths and the `./room` export. This is a source-level checkpoint pending CI/independent Codex acceptance; it is not connected to real WeChat login/Cocos room UI, and B-grade MySQL live-game persistence, fair reveal, full gameplay and real-device acceptance remain unimplemented.
@@ -125,6 +128,135 @@ Single primary implementer; use subagents only for independent review or API doc
 - Continue planned protocol integration in Goal 0046: separate durable envelope from current doudizhu-api-command-v1 request DTO, implement mapping, per-account/aggregate sequence/ID allocation and safe retries, private snapshot and terminal-evidence mapping. Do not submit the durable CommandEnvelope directly as a wire request or infer game state from notifications.
 
 ### Verification status
+
+#### Goal 0046 Round 2 — 独立复验，2026-11-03
+
+**结论：FAIL。F01–F11 原始复现用例均通过，但扩展复验确认 F02 同族的跨阶段竞叫幂等残留 N01/P1；F02 不能按完整历史回执能力验收通过。内部代码验收 FAIL，生产发布 FAIL（另有外部资格 BLOCKED），封版 NO。** 本轮没有修复产品代码。Goal0045/0046 均保持 `in_progress`，第一轮报告、要求和证据不变。
+
+固定验收与实际执行源码均为 `da0ed72fc9b49ffc0546589ac649ad83c9510001`。从干净 `main` 执行 `git pull --ff-only origin main`，从第一轮报告提交 `00daa9c` 快进至此 SHA；完整审查该范围的19个文件、398增/63删。先阅读本轮 objective、完整 AGENTS/current Goal、Goal0046及规范原则；独立核对实现/原复现，再运行本轮测试，未用 CI 结果替代本地执行。生产修改的所有者仍是 Doudizhu 业务、平台认证组合和客户端适配；未新增服务/模块边界或业务模块间数据库访问。本轮只新增 `docs/goals/current.md` 允许的状态/工作记录/验收报告，临时测试用私有 Go overlay 和独立脚本，不改仓库测试或产品语义。
+
+##### 证据及环境
+
+新证据根目录 `E=/root/.config/awesome-zero-platform/acceptance-0046-r2-da0ed72`；与第一轮 `acceptance-0046-0cc90a5` 分离，后者未写入。E 保留 objective、源码差异/原文校验、`runs.jsonl`（每次命令、cwd、完整源码SHA、UTC、耗时、退出码）、原复现和新增探针、原始失败日志、截图、矩阵及 SHA256 清单。目录0700、文件0600、必要可执行文件0700；密钥、凭证、JWT、恢复套件、二进制和截图不提交。
+
+环境：Linux x86_64，约7.8GiB内存/无swap；Go1.25.8、Node22.23.4/npm10.9.9、Playwright1.64.1/Chromium156.0.8078.4。Go构建/测试按低并发依次执行，`GOMAXPROCS=2`、`-p 1 -parallel 1`。创建新的 Docker项目 `codex0046r2`、持久卷及 `awesome_zero_platform`/`codex0046r2_product` 两个数据库，应用当前完整schema/seed；没有重用/删除第一轮卷，没有故障注入生产集群。真实MySQL5.7.44、Redis8.8.0；MySQL磁盘存储、`innodb_flush_log_at_trx_commit=1`、关闭binlog、64MiB buffer、容器1.5CPU/768MiB，规模测试workers16/pool24。
+
+原生构建的真实Go应用、正常管理员创建的4个不同账号及服务端认证/可撤销会话；3个实际WSS客户端、独立Nginx HTTPS/WSS、受信任的本地SAN证书。未伪造JWT、账号、手牌或随机源。服务端使用实际drand Quicknet/BLS，**未提供旧HMAC密钥**；故障观察将竞叫/出牌deadline配置为5分钟，公平承诺/揭示的真实截止时间未延长。玩家在发送承诺前将本局恢复套件私密保存在应用外，新Node进程导入后走原始客户端Manifest/AAD/HPKE链路，本轮不再需要第一轮的原始Manifest读取替代。普通Go测试账号和本地TLS不能替代微信code登录、正式域名和真机资格。
+
+##### F01–F11逐项复验矩阵
+
+“原始用例PASS”仅证明对应原复现被阻止；最终状态同时考虑本轮要求的完整链路与核心不变量。F05在本轮objective的P2标题下，但第一轮实际定级为P1，此处保留原始等级。
+
+| 缺陷 | 原始等级 | 修复结果和实现核对 | 独立复现证据 | 最终状态 |
+|---|---|---|---|---|
+| F01 Manifest | P1 | `doudizhu-client/src/api.ts:95`接受Go原始签名文档，未要求业务包装；GameFairnessActions仍验证Ed25519、KeyID/hash、有效期和版本高水位 | 原始 `prepare-game.mjs`三轮真实Go揭示均成功；`client-lifetime-matrix-final.log`对实际Go文档注入错误签名/KeyID/hash、过期及降级均拒绝；跨语言manifest验证通过 | PASS |
+| F02终局回执 | P1 | `application/hand_bidding.go:35`、`hand_playing.go`增加COMPLETED历史查询；`runtime/durable_live_recover.go`重放终局并恢复回执。原终局已修复；**PLAYING仍先拒绝历史竞叫，见N01** | 原始真实archive-backed59步overlay通过；`terminal-recovery.json`记录真实丢最后成功响应→domain COMPLETED→三WSS见SIGKILL→重启→原结果完全相同，动作59/归档1/摘要不变；改牌/版本/账号拒绝。`bid-phase-probe.json`反证跨阶段竞叫仍失败 | **FAIL（原终局用例PASS，同族残留）** |
+| F03 Genesis归属 | P1 | `sameImmutableRecoveryHand`比较Hand/Room、3座位账号、服务器承诺、揭示绑定、Beacon计划/值及贡献，再构建/发布实例 | 原座位互换用例通过；`TestCodexGenesisImmutableMatrix`12类真实SQL篡改均拒绝、失败实例无法读取私牌；每例先验证未篡改恢复/授权成功，未将破坏夹具本身当成功 | PASS |
+| F04清理语义 | P1 | `mysqlstore/live_retention.go:49`调用 `livehand.VerifyFinalRecord`，保留公开 `FinalArchiveReader`模块边界 | **原始真实终局克隆攻击** `TestCodexIncompleteArchiveFromRealCompletedHandCannotPrune`被阻止、59日志保留；7类真实克隆矩阵包括不足30天/活跃/无归档/水位/缺日志/Hand身份/有效执行；拒绝时全表计数不变，有效清理只删4恢复表、保留domain/最终archive。实际CLI中途SIGKILL完整回滚 | PASS |
+| F05空座位 | P1 | `api.ts:154`允许省略空座accountId并规范化为空串，同时保留座位唯一、占用数、账号唯一和空座未准备检查 | 实际Go建房/加入，每轮依次解析1/2/3人房；原丢响应用例的1人HTTP响应由原客户端成功解析。`real-game-commit.log`记录三种占用数 | PASS |
+| F06明确拒绝 | P2 | `GameFairnessActions.settle`仅对已验证的durable rejection清pending，原秘密保留；真正未知仍留原请求 | 原始 `client-adversarial.test.mjs`全部3例通过：版本拒绝后新合法操作/相同承诺，timeout原请求精确重试、不允许换ID。未将协议端口测试冒充实际微信并发 | PASS |
+| F07销毁竞态 | P2 | disposed/generation检查跨查询、随机数、ID、context、Manifest、seal、结果各await；丢弃的贡献字节清零 | 原准备延迟复现通过；`client-lifetime-matrix-final.log`11项（含F01一项）：查询、32/24字节、ID、reveal查询/context/manifest/真实HPKE seal/结果及import查询延迟后dispose，均拒绝成功返回、不恢复秘密/凭证/pending；未发送迟到请求，原贡献字节清零 | PASS |
+| F08部署配置 | P2 | Compose转发5字段；Quicknet/历史根由go-zero配置读取，微信字段由 `securityhttp/wechat.go:43-45`读取进程环境 | `deploy-wiring.json`验证5个非敏感占位值与容器定义完全一致；`provider-and-fresh-process-env.log`在全新子进程以标准production.yaml读取Quicknet/历史根成功；实际根/凭据未打印。微信真实code exchange仍外部BLOCKED | PASS |
+| F09提供方校验 | P2 | `config/validate.go:207`仅Quicknet免旧HMAC要求，其他模式继续强度检查 | 真实Quicknet应用无HMAC字段就绪、BLS完成三轮公平发牌；独立配置用例拒绝空/短local-hmac密钥，接受32字符密钥 | PASS |
+| F10开发YAML | P2 | `etc/main-api.yaml:73`给冒号结尾scalar加引号 | 原样仓库YAML启动实际服务，正常配置校验及MySQL/Redis就绪HTTP200；只用公开APP_HOST/APP_PORT隔离监听地址端口，未改YAML或绕过验证；`default-yaml-start.log`/`default-start.json` | PASS |
+| F11建房未知 | P2 | room coordinator保留原命令/定位符；controller自动权威查询，仅404时允许原请求精确重发 | 原真实WSS成功响应丢失后pending locator仍在，自动重连读取1人房成功；另在发送前断链，实际GET404后原ID/参数/seq/version/roomId完全一致地重发，两份请求哈希/对象相同、只建一个房，恢复后清pending；`room-unknown.json`,`room-before-send-loss.json` | PASS |
+
+##### 新发现/残留缺陷
+
+**N01 / P1 — 已确认竞叫在业务阶段推进后无法精确重放，F02修复只覆盖COMPLETED分支。** 位置：`server/business/doudizhu/application/hand_bidding.go:35-43`，运行时 `infrastructure/runtime/live_hand_bidding.go:40`已有回执查询；WSS `doudizhuapi/realtime.go:214`把未映射的WrongPhase呈现为INTERNAL。前提是玩家已合法竞叫并收到成功回执，domain已从BIDDING进入PLAYING，应用重启清除了进程级热重放缓存。非未授权攻击，也没有证明新批次引入该旧guard问题。
+
+独立步骤：实际4账号认证/3人房→三人真实承诺/新进程导入与HPKE揭示→真实未来drand轮次→发牌；当前竞叫者以稳定requestId、clientSeq91、expectedVersion1、score3提交，收到live版本2；**直接查MySQL确认domain=PLAYING**；SIGKILL实际Go进程并启动；再次查MySQL仍PLAYING；以原账号/ID/seq/版本/参数从新WSS精确重试。预期返回原live版本2。实际 `doudizhu.error INTERNAL`，durable动作数仍为1。未重复执行，但合法原请求无法确认，客户端只能继续未知结果处理。`bid-phase-probe.json`、`bid-phase-probe.log`给出状态/结果；此前 `bid-historical-replay.json`在另一局/两次故障恢复后也复现。然后继续用原三客户端harness执行58步完成v60，证明不是损坏牌局/不可用环境导致的假失败。
+
+根因：授权后只有 `snapshot.Phase==COMPLETED`绕过阶段guard；PLAYING下在Coordinator查原回执之前被拒绝。建议由ChatGPT统一“授权→精确历史回执查询→没有回执才做新动作阶段/参数校验”，保留actor、payload、expectedVersion、ID绑定、正常阶段拒绝和fencing。增加真实Service/Dispatcher/WSS覆盖：已确认最后竞叫进入PLAYING后重启/丢响应重试，以及SETTLING/其他生命周期合法历史回执；不能只加一个COMPLETED例外，也不能忽略身份/请求一致性。Codex未修复。新发现清单：P0未建立；P1一项同族残留N01；P2未新增可确证缺陷。终局“改账号”负例得到INTERNAL但已拒绝且无写入，错误分类作为后续检查风险记录，不夸大成越权。
+
+##### 本轮自动化与实际运行记录
+
+以下均为本轮独立执行，源码SHA为固定 `da0ed72`。Go计数含父测试/子测试且套件相互重叠，不可相加当作唯一用例；`[no test files]`不是失败。完整argv/cwd/UTC/退出码及单项耗时见E/runs.jsonl。
+
+| 检查 | 实际命令/过程 | 结果 |
+|---|---|---|
+| 客户端基础 | `bash scripts/verify-client-foundation.sh` | PASS，32.606s；TS严格类型/构建、30core+37Doudizhu+35Cocos=102测试 |
+| Go单元 | `cd server; go test -json -count=1 -p 1 -parallel 1 ./...` | PASS，44测试包、515测试/子测试、1skip；60.871s |
+| Go Race | `go test -json -race -count=1 -p 1 -parallel 1 ./...` | PASS，44包、515测试/子测试、1skip；139.046s；本轮是完整目录而非第一轮相关子集 |
+| Vet/格式 | `go vet -p 1 ./...`; `make fmt-check` | PASS，7.201s/.272s |
+| 真实MySQL全回归/规模 | `APP_API_INTEGRATION=1 DOUDIZHU_SCALE_PROFILE=1 go test -json -count=1 -p 1 -parallel 1 -tags=integration ./...` | PASS，44包、550测试/子测试、1skip；84.381s；含fencing、并发16精确请求、日志/检查点篡改、真实子进程kill、终局、密钥与100/1000局 |
+| 架构/依赖边界 | 完整Go套件中的 `TestPlatformModuleImportBoundaries`、gamecore生产导入/术语边界、模块拥有表检查及go-zero API路由契约；客户端基础脚本的边界检查 | PASS；实际Go/客户端日志内，非新增测试或目录命名推断 |
+| 原始客户端复现 | `node --test E/client-adversarial.test.mjs` | PASS，3/3，.538s；前轮2FAIL已消失 |
+| Manifest/销毁扩展 | `node --test E/client-lifetime-matrix.test.mjs` | PASS，最终11/11；真实Manifest+真实HPKE、受控协议端口延迟，非微信设备测试 |
+| 原始MySQL/Genesis/轮换/fork | `APP_API_INTEGRATION=1 go test ... -tags=integration -overlay E/overlay.json -run '^TestCodex(Completed\|IncompleteArchiveCannot\|Genesis\|Rotation\|Keyring\|Candidate)' ./business/doudizhu/infrastructure/mysqlstore ./business/doudizhu/domain/livehand` | PASS最终28测试/子测试、2包，6.036s；完整初次日志和修正原因保留 |
+| 真实归档原攻击 | `... -run '^TestCodexIncompleteArchiveFromReal' ./business/doudizhu/infrastructure/mysqlstore` | PASS，2.927s；真实v60/59步克隆，原攻击被拒绝 |
+| 清理矩阵/配置 | overlay `^TestCodexRealPruneSafetyMatrix`；`^TestCodex(Provider\|StockEnvironment)` | 7类清理子例均PASS；独立HMAC/全新子进程环境最终PASS，3.615s。混合初次运行中配置探针失败仍保留，非隐藏后重标绿 |
+| 实际CLI原子性 | `python3 E/prune-process.py` | PASS，7.702s；dryrun/29day拒绝；删除事务内marker后SIGKILL，前后4恢复表行数均[1,59,1,1] |
+| 原生服务构建 | `CGO_ENABLED=0 go build -p 1 -trimpath ... ./apps/app-api`及maintenance | PASS，11.150s/2.677s；本轮二进制用于真实进程故障 |
+| 开发配置实启 | `python3 E/default-start.py`→原main-api.yaml | PASS，1.269s，ready200，进程结束清理 |
+| 真实三人完整业务 | `python3 E/full-game.py`→原客户端commit/reveal→原 `verify-doudizhu-three-client-e2e.mjs` | PASS；59动作、v60，摘要 `6bc64b15180d6d408ce9517bfdf747074bb2b50adb5fe46e2ac34f0cc9a198ad`；非生产wx账号 |
+| 活跃故障与终局丢响应 | `python3 E/fault-game.py`→真实SQL事务pre/post kill→原harness末次成功响应接收端丢弃；`node E/terminal-recovery.mjs` | 活跃pre/post控制PASS；终局精确回执PASS，实际domain COMPLETED、三WSS断开、归档唯一/摘要/59动作不变；harness注入丢末回复后预期退出1，不能把它说成一次正常harness PASS |
+| 跨阶段竞叫 | `node E/bid-phase-probe.mjs`；随后原harness继续完成 | **FAIL/N01**，确认PLAYING前后和1持久动作；另一次同类复现也FAIL，之后58步/v60成功 |
+| 密码学/跨语言 | 安全包 `npm test`；TS vector→Go `SECURE_ENVELOPE_INTEROP_VECTOR=... go test ... ./foundation/secureenvelope`；Go manifest-vector→TS verify | PASS，安全包9测试；四个interop命令本轮执行，实际补跑全Go套件中未设vector导致的1skip |
+| Creator Web实际场景 | 原 `scripts/verify-cocos-browser.cjs`，root只加no-sandbox；实际导出Web运行三尺寸/生命周期/销毁；原生点击输入探针 | PASS，9.174s/10.605s，3尺寸、16房间控件、真实EditBox cap2048。初次未展开产物内层zip而404/超时保留，正确解压后原断言通过 |
+| 标准生产Compose运行时 | 仓库原Dockerfile/原断言；私有copy仅固定根/输出/项目/空闲host端口，build.network=host和legacy builder解决本机Docker DNS | PASS，242.784s；原Go/Admin Dockerfile实际构建，未使用原生二进制打包替代。首次417.177s中Go镜像已构建，Admin npm日志明确EAI_AGAIN后主动终止其唯一构建容器（137，非OOM）；两build均使用宿主网络后复用Go构建缓存并成功重跑，原失败/诊断日志保留。 |
+| 微信工具实际场景 | 现有Linux社区2.02.2609240-2，操作员现有AppID/登录，单编译worker、受限内存、软件GPU，当前等价输入包 | **BLOCKED**；实际“compile utility process crashed”，12样本/122.417s未见Cocos场景；截图人工确认，未声称SDK/真机PASS。工具已停止 |
+
+本轮还独立核对完整公开三客户端harness：从已发牌手开始，三份实际认证token和不同座位、真实私牌读取/真实WSS动作、版本推进/终局证据。前置流程验证4个不同服务端账户及第4账号私牌403；不能用不同token字符串本身证明不同账号。脚本主要地主单牌/农民过牌，不单独覆盖全部牌型/公平准备/重试/崩溃；规则由Go单元/集成覆盖，公平与故障按上列独立流程验证。未复制客户端游戏规则或制造假牌。
+
+##### CI和原生构建来源（与独立本地执行分开）
+
+实际读取各job/step与run元数据：固定SHA的 [CI 41548782178](https://github.com/oublie6/awesome-zero-platform/actions/runs/41548782178)、[Fair Doudizhu 41548782131](https://github.com/oublie6/awesome-zero-platform/actions/runs/41548782131)均success，包括runtime、单位/race/集成、客户端与manifest等真实job；不是本轮本地执行日志的替代。
+
+[Cocos Creator Smoke 41548136103](https://github.com/oublie6/awesome-zero-platform/actions/runs/41548136103)实际source为 `06733a93d614b68f897a796b9eb7684a79a4dbf9`，官方Creator `3.8.8-win-121518`真实导入、generated-config类型检查和Web/WeChat/Douyin导出成功，三份metadata均exit36，小游戏landscape。到固定da0ed72的完整diff只有两个后端retention文件、5增/5删；客户端/构建输入完全一致。Artifact `13189389701` SHA256 `63de80f989d965a033a9129cb83e754c4e26c56ab9e1ea945e925830bd6e2502`下载验真，安全展开outer ZIP及三个inner target ZIP，实际新Web已本地运行。明确为**较早SHA、相同客户端输入的原生构建证据**，没有本地exact-da0重跑Creator的假声明。保留原ZIP不变；私有微信副本仅配置现有AppID/loopback检查，不上传/预览/发布。
+
+##### 核心回归及数据安全结论
+
+| 本轮要求 | 状态 | 范围与限制 |
+|---|---|---|
+| 3独立认证账号全局 | PASS（本地真实Go账号） | 真实房间1/2/3人、退出/重入/准备/开局、完整59步至v60；微信平台code账号资格另BLOCKED |
+| 承诺/揭示/随机源/证据 | PASS | 原客户端原始Manifest读取、严格签名/上下文/HPKE、真实未来drand轮次，账户/座位秘密绑定与应用外备份；非自动明文SDK保存 |
+| COMMIT前后进程恢复 | PASS（已执行故障范围） | 实际SQL INSERT事务marker前kill回滚0行、原请求重试1行；COMMIT后接收端丢响应→kill→精确回执/版本不变。物理WAN/存储整体损坏未测试 |
+| 终局/历史精确幂等 | **FAIL（部分）** | 原终局COMPLETED全调用链及参数/账号负例通过；PLAYING历史竞叫N01失败，不能宣称所有已确认命令均可确认 |
+| OwnerEpoch/并发隔离 | PASS | 当前真实MySQL stale writer/fenced takeover、16并发同ID及不同手隔离测试；非生产自动跨节点迁移资格 |
+| 检查点/日志/Genesis完整性 | PASS（测试覆盖） | 真实DB篡改/版本/摘要/水位拒绝及12类不变字段；失败手实例不发布；其他账号无私牌访问。未宣称抗全部DB/根密钥共同被攻陷 |
+| 旧根/重加密 | PASS（静态keyring） | 子进程seed COMMIT后/checkpoint前SIGKILL，混合根恢复、提前移除旧根失败关闭、staleEpoch拒绝、重复迁移后新根独立恢复、原贡献不变；KMS/生产密钥托管/全库存淘汰另BLOCKED |
+| 历史清理 | PASS（本轮边界） | 原不完整证据攻击被拒绝，7边界、合法显式清理、30day/defaultdryrun与CLI事务kill回滚；最终archive/domain保留，业务adapter仍走公开归档port，无跨模块私表读取 |
+| 断线/同步/公平客户端生命周期 | PASS（已测范围） | 实际3WSS见进程断开，原请求重放和权威视图；建房前后丢失两分支；11项Manifest/lifetime控制。真机后台/前台/分享未验收 |
+| Cocos三目标与布局 | PASS构建/可用Web冒烟，外部BLOCKED | 等价输入真实三导出及本轮实际Web。房间竖屏小字/调试HUD遮挡观察仍保留，未把几何in-bounds当完整可读性；没有当前微信场景、实际平台业务登录/完整UI对局或真机通过证据 |
+
+##### Goal0046八项交付要求映射
+
+| 交付 | 状态 | 本轮证据与缺口 |
+|---|---|---|
+| GOAL1 | BLOCKED | Go account authentication/isolation pass; actual wx.login credentials/domain/device missing |
+| GOAL2 | BLOCKED | actual Go rooms1/2/3 and both lost-create branches pass; complete platform Cocos UI qualification unavailable |
+| GOAL3 | PASS | actual original client manifest/HPKE/drand fair lifecycle + outsider403 on local Go deployment |
+| GOAL4 | FAIL | actual full game passes; acknowledged bid replay after phase advance fails N01; full device UI unavailable |
+| GOAL5 | FAIL | active/terminal restart controls pass; N01 prevents full exact historical acknowledgement recovery |
+| GOAL6 | FAIL | actual threeWSS pre/postCOMMIT and terminal kill pass; expanded accepted historical bid invariant N01 fails |
+| GOAL7 | BLOCKED | 100/1000/commit/checkpoint/fork/race bounded measurements pass; long room/socket memory/hardware/SLA not proven |
+| GOAL8 | BLOCKED | equivalent-input3.8.8 native exports and actualWeb pass; current wx tool compile utility crashes and devices/domains unavailable |
+
+##### 性能与稳定性（本轮实测）
+
+| 测量 | P50 | P95 | P99 | 其他 |
+|---|---|---|---|---|
+| 100手真实MySQL提交 |13.822ms|48.499ms|54.840ms|最大56.219ms；setup.730s，恢复1.219s，heapDelta300168B |
+| 1000手真实MySQL提交 |11.500ms|51.242ms|54.952ms|最大58.126ms；setup7.941s，恢复12.649s，heapDelta3034064B |
+| 另80commit样本 |6.605ms|13.764ms|20.195ms|最大21.847ms，原样保留不同负载样本 |
+| 实际checkpoint100写入 |4.002ms|7.411ms|9.942ms|最大16.477ms，76563B，checkpoint33/watermark60，真实事务/fsync |
+| 1000次候选fork/history0 |3.918µs|14.531µs|22.447µs|2416allocatedB/fork；postGC heapDelta-29664B、goroutineDelta0 |
+| 1000次候选fork/history58 |20.122µs|40.794µs|94.164µs|13416allocatedB/fork；postGC heapDelta-38528B、goroutineDelta0 |
+
+这是指定资源限制/磁盘上的受限基线，不是生产SLA；1000手恢复12.649s是总耗时，不是每手P95。规模用例不是1000个真实手机长局/长连接。测得16个worker，并核对每手动作/回执上限和有界socket队列、Race控制；未证明跨手累计回执/房间内存回收，不把一次fork goroutineDelta0外推为全生命周期无泄漏。长期房间/套接字保留、生产锁争用/存储故障/硬件SLA、低端机帧耗时仍未验收；未追加与本轮修复无关的无界压力场景。
+
+##### 失败记录归因、自检与外部条件
+
+没有抹去失败：第一次Genesis矩阵把所有拒绝都过度限定为“identity mismatch”，实际两类破坏更早被journal结构/贡献完整性拒绝；更正为明确的验证/日志完整性拒绝且必须无私牌/部分实例后通过。初始旧清理探针对空FinalRecord过度要求特定错误分类，当前早期身份/保留条件拒绝同样安全，允许两个明确拒绝类；原真实59步攻击不变且已实际通过。配置探针在同一进程先加载后 `t.Setenv`，被go-zero `proc.Env`缓存空值；又以缺必需认证密钥的stock config触发正确拒绝。保留全部日志，改用启动前已置环境的新子进程验证真实部署路径，未修改加载器/绕过验证。Web初次outer ZIP未展开inner ZIP导致404/90s等待，确定夹具路径错误后正常展开再跑原脚本，通过；未把此错报产品回归。末次成功回复主动丢弃导致harness退出1是预期注入，之后独立终局恢复通过，不能混作正常完整运行PASS。
+
+验收报告第二遍**自检**（不冒充另一名独立审阅者）：逐条对照本轮objective、第一轮F01–F11原复现、固定源码diff、真实JSON、授权/阶段/回执顺序、候选commit/publish、epoch、Genesis比较/失败发布、归档语义/删除事务、旧根迁移和客户端pending/dispose状态；复核探针是否错误通过/过度断言、端口/模拟与真实Go边界、源/CI/产物一致性、测试计数重叠及秘密排除。特别追溯N01同族残留，不能用终局PASS盖住PLAYING失败。未对产品实现自修；历史文档剥离本轮插入后应逐字一致，所有要求与未完成状态保留。
+
+外部条件仍 **BLOCKED**：真实server AppSecret及wx.login到Go业务身份、正式批准HTTPS/WSS域名/白名单/生产TLS链、三微信用户真机后台/网络/分享/安全区；当前开发工具场景受编译子进程崩溃阻塞；Douyin SDK/设备/熵；生产KMS/旧贡献密文完整迁移与密钥退休库存、生产硬件/长期稳定性等。操作员现有AppID及工具登录并非缺失；它们不等于服务器凭据、域名或真机证据。不会把这些外部阻塞误判成代码缺陷，也不会用本地Go账号/构建/旧HK桌面首页替代资格。
+
+已停止本轮Go/control/TLS、浏览器/HTTP探针、微信工具及测试MySQL/Redis；生产runtime脚本已清理自己的项目/卷，失败的本轮构建容器已移除，隔离复现卷保留。19227/28888/28889/28999/28443/28080/28081/8888/3306/6379均无本轮监听；无本轮服务进程。两个K8s节点Ready，kubelet/containerd/SSH恢复通道active；HK操作员桌面和无关learn-xray服务未动。主机约4.4GiB可用内存/无swap，root/data用量46%/53%。以22个本轮实际私密凭据/根/registry私钥/JWT/恢复套件值扫描top-level日志与拟公开报告，未命中；这是明确边界的扫描，不是对所有内存/图像/JSON的普遍无泄露证明。证据保持私有权限。
+
+最终交接：**F01–F11专项最终FAIL（10项通过，F02原终局场景通过但广义历史回执残留N01）；Goal0046内部代码FAIL；生产发布FAIL且外部BLOCKED；允许封版NO。** ChatGPT应优先修复N01并增加跨业务阶段的Service/Dispatcher/真实MySQL+WSS回执回归，审阅修复、执行相关完整验证后推送单一新候选，再由Codex独立复验。无需因正常外部凭据缺失制造代码问题；无需重新开发已通过的11原场景。当前可用于明确未验收的隔离诊断环境，不能称作完成产品或生产发布。只提交本报告允许章节，直接main提交/推送；关闭回复记录报告commit，文档提交不冒充重新构建的产品源码。
 
 #### Goal 0046 consolidated independent product acceptance — 2026-11-02
 
@@ -504,6 +636,8 @@ No P0 or P3 finding was established. Positive fault controls passed: unrelated-h
 - Mandatory self-review completed: SDK timing, cancellation/deadlines, stale callbacks, duplicate full-snapshot confirmation, Go phase/TTL compatibility, version/identity boundaries, secret handling and cleanup. Reproduced regressions before correction; additional runtime self-review found and fixed false-ready polling, cropped/stretched canvas, small portrait text and retained UI; engine parent-destruction order and Web host initialization/page lifetime were checked against actual 3.8.8 source. Remaining interactive editor/SDK/device and long-term memory uncertainty is explicitly recorded in the phase report.
 
 ## Completion Report
+
+2026-11-03 Goal0046 Round2 at `da0ed72fc9b49ffc0546589ac649ad83c9510001`: **FAIL**. Original F01–F11 reproductions now pass; the integrated fix matrix is10PASS/1FAIL because F02 retains a P1 cross-phase historical-bid replay failure N01. Full Go unit/Race, real MySQL, cryptography, three actual authenticated clients/fairness/full games, terminal response-loss restart, Creator-equivalent builds/Web and standard production Docker runtime passed within documented scope. External platform/device/KMS qualification remains BLOCKED. Only report sections changed; no production fixes. Internal code/release FAIL, sealing NO, Goals0045/0046 remain in_progress. ChatGPT must fix N01 and push for consolidated independent re-verification.
 
 2026-11-02 consolidated independent product acceptance at `0cc90a5d8639c9a1dfd892e1034bb92067182794`: **FAIL**. Complete 114-item matrix and reproducible 5 P1/6 P2 findings recorded above; external qualification BLOCKED. Existing Go/client/security/integration/race suites pass, real HTTPS/WSS three-player backend game and pre/post-COMMIT active recovery controls pass, but original room/reveal contracts, terminal receipt recovery, genesis binding and prune evidence validity fail. Report-only changes by Codex; no product fixes. Goal0045/0046 remain in_progress and not ready to seal/release. ChatGPT must fix and push a consolidated candidate, then request independent re-verification.
 
