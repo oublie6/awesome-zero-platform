@@ -1,0 +1,32 @@
+name: One-shot Goal 0046 Round 5 gofmt
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/goal0046-r5-format-once.yml'
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Format Round 5 repair and remove the one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -w \
+            server/business/doudizhu/infrastructure/mysqlstore/live_journal.go \
+            server/business/doudizhu/infrastructure/mysqlstore/live_journal_validation_test.go \
+            server/business/doudizhu/infrastructure/mysqlstore/live_journal_downgrade_integration_test.go
+          git add -- server/business/doudizhu/infrastructure/mysqlstore/live_journal.go \
+            server/business/doudizhu/infrastructure/mysqlstore/live_journal_validation_test.go \
+            server/business/doudizhu/infrastructure/mysqlstore/live_journal_downgrade_integration_test.go
+          git rm .github/workflows/goal0046-r5-format-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'style(go): gofmt Goal 0046 Round 5 recovery repair'
+          git push origin HEAD:main
