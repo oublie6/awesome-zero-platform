@@ -4,6 +4,8 @@
 
 ## Status
 
+- Latest Goal0046 Round6 independent acceptance, source `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`: **R5-N05 and executed internal regression gates PASS; full product/internal qualification BLOCKED; external/release BLOCKED, sealing NO**. Matrix97PASS/0FAIL/17BLOCKED. No new blocking product defect established. Remaining lifetime/native/UI/platform/operations evidence is explicit in the [full report](0046-round6-independent-acceptance.md); Goals0045/0046 remain `in_progress`.
+
 - Latest Goal 0046 Round 5 independent acceptance: **FAIL**, source `797a7bad4ebdf9bcab26c3fdd797bac55e6009f0`. Original R3-N02 timers/SETTLING compensation and original R4-N04 sequence-only corruption pass; new R5-N05/P2 authenticated-journal legacy downgrade remains. Matrix92PASS/4FAIL/18BLOCKED. Internal/release FAIL, external BLOCKED, sealing NO. [Full report](0046-round5-independent-acceptance.md). Goals0045/0046 remain `in_progress`.
 
 - ChatGPT Round 5 R5-N05/P2 remediation candidate: authenticated journals reject unkeyed v1 recovery even when the row presents zero clientSeq. Explicitly keyless internal legacy remains supported; legacy active hands require controlled drain/reconciliation before configuring an authenticated root. Regression unit/MySQL tests added. **Implementation pending exact-SHA CI and Codex independent Round 6**; Round 5 FAIL above remains authoritative.
@@ -101,6 +103,8 @@ Single primary implementer; use subagents only for independent review or API doc
 
 ### In progress
 
+- 2026-11-03 Round6 independent verification finished at `1ae8ee1`: original R5-N05 and historical failures pass, full Go/Race/MySQL/client/three-player faults/scale/production runtime rerun. Additional1500 real WSS connections return goroutines26→26 and active sockets0. Full qualification still BLOCKED; report-only changes, no product repair. [Round6 report](0046-round6-independent-acceptance.md).
+
 - 2026-11-03 Round 5 independent acceptance completed for product source `797a7ba`: full Go/Race/integration, three actual fair WSS games, process faults, lifecycle repair, client/crypto/scale/deployment checks rerun. R5-N05/P2 returned to ChatGPT; only report/current records changed. See [Round 5](0046-round5-independent-acceptance.md).
 
 - 2026-11-03 Round 4 full independent acceptance finished at `cb161cf`: original timer/phase races still fail, real SETTLING retry fails to reconcile until restart, normal MySQL/WSS sequence binding and isolated legacy fail-closed controls pass; sequence-only journal corruption can rebind history. Full report/114-item matrix: [Round 4](0046-round4-independent-acceptance.md). Report-only Codex changes; ChatGPT owns fixes.
@@ -144,6 +148,10 @@ Single primary implementer; use subagents only for independent review or API doc
 - Continue planned protocol integration in Goal 0046: separate durable envelope from current doudizhu-api-command-v1 request DTO, implement mapping, per-account/aggregate sequence/ID allocation and safe retries, private snapshot and terminal-evidence mapping. Do not submit the durable CommandEnvelope directly as a wire request or infer game state from notifications.
 
 ### Verification status
+
+#### Goal 0046 Round 6 — 2026-11-03
+
+Tested product `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`. **R5-N05 closed; original R3-N02/R3-N03/R4-N04/F01–F11/N01 pass in recorded scope; no new blocking product defect established.** [Complete report and114-item matrix](0046-round6-independent-acceptance.md):97PASS/0FAIL/17BLOCKED. All previous4FAIL/18BLOCKED individually reassessed. Executed internal code gates PASS; full product/internal qualification BLOCKED by remaining resource/client qualification gaps; external platform/release BLOCKED, sealing NO. Exact-source CI10jobs, full independent Go/Race/integration/builds/client/crypto/real WSS games and process faults/scale/local production Docker evidence recorded. Current native/UI, room/history memory lifetime, platform/device/KMS/root-retirement conditions are not mislabeled PASS. Goals0045/0046 stay `in_progress`; all historical reports preserved below.
 
 #### Goal 0046 Round 5 — 2026-11-03
 
@@ -759,6 +767,8 @@ No P0 or P3 finding was established. Positive fault controls passed: unrelated-h
 - Mandatory self-review completed: SDK timing, cancellation/deadlines, stale callbacks, duplicate full-snapshot confirmation, Go phase/TTL compatibility, version/identity boundaries, secret handling and cleanup. Reproduced regressions before correction; additional runtime self-review found and fixed false-ready polling, cropped/stretched canvas, small portrait text and retained UI; engine parent-destruction order and Web host initialization/page lifetime were checked against actual 3.8.8 source. Remaining interactive editor/SDK/device and long-term memory uncertainty is explicitly recorded in the phase report.
 
 ## Completion Report
+
+2026-11-03 Goal0046 Round6 source `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`: independent acceptance/report assignment complete. **Repair/executed-code gates PASS; full product/internal, external and release qualification BLOCKED**,97PASS/0FAIL/17BLOCKED. R5-N05 and all original historical reproducers pass; no newly confirmed blocking product defect. [Full report](0046-round6-independent-acceptance.md). ChatGPT need not repeat R5-N05 repair; remaining resource/native/client/platform/operational qualifications require evidence. No product code/test/schema changes, no Goal sealing/archive; Goals0045/0046 remain `in_progress`. Report commit is distinct from tested product source.
 
 2026-11-03 Goal0046 Round5 source `797a7bad4ebdf9bcab26c3fdd797bac55e6009f0`: **FAIL**. Matrix92PASS/4FAIL/18BLOCKED; original lifecycle/sequence corruption reproducers pass, one new P2 authenticated-journal legacy downgrade remains. [Report](0046-round5-independent-acceptance.md). All available current-source regression, actual WSS/full games/process recovery, scale and local deployment gates executed; unqualified external/native/device/key-retirement/soak checks documented. Independent verification assignment complete; product Goals0045/0046 remain `in_progress`. ChatGPT owns R5-N05 repair. Report commit is documentation only, distinct from tested product SHA.
 
