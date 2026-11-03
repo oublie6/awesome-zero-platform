@@ -108,7 +108,7 @@ func (evidenceStub) Get(context.Context, domain.AccountID, domain.HandID) (appli
 	return application.FinalEvidenceResult{}, nil
 }
 
-type lifecycleStub struct{ trackCalls, bidCalls, playCalls, cancelCalls int }
+type lifecycleStub struct{ trackCalls, bidCalls, playCalls, cancelCalls, historicalBidCalls, historicalPlayCalls int }
 
 func (s *lifecycleStub) TrackBidding(context.Context, domain.AccountID, domain.HandID) error {
 	s.trackCalls++
@@ -120,6 +120,14 @@ func (s *lifecycleStub) AfterBid(context.Context, domain.AccountID, domain.HandI
 }
 func (s *lifecycleStub) AfterPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error {
 	s.playCalls++
+	return nil
+}
+func (s *lifecycleStub) AfterHistoricalBid(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error {
+	s.historicalBidCalls++
+	return nil
+}
+func (s *lifecycleStub) AfterHistoricalPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error {
+	s.historicalPlayCalls++
 	return nil
 }
 func (s *lifecycleStub) Cancel(context.Context, domain.AccountID, domain.HandID) (lifecycle.Outcome, error) {

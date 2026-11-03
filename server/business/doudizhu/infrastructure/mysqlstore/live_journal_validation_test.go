@@ -68,3 +68,56 @@ func TestValidateReplayActionAcceptsWriterTakeover(t *testing.T) {
 		t.Fatalf("same owner epoch rejected: %v", err)
 	}
 }
+
+func TestLiveActionHMACBindsAcceptedRequestIdentity(t *testing.T) {
+	original := LiveAction{
+		HandID: "hand-1", Version: 2, Epoch: 3, CommandID: "request-1",
+		Actor: "player-1", ActorPosition: 1, ExpectedVersion: 1,
+		ClientSeq: 91, Payload: []byte(`{"v":"bid","score":3}`),
+		ResultDigest: [32]byte{8}, IntegrityVersion: 2,
+	}
+	key := deriveLiveActionIntegrityKey(bytes.Repeat([]byte{4}, 32))
+	journal := &LiveJournal{integrityKey: key}
+	tag, err := liveActionIntegrityTag(original, key)
+	if err != nil || journal.verifyLiveActionIntegrity(original, tag[:]) != nil {
+		t.Fatalf("valid signed request rejected: %v", err)
+	}
+	for _, mutate := range []func(*LiveAction){
+		func(a *LiveAction) { a.ClientSeq = 92 },
+		func(a *LiveAction) { a.CommandID = "different" },
+		func(a *LiveAction) { a.Actor = "other-player" },
+		func(a *LiveAction) { a.ActorPosition = 2 },
+		func(a *LiveAction) { a.Epoch = 4 },
+		func(a *LiveAction) { a.ExpectedVersion = 2 },
+		func(a *LiveAction) { a.Payload = []byte(`{"v":"bid","score":2}`) },
+		func(a *LiveAction) { a.ResultDigest[0] ^= 1 },
+	} {
+		changed := original
+		mutate(&changed)
+		if journal.verifyLiveActionIntegrity(changed, tag[:]) == nil {
+			t.Fatalf("mutated request identity accepted: %+v", changed)
+		}
+	}
+	// MySQL JSON reorders object keys without changing semantic command data.
+	reordered := original
+	reordered.Payload = []byte(`{"score":3,"v":"bid"}`)
+	if err := journal.verifyLiveActionIntegrity(reordered, tag[:]); err != nil {
+		t.Fatalf("normal JSON object reordering rejected: %v", err)
+	}
+	// Rotation permits old roots strictly as readers, not current writers.
+	newKey := deriveLiveActionIntegrityKey(bytes.Repeat([]byte{5}, 32))
+	if err := (&LiveJournal{integrityKey: newKey, integrityReaders: [][]byte{key}}).verifyLiveActionIntegrity(original, tag[:]); err != nil {
+		t.Fatalf("retained authentication root failed: %v", err)
+	}
+	legacy := original
+	legacy.IntegrityVersion = 1
+	legacy.ClientSeq = 0
+	legacyTag, err := liveActionIntegrityTag(legacy, nil)
+	if err != nil || (&LiveJournal{}).verifyLiveActionIntegrity(legacy, legacyTag[:]) != nil {
+		t.Fatalf("zero-sequence internal legacy failed: %v", err)
+	}
+	legacy.ClientSeq = 91
+	if (&LiveJournal{}).verifyLiveActionIntegrity(legacy, legacyTag[:]) == nil {
+		t.Fatal("public request accepted unkeyed tag")
+	}
+}

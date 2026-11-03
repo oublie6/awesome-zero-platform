@@ -49,7 +49,11 @@ func (c *LiveHandCoordinator) bidInternal(ctx context.Context, handID domain.Han
 	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known, clientSeq); err != nil {
 		return application.LiveHandCommandResult{}, err
 	} else if found {
-		return checkedBidResult(handID, outcome)
+		result, err := checkedBidResult(handID, outcome)
+		if err == nil {
+			result.Historical = true
+		}
+		return result, err
 	}
 	game, err := c.game(ctx, handID)
 	if err != nil {

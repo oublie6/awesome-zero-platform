@@ -224,6 +224,10 @@ CREATE TABLE IF NOT EXISTS doudizhu_live_actions (
     client_sequence BIGINT UNSIGNED NOT NULL DEFAULT 0,
     command_payload JSON NOT NULL,
     result_digest BINARY(32) NOT NULL,
+    -- v2: authenticated root-derived HMAC of command identity and outcome digest.
+    -- v1: only zero-sequence internal legacy callers; unknown v0 rows fail closed.
+    integrity_version TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    integrity_tag BINARY(32) NULL,
     committed_at DATETIME(6) NOT NULL,
     PRIMARY KEY (hand_id, state_version),
     UNIQUE KEY uq_doudizhu_live_command (hand_id, command_id),

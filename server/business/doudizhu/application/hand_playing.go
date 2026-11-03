@@ -68,7 +68,7 @@ func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, ha
 				return LiveHandCommandResult{}, err
 			}
 			if found {
-				result.Historical = snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying
+				result.Historical = true
 				return result, nil
 			}
 		}
@@ -122,7 +122,7 @@ func (s *Service) submitLivePass(ctx context.Context, actor domain.AccountID, ha
 				return LiveHandCommandResult{}, err
 			}
 			if found {
-				result.Historical = snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying
+				result.Historical = true
 				return result, nil
 			}
 		}

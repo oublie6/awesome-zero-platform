@@ -63,6 +63,7 @@ func (j *LiveJournal) ConfigureCheckpointKeyring(active string, roots map[string
 		return err
 	}
 	readers := make([]cipher.AEAD, 0, len(ids)-1)
+	integrityReaders := make([][]byte, 0, len(ids)-1)
 	for _, id := range ids {
 		if id == active {
 			continue
@@ -72,8 +73,10 @@ func (j *LiveJournal) ConfigureCheckpointKeyring(active string, roots map[string
 			return err
 		}
 		readers = append(readers, aead)
+		integrityReaders = append(integrityReaders, deriveLiveActionIntegrityKey(roots[id]))
 	}
 	j.checkpointReaders = readers
+	j.integrityReaders = integrityReaders
 	return nil
 }
 

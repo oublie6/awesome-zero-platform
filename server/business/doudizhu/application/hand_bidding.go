@@ -56,7 +56,7 @@ func (s *Service) submitLiveBid(ctx context.Context, actor domain.AccountID, han
 				return LiveHandCommandResult{}, err
 			}
 			if found {
-				result.Historical = snapshot.Phase != domain.HandBidding
+				result.Historical = true
 				return result, nil
 			}
 		}

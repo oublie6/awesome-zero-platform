@@ -2,7 +2,9 @@ package mysqlstore
 
 import (
 	"context"
+	"bytes"
 	"crypto/cipher"
+	"crypto/hmac"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
@@ -34,6 +36,8 @@ type LiveAction struct {
 	ClientSeq       uint64
 	Payload         []byte
 	ResultDigest    [32]byte
+	IntegrityVersion uint8
+	IntegrityTag     [32]byte
 }
 
 // One Doudizhu hand has at most 54 played cards and bounded bidding turns.
@@ -48,6 +52,8 @@ type LiveJournal struct {
 	db                *sql.DB
 	checkpointAEAD    cipher.AEAD
 	checkpointReaders []cipher.AEAD
+	integrityKey      []byte
+	integrityReaders  [][]byte
 }
 
 func NewLiveJournal(db *sql.DB) (*LiveJournal, error) {
@@ -149,6 +155,22 @@ func (j *LiveJournal) Append(ctx context.Context, id domain.HandID, epoch uint64
 		return err
 	}
 	digest := sha256.Sum256(encodedResult)
+	action := LiveAction{HandID: id, Version: outcome.Version, Epoch: epoch,
+		CommandID: commandID, Actor: actor, ActorPosition: command.ActorPosition,
+		ExpectedVersion: command.ExpectedVersion, ClientSeq: sequence,
+		Payload: command.Payload, ResultDigest: digest}
+	var integrityKey []byte
+	action.IntegrityVersion = 1 // internal legacy zero-sequence path only
+	if len(j.integrityKey) != 0 {
+		integrityKey = j.integrityKey
+		action.IntegrityVersion = 2 // authenticated root-derived HMAC
+	} else if sequence != 0 {
+		return fmt.Errorf("%w: public sequence requires authenticated journal", ErrLiveReplayIntegrity)
+	}
+	tag, err := liveActionIntegrityTag(action, integrityKey)
+	if err != nil {
+		return err
+	}
 	tx, err := j.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
@@ -167,8 +189,8 @@ WHERE hand_id=? FOR UPDATE`, id).Scan(&foundEpoch, &committed); err != nil {
 	}
 	if _, err = tx.ExecContext(ctx, `INSERT INTO doudizhu_live_actions(
 hand_id,state_version,owner_epoch,command_id,actor_account_id,actor_position,expected_version,
-client_sequence,command_payload,result_digest,committed_at) VALUES(?,?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`,
-		id, outcome.Version, epoch, commandID, actor, command.ActorPosition, command.ExpectedVersion, sequence, command.Payload, digest[:]); err != nil {
+client_sequence,command_payload,result_digest,integrity_version,integrity_tag,committed_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`,
+		id, outcome.Version, epoch, commandID, actor, command.ActorPosition, command.ExpectedVersion, sequence, command.Payload, digest[:], action.IntegrityVersion, tag[:]); err != nil {
 		return err
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE doudizhu_live_writers
@@ -191,7 +213,7 @@ WHERE hand_id=? AND owner_epoch=? AND committed_version=?`, outcome.Version, id,
 }
 func (j *LiveJournal) Read(ctx context.Context, id domain.HandID) ([]LiveAction, error) {
 	rows, err := j.db.QueryContext(ctx, `SELECT state_version,owner_epoch,command_id,actor_account_id,
-actor_position,expected_version,client_sequence,command_payload,result_digest
+actor_position,expected_version,client_sequence,command_payload,result_digest,integrity_version,integrity_tag
 FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC LIMIT ?`, id, maxLiveActionsPerHand+1)
 	if err != nil {
 		return nil, err
@@ -205,11 +227,11 @@ FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC LIMIT ?`, 
 			return nil, ErrLiveReplayIntegrity
 		}
 		var action LiveAction
-		var digest []byte
-		var pos uint64
+		var digest, tag []byte
+		var pos, integrityVersion uint64
 		action.HandID = id
 		if err := rows.Scan(&action.Version, &action.Epoch, &action.CommandID, &action.Actor, &pos,
-			&action.ExpectedVersion, &action.ClientSeq, &action.Payload, &digest); err != nil {
+			&action.ExpectedVersion, &action.ClientSeq, &action.Payload, &digest, &integrityVersion, &tag); err != nil {
 			return nil, err
 		}
 		if pos < 1 || pos > 3 {
@@ -219,8 +241,15 @@ FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC LIMIT ?`, 
 		if err := validateReplayAction(action, expected, previousEpoch, digest); err != nil {
 			return nil, err
 		}
-		previousEpoch = action.Epoch
+		if integrityVersion > 255 {
+			return nil, ErrLiveReplayIntegrity
+		}
+		action.IntegrityVersion = uint8(integrityVersion)
 		copy(action.ResultDigest[:], digest)
+		if err := j.verifyLiveActionIntegrity(action, tag); err != nil {
+			return nil, err
+		}
+		previousEpoch = action.Epoch
 		out = append(out, action)
 		expected++
 	}
@@ -228,6 +257,93 @@ FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC LIMIT ?`, 
 		return nil, err
 	}
 	return out, nil
+}
+
+// Integrity covers the immutable accepted request identity and outcome digest.
+// MySQL JSON normalizes object property order, so payloads are canonicalized.
+// v2 authenticates with a separate root-derived HMAC; v1 is restricted to
+// internal zero-sequence legacy callers and cannot authenticate public replay.
+const liveActionIntegrityDomain = "doudizhu/live-action-integrity/v2:"
+
+func deriveLiveActionIntegrityKey(root []byte) []byte {
+	h := sha256.New()
+	_, _ = h.Write([]byte(liveActionIntegrityDomain))
+	_, _ = h.Write(root)
+	return h.Sum(nil)
+}
+
+func liveActionIntegrityTag(action LiveAction, key []byte) ([32]byte, error) {
+	var normalized any
+	decoder := json.NewDecoder(bytes.NewReader(action.Payload))
+	decoder.UseNumber()
+	if err := decoder.Decode(&normalized); err != nil {
+		return [32]byte{}, fmt.Errorf("%w: invalid live command JSON: %v", ErrLiveReplayIntegrity, err)
+	}
+	canonical, err := json.Marshal(normalized)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	binding, err := json.Marshal(struct {
+		Domain string
+		HandID domain.HandID
+		Version uint64
+		Epoch uint64
+		CommandID string
+		Actor domain.AccountID
+		ActorPosition uint8
+		ExpectedVersion uint64
+		ClientSeq uint64
+		Payload json.RawMessage
+		ResultDigest [32]byte
+	}{
+		Domain: liveActionIntegrityDomain,
+		HandID: action.HandID, Version: action.Version, Epoch: action.Epoch,
+		CommandID: action.CommandID, Actor: action.Actor,
+		ActorPosition: action.ActorPosition, ExpectedVersion: action.ExpectedVersion,
+		ClientSeq: action.ClientSeq, Payload: canonical, ResultDigest: action.ResultDigest,
+	})
+	if err != nil {
+		return [32]byte{}, err
+	}
+	if len(key) == 0 {
+		return sha256.Sum256(binding), nil
+	}
+	mac := hmac.New(sha256.New, key)
+	_, _ = mac.Write(binding)
+	var out [32]byte
+	copy(out[:], mac.Sum(nil))
+	return out, nil
+}
+
+func (j *LiveJournal) verifyLiveActionIntegrity(action LiveAction, stored []byte) error {
+	if len(stored) != sha256.Size {
+		return ErrLiveReplayIntegrity
+	}
+	var keys [][]byte
+	switch action.IntegrityVersion {
+	case 1:
+		if action.ClientSeq != 0 {
+			return ErrLiveReplayIntegrity // public request must not accept unkeyed tags
+		}
+		keys = [][]byte{nil}
+	case 2:
+		if j == nil || len(j.integrityKey) == 0 {
+			return ErrLiveReplayIntegrity
+		}
+		keys = append([][]byte{j.integrityKey}, j.integrityReaders...)
+	default:
+		return ErrLiveReplayIntegrity // unknown or unconverted pre-upgrade row
+	}
+	for _, key := range keys {
+		candidate, err := liveActionIntegrityTag(action, key)
+		if err != nil {
+			return ErrLiveReplayIntegrity
+		}
+		if hmac.Equal(candidate[:], stored) {
+			return nil
+		}
+	}
+	return ErrLiveReplayIntegrity
 }
 
 // Fail closed before building the in-memory receipt index. A malformed action

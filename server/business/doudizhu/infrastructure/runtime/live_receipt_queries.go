@@ -71,5 +71,6 @@ func (c *LiveHandCoordinator) findVerifiedReceipt(ctx context.Context, hand doma
 	if err != nil {
 		return application.LiveHandCommandResult{}, true, err
 	}
+	result.Historical = true // Verified receipt provenance, independent of current phase.
 	return result, true, nil
 }

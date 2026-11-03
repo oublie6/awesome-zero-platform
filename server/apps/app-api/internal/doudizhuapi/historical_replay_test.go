@@ -42,8 +42,9 @@ func TestRecoveredHistoricalLiveResultsDoNotRepeatLifecycleSideEffects(t *testin
 			t.Fatalf("historical %s result=%+v err=%v", tt.name, got, err)
 		}
 	}
-	if life.bidCalls != 0 || life.playCalls != 0 {
-		t.Fatalf("historical results restarted lifecycle: bid=%d play=%d", life.bidCalls, life.playCalls)
+	if life.bidCalls != 0 || life.playCalls != 0 || life.historicalBidCalls != 1 || life.historicalPlayCalls != 2 {
+		t.Fatalf("wrong lifecycle routing: bid=%d play=%d historicalBid=%d historicalPlay=%d",
+			life.bidCalls, life.playCalls, life.historicalBidCalls, life.historicalPlayCalls)
 	}
 }
 

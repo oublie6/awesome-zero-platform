@@ -305,8 +305,18 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			} else {
 				live, err = d.backend.SubmitLiveHandBid(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion, payload.Score)
 			}
-			if err == nil && !live.Historical {
-				terminal, err = d.lifecycle.AfterBid(ctx, actor, domain.HandID(request.AggregateID), live)
+			if err == nil {
+				if live.Historical {
+					reconciler, ok := d.lifecycle.(interface {
+					AfterHistoricalBid(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
+				})
+					if !ok {
+						return CommandResponse{}, fmt.Errorf("%w: historical bid reconciliation unavailable", ErrInvalidRequest)
+					}
+					err = reconciler.AfterHistoricalBid(ctx, actor, domain.HandID(request.AggregateID), live)
+				} else {
+					terminal, err = d.lifecycle.AfterBid(ctx, actor, domain.HandID(request.AggregateID), live)
+				}
 			}
 		}
 	case TypeHandPlay:
@@ -325,8 +335,18 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			} else {
 				live, err = d.backend.SubmitLiveHandPlay(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion, payload.Cards)
 			}
-			if err == nil && !live.Historical {
-				err = d.lifecycle.AfterPlay(ctx, actor, domain.HandID(request.AggregateID), live)
+			if err == nil {
+				if live.Historical {
+					reconciler, ok := d.lifecycle.(interface {
+					AfterHistoricalPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
+				})
+					if !ok {
+						return CommandResponse{}, fmt.Errorf("%w: historical play reconciliation unavailable", ErrInvalidRequest)
+					}
+					err = reconciler.AfterHistoricalPlay(ctx, actor, domain.HandID(request.AggregateID), live)
+				} else {
+					err = d.lifecycle.AfterPlay(ctx, actor, domain.HandID(request.AggregateID), live)
+				}
 			}
 		}
 	case TypeHandPass:
@@ -342,8 +362,18 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			} else {
 				live, err = d.backend.SubmitLiveHandPass(ctx, actor, domain.HandID(request.AggregateID), request.ExpectedVersion)
 			}
-			if err == nil && !live.Historical {
-				err = d.lifecycle.AfterPlay(ctx, actor, domain.HandID(request.AggregateID), live)
+			if err == nil {
+				if live.Historical {
+					reconciler, ok := d.lifecycle.(interface {
+					AfterHistoricalPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
+				})
+					if !ok {
+						return CommandResponse{}, fmt.Errorf("%w: historical play reconciliation unavailable", ErrInvalidRequest)
+					}
+					err = reconciler.AfterHistoricalPlay(ctx, actor, domain.HandID(request.AggregateID), live)
+				} else {
+					err = d.lifecycle.AfterPlay(ctx, actor, domain.HandID(request.AggregateID), live)
+				}
 			}
 		}
 	case TypeHandCancel:

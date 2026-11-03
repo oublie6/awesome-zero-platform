@@ -55,7 +55,7 @@ func TestHistoricalBidReceiptBeforePhaseGuard(t *testing.T) {
 			svc := &Service{store: store, liveHands: runtime}
 			result, err := svc.SubmitLiveHandBidWithID(context.Background(), "player-1", "hand-1", "accepted-1", 1, bidding.ScoreThree)
 			if err != nil || result.Version != 2 || string(result.Payload) != "original-bid" || runtime.calls != 1 ||
-				result.Historical != (phase != domain.HandBidding) {
+				!result.Historical {
 				t.Fatalf("phase=%s result=%+v calls=%d err=%v", phase, result, runtime.calls, err)
 			}
 		})
@@ -75,7 +75,7 @@ func TestHistoricalPlayAndPassReceiptsBeforePhaseGuard(t *testing.T) {
 				} else {
 					got, err = svc.SubmitLiveHandPassWithID(context.Background(), "player-1", "hand-1", "accepted-1", 1)
 				}
-				if err != nil || got.Version != 8 || runtime.calls != 1 || got.Historical != (phase == domain.HandSettling || phase == domain.HandCompleted) {
+				if err != nil || got.Version != 8 || runtime.calls != 1 || !got.Historical {
 					t.Fatalf("phase=%s kind=%s got=%+v calls=%d err=%v", phase, kind, got, runtime.calls, err)
 				}
 			})

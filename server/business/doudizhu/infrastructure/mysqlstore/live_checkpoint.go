@@ -47,6 +47,8 @@ func (j *LiveJournal) ConfigureCheckpoints(rootKey []byte) error {
 	}
 	j.checkpointAEAD = aead
 	j.checkpointReaders = nil
+	j.integrityKey = deriveLiveActionIntegrityKey(rootKey)
+	j.integrityReaders = nil
 	return nil
 }
 

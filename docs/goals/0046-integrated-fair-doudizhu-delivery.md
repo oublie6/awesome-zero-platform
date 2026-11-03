@@ -283,3 +283,31 @@ commit triggers the authoritative GitHub Actions on the formatted source,
 since the GitHub Actions token's own formatting push does not start ordinary
 push-triggered CI. No acceptance is asserted until those exact-source
 workflows complete, and the independent Codex reproducers still gate closure.
+
+## Round 4 FAIL remediation candidate — awaiting exact-SHA CI and Codex Round 5
+
+ChatGPT repair candidate addresses R3-N02/P1 and R4-N04/P2 without changing
+the public wire protocol. Verified receipts now have a stable historical marker,
+including same-phase lookups and serialized duplicate calls. Dispatcher calls
+AfterHistoricalBid/AfterHistoricalPlay rather than the ordinary timer-resetting
+handlers. Historic retries can reconcile omitted BIDDING→PLAYING or terminal
+lifecycle work without extending prior timeouts. Codex must independently
+reproduce the original virtual-clock races and real SETTLING retry.
+
+The live action journal adds integrity_version/integrity_tag. Version 2 is an
+HMAC-SHA256 with a separate key derived from the existing checkpoint
+protection root; it binds hand, version, epoch, command ID, account, seat,
+original clientSeq, expected version, canonical typed JSON payload and
+result digest. Retained checkpoint roots also validate retained journal tags.
+Missing configured roots reject any nonzero public clientSeq. Version 1
+(unkeyed digest) is reserved only for explicitly zero-sequence nontransport
+legacy callers; public replay never accepts it. Unknown pre-upgrade version-0
+records fail closed. The tag is inserted in the same fenced transaction as
+the accepted live action. There is no extra database read per command.
+
+Existing databases require operator-approved additive schema migration and
+explicit drain/reconciliation of legacy active hands before rollout; the
+current complete-schema SQL is not a migration. An old root cannot be retired
+while journal tags signed under that root remain. No automatic live journal
+retagging or production migration was performed. This is implementation only,
+NOT a CI PASS or independent Codex acceptance.

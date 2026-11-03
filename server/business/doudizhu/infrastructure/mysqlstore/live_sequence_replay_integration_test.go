@@ -52,6 +52,9 @@ func TestRealMySQLClientSequenceBoundAcrossProcessRecovery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := journal.ConfigureCheckpoints(coordinatorCrashKey()); err != nil {
+		t.Fatal(err)
+	}
 	if err := journal.Create(ctx, genesis); err != nil {
 		t.Fatal(err)
 	}
@@ -149,5 +152,14 @@ WHERE hand_id=?`, persisted.Phase, persisted.Version, encoded, id); err != nil {
 	actions, err := journal.Read(ctx, id)
 	if err != nil || len(actions) != 1 || actions[0].ClientSeq != 91 || actions[0].Version != 2 {
 		t.Fatalf("journal lost bound sequence or mutated state: %+v %v", actions, err)
+	}
+	// R4-N04: changing only the stored sequence must invalidate the immutable
+	// authenticated identity, including a cold coordinator restart.
+	if _, err := db.ExecContext(ctx, "UPDATE doudizhu_live_actions SET client_sequence=92 WHERE hand_id=? AND state_version=2", id); err != nil {
+		t.Fatal(err)
+	}
+	tampered := newCoordinatorCrashRuntime(t, db)
+	if err := tampered.RecoverActive(ctx, store.LoadHand); !errors.Is(err, mysqlstore.ErrLiveReplayIntegrity) {
+		t.Fatalf("tampered client sequence was accepted: %v", err)
 	}
 }

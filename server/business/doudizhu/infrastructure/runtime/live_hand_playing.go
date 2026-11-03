@@ -96,7 +96,11 @@ func (c *LiveHandCoordinator) applyPlayingCommand(
 	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known, clientSeq); err != nil {
 		return application.LiveHandCommandResult{}, err
 	} else if found {
-		return checkedPlayResult(handID, outcome)
+		result, err := checkedPlayResult(handID, outcome)
+		if err == nil {
+			result.Historical = true
+		}
+		return result, err
 	}
 	game, err := c.game(ctx, handID)
 	if err != nil {
