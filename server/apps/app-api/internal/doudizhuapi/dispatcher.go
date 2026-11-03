@@ -294,7 +294,11 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			Score bidding.Score `json:"score"`
 		}
 		if err = decodePayload(request.Payload, &payload); err == nil {
-			if durable, ok := d.backend.(interface {
+			if sequenced, ok := d.backend.(interface {
+				SubmitLiveHandBidWithSequence(context.Context, domain.AccountID, domain.HandID, string, uint64, bidding.Score, uint64) (application.LiveHandCommandResult, error)
+			}); ok {
+				live, err = sequenced.SubmitLiveHandBidWithSequence(ctx, actor, domain.HandID(request.AggregateID), request.RequestID, request.ExpectedVersion, payload.Score, request.ClientSeq)
+			} else if durable, ok := d.backend.(interface {
 				SubmitLiveHandBidWithID(context.Context, domain.AccountID, domain.HandID, string, uint64, bidding.Score) (application.LiveHandCommandResult, error)
 			}); ok {
 				live, err = durable.SubmitLiveHandBidWithID(ctx, actor, domain.HandID(request.AggregateID), request.RequestID, request.ExpectedVersion, payload.Score)
@@ -310,7 +314,11 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			Cards []string `json:"cards"`
 		}
 		if err = decodePayload(request.Payload, &payload); err == nil {
-			if durable, ok := d.backend.(interface {
+			if sequenced, ok := d.backend.(interface {
+				SubmitLiveHandPlayWithSequence(context.Context, domain.AccountID, domain.HandID, string, uint64, []string, uint64) (application.LiveHandCommandResult, error)
+			}); ok {
+				live, err = sequenced.SubmitLiveHandPlayWithSequence(ctx, actor, domain.HandID(request.AggregateID), request.RequestID, request.ExpectedVersion, payload.Cards, request.ClientSeq)
+			} else if durable, ok := d.backend.(interface {
 				SubmitLiveHandPlayWithID(context.Context, domain.AccountID, domain.HandID, string, uint64, []string) (application.LiveHandCommandResult, error)
 			}); ok {
 				live, err = durable.SubmitLiveHandPlayWithID(ctx, actor, domain.HandID(request.AggregateID), request.RequestID, request.ExpectedVersion, payload.Cards)
@@ -323,7 +331,11 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 		}
 	case TypeHandPass:
 		if err = requireEmptyPayload(request.Payload); err == nil {
-			if durable, ok := d.backend.(interface {
+			if sequenced, ok := d.backend.(interface {
+				SubmitLiveHandPassWithSequence(context.Context, domain.AccountID, domain.HandID, string, uint64, uint64) (application.LiveHandCommandResult, error)
+			}); ok {
+				live, err = sequenced.SubmitLiveHandPassWithSequence(ctx, actor, domain.HandID(request.AggregateID), request.RequestID, request.ExpectedVersion, request.ClientSeq)
+			} else if durable, ok := d.backend.(interface {
 				SubmitLiveHandPassWithID(context.Context, domain.AccountID, domain.HandID, string, uint64) (application.LiveHandCommandResult, error)
 			}); ok {
 				live, err = durable.SubmitLiveHandPassWithID(ctx, actor, domain.HandID(request.AggregateID), request.RequestID, request.ExpectedVersion)

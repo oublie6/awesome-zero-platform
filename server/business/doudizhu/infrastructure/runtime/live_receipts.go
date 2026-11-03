@@ -15,6 +15,7 @@ import (
 // replay; a retry of the exact same accepted request ID returns the same
 // authoritative result rather than executing an action twice.
 type liveReceipt struct {
+	clientSeq uint64
 	actor   domain.AccountID
 	command gamecore.Command
 	outcome gamecore.CommandOutcome
@@ -30,7 +31,7 @@ func cloneLiveOutcome(v gamecore.CommandOutcome) gamecore.CommandOutcome {
 	return v
 }
 func (c *LiveHandCoordinator) loadReceipt(ctx context.Context, id domain.HandID, actor domain.AccountID,
-	commandID string, command gamecore.Command) (gamecore.CommandOutcome, bool, error) {
+	commandID string, command gamecore.Command, clientSeq ...uint64) (gamecore.CommandOutcome, bool, error) {
 	if c == nil || commandID == "" {
 		return gamecore.CommandOutcome{}, false, nil
 	}
@@ -43,13 +44,15 @@ func (c *LiveHandCoordinator) loadReceipt(ctx context.Context, id domain.HandID,
 	if !found {
 		return gamecore.CommandOutcome{}, false, nil
 	}
-	if !duplicateCommandReceipt(receipt.command, command, receipt.actor, actor) {
+	var seq uint64
+	if len(clientSeq) > 0 { seq = clientSeq[0] }
+	if receipt.clientSeq != seq || !duplicateCommandReceipt(receipt.command, command, receipt.actor, actor) {
 		return gamecore.CommandOutcome{}, true, fmt.Errorf("%w: command ID bound to different live request", gamecore.ErrVerificationFailed)
 	}
 	return cloneLiveOutcome(receipt.outcome), true, nil
 }
 func (c *LiveHandCoordinator) storeReceipt(id domain.HandID, actor domain.AccountID,
-	commandID string, command gamecore.Command, outcome gamecore.CommandOutcome) {
+	commandID string, command gamecore.Command, outcome gamecore.CommandOutcome, clientSeq ...uint64) {
 	if c == nil || commandID == "" {
 		return
 	}
@@ -59,7 +62,9 @@ func (c *LiveHandCoordinator) storeReceipt(id domain.HandID, actor domain.Accoun
 		c.receipts[id] = make(map[string]liveReceipt)
 	}
 	command.Payload = append([]byte(nil), command.Payload...)
-	c.receipts[id][commandID] = liveReceipt{actor: actor, command: command, outcome: cloneLiveOutcome(outcome)}
+	var seq uint64
+	if len(clientSeq) > 0 { seq = clientSeq[0] }
+	c.receipts[id][commandID] = liveReceipt{actor: actor, clientSeq: seq, command: command, outcome: cloneLiveOutcome(outcome)}
 }
 
 // MySQL JSON columns normalize object-key order and insignificant whitespace.

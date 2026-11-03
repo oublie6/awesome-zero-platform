@@ -114,7 +114,7 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 			if _, exists := recoveredReceipts[item.CommandID]; exists {
 				return fmt.Errorf("%w: duplicate live command identity for %s", gamecore.ErrVerificationFailed, id)
 			}
-			recoveredReceipts[item.CommandID] = liveReceipt{actor: item.Actor,
+			recoveredReceipts[item.CommandID] = liveReceipt{actor: item.Actor, clientSeq: item.ClientSeq,
 				command: gamecore.Command{ActorPosition: item.ActorPosition, ExpectedVersion: item.ExpectedVersion,
 					Payload: append([]byte(nil), item.Payload...)},
 				outcome: cloneLiveOutcome(outcome)}

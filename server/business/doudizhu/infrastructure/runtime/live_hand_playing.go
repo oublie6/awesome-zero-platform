@@ -16,12 +16,12 @@ import (
 func (c *LiveHandCoordinator) PlayCommitted(ctx context.Context, handID domain.HandID,
 	actor domain.AccountID, commandID string, expectedVersion uint64, cards []string,
 ) (application.LiveHandCommandResult, error) {
-	return c.playInternal(ctx, handID, actor, commandID, expectedVersion, cards)
+	return c.playInternal(ctx, handID, actor, commandID, expectedVersion, cards, 0)
 }
 func (c *LiveHandCoordinator) PassCommitted(ctx context.Context, handID domain.HandID,
 	actor domain.AccountID, commandID string, expectedVersion uint64,
 ) (application.LiveHandCommandResult, error) {
-	return c.passInternal(ctx, handID, actor, commandID, expectedVersion)
+	return c.passInternal(ctx, handID, actor, commandID, expectedVersion, 0)
 }
 
 func (c *LiveHandCoordinator) Play(
@@ -31,10 +31,22 @@ func (c *LiveHandCoordinator) Play(
 	expectedVersion uint64,
 	cards []string,
 ) (application.LiveHandCommandResult, error) {
-	return c.playInternal(ctx, handID, actor, "", expectedVersion, cards)
+	return c.playInternal(ctx, handID, actor, "", expectedVersion, cards, 0)
+}
+func (c *LiveHandCoordinator) PlayCommittedWithSequence(ctx context.Context, id domain.HandID,
+	actor domain.AccountID, commandID string, version uint64, cards []string, clientSeq uint64,
+) (application.LiveHandCommandResult,error) {
+	if clientSeq == 0 || commandID == "" { return application.LiveHandCommandResult{}, fmt.Errorf("sequenced play identity required") }
+	return c.playInternal(ctx,id,actor,commandID,version,cards,clientSeq)
+}
+func (c *LiveHandCoordinator) PassCommittedWithSequence(ctx context.Context, id domain.HandID,
+	actor domain.AccountID, commandID string, version uint64, clientSeq uint64,
+) (application.LiveHandCommandResult,error) {
+	if clientSeq == 0 || commandID == "" { return application.LiveHandCommandResult{}, fmt.Errorf("sequenced pass identity required") }
+	return c.passInternal(ctx,id,actor,commandID,version,clientSeq)
 }
 func (c *LiveHandCoordinator) playInternal(ctx context.Context, handID domain.HandID, actor domain.AccountID,
-	commandID string, expectedVersion uint64, cards []string,
+	commandID string, expectedVersion uint64, cards []string, clientSeq uint64,
 ) (application.LiveHandCommandResult, error) {
 	payload, err := json.Marshal(livehand.PlayCommand{
 		Version: livehand.PlayCommandVersion,
@@ -43,7 +55,7 @@ func (c *LiveHandCoordinator) playInternal(ctx context.Context, handID domain.Ha
 	if err != nil {
 		return application.LiveHandCommandResult{}, fmt.Errorf("encode Doudizhu play: %w", err)
 	}
-	return c.applyPlayingCommand(ctx, handID, actor, commandID, expectedVersion, payload)
+	return c.applyPlayingCommand(ctx, handID, actor, commandID, expectedVersion, payload, clientSeq)
 }
 
 func (c *LiveHandCoordinator) Pass(
@@ -52,10 +64,10 @@ func (c *LiveHandCoordinator) Pass(
 	actor domain.AccountID,
 	expectedVersion uint64,
 ) (application.LiveHandCommandResult, error) {
-	return c.passInternal(ctx, handID, actor, "", expectedVersion)
+	return c.passInternal(ctx, handID, actor, "", expectedVersion, 0)
 }
 func (c *LiveHandCoordinator) passInternal(ctx context.Context, handID domain.HandID, actor domain.AccountID,
-	commandID string, expectedVersion uint64,
+	commandID string, expectedVersion uint64, clientSeq uint64,
 ) (application.LiveHandCommandResult, error) {
 	payload, err := json.Marshal(livehand.PassCommand{Version: livehand.PassCommandVersion})
 	if err != nil {
@@ -71,12 +83,13 @@ func (c *LiveHandCoordinator) applyPlayingCommand(
 	commandID string,
 	expectedVersion uint64,
 	payload []byte,
+	clientSeq uint64,
 ) (application.LiveHandCommandResult, error) {
 	lock := c.commandStripe(handID)
 	lock.Lock()
 	defer lock.Unlock()
 	known := gamecore.Command{ExpectedVersion: expectedVersion, Payload: append([]byte(nil), payload...)}
-	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known); err != nil {
+	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known, clientSeq); err != nil {
 		return application.LiveHandCommandResult{}, err
 	} else if found {
 		return checkedPlayResult(handID, outcome)
@@ -90,7 +103,7 @@ func (c *LiveHandCoordinator) applyPlayingCommand(
 		return application.LiveHandCommandResult{}, err
 	}
 	known.ActorPosition = position
-	outcome, err := c.applyLive(ctx, handID, actor, commandID, known)
+	outcome, err := c.applyLive(ctx, handID, actor, commandID, known, clientSeq)
 	if err != nil {
 		return application.LiveHandCommandResult{}, err
 	}

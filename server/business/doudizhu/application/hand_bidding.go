@@ -11,7 +11,7 @@ import (
 func (s *Service) SubmitLiveHandBidWithID(ctx context.Context, actor domain.AccountID,
 	handID domain.HandID, commandID string, expectedLiveVersion uint64, score bidding.Score,
 ) (LiveHandCommandResult, error) {
-	return s.submitLiveBid(ctx, actor, handID, commandID, expectedLiveVersion, score)
+	return s.submitLiveBid(ctx, actor, handID, commandID, expectedLiveVersion, score, 0)
 }
 
 func (s *Service) SubmitLiveHandBid(
@@ -21,10 +21,21 @@ func (s *Service) SubmitLiveHandBid(
 	expectedLiveVersion uint64,
 	score bidding.Score,
 ) (LiveHandCommandResult, error) {
-	return s.submitLiveBid(ctx, actor, handID, "", expectedLiveVersion, score)
+	return s.submitLiveBid(ctx, actor, handID, "", expectedLiveVersion, score, 0)
+}
+// SubmitLiveHandBidWithSequence is used only by authenticated public live
+// requests. The sequence is part of the persisted exact command identity.
+func (s *Service) SubmitLiveHandBidWithSequence(ctx context.Context, actor domain.AccountID,
+	handID domain.HandID, commandID string, expectedLiveVersion uint64, score bidding.Score,
+	clientSeq uint64,
+) (LiveHandCommandResult, error) {
+	if clientSeq == 0 || commandID == "" {
+		return LiveHandCommandResult{}, ErrInvalidCommand
+	}
+	return s.submitLiveBid(ctx, actor, handID, commandID, expectedLiveVersion, score, clientSeq)
 }
 func (s *Service) submitLiveBid(ctx context.Context, actor domain.AccountID, handID domain.HandID,
-	commandID string, expectedLiveVersion uint64, score bidding.Score,
+	commandID string, expectedLiveVersion uint64, score bidding.Score, clientSeq uint64,
 ) (LiveHandCommandResult, error) {
 	snapshot, err := s.authorizeHandViewer(ctx, actor, handID)
 	if err != nil {
@@ -39,7 +50,7 @@ func (s *Service) submitLiveBid(ctx context.Context, actor domain.AccountID, han
 	}
 	if commandID != "" {
 		if receipts, ok := s.liveHands.(LiveHandReceiptReader); ok {
-			result, found, err := receipts.FindBidReceipt(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, score)
+			result, found, err := receipts.FindBidReceipt(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, score, clientSeq)
 			if err != nil {
 				return LiveHandCommandResult{}, err
 			}
@@ -51,6 +62,12 @@ func (s *Service) submitLiveBid(ctx context.Context, actor domain.AccountID, han
 	}
 	if snapshot.Phase != domain.HandBidding {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
+	}
+	if clientSeq != 0 {
+		if sequenced, ok := s.liveHands.(LiveHandSequencedRuntime); ok {
+			return sequenced.BidCommittedWithSequence(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, score, clientSeq)
+		}
+		return LiveHandCommandResult{}, fmt.Errorf("%w: sequenced live runtime unavailable", ErrInvalidCommand)
 	}
 	if durable, ok := s.liveHands.(interface {
 		BidCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64, bidding.Score) (LiveHandCommandResult, error)

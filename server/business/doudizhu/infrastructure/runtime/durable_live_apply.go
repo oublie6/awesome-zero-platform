@@ -17,7 +17,7 @@ func (c *LiveHandCoordinator) DurabilityEnforced() bool { return c != nil && c.j
 // then publishes the committed candidate. A failed/ambiguous commit quarantines
 // the directory entry until explicit takeover/replay.
 func (c *LiveHandCoordinator) applyLive(
-	ctx context.Context, handID domain.HandID, actor domain.AccountID, commandID string, command gamecore.Command,
+	ctx context.Context, handID domain.HandID, actor domain.AccountID, commandID string, command gamecore.Command, clientSeq ...uint64,
 ) (gamecore.CommandOutcome, error) {
 	if c.journal == nil {
 		return c.directory.Apply(gamecore.InstanceID(handID), command)
@@ -32,14 +32,14 @@ func (c *LiveHandCoordinator) applyLive(
 		return gamecore.CommandOutcome{}, fmt.Errorf("live hand has no durable owner epoch")
 	}
 	outcome, next, err := c.directory.ApplyCommitted(gamecore.InstanceID(handID), command, func(result gamecore.CommandOutcome) error {
-		return c.journal.Append(ctx, handID, epoch, commandID, actor, command, result)
+		return c.journal.Append(ctx, handID, epoch, commandID, actor, command, result, clientSeq...)
 	})
 	if err != nil {
 		// A terminal gameplay action has already committed to MySQL when
 		// only the subsequent final archive fails. Preserve its exact
 		// accepted receipt for retries while archive recovery is pending.
 		// Storage/COMMIT ambiguity must never create a receipt.
-		c.retainArchivedFailureReceipt(handID, actor, commandID, command, outcome, err)
+		c.retainArchivedFailureReceipt(handID, actor, commandID, command, outcome, err, clientSeq...)
 		return outcome, err
 	}
 	if next != nil {
@@ -63,19 +63,19 @@ func (c *LiveHandCoordinator) applyLive(
 			c.mu.Unlock()
 		}
 	}
-	c.storeReceipt(handID, actor, commandID, command, outcome)
+	c.storeReceipt(handID, actor, commandID, command, outcome, clientSeq...)
 	c.checkpointAfterCommit(handID, epoch, outcome, next)
 	return outcome, nil
 }
 
 func (c *LiveHandCoordinator) retainArchivedFailureReceipt(
 	handID domain.HandID, actor domain.AccountID, commandID string, command gamecore.Command,
-	outcome gamecore.CommandOutcome, err error,
+	outcome gamecore.CommandOutcome, err error, clientSeq ...uint64,
 ) bool {
 	if !errors.Is(err, gamecore.ErrArchiveFailed) || !outcome.Terminal ||
 		outcome.Version == 0 || len(outcome.FinalPayload) == 0 || commandID == "" {
 		return false
 	}
-	c.storeReceipt(handID, actor, commandID, command, outcome)
+	c.storeReceipt(handID, actor, commandID, command, outcome, clientSeq...)
 	return true
 }

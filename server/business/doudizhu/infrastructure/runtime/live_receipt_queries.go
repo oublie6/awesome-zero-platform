@@ -18,17 +18,17 @@ var _ application.LiveHandReceiptReader = (*LiveHandCoordinator)(nil)
 // from this path. Application authorizes the seated actor before calling it;
 // the receipt additionally binds actor, exact command type/payload and version.
 func (c *LiveHandCoordinator) FindBidReceipt(ctx context.Context, hand domain.HandID, actor domain.AccountID,
-	commandID string, expectedVersion uint64, score bidding.Score,
+	commandID string, expectedVersion uint64, score bidding.Score, clientSeq ...uint64,
 ) (application.LiveHandCommandResult, bool, error) {
 	payload, err := json.Marshal(livehand.BidCommand{Version: livehand.BidCommandVersion, Score: score})
 	if err != nil {
 		return application.LiveHandCommandResult{}, false, err
 	}
-	return c.findVerifiedReceipt(ctx, hand, actor, commandID, expectedVersion, payload, checkedBidResult)
+	return c.findVerifiedReceipt(ctx, hand, actor, commandID, expectedVersion, payload, checkedBidResult, clientSeq...)
 }
 
 func (c *LiveHandCoordinator) FindPlayReceipt(ctx context.Context, hand domain.HandID, actor domain.AccountID,
-	commandID string, expectedVersion uint64, cards []string,
+	commandID string, expectedVersion uint64, cards []string, clientSeq ...uint64,
 ) (application.LiveHandCommandResult, bool, error) {
 	payload, err := json.Marshal(livehand.PlayCommand{
 		Version: livehand.PlayCommandVersion, Cards: append([]string(nil), cards...),
@@ -36,22 +36,22 @@ func (c *LiveHandCoordinator) FindPlayReceipt(ctx context.Context, hand domain.H
 	if err != nil {
 		return application.LiveHandCommandResult{}, false, err
 	}
-	return c.findVerifiedReceipt(ctx, hand, actor, commandID, expectedVersion, payload, checkedPlayResult)
+	return c.findVerifiedReceipt(ctx, hand, actor, commandID, expectedVersion, payload, checkedPlayResult, clientSeq...)
 }
 
 func (c *LiveHandCoordinator) FindPassReceipt(ctx context.Context, hand domain.HandID, actor domain.AccountID,
-	commandID string, expectedVersion uint64,
+	commandID string, expectedVersion uint64, clientSeq ...uint64,
 ) (application.LiveHandCommandResult, bool, error) {
 	payload, err := json.Marshal(livehand.PassCommand{Version: livehand.PassCommandVersion})
 	if err != nil {
 		return application.LiveHandCommandResult{}, false, err
 	}
-	return c.findVerifiedReceipt(ctx, hand, actor, commandID, expectedVersion, payload, checkedPlayResult)
+	return c.findVerifiedReceipt(ctx, hand, actor, commandID, expectedVersion, payload, checkedPlayResult, clientSeq...)
 }
 
 func (c *LiveHandCoordinator) findVerifiedReceipt(ctx context.Context, hand domain.HandID, actor domain.AccountID,
 	commandID string, expectedVersion uint64, payload []byte,
-	check func(domain.HandID, gamecore.CommandOutcome) (application.LiveHandCommandResult, error),
+	check func(domain.HandID, gamecore.CommandOutcome) (application.LiveHandCommandResult, error), clientSeq ...uint64,
 ) (application.LiveHandCommandResult, bool, error) {
 	if c == nil || commandID == "" {
 		return application.LiveHandCommandResult{}, false, nil
@@ -63,7 +63,7 @@ func (c *LiveHandCoordinator) findVerifiedReceipt(ctx context.Context, hand doma
 	stripe.Lock()
 	defer stripe.Unlock()
 	outcome, found, err := c.loadReceipt(ctx, hand, actor, commandID,
-		gamecore.Command{ExpectedVersion: expectedVersion, Payload: payload})
+		gamecore.Command{ExpectedVersion: expectedVersion, Payload: payload}, clientSeq...)
 	if err != nil || !found {
 		return application.LiveHandCommandResult{}, found, err
 	}

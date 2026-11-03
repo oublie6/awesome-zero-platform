@@ -22,6 +22,7 @@ const (
 )
 
 type checkpointReceipt struct {
+	ClientSeq uint64 `json:"clientSeq"`
 	CommandID string                  `json:"commandId"`
 	Actor     domain.AccountID        `json:"actor"`
 	Command   gamecore.Command        `json:"command"`
@@ -64,7 +65,7 @@ func (c *LiveHandCoordinator) checkpointAfterCommit(id domain.HandID, epoch uint
 			return
 		}
 		byVersion[version-2] = checkpointReceipt{
-			CommandID: commandID,
+			CommandID: commandID, ClientSeq: receipt.clientSeq,
 			Actor:     receipt.actor, Command: receipt.command, Outcome: receipt.outcome,
 		}
 	}
@@ -157,7 +158,8 @@ func restoreRecoveryCheckpoint(
 	for index, record := range cp.Receipts {
 		log := committed[index]
 		if record.CommandID == "" || record.CommandID != log.CommandID ||
-			record.Actor != log.Actor || record.Command.ActorPosition != log.ActorPosition ||
+			record.Actor != log.Actor || record.ClientSeq != log.ClientSeq ||
+			record.Command.ActorPosition != log.ActorPosition ||
 			record.Command.ExpectedVersion != log.ExpectedVersion ||
 			!sameJSONCommandPayload(record.Command.Payload, log.Payload) ||
 			record.Outcome.Version != log.Version {
@@ -183,7 +185,7 @@ func restoreRecoveryCheckpoint(
 			return nil, gamecore.ErrVerificationFailed
 		}
 		receipts[record.CommandID] = liveReceipt{
-			actor: record.Actor, command: record.Command, outcome: cloneLiveOutcome(replayed),
+			actor: record.Actor, clientSeq: record.ClientSeq, command: record.Command, outcome: cloneLiveOutcome(replayed),
 		}
 	}
 	pub, priv, err := checkpointViewDigests(game)

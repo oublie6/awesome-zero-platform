@@ -4,6 +4,7 @@
 
 ## Status
 
+- ChatGPT R3-N02/N03 repair candidate is under verification. The Round 3 FAIL verdict below remains authoritative. Added source-verified historical lifecycle semantics, durable clientSeq identity and real-MySQL/virtual-clock regressions; schema upgrade and independent Round 4 remain required before sealing.
 - Latest Goal 0046 Round 3 independent acceptance: **FAIL**, source `04da095c269509a2e4061901ee3f45c92d885d22`. Original N01 and F01–F11 reproducers PASS; R3-N02/P1 lifecycle timer race and R3-N03/P2 post-restart clientSeq binding remain. Internal/release FAIL, external qualification BLOCKED, sealing NO; report below.
 - ChatGPT N01/P1 repair candidate is under verification; the previous Round 2 FAIL below remains authoritative until an exact-SHA CI run and independent Codex Round 3 acceptance pass. Cross-phase historical bid receipt read, lifecycle-once handling and real-MySQL regressions have been added; do not seal Goal 0046 yet.
 - Latest Goal 0046 Round 2 acceptance: **FAIL**, source `da0ed72fc9b49ffc0546589ac649ad83c9510001`; original F01–F11 reproducers pass, but F02 has an expanded P1 historical-bid replay residual N01. Code/release FAIL, external qualifications BLOCKED, no sealing or Goal completion.

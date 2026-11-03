@@ -219,6 +219,9 @@ CREATE TABLE IF NOT EXISTS doudizhu_live_actions (
     actor_account_id VARCHAR(128) NOT NULL,
     actor_position TINYINT UNSIGNED NOT NULL,
     expected_version BIGINT UNSIGNED NOT NULL,
+    -- 0 is reserved for legacy non-transport callers and pre-upgrade rows.
+    -- Public accepted commands must durably bind a nonzero client sequence.
+    client_sequence BIGINT UNSIGNED NOT NULL DEFAULT 0,
     command_payload JSON NOT NULL,
     result_digest BINARY(32) NOT NULL,
     committed_at DATETIME(6) NOT NULL,

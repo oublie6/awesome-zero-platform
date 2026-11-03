@@ -11,12 +11,12 @@ import (
 func (s *Service) SubmitLiveHandPlayWithID(ctx context.Context, actor domain.AccountID, handID domain.HandID,
 	commandID string, expectedLiveVersion uint64, cards []string,
 ) (LiveHandCommandResult, error) {
-	return s.submitLivePlay(ctx, actor, handID, commandID, expectedLiveVersion, cards)
+	return s.submitLivePlay(ctx, actor, handID, commandID, expectedLiveVersion, cards, 0)
 }
 func (s *Service) SubmitLiveHandPassWithID(ctx context.Context, actor domain.AccountID, handID domain.HandID,
 	commandID string, expectedLiveVersion uint64,
 ) (LiveHandCommandResult, error) {
-	return s.submitLivePass(ctx, actor, handID, commandID, expectedLiveVersion)
+	return s.submitLivePass(ctx, actor, handID, commandID, expectedLiveVersion, 0)
 }
 
 func (s *Service) SubmitLiveHandPlay(
@@ -26,10 +26,22 @@ func (s *Service) SubmitLiveHandPlay(
 	expectedLiveVersion uint64,
 	cards []string,
 ) (LiveHandCommandResult, error) {
-	return s.submitLivePlay(ctx, actor, handID, "", expectedLiveVersion, cards)
+	return s.submitLivePlay(ctx, actor, handID, "", expectedLiveVersion, cards, 0)
+}
+func (s *Service) SubmitLiveHandPlayWithSequence(ctx context.Context, actor domain.AccountID, handID domain.HandID,
+	commandID string, expectedLiveVersion uint64, cards []string, clientSeq uint64,
+) (LiveHandCommandResult, error) {
+	if clientSeq == 0 || commandID == "" { return LiveHandCommandResult{}, ErrInvalidCommand }
+	return s.submitLivePlay(ctx, actor, handID, commandID, expectedLiveVersion, cards, clientSeq)
+}
+func (s *Service) SubmitLiveHandPassWithSequence(ctx context.Context, actor domain.AccountID, handID domain.HandID,
+	commandID string, expectedLiveVersion uint64, clientSeq uint64,
+) (LiveHandCommandResult, error) {
+	if clientSeq == 0 || commandID == "" { return LiveHandCommandResult{}, ErrInvalidCommand }
+	return s.submitLivePass(ctx, actor, handID, commandID, expectedLiveVersion, clientSeq)
 }
 func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, handID domain.HandID,
-	commandID string, expectedLiveVersion uint64, cards []string,
+	commandID string, expectedLiveVersion uint64, cards []string, clientSeq uint64,
 ) (LiveHandCommandResult, error) {
 	snapshot, err := s.authorizeHandViewer(ctx, actor, handID)
 	if err != nil {
@@ -47,7 +59,7 @@ func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, ha
 	}
 	if commandID != "" {
 		if receipts, ok := s.liveHands.(LiveHandReceiptReader); ok {
-			result, found, err := receipts.FindPlayReceipt(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, copied)
+			result, found, err := receipts.FindPlayReceipt(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, copied, clientSeq)
 			if err != nil {
 				return LiveHandCommandResult{}, err
 			}
@@ -59,6 +71,12 @@ func (s *Service) submitLivePlay(ctx context.Context, actor domain.AccountID, ha
 	}
 	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
+	}
+	if clientSeq != 0 {
+		if sequenced, ok := s.liveHands.(LiveHandSequencedRuntime); ok {
+			return sequenced.PlayCommittedWithSequence(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, copied, clientSeq)
+		}
+		return LiveHandCommandResult{}, fmt.Errorf("%w: sequenced live runtime unavailable", ErrInvalidCommand)
 	}
 	if durable, ok := s.liveHands.(interface {
 		PlayCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64, []string) (LiveHandCommandResult, error)
@@ -81,10 +99,10 @@ func (s *Service) SubmitLiveHandPass(
 	handID domain.HandID,
 	expectedLiveVersion uint64,
 ) (LiveHandCommandResult, error) {
-	return s.submitLivePass(ctx, actor, handID, "", expectedLiveVersion)
+	return s.submitLivePass(ctx, actor, handID, "", expectedLiveVersion, 0)
 }
 func (s *Service) submitLivePass(ctx context.Context, actor domain.AccountID, handID domain.HandID,
-	commandID string, expectedLiveVersion uint64,
+	commandID string, expectedLiveVersion uint64, clientSeq uint64,
 ) (LiveHandCommandResult, error) {
 	snapshot, err := s.authorizeHandViewer(ctx, actor, handID)
 	if err != nil {
@@ -95,7 +113,7 @@ func (s *Service) submitLivePass(ctx context.Context, actor domain.AccountID, ha
 	}
 	if commandID != "" {
 		if receipts, ok := s.liveHands.(LiveHandReceiptReader); ok {
-			result, found, err := receipts.FindPassReceipt(ctx, snapshot.ID, actor, commandID, expectedLiveVersion)
+			result, found, err := receipts.FindPassReceipt(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, clientSeq)
 			if err != nil {
 				return LiveHandCommandResult{}, err
 			}
@@ -107,6 +125,12 @@ func (s *Service) submitLivePass(ctx context.Context, actor domain.AccountID, ha
 	}
 	if snapshot.Phase != domain.HandBidding && snapshot.Phase != domain.HandPlaying {
 		return LiveHandCommandResult{}, fmt.Errorf("%w: hand phase %s", domain.ErrWrongPhase, snapshot.Phase)
+	}
+	if clientSeq != 0 {
+		if sequenced, ok := s.liveHands.(LiveHandSequencedRuntime); ok {
+			return sequenced.PassCommittedWithSequence(ctx, snapshot.ID, actor, commandID, expectedLiveVersion, clientSeq)
+		}
+		return LiveHandCommandResult{}, fmt.Errorf("%w: sequenced live runtime unavailable", ErrInvalidCommand)
 	}
 	if durable, ok := s.liveHands.(interface {
 		PassCommitted(context.Context, domain.HandID, domain.AccountID, string, uint64) (LiveHandCommandResult, error)

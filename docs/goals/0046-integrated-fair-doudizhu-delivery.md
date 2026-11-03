@@ -201,3 +201,78 @@ workflow formatted Go sources and removed itself in `cc90e1a6`.
 The pre-format CI's gofmt gate failed as expected. The follow-on exact
 formatted-source CI is the authoritative build gate; do not interpret
 a successful pre-format integration job as complete acceptance.
+
+
+## Round 3 R3-N02/P1 and R3-N03/P2 repair candidate — not independently accepted
+
+The 2026-11-03 Round 3 independent acceptance at `04da095c269509a2e4061901ee3f45c92d885d22`
+remains **FAIL** (read the unchanged report in `docs/goals/current.md`).
+Its original N01/F01–F11 reproducers passed, but the following expanded
+safety requirements remained open.
+
+### R3-N02 — source-verified history and monotonic lifecycle reconciliation
+
+**Owner:** Doudizhu application/runtime and the existing Dispatcher adapter,
+not the platform or gamecore. Every exact receipt hit is now marked Historical
+regardless of a concurrently read domain phase; the internal mutation path
+also marks duplicates found while the operation was being serialized.
+The normal AfterBid/AfterPlay side effects execute only on freshly committed
+commands. Historical requests invoke a separate lifecycle reconciliation port.
+That port does not reschedule normal bidding/playing deadlines or downgrade
+a playing timer to bidding, but durably completes a previously omitted
+BIDDING→PLAYING or PLAYING→SETTLING→COMPLETED transition if actual authority
+is behind the already-committed result. Recovery still executes before serving
+requests. No external response or client protocol version changes.
+
+**Security/concurrency:** seat authorization and exact original actor/type/
+payload/version binding are performed before any historical result is returned.
+The read-only receipt index shares the per-hand fixed-stripe lock with receipt
+publication; normal durable writes remain protected by MySQL epoch fencing.
+A historical request does not create a new live operation or refresh an
+existing timer. This does not claim that all fault-injected lifecycle races
+have been independently requalified; Codex must rerun its original controlled
+virtual-clock and real WSS tests.
+
+### R3-N03 — persistent authenticated clientSeq identity
+
+**Owner/data authority:** the Doudizhu-owned `doudizhu_live_actions` MySQL
+journal, which now contains `client_sequence BIGINT UNSIGNED NOT NULL DEFAULT 0`.
+The public Dispatcher passes the validated `clientSeq` through explicitly
+sequenced application/runtime ports; the number is appended in the *same*
+owner-fenced SQL transaction as the action and result digest. Exact duplicate
+reads compare sequence along with the original actor, command ID/type,
+expected version and typed payload. Cold-start replay restores sequence from
+the verified journal for both checkpoint prefixes and suffix actions;
+encrypted checkpoints record and cross-check it. A changed sequence cannot
+become the successful cached identity or displace the original request.
+Direct internal test-only/nontransport legacy paths retain sequence=0 and
+cannot silently be used as a public transport substitute.
+
+**Schema compatibility / operational rollout:** the repository is an early
+complete-schema model and only `server/database/schema/current.sql` is
+versioned. `CREATE TABLE IF NOT EXISTS` does *not* add the field to an
+existing database. A controlled DB schema upgrade or a fresh disposable
+development DB is **mandatory before rolling out this code**; no automatic
+DDL, production migration, credentials, or destructive operation was
+performed. For existing acknowledged live actions whose old journals lacked
+a saved client sequence, the original value cannot be reconstructed safely:
+the new reader treats a nonzero public retry against a legacy zero identity
+as an **integrity mismatch (fail closed)**, never guesses or rebinds it.
+Production upgrade must therefore first drain/finish or explicitly reconcile
+these active legacy hands under a separate operator-approved migration plan.
+Rollback to the previous app on a DB with the new additive column is
+structurally possible; rollback of already-bound sequenced hands sacrifices
+their new sequence guard and must **not** be done while such hands are active.
+No release or full B-level history claim is made for unconverted legacy
+hand identities.
+
+**Performance and regression:** one extra unsigned integer per durable
+action/receipt, no additional DB query per live command; existing 512-action
+bound and fixed-stripe contention remain. Added real MySQL cold-restart
+sequence 91→92 refusal→91 original acceptance, all-three-command complete
+59-action takeover/checkpoint/terminal coverage, in-memory changed-sequence
+checks, Dispatcher sequencing probe, virtual-clock historical timeout tests
+and missing lifecycle stage repair controls. The exact post-format source
+must pass CI and independent Codex Round 4 with the original R3 evidence
+before Goal 0046 can be considered internally accepted. External WeChat
+credentials, devices, domains and release qualifications remain BLOCKED.

@@ -31,6 +31,7 @@ type LiveAction struct {
 	Actor           domain.AccountID
 	ActorPosition   uint8
 	ExpectedVersion uint64
+	ClientSeq uint64
 	Payload         []byte
 	ResultDigest    [32]byte
 }
@@ -128,7 +129,9 @@ WHERE hand_id=? FOR UPDATE`, id).Scan(&epoch, &version, &raw); err != nil {
 	}
 	return epoch, version, genesis, nil
 }
-func (j *LiveJournal) Append(ctx context.Context, id domain.HandID, epoch uint64, commandID string, actor domain.AccountID, command gamecore.Command, outcome gamecore.CommandOutcome) error {
+func (j *LiveJournal) Append(ctx context.Context, id domain.HandID, epoch uint64, commandID string, actor domain.AccountID, command gamecore.Command, outcome gamecore.CommandOutcome, clientSeq ...uint64) error {
+	var sequence uint64
+	if len(clientSeq)>0 { sequence=clientSeq[0] }
 	if j == nil || j.db == nil || id == "" || epoch == 0 || commandID == "" || len(commandID) > 128 ||
 		actor == "" || len(actor) > 128 || command.ActorPosition < 1 || command.ActorPosition > 3 ||
 		outcome.Version == 0 || outcome.Version != command.ExpectedVersion+1 ||
@@ -162,8 +165,8 @@ WHERE hand_id=? FOR UPDATE`, id).Scan(&foundEpoch, &committed); err != nil {
 	}
 	if _, err = tx.ExecContext(ctx, `INSERT INTO doudizhu_live_actions(
 hand_id,state_version,owner_epoch,command_id,actor_account_id,actor_position,expected_version,
-command_payload,result_digest,committed_at) VALUES(?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`,
-		id, outcome.Version, epoch, commandID, actor, command.ActorPosition, command.ExpectedVersion, command.Payload, digest[:]); err != nil {
+client_sequence,command_payload,result_digest,committed_at) VALUES(?,?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`,
+		id, outcome.Version, epoch, commandID, actor, command.ActorPosition, command.ExpectedVersion, sequence, command.Payload, digest[:]); err != nil {
 		return err
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE doudizhu_live_writers
@@ -186,7 +189,7 @@ WHERE hand_id=? AND owner_epoch=? AND committed_version=?`, outcome.Version, id,
 }
 func (j *LiveJournal) Read(ctx context.Context, id domain.HandID) ([]LiveAction, error) {
 	rows, err := j.db.QueryContext(ctx, `SELECT state_version,owner_epoch,command_id,actor_account_id,
-actor_position,expected_version,command_payload,result_digest
+actor_position,expected_version,client_sequence,command_payload,result_digest
 FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC LIMIT ?`, id, maxLiveActionsPerHand+1)
 	if err != nil {
 		return nil, err
@@ -204,7 +207,7 @@ FROM doudizhu_live_actions WHERE hand_id=? ORDER BY state_version ASC LIMIT ?`, 
 		var pos uint64
 		action.HandID = id
 		if err := rows.Scan(&action.Version, &action.Epoch, &action.CommandID, &action.Actor, &pos,
-			&action.ExpectedVersion, &action.Payload, &digest); err != nil {
+			&action.ExpectedVersion, &action.ClientSeq, &action.Payload, &digest); err != nil {
 			return nil, err
 		}
 		if pos < 1 || pos > 3 {

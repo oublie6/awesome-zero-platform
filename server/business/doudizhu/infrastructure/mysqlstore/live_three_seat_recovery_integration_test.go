@@ -94,7 +94,7 @@ func TestRealMySQLThreeSeatFullHandSurvivesTakeoverAndFinalRestart(t *testing.T)
 				t.Fatalf("unexpected bidding action %d", action)
 			}
 			first = state.Bidding.FirstBidder
-			result, err = current.BidCommitted(ctx, id, actor(first), requestID, public.Version, bidding.ScoreThree)
+			result, err = current.BidCommittedWithSequence(ctx, id, actor(first), requestID, public.Version, bidding.ScoreThree, uint64(action))
 		} else {
 			if state.Phase != livehand.PhasePlaying || state.Playing == nil {
 				t.Fatalf("unexpected active phase %s", state.Phase)
@@ -112,10 +112,10 @@ func TestRealMySQLThreeSeatFullHandSurvivesTakeoverAndFinalRestart(t *testing.T)
 				if len(hand.Cards) == 0 {
 					t.Fatal("landlord's final card disappeared")
 				}
-				result, err = current.PlayCommitted(ctx, id, actor(seat), requestID, public.Version, hand.Cards[:1])
+				result, err = current.PlayCommittedWithSequence(ctx, id, actor(seat), requestID, public.Version, hand.Cards[:1], uint64(action))
 				lastSeat, lastCard = seat, hand.Cards[0]
 			} else {
-				result, err = current.PassCommitted(ctx, id, actor(seat), requestID, public.Version)
+				result, err = current.PassCommittedWithSequence(ctx, id, actor(seat), requestID, public.Version, uint64(action))
 				if passID == "" {
 					passID, passSeat, passVersion = requestID, seat, public.Version
 				}
@@ -174,7 +174,7 @@ func TestRealMySQLThreeSeatFullHandSurvivesTakeoverAndFinalRestart(t *testing.T)
 			if !errors.Is(err, mysqlstore.ErrLiveWriterFenced) {
 				t.Fatalf("fenced previous coordinator still wrote: %v", err)
 			}
-			replayed, err := successor.BidCommitted(ctx, id, actor(first), "three-recovery-action-1", 1, bidding.ScoreThree)
+			replayed, err := successor.BidCommittedWithSequence(ctx, id, actor(first), "three-recovery-action-1", 1, bidding.ScoreThree, 1)
 			if err != nil || replayed.Version != 2 {
 				t.Fatalf("checkpoint forgot exactly acknowledged bid: %+v %v", replayed, err)
 			}
@@ -194,25 +194,25 @@ func TestRealMySQLThreeSeatFullHandSurvivesTakeoverAndFinalRestart(t *testing.T)
 	}
 	// Query all three historical command kinds on a fully finalized and
 	// restarted hand. The read-only port must not require an active game.
-	bidReceipt, found, err := third.FindBidReceipt(ctx, id, actor(first), "three-recovery-action-1", 1, bidding.ScoreThree)
+	bidReceipt, found, err := third.FindBidReceipt(ctx, id, actor(first), "three-recovery-action-1", 1, bidding.ScoreThree, 1)
 	if err != nil || !found || bidReceipt.Version != 2 {
 		t.Fatalf("archived bid receipt unavailable: %+v found=%v err=%v", bidReceipt, found, err)
 	}
 	if passID == "" {
 		t.Fatal("full hand had no pass to verify")
 	}
-	passReceipt, found, err := third.FindPassReceipt(ctx, id, actor(passSeat), passID, passVersion)
+	passReceipt, found, err := third.FindPassReceipt(ctx, id, actor(passSeat), passID, passVersion, passVersion)
 	if err != nil || !found || passReceipt.Version != passVersion+1 {
 		t.Fatalf("archived pass receipt unavailable: %+v found=%v err=%v", passReceipt, found, err)
 	}
-	playReceipt, found, err := third.FindPlayReceipt(ctx, id, actor(lastSeat), lastID, 59, []string{lastCard})
+	playReceipt, found, err := third.FindPlayReceipt(ctx, id, actor(lastSeat), lastID, 59, []string{lastCard}, 59)
 	if err != nil || !found || playReceipt.Version != 60 {
 		t.Fatalf("archived play receipt unavailable: %+v found=%v err=%v", playReceipt, found, err)
 	}
-	if _, found, err := third.FindBidReceipt(ctx, id, actor(first), "unknown-bid-id", 1, bidding.ScoreThree); err != nil || found {
+	if _, found, err := third.FindBidReceipt(ctx, id, actor(first), "unknown-bid-id", 1, bidding.ScoreThree, 1); err != nil || found {
 		t.Fatalf("unknown historical bid became accepted: found=%v err=%v", found, err)
 	}
-	if _, found, err := third.FindPassReceipt(ctx, id, actor(lastSeat), lastID, 59); !found || !errors.Is(err, gamecore.ErrVerificationFailed) {
+	if _, found, err := third.FindPassReceipt(ctx, id, actor(lastSeat), lastID, 59, 59); !found || !errors.Is(err, gamecore.ErrVerificationFailed) {
 		t.Fatalf("reused play ID as pass: found=%v err=%v", found, err)
 	}
 	if got := third.RecoveredPhases()[id]; got != livehand.PhaseCompleted {
@@ -223,11 +223,11 @@ func TestRealMySQLThreeSeatFullHandSurvivesTakeoverAndFinalRestart(t *testing.T)
 		record.Version() != 60 || record.Validate() != nil {
 		t.Fatalf("recovered final record corrupt: %+v %v", record, err)
 	}
-	replay, err := third.PlayCommitted(ctx, id, actor(lastSeat), lastID, 59, []string{lastCard})
+	replay, err := third.PlayCommittedWithSequence(ctx, id, actor(lastSeat), lastID, 59, []string{lastCard}, 59)
 	if err != nil || replay.Version != 60 {
 		t.Fatalf("lost terminal response was replayed as a new command: %+v %v", replay, err)
 	}
-	_, err = third.PlayCommitted(ctx, id, actor(lastSeat), lastID, 59, []string{lastCard, lastCard})
+	_, err = third.PlayCommittedWithSequence(ctx, id, actor(lastSeat), lastID, 59, []string{lastCard, lastCard}, 59)
 	if !errors.Is(err, gamecore.ErrVerificationFailed) {
 		t.Fatalf("changed terminal request accepted using same command ID: %v", err)
 	}

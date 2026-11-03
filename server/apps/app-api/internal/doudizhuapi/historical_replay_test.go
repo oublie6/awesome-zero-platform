@@ -46,3 +46,25 @@ func TestRecoveredHistoricalLiveResultsDoNotRepeatLifecycleSideEffects(t *testin
 		t.Fatalf("historical results restarted lifecycle: bid=%d play=%d", life.bidCalls, life.playCalls)
 	}
 }
+
+type sequencedBackendProbe struct {
+	historicalBackendStub
+	seenSeq uint64
+}
+func (s *sequencedBackendProbe) SubmitLiveHandBidWithSequence(_ context.Context,_ domain.AccountID,
+	_ domain.HandID,_ string,_ uint64,_ bidding.Score,seq uint64,
+) (application.LiveHandCommandResult,error){
+	s.seenSeq=seq
+	return application.LiveHandCommandResult{Version:2,Payload:[]byte(`{"kind":"bid"}`),Historical:true},nil
+}
+func TestDispatcherForwardsAuthenticatedClientSeqToDurableLiveBackend(t *testing.T){
+	backend:=&sequencedBackendProbe{}
+	d:=newDispatcherForTest(t,backend,&lifecycleStub{})
+	req:=CommandRequest{Version:CommandRequestV1,RequestID:"seq-bound-request",Type:TypeHandBid,
+		AggregateID:"hand-1",ClientSeq:91,ExpectedVersion:1,
+		Payload:json.RawMessage(`{"score":3}`)}
+	got,err:=d.Execute(context.Background(),"account-1",req)
+	if err!=nil||got.Live==nil||backend.seenSeq!=91{
+		t.Fatalf("dispatcher discarded durable clientSeq: %+v seq=%d err=%v",got,backend.seenSeq,err)
+	}
+}

@@ -50,7 +50,17 @@ type LiveHandRuntime interface {
 // This port is optional for legacy non-durable runtimes and avoids making the
 // application depend on gamecore or storage implementation details.
 type LiveHandReceiptReader interface {
-	FindBidReceipt(context.Context, domain.HandID, domain.AccountID, string, uint64, bidding.Score) (LiveHandCommandResult, bool, error)
-	FindPlayReceipt(context.Context, domain.HandID, domain.AccountID, string, uint64, []string) (LiveHandCommandResult, bool, error)
-	FindPassReceipt(context.Context, domain.HandID, domain.AccountID, string, uint64) (LiveHandCommandResult, bool, error)
+	FindBidReceipt(context.Context, domain.HandID, domain.AccountID, string, uint64, bidding.Score, ...uint64) (LiveHandCommandResult, bool, error)
+	FindPlayReceipt(context.Context, domain.HandID, domain.AccountID, string, uint64, []string, ...uint64) (LiveHandCommandResult, bool, error)
+	FindPassReceipt(context.Context, domain.HandID, domain.AccountID, string, uint64, ...uint64) (LiveHandCommandResult, bool, error)
+}
+
+// LiveHandSequencedRuntime binds a publicly authenticated clientSeq to the
+// same durable journal transaction as the accepted command/result. Non-WSS
+// internal callers retain zero-sequence legacy methods; public requests must
+// use the sequenced variants so restart cannot weaken exact replay identity.
+type LiveHandSequencedRuntime interface {
+	BidCommittedWithSequence(context.Context, domain.HandID, domain.AccountID, string, uint64, bidding.Score, uint64) (LiveHandCommandResult, error)
+	PlayCommittedWithSequence(context.Context, domain.HandID, domain.AccountID, string, uint64, []string, uint64) (LiveHandCommandResult, error)
+	PassCommittedWithSequence(context.Context, domain.HandID, domain.AccountID, string, uint64, uint64) (LiveHandCommandResult, error)
 }

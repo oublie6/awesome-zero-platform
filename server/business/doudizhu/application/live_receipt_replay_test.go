@@ -26,7 +26,7 @@ func (s *historicalReceiptStub) lookup(actor domain.AccountID, id domain.HandID,
 	return s.result, s.found, s.err
 }
 func (s *historicalReceiptStub) FindBidReceipt(_ context.Context, id domain.HandID, actor domain.AccountID,
-	commandID string, version uint64, score bidding.Score,
+	commandID string, version uint64, score bidding.Score, clientSeq ...uint64,
 ) (LiveHandCommandResult, bool, error) {
 	if score != bidding.ScoreThree {
 		return LiveHandCommandResult{}, true, gamecore.ErrVerificationFailed
@@ -34,7 +34,7 @@ func (s *historicalReceiptStub) FindBidReceipt(_ context.Context, id domain.Hand
 	return s.lookup(actor, id, commandID, version)
 }
 func (s *historicalReceiptStub) FindPlayReceipt(_ context.Context, id domain.HandID, actor domain.AccountID,
-	commandID string, version uint64, cards []string,
+	commandID string, version uint64, cards []string, clientSeq ...uint64,
 ) (LiveHandCommandResult, bool, error) {
 	if len(cards) != 1 || cards[0] != "C3" {
 		return LiveHandCommandResult{}, true, gamecore.ErrVerificationFailed
@@ -42,7 +42,7 @@ func (s *historicalReceiptStub) FindPlayReceipt(_ context.Context, id domain.Han
 	return s.lookup(actor, id, commandID, version)
 }
 func (s *historicalReceiptStub) FindPassReceipt(_ context.Context, id domain.HandID, actor domain.AccountID,
-	commandID string, version uint64,
+	commandID string, version uint64, clientSeq ...uint64,
 ) (LiveHandCommandResult, bool, error) {
 	return s.lookup(actor, id, commandID, version)
 }

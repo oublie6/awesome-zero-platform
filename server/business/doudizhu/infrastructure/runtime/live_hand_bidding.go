@@ -15,7 +15,7 @@ import (
 func (c *LiveHandCoordinator) BidCommitted(ctx context.Context, handID domain.HandID,
 	actor domain.AccountID, commandID string, expectedVersion uint64, score bidding.Score,
 ) (application.LiveHandCommandResult, error) {
-	return c.bidInternal(ctx, handID, actor, commandID, expectedVersion, score)
+	return c.bidInternal(ctx, handID, actor, commandID, expectedVersion, score, 0)
 }
 
 func (c *LiveHandCoordinator) Bid(
@@ -25,10 +25,16 @@ func (c *LiveHandCoordinator) Bid(
 	expectedVersion uint64,
 	score bidding.Score,
 ) (application.LiveHandCommandResult, error) {
-	return c.bidInternal(ctx, handID, actor, "", expectedVersion, score)
+	return c.bidInternal(ctx, handID, actor, "", expectedVersion, score, 0)
+}
+func (c *LiveHandCoordinator) BidCommittedWithSequence(ctx context.Context, id domain.HandID,
+	actor domain.AccountID, commandID string, expectedVersion uint64, score bidding.Score, clientSeq uint64,
+) (application.LiveHandCommandResult,error) {
+	if clientSeq == 0 || commandID == "" { return application.LiveHandCommandResult{}, fmt.Errorf("sequenced bid identity required") }
+	return c.bidInternal(ctx,id,actor,commandID,expectedVersion,score,clientSeq)
 }
 func (c *LiveHandCoordinator) bidInternal(ctx context.Context, handID domain.HandID, actor domain.AccountID,
-	commandID string, expectedVersion uint64, score bidding.Score,
+	commandID string, expectedVersion uint64, score bidding.Score, clientSeq uint64,
 ) (application.LiveHandCommandResult, error) {
 	payload, err := json.Marshal(livehand.BidCommand{Version: livehand.BidCommandVersion, Score: score})
 	if err != nil {
@@ -38,7 +44,7 @@ func (c *LiveHandCoordinator) bidInternal(ctx context.Context, handID domain.Han
 	lock.Lock()
 	defer lock.Unlock()
 	known := gamecore.Command{ExpectedVersion: expectedVersion, Payload: payload}
-	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known); err != nil {
+	if outcome, found, err := c.loadReceipt(ctx, handID, actor, commandID, known, clientSeq); err != nil {
 		return application.LiveHandCommandResult{}, err
 	} else if found {
 		return checkedBidResult(handID, outcome)
@@ -52,7 +58,7 @@ func (c *LiveHandCoordinator) bidInternal(ctx context.Context, handID domain.Han
 		return application.LiveHandCommandResult{}, err
 	}
 	known.ActorPosition = position
-	outcome, err := c.applyLive(ctx, handID, actor, commandID, known)
+	outcome, err := c.applyLive(ctx, handID, actor, commandID, known, clientSeq)
 	if err != nil {
 		return application.LiveHandCommandResult{}, err
 	}
