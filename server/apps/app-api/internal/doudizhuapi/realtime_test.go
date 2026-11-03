@@ -260,6 +260,8 @@ func containsJSONText(payload json.RawMessage, value string) bool {
 }
 
 func TestWrongPhaseHasConflictWireCodeRatherThanInternal(t *testing.T) {
-	code,_:=realtimeError(domain.ErrWrongPhase)
-	if code!="CONFLICT"{t.Fatalf("expected explicit phase conflict, got %s",code)}
+	code, _ := realtimeError(domain.ErrWrongPhase)
+	if code != "CONFLICT" {
+		t.Fatalf("expected explicit phase conflict, got %s", code)
+	}
 }

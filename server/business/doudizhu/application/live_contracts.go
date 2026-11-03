@@ -24,7 +24,7 @@ type LiveHandView struct {
 type LiveHandCommandResult struct {
 	// Historical is an internally verified old receipt. Transport must return
 	// its original live result without re-running lifecycle side effects.
-	Historical bool
+	Historical          bool
 	Version             uint64
 	Payload             []byte
 	RequiresTermination bool

@@ -194,24 +194,26 @@ func TestRealMySQLThreeSeatFullHandSurvivesTakeoverAndFinalRestart(t *testing.T)
 	}
 	// Query all three historical command kinds on a fully finalized and
 	// restarted hand. The read-only port must not require an active game.
-	bidReceipt, found, err := third.FindBidReceipt(ctx,id,actor(first),"three-recovery-action-1",1,bidding.ScoreThree)
-	if err!=nil || !found || bidReceipt.Version!=2 {
-		t.Fatalf("archived bid receipt unavailable: %+v found=%v err=%v",bidReceipt,found,err)
+	bidReceipt, found, err := third.FindBidReceipt(ctx, id, actor(first), "three-recovery-action-1", 1, bidding.ScoreThree)
+	if err != nil || !found || bidReceipt.Version != 2 {
+		t.Fatalf("archived bid receipt unavailable: %+v found=%v err=%v", bidReceipt, found, err)
 	}
-	if passID==""{t.Fatal("full hand had no pass to verify")}
-	passReceipt, found, err := third.FindPassReceipt(ctx,id,actor(passSeat),passID,passVersion)
-	if err!=nil || !found || passReceipt.Version!=passVersion+1{
-		t.Fatalf("archived pass receipt unavailable: %+v found=%v err=%v",passReceipt,found,err)
+	if passID == "" {
+		t.Fatal("full hand had no pass to verify")
 	}
-	playReceipt, found, err := third.FindPlayReceipt(ctx,id,actor(lastSeat),lastID,59,[]string{lastCard})
-	if err!=nil || !found || playReceipt.Version!=60{
-		t.Fatalf("archived play receipt unavailable: %+v found=%v err=%v",playReceipt,found,err)
+	passReceipt, found, err := third.FindPassReceipt(ctx, id, actor(passSeat), passID, passVersion)
+	if err != nil || !found || passReceipt.Version != passVersion+1 {
+		t.Fatalf("archived pass receipt unavailable: %+v found=%v err=%v", passReceipt, found, err)
 	}
-	if _,found,err:=third.FindBidReceipt(ctx,id,actor(first),"unknown-bid-id",1,bidding.ScoreThree);
-		err!=nil||found{t.Fatalf("unknown historical bid became accepted: found=%v err=%v",found,err)}
-	if _,found,err:=third.FindPassReceipt(ctx,id,actor(lastSeat),lastID,59);
-		!found||!errors.Is(err,gamecore.ErrVerificationFailed){
-		t.Fatalf("reused play ID as pass: found=%v err=%v",found,err)
+	playReceipt, found, err := third.FindPlayReceipt(ctx, id, actor(lastSeat), lastID, 59, []string{lastCard})
+	if err != nil || !found || playReceipt.Version != 60 {
+		t.Fatalf("archived play receipt unavailable: %+v found=%v err=%v", playReceipt, found, err)
+	}
+	if _, found, err := third.FindBidReceipt(ctx, id, actor(first), "unknown-bid-id", 1, bidding.ScoreThree); err != nil || found {
+		t.Fatalf("unknown historical bid became accepted: found=%v err=%v", found, err)
+	}
+	if _, found, err := third.FindPassReceipt(ctx, id, actor(lastSeat), lastID, 59); !found || !errors.Is(err, gamecore.ErrVerificationFailed) {
+		t.Fatalf("reused play ID as pass: found=%v err=%v", found, err)
 	}
 	if got := third.RecoveredPhases()[id]; got != livehand.PhaseCompleted {
 		t.Fatalf("recovery did not archive final evidence: phase=%s", got)
