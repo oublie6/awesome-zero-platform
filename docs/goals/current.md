@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-04 real WeChat configuration follow-up: user-provided HK AppID/AppSecret configured privately with preserved HMAC root; actual wx.login→official exchange→Go identity, stable repeated login, session restore, WSS and logout PASS. Additional exact room.create retry FAIL: WX-N01/P2, server-generated request timestamps conflict with durable identity; return to ChatGPT for repair. Upload key unused; no production deployment. [Dated evidence](0046-round6-independent-acceptance.md). Goals0045/0046 remain `in_progress`; this is a focused supplement, not a new full matrix.
+
 - 2026-11-04 WeChat supplement: current CLI login=true and owned AppID verified; actual SDK login/secure entropy/storage/listener lifecycle and real wx.request/wx.connectSocket→isolated Go auth/WSS pass. Positive code exchange remains unconfigured (actual HTTP500); Cocos full UI/native/domain/device qualification remains open. See [Round6 dated supplement](0046-round6-independent-acceptance.md). Do not describe this as missing tool login/AppID. Goals0045/0046 remain `in_progress`.
 
 - Latest Goal0046 Round6 independent acceptance, source `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`: **R5-N05 and executed internal regression gates PASS; full product/internal qualification BLOCKED; external/release BLOCKED, sealing NO**. Matrix97PASS/0FAIL/17BLOCKED. No new blocking product defect established. Remaining lifetime/native/UI/platform/operations evidence is explicit in the [full report](0046-round6-independent-acceptance.md); Goals0045/0046 remain `in_progress`.
@@ -152,6 +154,8 @@ Single primary implementer; use subagents only for independent review or API doc
 - Continue planned protocol integration in Goal 0046: separate durable envelope from current doudizhu-api-command-v1 request DTO, implement mapping, per-account/aggregate sequence/ID allocation and safe retries, private snapshot and terminal-evidence mapping. Do not submit the durable CommandEnvelope directly as a wire request or infer game state from notifications.
 
 ### Verification status
+
+2026-11-04 configuration follow-up at product source `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`: real WeChat code exchange and account/session/WSS checks PASS after private configuration; exact room.create replay FAIL (WX-N01/P2). Earlier missing-configuration observation is resolved for this isolated environment. Full UI/device/domain qualification remains open. See Round6 dated supplement; historical matrices unchanged.
 
 #### Goal 0046 Round 6 — 2026-11-03
 
@@ -771,6 +775,8 @@ No P0 or P3 finding was established. Positive fault controls passed: unrelated-h
 - Mandatory self-review completed: SDK timing, cancellation/deadlines, stale callbacks, duplicate full-snapshot confirmation, Go phase/TTL compatibility, version/identity boundaries, secret handling and cleanup. Reproduced regressions before correction; additional runtime self-review found and fixed false-ready polling, cropped/stretched canvas, small portrait text and retained UI; engine parent-destruction order and Web host initialization/page lifetime were checked against actual 3.8.8 source. Remaining interactive editor/SDK/device and long-term memory uncertainty is explicitly recorded in the phase report.
 
 ## Completion Report
+
+2026-11-04 private WeChat configuration and positive exchange verification completed. Real official code exchange, stable AccountID on repeated login, authenticated WSS, owned room access, session restore and token revocation PASS. Additional room.create exact retry FAIL WX-N01/P2, handed back to ChatGPT without product edits. Secrets remain outside Git; upload key unused; no production configuration/release. Goals0045/0046 remain `in_progress`. [Evidence and limits](0046-round6-independent-acceptance.md).
 
 2026-11-03 Goal0046 Round6 source `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`: independent acceptance/report assignment complete. **Repair/executed-code gates PASS; full product/internal, external and release qualification BLOCKED**,97PASS/0FAIL/17BLOCKED. R5-N05 and all original historical reproducers pass; no newly confirmed blocking product defect. [Full report](0046-round6-independent-acceptance.md). ChatGPT need not repeat R5-N05 repair; remaining resource/native/client/platform/operational qualifications require evidence. No product code/test/schema changes, no Goal sealing/archive; Goals0045/0046 remain `in_progress`. Report commit is distinct from tested product source.
 

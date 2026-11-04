@@ -338,3 +338,31 @@ Owned Round6 supervisor/app/TLS/MySQL/Redis stopped after final gates. Runtime C
 私有新证据：`/root/.config/awesome-zero-platform/round6-wechat-supplement-20261104`，主要文件 cli-islogin.log、project-provenance.json、sdk-login.json、sdk-network.json、backend-boundary.json、cocos-module-state.json、local-tls-trust.json、cleanup.json、SHA256SUMS，及实际探针脚本。截图、AppID、登录配置、凭据、code 和令牌不提交。Go测试会话已经退出；本次工具/服务/容器均停止，端口清空，已登录配置保留，原验收库与无关服务不动。
 
 本段是定向补充，不是114项完整重跑；2026-11-03的97PASS/0FAIL/17BLOCKED矩阵保留为当时记录。相关阻塞原因应收窄：**工具登录、真实 SDK 登录/随机源/存储监听，以及真实 SDK→Go HTTP/WSS 已有本次实测证据**；GOAL1仍需正向平台换证，H06/H07/GOAL2/GOAL4仍需完整UI流程，当前原生导出、正式域名与真机要求仍未满足。不能再笼统归因于“微信没有登录”。未新增已确认的产品代码缺陷，Goal0045/0046继续保持 in_progress。
+
+
+## 2026-11-04 补充：真实微信服务端配置与正向换证
+
+用户随后授权配置，并提供 HK 节点 `/root/wx_xcx` 下的 AppID、AppSecret 和小程序上传密钥。通过保存的 SSH 连接和严格主机密钥校验读取前两项；上传密钥仅核对存在，未读取、上传、预览或发布。AppID 与此前项目一致。真实配置保存在本机 `/root/.config/awesome-zero-platform/wechat-test.env`（目录0700、文件0600），包含 `APP_WECHAT_APP_ID`、`APP_WECHAT_APP_SECRET`、`APP_WECHAT_SUBJECT_HMAC_KEY_HEX`；沿用既有32字节 HMAC 根，避免改变账号绑定。密钥不入库。本次只配置新建的隔离验证后端，没有改生产部署、产品实现或正式测试。
+
+仓库起点 `dbe7da78b80030688068b67a80214568cfa5f5d8`；实际 Go 产品源码仍为 `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`，复用哈希已核对的二进制。客户端与构建输入及保留 Creator 产物的对应关系同前一补充。本次另建 `codex0046wxauth` MySQL/Redis、数据库和 HTTPS/WSS 证书，不改原验收库。工具沿用已登录配置，SDK3.17.5，实际 wx 对象未替换；使用当前 GameSession、WeChatIdentityExchange、MiniHttp 和 MiniSocketTransport。私有本地证书精确信任及开发 urlCheck=false 仅用于隔离调试，不构成正式域名资格。
+
+| 本次实际检查 | 结果 |
+|---|---|
+| 真实 wx.login → HTTPS `/auth/wechat/code` → Go → 微信官方换证 → 业务令牌 | PASS；不再返回先前缺配置的 HTTP500，无伪造身份或密码登录替代 |
+| Go `/auth/session` 验证、认证 WSS 与关联 pong | PASS |
+| 微信账号建房、服务端成员身份与已验证内部 AccountID 一致 | PASS；单成员、占用1席 |
+| 第二个新鲜平台 code 再登录 | PASS；内部 AccountID 与首次一致 |
+| 当前 GameSession 从真实 SDK 存储恢复并经服务端验证 | PASS；恢复后可查询同一房间并退出 |
+| 退出、撤销本次自有令牌，旧令牌均被拒绝 | PASS；原有 SDK 会话存储在 finally 恢复 |
+| 相同建房请求再次发送 | **FAIL，WX-N01/P2**，详见下文 |
+| 完整 Cocos 场景、正式域名、手机端分享/生命周期/三人操作 | 未通过本次验证；实际仍无活动 Scene，不以 SDK 成功替代 UI/设备资格 |
+
+**WX-N01/P2：房间持久化命令的完全相同网络重试被拒绝。** 在真实微信认证 WSS 上发送 `doudizhu-api-command-v1` 的 `room.create`（新房间、新 requestId、clientSeq=1、expectedVersion=0、空 payload），首次返回 durable.accepted=true；随后原样再次发送同一对象，返回 durable.accepted=false、failure.code=`DDZ_CONFLICT`、duplicate=false。多次独立新房间重复得到相同结果。即使忽略预期可变化的 duplicate 标记并排序对象键，结果仍不一致；这不是 JSON 属性顺序问题。
+
+源码依据：`server/apps/app-api/internal/doudizhuapi/dispatcher.go` 的 Execute 只为 live 类型使用 ReplayCache；execute 为每次普通 durable 请求重新生成 IssuedAt/ExpiresAt。`server/business/doudizhu/application/service.go` 的 sameCommand 又将两个时间字段纳入身份比较，在返回已保存结果前判定不相同。完全相同的外部请求经过不同毫秒时钟即产生冲突。该路径同样涉及其他按此方式组装的普通 durable 命令；本次动态复现范围是 room.create，不声称已动态验证所有命令。
+
+影响：接受后丢回复的重发可能被解释成拒绝，破坏网络请求的幂等结果契约；本次没有观察到额外房间或重复业务效果。建议 ChatGPT 保持严格请求绑定，在传输到持久化命令的转换中稳定内部时间身份，并增加跨毫秒、冷缓存及服务重启后的完全相同请求回归，同时保留改 payload/seq/actor 应拒绝的负例。Codex 不修改产品实现。**该新增定向门禁 FAIL，应交回 ChatGPT 修复；微信配置/正向换证本身 PASS。** 原 Round6 修复门禁与114项计数作为当时记录保留，不能用新登录成功覆盖本次发现，也不能把本次定向验证当114项完整重跑。Goals0045/0046继续 `in_progress`，不封版、不发布。
+
+私有证据目录 `/root/.config/awesome-zero-platform/wechat-exchange-20261104`：configuration.json、source-provenance.json、authentication.json、authentication.replay-failure.json、实际 authentication.cjs/auth-expression.js、进程记录及 SHA256SUMS。最终认证探针的所有认证/账号/恢复/撤销标记通过，sameRequestReplayed=false 单独列为失败。最初探针按完整 JSON 相等比较，随后依据 durable duplicate 契约改为结构比较并仍复现冲突；另一个探针在 logout 后再次 revoke 同一令牌收到预期401，改为只撤销尚有效的自有令牌后完整通过认证检查。这些私有探针纠错不计产品缺陷。没有重新运行完整 Go/CI/114项门禁，也没有新的原生导出声明。
+
+收尾：本次工具/Go supervisor 已停止，专属 TLS/MySQL/Redis 容器已退出，相关端口无监听；保留私有配置、测试卷、登录 profile 与证据。两节点 Ready，kubelet/containerd active。拟提交两份文档按实际三项微信配置值扫描未命中，git diff --check 通过；该扫描范围不涵盖所有私有文件、图像或内存。
