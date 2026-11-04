@@ -44,12 +44,12 @@ func (s *Supervisor) ReconcileRecovered(ctx context.Context, states map[domain.H
 			if snapshot.Phase != domain.HandBidding {
 				return fmt.Errorf("recovered bidding phase mismatch %s", id)
 			}
-			s.schedule(id, actor, phaseBidding, s.config.BiddingTimeout)
+			s.scheduleIfPhaseMissing(id, actor, phaseBidding, s.config.BiddingTimeout, 0)
 		case livehand.PhasePlaying:
 			if err := s.advanceLiveHand(ctx, id, false); err != nil {
 				return fmt.Errorf("reconcile playing %s: %w", id, err)
 			}
-			s.schedule(id, actor, phasePlaying, s.config.PlayingTimeout)
+			s.scheduleIfPhaseMissing(id, actor, phasePlaying, s.config.PlayingTimeout, 0)
 		case livehand.PhaseCompleted:
 			if err := s.advanceLiveHand(ctx, id, true); err != nil {
 				return fmt.Errorf("reconcile completed %s: %w", id, err)
