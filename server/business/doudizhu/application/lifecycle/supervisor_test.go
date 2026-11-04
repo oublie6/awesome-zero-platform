@@ -140,6 +140,89 @@ func TestLateDealtTrackingCannotRegressPlayingDeadline(t *testing.T) {
 	}
 }
 
+// A previously committed low bid can return after a later winning bid.
+// Callback order must not undo the authoritative PLAYING deadline.
+func TestFreshBidCallbacksUseCommitVersionOrder(t *testing.T) {
+	clock := &testClock{now: time.Unix(1800000030, 0)}
+	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{
+		"hand-order": testHand("hand-order", "seat-1", domain.HandBidding, 9),
+	}}
+	terminal := &phaseTestTerminal{testTerminal: &testTerminal{}, hands: hands}
+	s := newTestSupervisor(t, hands, terminal, clock, &testIDs{prefix: "bid-order"})
+	if err := s.TrackBidding(context.Background(), "seat-1", "hand-order"); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(time.Second)
+	// Winning bid v3 has committed and its callback finishes before the
+	// previously committed low bid v2 returns from the transport.
+	if _, err := s.AfterBid(context.Background(), "seat-1", "hand-order",
+		bidResult(t, "hand-order", 3, livehand.PhasePlaying, false)); err != nil {
+		t.Fatal(err)
+	}
+	if hands.snapshots["hand-order"].Phase != domain.HandPlaying {
+		t.Fatal("winning bid did not durably advance hand phase")
+	}
+	clock.Advance(4 * time.Second)
+	if _, err := s.AfterBid(context.Background(), "seat-1", "hand-order",
+		bidResult(t, "hand-order", 2, livehand.PhaseBidding, false)); err != nil {
+		t.Fatal(err)
+	}
+	if current := s.entries["hand-order"]; current.phase != phasePlaying || current.liveVersion != 3 {
+		t.Fatalf("late callback regressed timer: %+v", current)
+	}
+	clock.Advance(2 * time.Second) // Past the old 5s bidding deadline.
+	if terminated, err := s.Sweep(context.Background()); err != nil || len(terminated) != 0 {
+		t.Fatalf("old bidding response ended active playing hand: %v %v", terminated, err)
+	}
+	clock.Advance(4 * time.Second) // The original 10s playing deadline.
+	if terminated, err := s.Sweep(context.Background()); err != nil || len(terminated) != 1 ||
+		terminated[0] != "hand-order" {
+		t.Fatalf("playing deadline not honored: %v %v", terminated, err)
+	}
+	if len(terminal.expireCalls) != 1 || terminal.expireCalls[0].reason != ReasonPlayingTimeout {
+		t.Fatalf("timeout reason changed: %+v", terminal.expireCalls)
+	}
+}
+
+func TestFreshPlayingCallbacksOnlyRenewForHigherVersions(t *testing.T) {
+	clock := &testClock{now: time.Unix(1800000040, 0)}
+	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{
+		"hand-play": testHand("hand-play", "seat-1", domain.HandPlaying, 11),
+	}}
+	terminal := &testTerminal{}
+	s := newTestSupervisor(t, hands, terminal, clock, &testIDs{prefix: "play-order"})
+	makePlay := func(version uint64) application.LiveHandCommandResult {
+		payload, err := json.Marshal(livehand.PlayResult{Version: livehand.PlayResultVersion,
+			HandID: "hand-play", StateVersion: version, Phase: livehand.PhasePlaying})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return application.LiveHandCommandResult{Version: version, Payload: payload}
+	}
+	if err := s.AfterPlay(context.Background(), "seat-1", "hand-play", makePlay(12)); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(time.Second)
+	if err := s.AfterPlay(context.Background(), "seat-1", "hand-play", makePlay(13)); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(8 * time.Second)
+	if err := s.AfterPlay(context.Background(), "seat-1", "hand-play", makePlay(12)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.AfterPlay(context.Background(), "seat-1", "hand-play", makePlay(13)); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(2 * time.Second)
+	terminated, err := s.Sweep(context.Background())
+	if err != nil || len(terminated) != 1 || terminated[0] != "hand-play" {
+		t.Fatalf("stale play callbacks extended deadline: %v %v", terminated, err)
+	}
+	if len(terminal.expireCalls) != 1 || terminal.expireCalls[0].reason != ReasonPlayingTimeout {
+		t.Fatalf("unexpected playing timeout: %+v", terminal.expireCalls)
+	}
+}
+
 func TestParticipantCancellationRequiresASeat(t *testing.T) {
 	clock := &testClock{now: time.UnixMilli(3_000).UTC()}
 	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{

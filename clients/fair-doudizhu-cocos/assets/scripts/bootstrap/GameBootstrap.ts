@@ -131,7 +131,7 @@ export class GameBootstrap extends Component {
         ? `牌局 ${snapshot.handId} · 版本${snapshot.version}\n${seatInfo??''}\n${pub?.phase==='BIDDING'?'等待当前玩家叫地主':pub?.phase==='PLAYING'?('轮到座位'+String(pub.playingSeat??'?')):'等待服务端状态'}`
         : '等待服务端权威私有牌局快照，不展示模拟手牌'
       const cards=Array.isArray(snapshot?.view.cards) ? snapshot!.view.cards as string[] : []
-      for(const selected of this.selectedCards)if(!cards.includes(selected))this.selectedCards.delete(selected)
+      this.selectedCards.forEach(selected => { if(!cards.includes(selected))this.selectedCards.delete(selected) })
       for (const card of cards) {
         this.addMenu([{name:'Card_'+card,caption:(this.selectedCards.has(card)?'✓ ':'')+card,
           action:()=>{if(this.selectedCards.has(card))this.selectedCards.delete(card);else this.selectedCards.add(card);this.renderScreen('table')}}])
@@ -374,7 +374,13 @@ export class GameBootstrap extends Component {
     catch(error){this.notice('叫地主失败：'+this.message(error))}
   }
   private async play():Promise<void> {
-    try {await this.requireOnline().actions.play([...this.selectedCards]);this.selectedCards.clear();await this.refreshHand()}
+    try {
+      // Set spread is not supported by Creator 3.8's mini-game downlevel output.
+      const selectedCards: string[] = []
+      this.selectedCards.forEach(card => selectedCards.push(card))
+      await this.requireOnline().actions.play(selectedCards)
+      this.selectedCards.clear();await this.refreshHand()
+    }
     catch(error){this.notice('出牌失败：'+this.message(error))}
   }
   private async pass():Promise<void> {

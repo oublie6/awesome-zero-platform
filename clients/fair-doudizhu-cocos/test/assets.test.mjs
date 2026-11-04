@@ -23,3 +23,11 @@ test('every source asset and directory has a unique stable meta UUID',async()=>{
  }}
  await visit(new URL('../assets/',import.meta.url))
 })
+
+test('Creator 3.8 card selections use Set.forEach instead of downlevel-unsafe iteration',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.doesNotMatch(source,/\[\s*\.\.\.\s*this\.selectedCards\s*\]/)
+ assert.doesNotMatch(source,/for\s*\(\s*const\s+\w+\s+of\s+this\.selectedCards\s*\)/)
+ assert.match(source,/this\.selectedCards\.forEach\(card\s*=>\s*selectedCards\.push\(card\)\)/)
+ assert.match(source,/actions\.play\(selectedCards\)/)
+})

@@ -275,7 +275,9 @@ func rejectedResult(command Command, failure CommandFailure, aggregateVersion ui
 
 func cloneResult(value CommandResult) CommandResult {
 	result := value
-	result.Events = append([]EventRef(nil), value.Events...)
+	// A durable result always encodes events as an array, even when empty.
+	// Appending to a non-nil zero-length destination also retains deep-copy semantics.
+	result.Events = append([]EventRef{}, value.Events...)
 	if value.Failure != nil {
 		copyFailure := *value.Failure
 		if value.Failure.CurrentVersion != nil {

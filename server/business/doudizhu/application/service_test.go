@@ -3,8 +3,10 @@ package application
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -198,6 +200,15 @@ func TestBusinessRejectionConsumesSequenceAndReplays(t *testing.T) {
 	replay, err := service.JoinRoom(context.Background(), "actor-1", join)
 	if err != nil || replay.Accepted || !replay.Duplicate || replay.Failure.Code != first.Failure.Code {
 		t.Fatalf("replay=%#v err=%v", replay, err)
+	}
+	for _, value := range []CommandResult{first, replay} {
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(encoded), `"events":[]`) {
+			t.Fatalf("rejected durable receipt must preserve empty events array: %s", encoded)
+		}
 	}
 }
 

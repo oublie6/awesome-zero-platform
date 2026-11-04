@@ -26,7 +26,9 @@ export function openSocket(driver: SocketDriver, options: SocketOptions = {}): P
       // Close even a failed opening attempt; late native callbacks are inert.
       try { driver.close(code, reason) } catch { /* the native socket may already be closed */ }
       if (pending) reject(error ?? new Error('socket closed before open'))
-      const callbacks = [...closes]
+      // Creator 3.8 downlevel compilation does not preserve Set spread semantics.
+      const callbacks: Array<() => void> = []
+      closes.forEach(cb => callbacks.push(cb))
       messages.clear(); closes.clear()
       callbacks.forEach(cb => cb())
     }

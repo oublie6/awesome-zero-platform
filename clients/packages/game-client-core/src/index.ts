@@ -94,7 +94,9 @@ export class ConnectionManager {
   }
   close(): void {
     this.generation++
-    const cancellations = [...this.cancellations]
+    // Snapshot via forEach: Creator 3.8 may lower Set spread to concat(Set).
+    const cancellations: Unsubscribe[] = []
+    this.cancellations.forEach(cancel => cancellations.push(cancel))
     this.cancellations.clear()
     cancellations.forEach(cancel => { try { cancel() } catch { /* continue owned-resource cleanup */ } })
     this.unsubscribe.splice(0).forEach(fn => { try { fn() } catch { /* continue owned-resource cleanup */ } })

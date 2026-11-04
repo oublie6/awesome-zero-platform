@@ -54,7 +54,7 @@ func (s *Supervisor) AfterHistoricalBid(ctx context.Context, actor domain.Accoun
 			return err
 		}
 		if current.Phase == domain.HandPlaying {
-			s.scheduleIfPhaseMissing(id, actor, phasePlaying, s.config.PlayingTimeout)
+			s.scheduleIfPhaseMissing(id, actor, phasePlaying, s.config.PlayingTimeout, result.Version)
 		}
 		return nil
 	case livehand.PhaseNoLandlord:
@@ -101,7 +101,7 @@ func (s *Supervisor) AfterHistoricalPlay(ctx context.Context, actor domain.Accou
 				return err
 			}
 			if current.Phase == domain.HandPlaying {
-				s.scheduleIfPhaseMissing(id, actor, phasePlaying, s.config.PlayingTimeout)
+				s.scheduleIfPhaseMissing(id, actor, phasePlaying, s.config.PlayingTimeout, result.Version)
 			}
 		}
 		return nil
@@ -119,17 +119,18 @@ func (s *Supervisor) AfterHistoricalPlay(ctx context.Context, actor domain.Accou
 // Never extend an existing countdown, and never replace a playing countdown
 // with an older bidding state. Only fill a genuinely missing phase transition.
 func (s *Supervisor) scheduleIfPhaseMissing(id domain.HandID, actor domain.AccountID,
-	desired phase, timeout time.Duration,
+	desired phase, timeout time.Duration, version uint64,
 ) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	current, exists := s.entries[id]
-	if current.pending != nil || (exists && (current.phase == desired ||
-		(current.phase == phasePlaying && desired == phaseBidding))) {
+	if current.pending != nil || (exists && (current.liveVersion > version ||
+		current.phase == desired || (current.phase == phasePlaying && desired == phaseBidding))) {
 		return
 	}
 	current.actor = actor
 	current.phase = desired
+	current.liveVersion = version
 	current.deadline = s.clock.Now().UTC().Add(timeout)
 	s.entries[id] = current
 }

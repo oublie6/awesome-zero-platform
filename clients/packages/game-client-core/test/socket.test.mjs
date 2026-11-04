@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { ConnectionManager } from '../dist/index.js'
+import { readFileSync } from 'node:fs'
+import ts from 'typescript'
 import { MiniSocketTransport } from '../dist/minigame.js'
 
 import { Task } from './fakes.mjs'
@@ -56,4 +58,47 @@ test('close in listener registration cannot leave a manager connected',async()=>
   const manager=new ConnectionManager({async connect(){return {send:async()=>{},close(){closed++},onMessage(){return()=>removed++},onClose(cb){cb();return()=>removed++}}}})
   await assert.rejects(manager.open('wss://x/ws','token',()=>{},()=>{}),/closed/)
   assert.equal(closed,1);assert.equal(removed,2);await assert.rejects(manager.send({}),/disconnected/)
+})
+
+test('Creator 3.8 compatible ES5 output invokes all Set-managed socket cleanup callbacks', async () => {
+  // Exercise the actual platform-neutral TypeScript sources after downlevel
+  // compilation rather than trusting the ES2022 Node test build.
+  const compile = (url, load) => {
+    const source = readFileSync(new URL(url, import.meta.url), 'utf8')
+    const emitted = ts.transpileModule(source, { compilerOptions: {
+      target: ts.ScriptTarget.ES5, module: ts.ModuleKind.CommonJS, downlevelIteration: false,
+    } }).outputText
+    const module = { exports: {} }
+    new Function('module', 'exports', 'require', emitted)(module, module.exports, load)
+    return module.exports
+  }
+  const { ConnectionManager: LegacyManager } = compile('../src/index.ts', () => { throw Error('unexpected dependency') })
+  const manager = new LegacyManager({connect: async () => { throw Error('no connection required') }})
+  let cancelled = 0
+  manager.cancellations.add(() => { cancelled++ })
+  manager.cancellations.add(() => { cancelled++ })
+  manager.close()
+  assert.equal(cancelled, 2)
+  assert.equal(manager.cancellations.size, 0)
+
+  const { openSocket } = compile('../src/socket.ts', name => {
+    assert.equal(name, './network-timeout.js')
+    return { networkTimeout: value => value ?? 15000 }
+  })
+  let events
+  let closed = 0
+  const driver = {
+    bind(handlers) { events = handlers; return () => {} },
+    send: async () => {},
+    close() { closed++ },
+  }
+  const opening = openSocket(driver, { timeoutMs: 5000 })
+  events.open()
+  const connection = await opening
+  let callbacks = 0
+  connection.onClose(() => { callbacks++ })
+  connection.onClose(() => { callbacks++ })
+  connection.close()
+  assert.equal(callbacks, 2)
+  assert.equal(closed, 1)
 })

@@ -363,3 +363,27 @@ The temporary gofmt workflow formatted the updated Go files and removed
 itself. This documentation-only commit triggers normal GitHub Actions against
 the exact formatted code tree; final success and independent acceptance remain
 separate gates.
+
+## Round 7 findings — ChatGPT repair candidate, awaiting independent acceptance
+
+The three confirmed findings from the independent Round 7 report are addressed
+within existing module boundaries, without changing the public command wire
+contract or MySQL schema:
+
+- R7-N03: the lifecycle supervisor retains the greatest live action version
+  applied to each active countdown, allowing newer accepted bids/plays to renew
+  deadlines while preventing delayed older callbacks from rolling the phase or
+  countdown backwards. Historical receipts still only reconcile missing work.
+  Deterministic virtual-clock tests cover bid and play callback reordering.
+- R7-N04: replace Set spread/iteration in shared socket cancellation and
+  listener cleanup, and Cocos card selection, with Set.forEach copying. Add
+  downlevel compilation tests to detect the Creator 3.8 collection bug.
+  Creator-generated Mini Game and actual gameplay re-verification remain for Codex.
+- WX-N02: cloned durable results preserve the JSON array type for empty
+  events, without discarding deep-copy isolation. Unit and real MySQL cold
+  rejection receipt tests cover the stable replay contract.
+
+Implementation is not an acceptance verdict. Run the full CI checks against
+one fixed source SHA, then ask Codex to reproduce the original regressions
+and qualify the actual Creator 3.8.8 generated product. The previously
+reported P1/P2 items remain open until independent evidence closes them.

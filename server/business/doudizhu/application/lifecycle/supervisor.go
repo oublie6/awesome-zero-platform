@@ -77,8 +77,9 @@ const (
 type entry struct {
 	actor    domain.AccountID
 	phase    phase
-	deadline time.Time
-	pending  *pendingTermination
+	deadline    time.Time
+	liveVersion uint64 // last live callback version applied to this timer
+	pending     *pendingTermination
 }
 
 type pendingTermination struct {
@@ -153,12 +154,12 @@ func (s *Supervisor) AfterBid(
 	}
 	switch bid.Phase {
 	case livehand.PhaseBidding:
-		s.schedule(handID, actor, phaseBidding, s.config.BiddingTimeout)
+		s.schedule(handID, actor, phaseBidding, s.config.BiddingTimeout, result.Version)
 	case livehand.PhasePlaying:
 		if err := s.advanceLiveHand(ctx, handID, false); err != nil {
 			return Outcome{}, err
 		}
-		s.schedule(handID, actor, phasePlaying, s.config.PlayingTimeout)
+		s.schedule(handID, actor, phasePlaying, s.config.PlayingTimeout, result.Version)
 	default:
 		return Outcome{}, fmt.Errorf("lifecycle bid phase %q is invalid", bid.Phase)
 	}
@@ -180,7 +181,7 @@ func (s *Supervisor) AfterPlay(
 	}
 	switch play.Phase {
 	case livehand.PhasePlaying:
-		s.schedule(handID, actor, phasePlaying, s.config.PlayingTimeout)
+		s.schedule(handID, actor, phasePlaying, s.config.PlayingTimeout, result.Version)
 	case livehand.PhaseCompleted:
 		if err := s.advanceLiveHand(ctx, handID, true); err != nil {
 			return err
@@ -274,15 +275,20 @@ func (s *Supervisor) Pending(handID domain.HandID) bool {
 	return ok && current.pending != nil
 }
 
-func (s *Supervisor) schedule(handID domain.HandID, actor domain.AccountID, value phase, timeout time.Duration) {
+// schedule applies committed live callbacks in their state-version order, not
+// their asynchronous response order. A newer callback is allowed to renew the
+// current phase deadline, but an older callback cannot extend or regress it.
+func (s *Supervisor) schedule(handID domain.HandID, actor domain.AccountID, value phase, timeout time.Duration, version uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	current := s.entries[handID]
-	if current.pending != nil {
+	if current.pending != nil || version <= current.liveVersion ||
+		(current.phase == phasePlaying && value == phaseBidding) {
 		return
 	}
 	current.actor = actor
 	current.phase = value
+	current.liveVersion = version
 	current.deadline = s.clock.Now().UTC().Add(timeout)
 	s.entries[handID] = current
 }

@@ -572,3 +572,52 @@ func TestServerGeneratedTimeDurableReplayWithRealMySQL(t *testing.T) {
 	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_rooms WHERE room_id=?", 1, roomID)
 	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_command_results WHERE command_id=?", 1, original.CommandID)
 }
+
+// Cold replay of a completed business rejection must keep the exact wire
+// shape of the original receipt; nil events serializes to null, not [].
+func TestRejectedDurableReceiptKeepsEmptyEventsAcrossRestartWithRealMySQL(t *testing.T) {
+	if os.Getenv("APP_API_INTEGRATION") != "1" {
+		t.Skip("APP_API_INTEGRATION is not enabled")
+	}
+	db := openIntegrationDB(t)
+	prefix := fmt.Sprintf("g21-rejected-events-%d", time.Now().UnixNano())
+	actor := domain.AccountID(prefix + "-actor")
+	roomID := prefix + "-room"
+	cleanupIntegrationRows(t, db, prefix)
+	defer cleanupIntegrationRows(t, db, prefix)
+	service, clock := newIntegrationService(t, db, prefix)
+	create := integrationCommand(clock.Now(), application.CommandRoomCreate, domain.AggregateRoom, roomID, prefix+"-create", 1, 0)
+	create.ServerGeneratedTimes = true
+	if result, err := service.CreateRoom(context.Background(), actor, create); err != nil || !result.Accepted {
+		t.Fatalf("room create=%+v err=%v", result, err)
+	}
+	rejected := integrationCommand(clock.Now(), application.CommandRoomCreate, domain.AggregateRoom, roomID, prefix+"-reject", 2, 0)
+	rejected.ServerGeneratedTimes = true
+	first, err := service.CreateRoom(context.Background(), actor, rejected)
+	if err != nil || first.Accepted || first.Duplicate || first.Failure == nil {
+		t.Fatalf("initial rejection=%+v err=%v", first, err)
+	}
+	cold, coldClock := newIntegrationService(t, db, prefix+"-restarted")
+	coldClock.Set(rejected.ExpiresAt.Add(time.Minute))
+	retry := rejected
+	retry.IssuedAt = coldClock.Now()
+	retry.ExpiresAt = retry.IssuedAt.Add(time.Minute)
+	second, err := cold.CreateRoom(context.Background(), actor, retry)
+	if err != nil || second.Accepted || !second.Duplicate || second.Failure == nil ||
+		second.Failure.Code != first.Failure.Code {
+		t.Fatalf("cold rejected replay=%+v err=%v", second, err)
+	}
+	for _, value := range []application.CommandResult{first, second} {
+		wire, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Contains(wire, []byte(`"events":[]`)) {
+			t.Fatalf("replayed rejection changed public JSON type: %s", wire)
+		}
+	}
+	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_rooms WHERE room_id=?", 1, roomID)
+	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_outbox_events WHERE causation_command_id=?", 1, create.CommandID)
+	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_command_results WHERE aggregate_id=?", 2, roomID)
+}
+
