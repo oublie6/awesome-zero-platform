@@ -357,3 +357,9 @@ no extra room/outbox records and mismatched identity/payload rejection.
 This is an implementation candidate, NOT independent acceptance. The
 Round 6 supplemental WX-N01 FAIL stays authoritative until independently
 reproduced against a fixed SHA. Goals 0045 and 0046 remain in_progress.
+
+Formatted WX-N01 repair checkpoint: `15e28757f0c6e913edc60d2d137ae5a1dbe30a42`.
+The temporary gofmt workflow formatted the updated Go files and removed
+itself. This documentation-only commit triggers normal GitHub Actions against
+the exact formatted code tree; final success and independent acceptance remain
+separate gates.
