@@ -223,6 +223,69 @@ func TestFreshPlayingCallbacksOnlyRenewForHigherVersions(t *testing.T) {
 	}
 }
 
+// A sweep may observe an overdue timer, then block reading the hand while a
+// newer accepted bid callback extends the deadline. It must not expire the
+// hand using the stale timer snapshot.
+func TestSweepDoesNotExpireRenewedDeadline(t *testing.T) {
+	clock := &testClock{now: time.Unix(1800000050, 0)}
+	base := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{
+		"hand-sweep": testHand("hand-sweep", "seat-1", domain.HandBidding, 9),
+	}}
+	terminal := &testTerminal{}
+	s := newTestSupervisor(t, base, terminal, clock, &testIDs{prefix: "sweep-version"})
+	if err := s.TrackBidding(context.Background(), "seat-1", "hand-sweep"); err != nil {
+		t.Fatal(err)
+	}
+	gate := &gatedHandReader{
+		delegate: base,
+		entered:  make(chan struct{}),
+		release:  make(chan struct{}),
+	}
+	s.hands = gate
+	clock.Advance(6 * time.Second)
+	completed := make(chan struct {
+		ids []domain.HandID
+		err error
+	}, 1)
+	go func() {
+		ids, err := s.Sweep(context.Background())
+		completed <- struct {
+			ids []domain.HandID
+			err error
+		}{ids, err}
+	}()
+	<-gate.entered
+	if _, err := s.AfterBid(context.Background(), "seat-1", "hand-sweep",
+		bidResult(t, "hand-sweep", 3, livehand.PhaseBidding, false)); err != nil {
+		t.Fatal(err)
+	}
+	close(gate.release)
+	result := <-completed
+	if result.err != nil || len(result.ids) != 0 || len(terminal.expireCalls) != 0 {
+		t.Fatalf("renewed deadline expired by a stale sweep: %+v expireCalls=%+v", result, terminal.expireCalls)
+	}
+	clock.Advance(5 * time.Second)
+	terminated, err := s.Sweep(context.Background())
+	if err != nil || len(terminated) != 1 || terminated[0] != "hand-sweep" {
+		t.Fatalf("renewed deadline never expired: %v %v", terminated, err)
+	}
+}
+
+type gatedHandReader struct {
+	delegate HandReader
+	entered  chan struct{}
+	release  chan struct{}
+	once     sync.Once
+}
+
+func (g *gatedHandReader) LoadHand(ctx context.Context, id domain.HandID) (domain.HandSnapshot, error) {
+	g.once.Do(func() {
+		close(g.entered)
+		<-g.release
+	})
+	return g.delegate.LoadHand(ctx, id)
+}
+
 func TestParticipantCancellationRequiresASeat(t *testing.T) {
 	clock := &testClock{now: time.UnixMilli(3_000).UTC()}
 	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{

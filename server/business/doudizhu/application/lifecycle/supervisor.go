@@ -215,33 +215,32 @@ func (s *Supervisor) Sweep(ctx context.Context) ([]domain.HandID, error) {
 	}
 	now := s.clock.Now().UTC()
 	s.mu.Lock()
-	due := make([]domain.HandID, 0)
+	type dueCandidate struct {
+		handID domain.HandID
+		state  entry
+	}
+	due := make([]dueCandidate, 0)
 	for handID, current := range s.entries {
 		if current.pending == nil && !now.Before(current.deadline) {
-			due = append(due, handID)
+			due = append(due, dueCandidate{handID: handID, state: current})
 		}
 	}
 	s.mu.Unlock()
-	sort.Slice(due, func(i, j int) bool { return due[i] < due[j] })
+	sort.Slice(due, func(i, j int) bool { return due[i].handID < due[j].handID })
 
 	terminated := make([]domain.HandID, 0, len(due))
-	for _, handID := range due {
-		s.mu.Lock()
-		current, ok := s.entries[handID]
-		s.mu.Unlock()
-		if !ok {
-			continue
-		}
+	for _, candidate := range due {
 		reason := ReasonPlayingTimeout
-		if current.phase == phaseBidding {
+		if candidate.state.phase == phaseBidding {
 			reason = ReasonBiddingTimeout
 		}
-		outcome, err := s.terminate(ctx, current.actor, handID, terminationExpire, reason)
+		outcome, err := s.terminateWhenDue(ctx, candidate.state.actor, candidate.handID,
+			terminationExpire, reason, &candidate.state)
 		if err != nil {
 			return terminated, err
 		}
 		if outcome.Triggered {
-			terminated = append(terminated, handID)
+			terminated = append(terminated, candidate.handID)
 		}
 	}
 	return terminated, nil
@@ -293,6 +292,17 @@ func (s *Supervisor) schedule(handID domain.HandID, actor domain.AccountID, valu
 	s.entries[handID] = current
 }
 
+// Caller holds s.mu. This comparison is the final linearization check for a
+// timeout candidate; it prevents Sweep's stale list from expiring a renewed
+// deadline while the operation was authorizing or loading the hand snapshot.
+func (s *Supervisor) dueUnchangedLocked(handID domain.HandID, expected entry) bool {
+	current, exists := s.entries[handID]
+	return exists && current.pending == nil && current.actor == expected.actor &&
+		current.phase == expected.phase && current.liveVersion == expected.liveVersion &&
+		current.deadline.Equal(expected.deadline) &&
+		!s.clock.Now().UTC().Before(current.deadline)
+}
+
 func (s *Supervisor) terminate(
 	ctx context.Context,
 	actor domain.AccountID,
@@ -300,11 +310,29 @@ func (s *Supervisor) terminate(
 	kind terminationKind,
 	reason string,
 ) (Outcome, error) {
+	return s.terminateWhenDue(ctx, actor, handID, kind, reason, nil)
+}
+
+// Sweep captures the deadline and version at discovery time. Before creating a
+// terminal command it must check that a newer accepted action has not renewed
+// that deadline. The ordinary cancel/termination path has no expiry guard.
+func (s *Supervisor) terminateWhenDue(
+	ctx context.Context,
+	actor domain.AccountID,
+	handID domain.HandID,
+	kind terminationKind,
+	reason string,
+	due *entry,
+) (Outcome, error) {
 	if _, err := s.authorize(ctx, actor, handID); err != nil {
 		return Outcome{}, err
 	}
 	s.mu.Lock()
 	current := s.entries[handID]
+	if due != nil && !s.dueUnchangedLocked(handID, *due) {
+		s.mu.Unlock()
+		return Outcome{}, nil
+	}
 	if current.pending != nil {
 		pending := *current.pending
 		s.mu.Unlock()
@@ -349,6 +377,10 @@ func (s *Supervisor) terminate(
 	}
 	s.mu.Lock()
 	current = s.entries[handID]
+	if due != nil && !s.dueUnchangedLocked(handID, *due) {
+		s.mu.Unlock()
+		return Outcome{}, nil
+	}
 	if current.pending == nil {
 		current.actor = actor
 		current.pending = &pending

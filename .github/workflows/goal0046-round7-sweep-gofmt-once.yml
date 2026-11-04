@@ -1,0 +1,27 @@
+name: One-shot Round 7 sweep gofmt
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/goal0046-round7-sweep-gofmt-once.yml'
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Format sweep regression and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -w server/business/doudizhu/application/lifecycle/supervisor.go server/business/doudizhu/application/lifecycle/supervisor_test.go
+          git add -- server/business/doudizhu/application/lifecycle
+          git rm .github/workflows/goal0046-round7-sweep-gofmt-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'style(go): format expiry-candidate race regression'
+          git push origin HEAD:main
