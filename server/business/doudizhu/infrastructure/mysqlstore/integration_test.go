@@ -620,4 +620,3 @@ func TestRejectedDurableReceiptKeepsEmptyEventsAcrossRestartWithRealMySQL(t *tes
 	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_outbox_events WHERE causation_command_id=?", 1, create.CommandID)
 	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_command_results WHERE aggregate_id=?", 2, roomID)
 }
-

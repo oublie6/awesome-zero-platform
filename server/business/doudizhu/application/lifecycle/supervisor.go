@@ -75,8 +75,8 @@ const (
 )
 
 type entry struct {
-	actor    domain.AccountID
-	phase    phase
+	actor       domain.AccountID
+	phase       phase
 	deadline    time.Time
 	liveVersion uint64 // last live callback version applied to this timer
 	pending     *pendingTermination
