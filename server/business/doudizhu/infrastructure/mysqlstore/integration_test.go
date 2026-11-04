@@ -572,4 +572,3 @@ func TestServerGeneratedTimeDurableReplayWithRealMySQL(t *testing.T) {
 	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_rooms WHERE room_id=?", 1, roomID)
 	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_command_results WHERE command_id=?", 1, original.CommandID)
 }
-
