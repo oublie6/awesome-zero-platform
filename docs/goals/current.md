@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-04 WeChat supplement: current CLI login=true and owned AppID verified; actual SDK login/secure entropy/storage/listener lifecycle and real wx.request/wx.connectSocket→isolated Go auth/WSS pass. Positive code exchange remains unconfigured (actual HTTP500); Cocos full UI/native/domain/device qualification remains open. See [Round6 dated supplement](0046-round6-independent-acceptance.md). Do not describe this as missing tool login/AppID. Goals0045/0046 remain `in_progress`.
+
 - Latest Goal0046 Round6 independent acceptance, source `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`: **R5-N05 and executed internal regression gates PASS; full product/internal qualification BLOCKED; external/release BLOCKED, sealing NO**. Matrix97PASS/0FAIL/17BLOCKED. No new blocking product defect established. Remaining lifetime/native/UI/platform/operations evidence is explicit in the [full report](0046-round6-independent-acceptance.md); Goals0045/0046 remain `in_progress`.
 
 - Latest Goal 0046 Round 5 independent acceptance: **FAIL**, source `797a7bad4ebdf9bcab26c3fdd797bac55e6009f0`. Original R3-N02 timers/SETTLING compensation and original R4-N04 sequence-only corruption pass; new R5-N05/P2 authenticated-journal legacy downgrade remains. Matrix92PASS/4FAIL/18BLOCKED. Internal/release FAIL, external BLOCKED, sealing NO. [Full report](0046-round5-independent-acceptance.md). Goals0045/0046 remain `in_progress`.
@@ -102,6 +104,8 @@ Single primary implementer; use subagents only for independent review or API doc
 - Phase closeout completed: new native build and simulator smoke for the entry-copy correction passed; CI/evidence and handoff are recorded in the phase report. Daily runtime uses the existing community Linux developer tool per user preference. The discontinued Android trial and APK/AVD/SDK were removed after preserving evidence (about 5.3 GiB disk recovered); no Android WeChat login/runtime pass is claimed.
 
 ### In progress
+
+- 2026-11-04 在已登录微信工具完成定向补充验证：真实SDK3.17.5、wx.login、现有平台适配器与隔离Go HTTPS/WSS均实测；平台code正向换证待服务端测试配置，完整Scene/UI与真机未通过。已追加Round6补充证据，未重标完整114项矩阵；私有测试资源已停止，原登录配置/验收库保留。
 
 - 2026-11-03 Round6 independent verification finished at `1ae8ee1`: original R5-N05 and historical failures pass, full Go/Race/MySQL/client/three-player faults/scale/production runtime rerun. Additional1500 real WSS connections return goroutines26→26 and active sockets0. Full qualification still BLOCKED; report-only changes, no product repair. [Round6 report](0046-round6-independent-acceptance.md).
 

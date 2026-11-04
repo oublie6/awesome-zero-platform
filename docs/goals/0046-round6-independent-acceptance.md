@@ -310,3 +310,31 @@ Owned Round6 supervisor/app/TLS/MySQL/Redis stopped after final gates. Runtime C
 
 
 **Final decision:** repair/executed-code regression gates PASS; full product/internal qualification BLOCKED by the remaining evidence gaps, external qualification BLOCKED, production release BLOCKED, sealing NO. Preserve Goals0045/0046 `in_progress`. ChatGPT can proceed with remaining qualification/resource/operational work; no speculative code change or repeated R5-N05 repair is required by this report. A later complete-product acceptance still needs evidence for every required open condition at its own fixed source SHA.
+
+
+## 2026-11-04 补充：已登录微信工具的实际 SDK 与 Go 网络验证
+
+用户指出已登录的微信工具仍可继续验证。本次重新启动保留的社区 Linux 微信工具，CLI `islogin` 实际返回 `{"login":true}`，不是沿用历史登录结论。原有 AppID 和已登录配置都存在；“微信未登录／没有 AppID／SDK 无法执行”不能作为本次阻塞原因。
+
+产品源码仍为 `1ae8ee111f8dbaad2e8312b55a0a1f51603f34da`；开始时仓库 HEAD 为 Round6 文档提交 `118ae7b3ceb03e8d655d0d9af6ea903df116b127`。未修改产品、正式测试、业务设计、原项目或生产部署。使用此前已校验的 Creator3.8.8 产物06733a9，验证其全部客户端/构建脚本输入与当前代码无差异；只在私有副本 project.config.json 设置已有操作者 AppID 和项目显示名。引擎、应用、资产文件哈希保持一致。这不是一次新的当前 SHA Creator 原生导出。
+
+| 实际补充检查 | 结果与范围 |
+|---|---|
+| 当前工具登录态 | PASS：CLI islogin=true，真实小游戏上下文所属 AppID 匹配操作者项目 |
+| 当前项目适配器调用真实 wx.login | PASS：SDK3.17.5/platform=devtools，返回非空32字符 code；探针仅记录是否非空与长度，不输出 code 内容 |
+| 微信安全随机源 | PASS：使用现有 createMiniPlatform 与 UserCryptoManager 路径，两次32字节输出长度正确且不同，随后清零临时数组 |
+| 存储、生命周期监听 | PASS：独立测试键保存/读取/移除；当前适配器 onShow/onHide 注册和卸载成功。未验证真实前后台事件触发、分享或手机系统行为 |
+| 真实 wx.request→当前 Go | PASS：全新隔离 Go 测试账号通过 HTTPS 登录和会话验证。服务端是 Round6 已验证的同一二进制（哈希一致），使用新数据库/新凭据，不改以前验收库 |
+| 真实 wx.connectSocket→当前 Go | PASS：现有 MiniSocketTransport 使用实际 SocketTask 建立认证 WSS，取得关联 system.pong；无效令牌拒绝；退出自有会话后旧令牌被拒绝；未将令牌放在连接 URL |
+| 微信 code→Go 业务身份完整换证 | **仍未通过**：真实 SDK 生成的 code 已通过实际 HTTPS 请求发到 `/auth/wechat/code`，返回 HTTP500，Go 日志明确为 `WeChat identity exchange not configured`。隔离服务缺少 APP_WECHAT_APP_ID/APP_WECHAT_APP_SECRET/APP_WECHAT_SUBJECT_HMAC_KEY_HEX。工具登录不会自动配置这组服务端参数。已向用户询问可用测试后端或本地私有配置路径，没有索取明文 AppSecret |
+| 完整 Cocos UI 与真机 | **未验证通过**：真实 System.import('cc') 可加载引擎，但 director 尚无活动 Scene/Canvas；SDK/网络通过不等于界面已可玩。没有进行上传、预览、审核、发布或真机操作 |
+
+网络认证对照使用服务端正常创建的隔离密码账号；它证明真实微信 SDK 的 HTTP/WSS 能与当前 Go 认证协议配合，**不表示该对照账号已经通过微信 code 换证成为平台业务身份**。正向平台换证需要有效的服务端测试配置，不能用工具登录态或假身份替代。
+
+第一次完整产物运行触发工具自身2GiB上限（oom-kill）；在主机有余量时以3GiB/无swap/CPU150%重新运行，SDK检查完成。工具均有运行时限。初次手写随机数探针用了错误的 wx.getRandomValues 入口，改为加载项目实际适配器后通过；未据此报告产品缺陷。模块探针补齐实际依赖后复测；这些是私有探针纠错。
+
+本地 HTTPS 首次失败的工具日志为 TLS net_error -202。随后仅对隔离服务证书配置精确 SPKI 信任和 NODE_EXTRA_CA_CERTS，重试实际 SDK 网络检查通过；未主动启用全局忽略证书错误。私有项目使用开发调试 urlCheck=false，故不构成正式域名白名单或生产 TLS 资格。
+
+私有新证据：`/root/.config/awesome-zero-platform/round6-wechat-supplement-20261104`，主要文件 cli-islogin.log、project-provenance.json、sdk-login.json、sdk-network.json、backend-boundary.json、cocos-module-state.json、local-tls-trust.json、cleanup.json、SHA256SUMS，及实际探针脚本。截图、AppID、登录配置、凭据、code 和令牌不提交。Go测试会话已经退出；本次工具/服务/容器均停止，端口清空，已登录配置保留，原验收库与无关服务不动。
+
+本段是定向补充，不是114项完整重跑；2026-11-03的97PASS/0FAIL/17BLOCKED矩阵保留为当时记录。相关阻塞原因应收窄：**工具登录、真实 SDK 登录/随机源/存储监听，以及真实 SDK→Go HTTP/WSS 已有本次实测证据**；GOAL1仍需正向平台换证，H06/H07/GOAL2/GOAL4仍需完整UI流程，当前原生导出、正式域名与真机要求仍未满足。不能再笼统归因于“微信没有登录”。未新增已确认的产品代码缺陷，Goal0045/0046继续保持 in_progress。
