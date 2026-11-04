@@ -86,6 +86,60 @@ func TestBiddingAndPlayingDeadlinesUseUnifiedExpiry(t *testing.T) {
 	}
 }
 
+func TestRepeatedDealtTrackingPreservesOriginalDeadline(t *testing.T) {
+	clock := &testClock{now: time.UnixMilli(2_400).UTC()}
+	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{
+		"hand-dealt": testHand("hand-dealt", "seat-1", domain.HandBidding, 5),
+	}}
+	terminal := &testTerminal{}
+	supervisor := newTestSupervisor(t, hands, terminal, clock, &testIDs{prefix: "dealt-idempotent"})
+	if err := supervisor.TrackBidding(context.Background(), "seat-1", "hand-dealt"); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(4 * time.Second)
+	if err := supervisor.TrackBidding(context.Background(), "seat-1", "hand-dealt"); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(2 * time.Second)
+	terminated, err := supervisor.Sweep(context.Background())
+	if err != nil || len(terminated) != 1 || terminated[0] != "hand-dealt" {
+		t.Fatalf("duplicate dealt extended bidding timeout: terminated=%v err=%v", terminated, err)
+	}
+	if len(terminal.expireCalls) != 1 || terminal.expireCalls[0].reason != ReasonBiddingTimeout {
+		t.Fatalf("unexpected expiry after duplicate dealt: %#v", terminal.expireCalls)
+	}
+}
+
+func TestLateDealtTrackingCannotRegressPlayingDeadline(t *testing.T) {
+	clock := &testClock{now: time.UnixMilli(3_500).UTC()}
+	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{
+		"hand-playing": testHand("hand-playing", "seat-1", domain.HandBidding, 5),
+	}}
+	terminal := &testTerminal{}
+	supervisor := newTestSupervisor(t, hands, terminal, clock, &testIDs{prefix: "dealt-phase"})
+	if err := supervisor.TrackBidding(context.Background(), "seat-1", "hand-playing"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := supervisor.AfterBid(context.Background(), "seat-1", "hand-playing", bidResult(t, "hand-playing", 6, livehand.PhasePlaying, false)); err != nil {
+		t.Fatal(err)
+	}
+	playing := hands.snapshots["hand-playing"]
+	playing.Phase = domain.HandPlaying
+	hands.snapshots["hand-playing"] = playing
+	clock.Advance(4 * time.Second)
+	if err := supervisor.TrackBidding(context.Background(), "seat-1", "hand-playing"); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(6 * time.Second)
+	terminated, err := supervisor.Sweep(context.Background())
+	if err != nil || len(terminated) != 1 || terminated[0] != "hand-playing" {
+		t.Fatalf("late dealt tracking replaced playing timer: terminated=%v err=%v", terminated, err)
+	}
+	if len(terminal.expireCalls) != 1 || terminal.expireCalls[0].reason != ReasonPlayingTimeout {
+		t.Fatalf("wrong phase timeout after dealt replay: %#v", terminal.expireCalls)
+	}
+}
+
 func TestParticipantCancellationRequiresASeat(t *testing.T) {
 	clock := &testClock{now: time.UnixMilli(3_000).UTC()}
 	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{

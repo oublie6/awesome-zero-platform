@@ -112,10 +112,23 @@ func New(
 }
 
 func (s *Supervisor) TrackBidding(ctx context.Context, actor domain.AccountID, handID domain.HandID) error {
-	if _, err := s.authorize(ctx, actor, handID); err != nil {
+	snapshot, err := s.authorize(ctx, actor, handID)
+	if err != nil {
 		return err
 	}
-	s.schedule(handID, actor, phaseBidding, s.config.BiddingTimeout)
+	// A durable hand.dealt receipt may be replayed after the original
+	// transition. Never regress an already-playing hand to bidding.
+	if snapshot.Phase != domain.HandBidding {
+		return nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// The first successful registration owns the original deadline. A
+	// verified duplicate may repair a missing entry but must not extend or
+	// overwrite an existing bidding/playing timer.
+	if _, tracked := s.entries[handID]; !tracked {
+		s.entries[handID] = entry{actor: actor, phase: phaseBidding, deadline: s.clock.Now().UTC().Add(s.config.BiddingTimeout)}
+	}
 	return nil
 }
 
