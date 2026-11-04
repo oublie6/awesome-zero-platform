@@ -1,0 +1,17 @@
+{
+  "engine": {
+    "configs": {
+      "linux-wechat-2d": {
+        "name": "Linux WeChat 2D UI",
+        "includeModules": [
+          "base", "gfx-webgl", "gfx-webgl2", "2d", "affine-transform",
+          "ui", "mask", "graphics", "rich-text", "tween", "profiler",
+          "websocket", "custom-pipeline"
+        ],
+        "flags": {},
+        "noDeprecatedFeatures": { "value": false, "version": "" }
+      }
+    },
+    "globalConfigKey": "linux-wechat-2d"
+  }
+}
