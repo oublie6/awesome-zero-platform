@@ -194,6 +194,13 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 	response := CommandResponse{Version: CommandResponseV1, RequestID: request.RequestID, Type: request.Type}
 	command := application.Command{Version: application.CommandProtocolV1, CommandID: request.RequestID, AggregateID: request.AggregateID, ClientSeq: request.ClientSeq, ExpectedVersion: request.ExpectedVersion, IssuedAt: d.clock.Now().UTC().Truncate(time.Millisecond)}
 	command.ExpiresAt = command.IssuedAt.Add(d.config.CommandTTL)
+	// Ordinary durable API requests contain no client-issued timestamps. On
+	// retransmission the freshly generated times must not change the durable
+	// request identity. Signed reveal context is different: its verified time
+	// binding is part of the authenticated command and stays strict.
+	if !isLiveType(request.Type) && request.Type != TypeHandReveal {
+		command.ServerGeneratedTimes = true
+	}
 	if request.Type == TypeHandReveal {
 		issued, expires, err := d.verifyRevealContext(actor, request)
 		if err != nil {

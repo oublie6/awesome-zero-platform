@@ -45,6 +45,12 @@ type Command struct {
 	IssuedAt        time.Time
 	ExpiresAt       time.Time
 	PayloadDigest   [32]byte
+
+	// ServerGeneratedTimes is only set by a trusted transport adapter when
+	// the issued/expiry timestamps were generated on receipt, not supplied by
+	// the caller. It is never persisted and cannot be selected via the wire.
+	// The stored original timestamps still control the first execution.
+	ServerGeneratedTimes bool `json:"-"`
 }
 
 type StoredCommandResult struct {

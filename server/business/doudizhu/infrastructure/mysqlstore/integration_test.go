@@ -510,3 +510,66 @@ func assertCount(t *testing.T, db *sql.DB, query string, expected int, args ...a
 }
 
 var _ = url.QueryEscape
+
+// The public API creates new issued/expiry timestamps for every transport
+// delivery. A cold service using the same MySQL state must still return the
+// original completed receipt, without replaying the business mutation.
+func TestServerGeneratedTimeDurableReplayWithRealMySQL(t *testing.T) {
+	if os.Getenv("APP_API_INTEGRATION") != "1" {
+		t.Skip("APP_API_INTEGRATION is not enabled")
+	}
+	db := openIntegrationDB(t)
+	prefix := fmt.Sprintf("g21-api-retry-%d", time.Now().UnixNano())
+	actor := domain.AccountID(prefix + "-actor")
+	roomID := prefix + "-room"
+	cleanupIntegrationRows(t, db, prefix)
+	defer cleanupIntegrationRows(t, db, prefix)
+	service, clock := newIntegrationService(t, db, prefix)
+	original := integrationCommand(clock.Now(), application.CommandRoomCreate, domain.AggregateRoom, roomID, prefix+"-create", 1, 0)
+	original.ServerGeneratedTimes = true
+	first, err := service.CreateRoom(context.Background(), actor, original)
+	if err != nil || !first.Accepted || first.Duplicate {
+		t.Fatalf("initial create=%#v err=%v", first, err)
+	}
+	var storedJSON []byte
+	if err := db.QueryRow("SELECT command_json FROM doudizhu_command_results WHERE actor_account_id=? AND command_id=?", actor, original.CommandID).Scan(&storedJSON); err != nil {
+		t.Fatal(err)
+	}
+	var stored application.Command
+	if err := json.Unmarshal(storedJSON, &stored); err != nil {
+		t.Fatal(err)
+	}
+	if stored.ServerGeneratedTimes || !stored.IssuedAt.Equal(original.IssuedAt) || !stored.ExpiresAt.Equal(original.ExpiresAt) {
+		t.Fatalf("transient time policy leaked into persisted command: %#v", stored)
+	}
+	clock.Set(original.ExpiresAt.Add(2 * time.Minute))
+	cold, coldClock := newIntegrationService(t, db, prefix+"-cold")
+	coldClock.Set(clock.Now())
+	retry := integrationCommand(coldClock.Now(), application.CommandRoomCreate, domain.AggregateRoom, roomID, original.CommandID, 1, 0)
+	retry.ServerGeneratedTimes = true
+	if retry.IssuedAt.Equal(original.IssuedAt) {
+		t.Fatal("retry did not advance the synthetic timestamp")
+	}
+	second, err := cold.CreateRoom(context.Background(), actor, retry)
+	if err != nil || !second.Accepted || !second.Duplicate || second.AggregateVersion != first.AggregateVersion {
+		t.Fatalf("cold retry=%#v err=%v", second, err)
+	}
+	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_rooms WHERE room_id=?", 1, roomID)
+	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_command_results WHERE command_id=?", 1, original.CommandID)
+	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_outbox_events WHERE causation_command_id=?", 1, original.CommandID)
+	changedSeq := retry
+	changedSeq.ClientSeq++
+	conflict, err := cold.CreateRoom(context.Background(), actor, changedSeq)
+	if err != nil || conflict.Accepted || conflict.Failure == nil || conflict.Failure.Code != application.CodeConflict {
+		t.Fatalf("changed sequence matched original: %#v %v", conflict, err)
+	}
+	changedRoom := retry
+	changedRoom.AggregateID = prefix + "-other-room"
+	conflict, err = cold.CreateRoom(context.Background(), actor, changedRoom)
+	if err != nil || conflict.Accepted || conflict.Failure == nil || conflict.Failure.Code != application.CodeConflict {
+		t.Fatalf("changed aggregate matched original: %#v %v", conflict, err)
+	}
+	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_rooms WHERE room_id=?", 1, roomID)
+	assertCount(t, db, "SELECT COUNT(*) FROM doudizhu_command_results WHERE command_id=?", 1, original.CommandID)
+}
+

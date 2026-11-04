@@ -4,6 +4,8 @@
 
 ## Status
 
+- ChatGPT WX-N01/P2 repair candidate (2026-11-04): preserve durable transport retry identity across newly generated server timestamps without weakening actor/sequence/aggregate/payload binding. Signed reveal times and direct application callers remain strictly time-bound; new unit and real-MySQL cold-replay regressions added. **Implementation/CI/next Codex review pending**; the Round 6 original matrix and subsequent WeChat FAIL remain historical evidence. Goals 0045/0046 remain `in_progress`.
+
 - 2026-11-04 real WeChat configuration follow-up: user-provided HK AppID/AppSecret configured privately with preserved HMAC root; actual wx.login→official exchange→Go identity, stable repeated login, session restore, WSS and logout PASS. Additional exact room.create retry FAIL: WX-N01/P2, server-generated request timestamps conflict with durable identity; return to ChatGPT for repair. Upload key unused; no production deployment. [Dated evidence](0046-round6-independent-acceptance.md). Goals0045/0046 remain `in_progress`; this is a focused supplement, not a new full matrix.
 
 - 2026-11-04 WeChat supplement: current CLI login=true and owned AppID verified; actual SDK login/secure entropy/storage/listener lifecycle and real wx.request/wx.connectSocket→isolated Go auth/WSS pass. Positive code exchange remains unconfigured (actual HTTP500); Cocos full UI/native/domain/device qualification remains open. See [Round6 dated supplement](0046-round6-independent-acceptance.md). Do not describe this as missing tool login/AppID. Goals0045/0046 remain `in_progress`.

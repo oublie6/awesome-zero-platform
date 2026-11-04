@@ -31,6 +31,81 @@ func TestDuplicateReturnsOriginalBeforeExpiry(t *testing.T) {
 	}
 }
 
+func TestServerGeneratedTimesPreserveDurableRetryIdentity(t *testing.T) {
+	service, store, clock := newCommandTestService(t)
+	original := testCommand(clock.Now(), CommandRoomCreate, domain.AggregateRoom, "room-timed", "create-timed", 1, 0)
+	original.ServerGeneratedTimes = true
+	first, err := service.CreateRoom(context.Background(), "actor-1", original)
+	if err != nil || !first.Accepted || first.Duplicate {
+		t.Fatalf("first=%#v err=%v", first, err)
+	}
+	outboxCount := len(store.state.outbox)
+	// Reconstruct the service to model cache-free replay. The caller sends the
+	// same request, but the transport clock has crossed both TTL boundaries.
+	clock.Set(original.ExpiresAt.Add(2 * time.Minute))
+	restarted, err := NewService(store, clock, &testIDs{}, testSetup{}, testBeaconVerifier{}, testLiveRuntime{}, testOpener{}, testProtector{}, testNormalizer{}, DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	retry := original
+	retry.IssuedAt = clock.Now()
+	retry.ExpiresAt = retry.IssuedAt.Add(time.Minute)
+	duplicate, err := restarted.CreateRoom(context.Background(), "actor-1", retry)
+	if err != nil || !duplicate.Accepted || !duplicate.Duplicate || duplicate.AggregateVersion != first.AggregateVersion {
+		t.Fatalf("replayed=%#v err=%v", duplicate, err)
+	}
+	if len(store.state.rooms) != 1 || len(store.state.outbox) != outboxCount {
+		t.Fatal("retry repeated a durable room mutation or outbox append")
+	}
+	for _, variant := range []struct {
+		name string
+		edit func(*Command)
+	}{
+		{"sequence", func(c *Command) { c.ClientSeq++ }},
+		{"aggregate", func(c *Command) { c.AggregateID = "room-other" }},
+	} {
+		t.Run(variant.name, func(t *testing.T) {
+			changed := retry
+			variant.edit(&changed)
+			result, err := restarted.CreateRoom(context.Background(), "actor-1", changed)
+			if err != nil || result.Accepted || result.Failure == nil || result.Failure.Code != CodeConflict {
+				t.Fatalf("changed request reused original identity: %#v %v", result, err)
+			}
+		})
+	}
+	// Typed input is included in the durable payload digest even when the
+	// transport-generated timestamps differ.
+	ready := testCommand(clock.Now(), CommandRoomReadySet, domain.AggregateRoom, "room-timed", "ready-timed", 2, 1)
+	ready.ServerGeneratedTimes = true
+	accepted, err := restarted.SetRoomReady(context.Background(), "actor-1", ready, SetReadyInput{Ready: true})
+	if err != nil || !accepted.Accepted {
+		t.Fatalf("ready=%#v err=%v", accepted, err)
+	}
+	changedReady := ready
+	changedReady.IssuedAt = changedReady.IssuedAt.Add(time.Millisecond)
+	changedReady.ExpiresAt = changedReady.ExpiresAt.Add(time.Millisecond)
+	changed, err := restarted.SetRoomReady(context.Background(), "actor-1", changedReady, SetReadyInput{Ready: false})
+	if err != nil || changed.Accepted || changed.Failure == nil || changed.Failure.Code != CodeConflict {
+		t.Fatalf("different payload was replayed: %#v %v", changed, err)
+	}
+	originalReady, err := restarted.SetRoomReady(context.Background(), "actor-1", changedReady, SetReadyInput{Ready: true})
+	if err != nil || !originalReady.Accepted || !originalReady.Duplicate {
+		t.Fatalf("matching ready retry=%#v err=%v", originalReady, err)
+	}
+	// Direct application commands still bind exact issued/expiry timestamps.
+	strict := testCommand(clock.Now(), CommandRoomCreate, domain.AggregateRoom, "room-strict", "create-strict", 1, 0)
+	if result, err := restarted.CreateRoom(context.Background(), "actor-1", strict); err != nil || !result.Accepted {
+		t.Fatalf("strict create=%#v err=%v", result, err)
+	}
+	strictRetry := strict
+	strictRetry.IssuedAt = strictRetry.IssuedAt.Add(time.Millisecond)
+	strictRetry.ExpiresAt = strictRetry.ExpiresAt.Add(time.Millisecond)
+	result, err := restarted.CreateRoom(context.Background(), "actor-1", strictRetry)
+	if err != nil || result.Accepted || result.Failure == nil || result.Failure.Code != CodeConflict {
+		t.Fatalf("direct caller timestamp binding weakened: %#v %v", result, err)
+	}
+}
+
 func TestCommandIDBindsPayload(t *testing.T) {
 	service, _, clock := newCommandTestService(t)
 	create := testCommand(clock.Now(), CommandRoomCreate, domain.AggregateRoom, "room-1", "create-1", 1, 0)

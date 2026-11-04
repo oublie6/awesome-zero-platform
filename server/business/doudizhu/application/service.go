@@ -288,11 +288,20 @@ func cloneResult(value CommandResult) CommandResult {
 }
 
 func sameCommand(left, right Command) bool {
-	return left.Version == right.Version && left.Name == right.Name && left.CommandID == right.CommandID &&
-		left.AggregateType == right.AggregateType && left.AggregateID == right.AggregateID &&
-		left.ClientSeq == right.ClientSeq && left.ExpectedVersion == right.ExpectedVersion &&
-		left.IssuedAt.Equal(right.IssuedAt) && left.ExpiresAt.Equal(right.ExpiresAt) &&
-		left.PayloadDigest == right.PayloadDigest
+	if left.Version != right.Version || left.Name != right.Name || left.CommandID != right.CommandID ||
+		left.AggregateType != right.AggregateType || left.AggregateID != right.AggregateID ||
+		left.ClientSeq != right.ClientSeq || left.ExpectedVersion != right.ExpectedVersion ||
+		left.PayloadDigest != right.PayloadDigest {
+		return false
+	}
+	// The API generates these two times anew for every delivery. They are
+	// deliberately not part of the caller's request identity. Only trusted
+	// transport commands may exclude them; direct application callers and
+	// signed reveal-context timestamps retain their exact-time binding.
+	if right.ServerGeneratedTimes {
+		return true
+	}
+	return left.IssuedAt.Equal(right.IssuedAt) && left.ExpiresAt.Equal(right.ExpiresAt)
 }
 
 func bindCommandPayload(command Command, payload any) (Command, error) {

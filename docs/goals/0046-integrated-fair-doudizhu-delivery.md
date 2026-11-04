@@ -336,3 +336,24 @@ acceptance, or Goal completion is claimed by this note**. Round 5 FAIL remains
 the latest authoritative acceptance verdict until the next Codex review.
 
 Formatted R5-N05 implementation checkpoint: `3f14b15cdfc8528cfd89b5290fdf4b486934bd06`. The one-shot gofmt job succeeded and removed itself. This documentation-only commit requests the ordinary exact-SHA CI/Fair Doudizhu workflows on the formatted source; do not claim their success until results are verified.
+
+## WX-N01/P2 retry repair candidate — pending CI and independent replay verification
+
+The 2026-11-04 real WeChat SDK + backend supplement established that identical
+room.create WSS retransmission was rejected because the adapter regenerated
+IssuedAt/ExpiresAt and the business-layer durable identity compared both.
+Trusted API adapters now mark timestamps synthesized on receipt as non-client
+identity metadata. The application still stores the first timestamps for
+freshness/expiry enforcement on new commands and preserves strict comparisons
+for every real caller-controlled field: actor (transaction scope), command ID,
+type, aggregate, expected version, sequence and typed payload digest. Direct
+application commands and signed hand.reveal context retain exact timestamp
+binding. The temporary marker is never serialized into durable command JSON,
+and new adapters do not change public request/response formats, SQL or schemas.
+
+Unit and actual MySQL regression coverage checks replay across different
+clock milliseconds and fresh service instances, original accepted result,
+no extra room/outbox records and mismatched identity/payload rejection.
+This is an implementation candidate, NOT independent acceptance. The
+Round 6 supplemental WX-N01 FAIL stays authoritative until independently
+reproduced against a fixed SHA. Goals 0045 and 0046 remain in_progress.

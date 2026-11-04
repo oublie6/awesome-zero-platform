@@ -54,7 +54,7 @@ func TestDurableCommandBindingAndLifecycleTracking(t *testing.T) {
 	if err != nil || result.Durable == nil || !result.Durable.Accepted || life.trackCalls != 1 {
 		t.Fatalf("result=%#v track=%d err=%v", result, life.trackCalls, err)
 	}
-	if backend.lastCommand.Name != application.CommandHandDealt || backend.lastCommand.AggregateType != domain.AggregateHand || backend.lastCommand.CommandID != "req-dealt" || backend.lastCommand.ClientSeq != 7 || backend.lastCommand.ExpectedVersion != 8 || backend.lastCommand.IssuedAt.IsZero() || backend.lastCommand.ExpiresAt.Sub(backend.lastCommand.IssuedAt) != time.Minute {
+	if backend.lastCommand.Name != application.CommandHandDealt || backend.lastCommand.AggregateType != domain.AggregateHand || backend.lastCommand.CommandID != "req-dealt" || backend.lastCommand.ClientSeq != 7 || backend.lastCommand.ExpectedVersion != 8 || backend.lastCommand.IssuedAt.IsZero() || backend.lastCommand.ExpiresAt.Sub(backend.lastCommand.IssuedAt) != time.Minute || !backend.lastCommand.ServerGeneratedTimes {
 		t.Fatalf("command=%#v", backend.lastCommand)
 	}
 }
