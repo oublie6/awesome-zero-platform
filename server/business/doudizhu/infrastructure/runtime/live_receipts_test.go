@@ -131,23 +131,27 @@ func TestLiveReceiptClientSequenceIsBoundAndCopied(t *testing.T) {
 }
 
 func TestRetiredLiveRuntimeHistoryHasFixedMemoryCardinality(t *testing.T) {
- c := &LiveHandCoordinator{
-  games: make(map[domain.HandID]*livehand.Game),
-  finalized: make(map[domain.HandID]gamecore.FinalRecord),
-  receipts: make(map[domain.HandID]map[string]liveReceipt),
-  epochs: make(map[domain.HandID]uint64),
- }
- for i := 0; i < 110; i++ {
-  id := domain.HandID(fmt.Sprintf("retired-%d",i))
-  c.epochs[id] = 5
-  c.receipts[id] = map[string]liveReceipt{"done":{}}
-  c.finish(id,gamecore.FinalRecord{})
-  if len(c.finalized)>maxRetiredHotHands || len(c.receipts)>maxRetiredHotHands ||
-    len(c.retiredOrder)>maxRetiredHotHands || len(c.epochs)!=0 {
-   t.Fatalf("history not bounded at %d: final=%d receipts=%d queue=%d epochs=%d",
-    i,len(c.finalized),len(c.receipts),len(c.retiredOrder),len(c.epochs))
-  }
- }
- if _,ok:=c.receipts["retired-0"];ok {t.Fatal("oldest terminal receipt retained")}
- if _,ok:=c.finalized["retired-109"];!ok {t.Fatal("newest terminal missing")}
+	c := &LiveHandCoordinator{
+		games:     make(map[domain.HandID]*livehand.Game),
+		finalized: make(map[domain.HandID]gamecore.FinalRecord),
+		receipts:  make(map[domain.HandID]map[string]liveReceipt),
+		epochs:    make(map[domain.HandID]uint64),
+	}
+	for i := 0; i < 110; i++ {
+		id := domain.HandID(fmt.Sprintf("retired-%d", i))
+		c.epochs[id] = 5
+		c.receipts[id] = map[string]liveReceipt{"done": {}}
+		c.finish(id, gamecore.FinalRecord{})
+		if len(c.finalized) > maxRetiredHotHands || len(c.receipts) > maxRetiredHotHands ||
+			len(c.retiredOrder) > maxRetiredHotHands || len(c.epochs) != 0 {
+			t.Fatalf("history not bounded at %d: final=%d receipts=%d queue=%d epochs=%d",
+				i, len(c.finalized), len(c.receipts), len(c.retiredOrder), len(c.epochs))
+		}
+	}
+	if _, ok := c.receipts["retired-0"]; ok {
+		t.Fatal("oldest terminal receipt retained")
+	}
+	if _, ok := c.finalized["retired-109"]; !ok {
+		t.Fatal("newest terminal missing")
+	}
 }
