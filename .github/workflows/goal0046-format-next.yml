@@ -1,0 +1,26 @@
+name: One-shot Go format
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/goal0046-format-next.yml']
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Apply gofmt then remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -w server/business/doudizhu/infrastructure/mysqlstore/live_terminal_history_integration_test.go
+          git add server/business/doudizhu/infrastructure/mysqlstore/live_terminal_history_integration_test.go
+          git rm .github/workflows/goal0046-format-next.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'style(go): format terminal history integration test'
+          git push origin HEAD:main
