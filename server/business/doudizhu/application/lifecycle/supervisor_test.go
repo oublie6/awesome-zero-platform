@@ -294,6 +294,7 @@ type committedViewTerminal struct {
 	version uint64
 	phase   string
 }
+
 func (v *committedViewTerminal) GetHandPublicView(_ context.Context, _ domain.AccountID, id domain.HandID) (application.LiveHandView, error) {
 	payload, err := json.Marshal(struct {
 		HandID       string `json:"handId"`
