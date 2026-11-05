@@ -75,6 +75,12 @@ This directory is the normative source for these decisions. Keep `AGENTS.md` com
 - Add or update narrow architecture/dependency tests when introducing a new cross-module boundary. Treat `gamecore` import tests as game-specific, not a substitute for platform-wide dependency checks.
 - Preserve backwards compatibility and real verification evidence; do not refactor a working subsystem or introduce distributed components solely for theoretical extensibility.
 
+## Linux-native client build policy (user-authorized, 2026-11-05)
+
+- Converge future client builds and packaging on **one Linux-native pipeline using the official cocos-cli with a pinned Cocos 4.0 engine**. Creator 3.8.8 is historical evidence, not a parallel routine build or acceptance requirement. Preserve its reports and artifacts; rerun that toolchain only for an explicitly requested historical investigation.
+- Do not use Wine or download/install Windows or macOS virtual machines to make foreign-system Creator binaries work. Prefer native Linux tools and dependencies; document unsupported capabilities instead of introducing another OS compatibility toolchain.
+- Implement the baseline migration as a coherent, reviewable Goal checkpoint updating project/engine declarations, pinned CLI/engine/platform-extension versions, CI and documentation together. This policy sets the migration direction; it does not itself change the current source version or qualify a beta engine or experimental exporter for release. Keep actual build, SDK interaction, full gameplay, device and release evidence separate, and preserve unresolved acceptance findings and Goal states.
+
 ## Main branch workflow
 
 - All project changes by ChatGPT, Codex, automation, and other repository agents must be made directly on `main` unless the user explicitly overrides this rule for a specific task.
