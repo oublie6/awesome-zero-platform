@@ -88,3 +88,10 @@ test('generated crypto audit distinguishes minified numeric powers and rejects B
   audit(root, { stripInlineMaps: true });
   assert.equal(fs.readFileSync(file, 'utf8'), 'const url="//# sourceMappingURL=data:abc";\n\n');
 });
+
+test('cold Linux exporter provisions the copied file-linked portable dependencies',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'build.cjs'),'utf8')
+ assert.match(source,/\['game-client-core','doudizhu-client'\]/)
+ assert.match(source,/package-lock=false/)
+ assert.ok(source.indexOf("'--prefix',project")>source.indexOf("'--package-lock=false'"))
+})

@@ -38,6 +38,11 @@ func TestRecoverLivePhasesAndFailClosedMismatch(t *testing.T) {
 		{"terminal-not-marked", domain.HandPlaying, livehand.PhaseCompleted, false, false},
 		{"completed-domain-unfinished-replay", domain.HandCompleted, livehand.PhasePlaying, false, false},
 		{"completed-domain-final-receipt", domain.HandCompleted, livehand.PhaseCompleted, true, true},
+        {"expired-bidding-replay", domain.HandExpired, livehand.PhaseBidding, false, true},
+        {"expired-playing-replay", domain.HandExpired, livehand.PhasePlaying, false, true},
+        {"cancelled-bidding-replay", domain.HandCancelled, livehand.PhaseBidding, false, true},
+        {"aborted-playing-replay", domain.HandAborted, livehand.PhasePlaying, false, true},
+        {"expired-cannot-impersonate-completion", domain.HandExpired, livehand.PhaseCompleted, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

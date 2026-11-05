@@ -148,6 +148,19 @@ func (c *LiveHandCoordinator) ReleasePrepared(ctx context.Context, handID domain
 	if c.Contains(handID) {
 		return fmt.Errorf("%w: live hand %s still active", domain.ErrHandActive, handID)
 	}
+	if c.journal != nil {
+		// A duplicate terminal command can arrive long after the hot cache
+		// was evicted. Keep encrypted genesis material whenever durable live
+		// actions could still need exact, authenticated historical replay.
+		exists, err := c.journal.HasLiveWriter(ctx, handID)
+		if err != nil {
+			return fmt.Errorf("check durable terminal seed retention: %w", err)
+		}
+		if exists {
+			c.seeds.EvictCached(handID)
+			return nil
+		}
+	}
 	// Never turn a transient durable-store outage into a successful cleanup.
 	err := c.seeds.Release(handID)
 	if errors.Is(err, ErrSeedNotFound) {

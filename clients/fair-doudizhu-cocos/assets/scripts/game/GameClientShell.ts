@@ -25,6 +25,10 @@ export class GameClientShell {
   private transportReady = false
   private generation = 0
   private syncSequence = 0
+  // Bound only by authenticated room/start-hand evidence, not a realtime
+  // event. A stale prior-room snapshot must not populate an empty HandStore.
+  private authoritativeHand: string | null = null
+  private handBound = false
   private pendingCommands = new Map<string, { request: WireCommand; resolve: (value: WireCommandResult) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>()
   private notify: (message: string) => void
   constructor(notify: (message: string) => void) { this.notify = notify }
@@ -50,13 +54,16 @@ export class GameClientShell {
       }
     })
     this.events.on('doudizhu.hand.changed', payload => {
-      if (this.hand.snapshot && (payload as {handId?: string}).handId !== this.hand.snapshot.handId) return
+      const id = (payload as {handId?: string}).handId
+      if (this.handBound && id !== this.authoritativeHand) return
+      if (this.hand.snapshot && id !== this.hand.snapshot.handId) return
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')
       this.notify('收到牌局状态变化，请同步权威快照')
     })
     this.events.on('doudizhu.hand.snapshot', payload => {
       if (this.disposed) return
       const event = payload as {handId?: string; knownVersion?: number; notModified?: boolean; view?: unknown}
+      if (this.handBound && event.handId !== this.authoritativeHand) return
       if (event.notModified) {
         if (this.hand.status === 'synchronizing' &&
             event.handId === this.hand.snapshot?.handId && event.knownVersion === this.hand.snapshot?.version) {
@@ -83,7 +90,9 @@ export class GameClientShell {
       }
     })
     this.events.on('doudizhu.hand.evidence', payload => {
-      if (this.hand.snapshot && (payload as {handId?: string}).handId !== this.hand.snapshot.handId) return
+      const id = (payload as {handId?: string}).handId
+      if (this.handBound && id !== this.authoritativeHand) return
+      if (this.hand.snapshot && id !== this.hand.snapshot.handId) return
       // Keep transport status truthful; block actions while terminal DTO mapping is pending.
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')
       this.notify('已收到终局证据，牌局操作已停止')
@@ -129,10 +138,20 @@ export class GameClientShell {
       throw error
     }
   }
-  clearHand(): void {
+  /** Called only after an authenticated room read or accepted start/leave.
+   * It permits a NEW hand identity without weakening HandStore's normal
+   * cross-hand rejection, and keeps previous realtime messages fenced. */
+  useAuthoritativeHand(handId: string | null): void {
+    if (this.disposed) throw new Error('client disposed')
+    if (handId !== null && (!/^[A-Za-z0-9_-]{1,128}$/.test(handId)))
+      throw new Error('invalid authoritative hand identity')
     if (this.pendingCommands.size) throw new Error('hand command still pending')
+    if (this.handBound && this.authoritativeHand === handId) return
+    this.authoritativeHand = handId
+    this.handBound = true
     this.hand.clearHand()
   }
+  clearHand(): void { this.useAuthoritativeHand(null) }
 
   /** Only call with authenticated HTTP evidence already validated by
    * DoudizhuHTTPClient.finalEvidence. A terminal archive replaces live
@@ -140,6 +159,8 @@ export class GameClientShell {
   acceptVerifiedFinalEvidence(evidence: FinalEvidenceRead): void {
     if (this.disposed) return
     const handId = evidence.handId
+    if (this.handBound && handId !== this.authoritativeHand)
+      throw new Error('terminal evidence outside authorized hand context')
     const phase = String(evidence.status).toUpperCase()
     const verification = evidence.verification
     if (!handId || !Number.isSafeInteger(evidence.finalVersion) || evidence.finalVersion < 1 ||
@@ -167,6 +188,8 @@ export class GameClientShell {
   }
   acceptVerifiedSnapshot(snapshot: HandSnapshot): void {
     if (this.disposed) return
+    if (this.handBound && snapshot.handId !== this.authoritativeHand)
+      throw new Error('snapshot outside authorized hand context')
     const applied = this.hand.apply(snapshot)
     const confirmed = this.hand.snapshot
     if (this.hand.status === 'synchronizing' && confirmed?.handId === snapshot.handId && confirmed.version === snapshot.version) {
@@ -176,6 +199,8 @@ export class GameClientShell {
   }
   async syncHand(handId: string, knownVersion?: number): Promise<void> {
     if (this.disposed || !this.connection || !['synchronizing','connected'].includes(this.hand.status)) throw new Error('not connected')
+    if (this.handBound && handId !== this.authoritativeHand)
+      throw new Error('hand sync outside authorized hand context')
     if (!handId.trim() || handId !== handId.trim() || handId.length > 128 ||
         (knownVersion !== undefined && (!Number.isSafeInteger(knownVersion) || knownVersion < 0))) throw new Error('invalid hand sync')
     await this.connection.send({

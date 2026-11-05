@@ -125,3 +125,29 @@ func TestRoomHandSeatsAreFixed(t *testing.T) {
 		t.Fatalf("HandSeats() = %#v, want %#v", seats, want)
 	}
 }
+
+func TestCancelledBeforeDealDoesNotExposeUnarchivedLastHand(t *testing.T) {
+	room, err := NewRoom("room-predeal-cancel", "owner-predeal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, actor := range []AccountID{"join-2", "join-3"} {
+		if _, err := room.Join(actor, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, actor := range []AccountID{"owner-predeal", "join-2", "join-3"} {
+		if _, err := room.SetReady(actor, true, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := room.StartHand("owner-predeal", "hand-cancel-no-deal", room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := room.FinishHand("hand-cancel-no-deal", room.Snapshot().Version, false); err != nil {
+		t.Fatal(err)
+	}
+	if room.Snapshot().LastHandID != "" || room.Snapshot().ActiveHandID != "" {
+		t.Fatalf("unarchived cancellation exposed as lastHandId: %+v", room.Snapshot())
+	}
+}

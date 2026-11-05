@@ -165,3 +165,17 @@ func (v *SeedVault) Count() int {
 	defer v.mu.RUnlock()
 	return len(v.seeds)
 }
+
+// EvictCached clears RAM without removing encrypted durable seed material.
+func (v *SeedVault) EvictCached(id domain.HandID) {
+	if v == nil || v.persistent == nil {
+		return
+	}
+	v.mu.Lock()
+	if seed, found := v.seeds[id]; found {
+		clear(seed[:])
+		v.seeds[id] = seed
+		delete(v.seeds, id)
+	}
+	v.mu.Unlock()
+}

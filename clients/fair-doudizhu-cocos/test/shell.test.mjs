@@ -196,3 +196,29 @@ test('authenticated archive evidence changes terminal UI state without forging l
   assert.equal(s.hand.status,'connected')
   s.dispose()
 })
+
+test('Round9 explicitly bound second hand rejects old finished snapshots and stale evidence',async()=>{
+ const s=new GameClientShell(()=>{}),t=transport()
+ await s.initialize()
+ const opening=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await opening
+ s.useAuthoritativeHand('hand-1')
+ s.acceptVerifiedSnapshot(snapshot)
+ s.useAuthoritativeHand('hand-2')
+ assert.equal(s.hand.snapshot,null)
+ assert.equal(s.hand.status,'connected')
+ assert.throws(()=>s.acceptVerifiedSnapshot({...snapshot,version:10}),/outside authorized hand/)
+ const second={handId:'hand-2',version:2,phase:'BIDDING',view:{cards:['5H']}}
+ s.acceptVerifiedSnapshot(second)
+ assert.equal(s.hand.snapshot.handId,'hand-2')
+ const evidence={handId:'hand-1',status:'completed',finalVersion:10,verification:{
+  handId:'hand-1',finalVersion:10,recordDigest:'a'.repeat(64),seatPoints:[6,-3,-3],winnerSeat:1}}
+ assert.throws(()=>s.acceptVerifiedFinalEvidence(evidence),/outside authorized hand/)
+ s.clearHand()
+ assert.equal(s.hand.snapshot,null)
+ assert.throws(()=>s.acceptVerifiedFinalEvidence(evidence),/outside authorized hand/)
+ assert.throws(()=>s.acceptVerifiedSnapshot(second),/outside authorized hand/)
+ s.useAuthoritativeHand('hand-3')
+ s.acceptVerifiedSnapshot({handId:'hand-3',version:2,phase:'PLAYING',view:{cards:['K']}})
+ assert.equal(s.hand.snapshot.handId,'hand-3')
+ s.dispose()
+})

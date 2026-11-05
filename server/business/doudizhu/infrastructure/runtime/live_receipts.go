@@ -41,6 +41,20 @@ func (c *LiveHandCoordinator) loadReceipt(ctx context.Context, id domain.HandID,
 	c.mu.RLock()
 	receipt, found := c.receipts[id][commandID]
 	c.mu.RUnlock()
+	if !found && c.journal != nil {
+		// Active hands have a complete RAM index. Retired hands are bounded
+		// and must use an exact, verified journal replay after eviction.
+		c.mu.RLock()
+		_, active := c.games[id]
+		c.mu.RUnlock()
+		if !active {
+			var err error
+			receipt, found, err = c.loadTerminalReceipt(ctx, id, commandID)
+			if err != nil {
+				return gamecore.CommandOutcome{}, false, err
+			}
+		}
+	}
 	if !found {
 		return gamecore.CommandOutcome{}, false, nil
 	}

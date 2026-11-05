@@ -56,7 +56,9 @@ func RestoreRoom(snapshot RoomSnapshot) (*Room, error) {
 		seen[current.AccountID] = struct{}{}
 		room.seats[index] = roomSeat{AccountID: current.AccountID, Ready: current.Ready}
 	}
-	if room.seats[0].AccountID != snapshot.OwnerID {
+	// Closing the room deliberately vacates its last (owner) seat. All
+	// non-closed rooms still require that owner in the first seat.
+	if snapshot.Status != RoomClosed && room.seats[0].AccountID != snapshot.OwnerID {
 		return nil, fmt.Errorf("%w: owner must occupy seat 1", ErrInvalidArgument)
 	}
 	if err := validateRoomSnapshotState(room); err != nil {

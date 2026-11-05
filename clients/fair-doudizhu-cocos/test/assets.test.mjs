@@ -37,5 +37,7 @@ test('native UI exposes a room leave control and displays verified archive compl
  assert.match(source,/name:'LeaveRoom'/)
  assert.match(source,/online\.leaveRoom\(\)/)
  assert.match(source,/terminalEvidence/)
- assert.match(source,/api\.finalEvidence\(this\.handID\)/)
+ assert.match(source,/roomGeneration/)
+ assert.match(source,/useAuthoritativeHand/)
+ assert.match(source,/api\.finalEvidence\(handID\)/)
 })

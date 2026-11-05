@@ -51,6 +51,8 @@ export class GameBootstrap extends Component {
   private roomID = ''
   private handID = ''
   private requestGeneration = 0
+  // Any leave, new hand or room switch invalidates older awaited HTTP replies.
+  private roomGeneration = 0
 
   override start(): void {
     this.content = new Node('SafeContent')
@@ -233,8 +235,13 @@ export class GameBootstrap extends Component {
     try {
       const view=await this.requireOnline().reconnectAndResync(this.roomID || undefined)
       if(view) {
+        const currentHand=view.activeHandId || view.lastHandId || ''
+        if(this.roomID!==view.roomId || this.handID!==currentHand) {
+          this.roomGeneration++
+          this.selectedCards.clear()
+        }
         this.roomID=view.roomId
-        if(view.activeHandId || view.lastHandId)this.handID=view.activeHandId || view.lastHandId!
+        this.handID=currentHand
       }
       this.notice(view?'重连成功，已向服务器请求房间与牌局同步':'重连成功，等待创建或加入房间')
     }catch(error){this.notice('重连失败：'+this.message(error))}
@@ -251,7 +258,10 @@ export class GameBootstrap extends Component {
     try {
       const online=this.requireOnline()
       const room=await online.createRoom()
+      this.roomGeneration++
       this.roomID=room.roomId
+      this.handID=''
+      this.selectedCards.clear()
       await this.refreshRoom()
     }catch(error){this.notice('建房失败：'+this.message(error))}
   }
@@ -261,7 +271,10 @@ export class GameBootstrap extends Component {
       const roomID=this.roomInput?.string?.trim() || this.roomID
       if(!roomID)throw new Error('请填写房间号')
       const room=await online.joinRoom(roomID)
+      this.roomGeneration++
       this.roomID=room.roomId
+      this.handID=''
+      this.selectedCards.clear()
       await this.refreshRoom()
     }catch(error){this.notice('加入失败：'+this.message(error))}
   }
@@ -271,6 +284,7 @@ export class GameBootstrap extends Component {
       if(!this.roomID || online.rooms.state?.roomId!==this.roomID)
         throw new Error('请先确认当前房间成员身份')
       await online.leaveRoom()
+      this.roomGeneration++
       this.roomID=''
       this.handID=''
       this.selectedCards.clear()
@@ -290,6 +304,10 @@ export class GameBootstrap extends Component {
       if(!this.platform)throw new Error('游戏平台未初始化')
       const handID='hand-'+await secureRoomCommandIdentity(this.platform.random).newRequestId()
       await online.rooms.startHand(handID)
+      this.roomGeneration++
+      this.handID=handID
+      this.selectedCards.clear()
+      online.shell.useAuthoritativeHand(handID)
       await this.refreshRoom()
     }catch(error){this.notice('开局失败：'+this.message(error))}
   }
@@ -297,23 +315,35 @@ export class GameBootstrap extends Component {
     try {
       const online=this.requireOnline()
       if(!this.roomID)throw new Error('还没有房间')
-      const info=await online.roomInfo(this.roomID)
+      const roomID=this.roomID
+      const generation=this.roomGeneration
+      const info=await online.roomInfo(roomID)
+      if(generation!==this.roomGeneration || roomID!==this.roomID || online!==this.online)return
       if(!info.member)throw new Error('当前账号不属于该房间')
       online.rooms.restoreTrustedRoom(info.roomId,info.version,info.lastClientSequence)
       if(this.screen==='rooms')this.renderScreen('rooms')
       const seats=(info.seats||[]).map(s=>s.accountId ? `座位${s.position} ${s.ready?'已准备':'未准备'}`:`座位${s.position} 空`).join(' / ')
       this.notice(`房间版本 ${info.version} · ${seats}`)
+      const authorizedHand=info.activeHandId || info.lastHandId || ''
+      if(authorizedHand!==this.handID){
+        this.roomGeneration++
+        this.handID=authorizedHand
+        this.selectedCards.clear()
+      }
+      online.shell.useAuthoritativeHand(authorizedHand || null)
       if(info.activeHandId){
-        this.handID=info.activeHandId
+        const handGeneration=this.roomGeneration
         const fairness=await online.api.fairness(info.activeHandId)
+        if(handGeneration!==this.roomGeneration || info.activeHandId!==this.handID || online!==this.online)return
         if(fairness.phase==='BIDDING' || fairness.phase==='PLAYING' || fairness.phase==='SETTLING'){
           await online.shell.syncHand(info.activeHandId)
         } else {
           this.notice(`公平洗牌阶段：${fairness.phase} · 座位${fairness.seat} · ${fairness.committed?'已承诺':'待承诺'} / ${fairness.revealed?'已贡献':'待贡献'}`)
         }
       } else if(info.lastHandId){
-        this.handID=info.lastHandId
+        const handGeneration=this.roomGeneration
         const evidence=await online.api.finalEvidence(info.lastHandId)
+        if(handGeneration!==this.roomGeneration || info.lastHandId!==this.handID || online!==this.online)return
         online.shell.acceptVerifiedFinalEvidence(evidence)
         if(this.screen==='table')this.renderScreen('table')
       }
@@ -370,7 +400,14 @@ export class GameBootstrap extends Component {
     try{
       if(!this.handID)throw new Error('尚未创建牌局')
       const online=this.requireOnline()
-      const data=await online.api.finalEvidence(this.handID)
+      const generation=this.roomGeneration
+      const handID=this.handID
+      const roomID=this.roomID
+      const data=await online.api.finalEvidence(handID)
+      // A valid, previously authorized HTTP response is nevertheless stale
+      // after Leave, a subsequent StartHand, or a session/controller switch.
+      if(generation!==this.roomGeneration || handID!==this.handID ||
+          roomID!==this.roomID || online!==this.online)return
       online.shell.acceptVerifiedFinalEvidence(data)
       this.selectedCards.clear()
       if(this.screen==='table')this.renderScreen('table')

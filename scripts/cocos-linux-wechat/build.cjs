@@ -32,6 +32,15 @@ try {
   const settings=path.join(project,'settings');
   fs.mkdirSync(settings,{recursive:true});
   fs.copyFileSync(path.join(__dirname,'engine-profile.json'),path.join(settings,'cocos.config.json'));
+  // Local file: packages are copied without node_modules. npm ci for the
+  // Cocos project does not restore the transitive runtime dependencies in
+  // those source directories; the actual CLI follows the file-linked paths.
+  // Provision each isolated package explicitly before installing the project.
+  for(const packageName of ['game-client-core','doudizhu-client']){
+    command('npm',['ci','--no-audit','--no-fund','--prefix',path.join(copy,'packages',packageName)]);
+  }
+  command('npm',['install','--package-lock=false','--ignore-scripts','--no-audit','--no-fund',
+    '--prefix',path.join(copy,'packages','secure-envelope')]);
   command('npm',['ci','--no-audit','--no-fund','--prefix',project]);
   const scene=JSON.parse(fs.readFileSync(path.join(project,'assets/scenes/Entry.scene.meta'),'utf8'));
   assert.match(scene.uuid,/^[a-f0-9-]{36}$/i);

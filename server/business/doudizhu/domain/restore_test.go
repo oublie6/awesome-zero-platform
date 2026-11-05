@@ -117,3 +117,26 @@ func advanceRestoreHandToBeacon(t *testing.T, hand *Hand) {
 		}
 	}
 }
+
+func TestRestoreClosedRoomWithVacantOwnerSeat(t *testing.T) {
+	room, err := NewRoom("room-closed-restore", "owner-closed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := room.Leave("owner-closed", room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
+	snapshot := room.Snapshot()
+	if snapshot.Status != RoomClosed || snapshot.Seats[0].AccountID != "" {
+		t.Fatalf("closed snapshot malformed: %+v", snapshot)
+	}
+	restored, err := RestoreRoom(snapshot)
+	if err != nil || restored.Snapshot().Status != RoomClosed {
+		t.Fatalf("valid closed room cannot restore: %+v %v", restored, err)
+	}
+	invalid := snapshot
+	invalid.Seats[0].AccountID = "owner-closed"
+	if _, err := RestoreRoom(invalid); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("closed room containing occupant was accepted: %v", err)
+	}
+}

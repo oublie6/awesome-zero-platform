@@ -215,7 +215,10 @@ func (r *Room) StartHand(actor AccountID, handID HandID, expectedVersion uint64)
 	return []Event{r.record(EventRoomHandStarted, RoomHandPayload{HandID: handID})}, nil
 }
 
-func (r *Room) FinishHand(handID HandID, expectedVersion uint64) ([]Event, error) {
+// archiveAvailable marks whether this termination has a runtime final record.
+// A pre-deal cancellation cannot be exposed as lastHandId: its final-evidence
+// endpoint is intentionally not backed by a live archive.
+func (r *Room) FinishHand(handID HandID, expectedVersion uint64, archiveAvailable ...bool) ([]Event, error) {
 	if err := checkExpectedVersion(r.version, expectedVersion); err != nil {
 		return nil, err
 	}
@@ -223,7 +226,13 @@ func (r *Room) FinishHand(handID HandID, expectedVersion uint64) ([]Event, error
 		return nil, ErrHandNotActive
 	}
 	r.activeHandID = ""
-	r.lastHandID = handID
+	if len(archiveAvailable) == 0 || archiveAvailable[0] {
+		r.lastHandID = handID
+	} else {
+		// Clear a previous completed hand as well: the most recently ended
+		// hand does not have an archive that can be replayed on reconnect.
+		r.lastHandID = ""
+	}
 	r.recalculateStatus()
 	return []Event{r.record(EventRoomHandFinished, RoomHandPayload{HandID: handID})}, nil
 }

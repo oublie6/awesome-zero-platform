@@ -301,7 +301,13 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 			if err != nil {
 				return mutationOutcome{}, wrapInfrastructure("restore room snapshot", err)
 			}
-			roomEvents, err := room.FinishHand(handSnapshot.ID, roomSnapshot.Version)
+			// A hand stopped before deterministic dealing has no runtime archive.
+			// Do not advertise an unresolvable lastHandId in the room view.
+			archiveAvailable := updatedHand.Phase == domain.HandCompleted ||
+				handSnapshot.Phase == domain.HandBidding ||
+				handSnapshot.Phase == domain.HandPlaying ||
+				handSnapshot.Phase == domain.HandSettling
+			roomEvents, err := room.FinishHand(handSnapshot.ID, roomSnapshot.Version, archiveAvailable)
 			if err != nil {
 				return mutationOutcome{}, wrapInfrastructure("release terminal hand room", err)
 			}

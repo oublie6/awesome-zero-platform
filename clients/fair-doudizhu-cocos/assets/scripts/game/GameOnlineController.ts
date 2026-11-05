@@ -18,6 +18,7 @@ export class GameOnlineController {
   readonly actions: GameHandActions
   readonly fairness: GameFairnessActions
   private disposed = false
+  private membershipGeneration = 0
   constructor(
     private readonly platform: GamePlatform,
     identity: IdentityExchange,
@@ -56,16 +57,21 @@ export class GameOnlineController {
    * result for commands whose response was lost on the old connection. */
   async reconnectAndResync(roomId?: string): Promise<RoomRead | null> {
     if (this.disposed || !this.session.authenticated) throw new Error('authenticated session required')
+    const generation = this.membershipGeneration
     await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
     const target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId
     if (!target) return null
     const room = await this.lookupOrRetryPendingCreate(target)
+    if (this.disposed || generation !== this.membershipGeneration) return null
     if (!room.member) throw new Error('room membership not confirmed after reconnect')
     this.rooms.restoreTrustedRoom(room.roomId, room.version, room.lastClientSequence)
+    this.shell.useAuthoritativeHand(room.activeHandId || room.lastHandId || null)
     if (room.activeHandId) {
       await this.shell.syncHand(room.activeHandId)
     } else if (room.lastHandId) {
       const evidence = await this.api.finalEvidence(room.lastHandId)
+      if (this.disposed || generation !== this.membershipGeneration ||
+          this.rooms.state?.roomId !== room.roomId) return null
       this.shell.acceptVerifiedFinalEvidence(evidence)
     }
     return room
@@ -80,9 +86,14 @@ export class GameOnlineController {
     if (view.status === 'CLOSED' || view.status === 'HAND_ACTIVE') throw new Error('room not joinable')
     if (view.member) {
       this.rooms.restoreTrustedRoom(roomId, view.version, view.lastClientSequence)
+      this.membershipGeneration++
+      this.shell.useAuthoritativeHand(view.activeHandId || view.lastHandId || null)
       return this.rooms.state!
     }
-    return this.rooms.join(roomId, view.version, view.lastClientSequence)
+    const joined = await this.rooms.join(roomId, view.version, view.lastClientSequence)
+    this.membershipGeneration++
+    this.shell.useAuthoritativeHand(null)
+    return joined
   }
   /** Resolve an ambiguous command only from an authenticated, authoritative room read. */
   async reconcileRoom(roomId: string): Promise<RoomRead> {
@@ -104,6 +115,7 @@ export class GameOnlineController {
       if (!this.rooms.state) throw new Error('room not confirmed by server')
       await this.rooms.leave()
     }
+    this.membershipGeneration++
     this.shell.clearHand()
   }
 
@@ -123,7 +135,10 @@ export class GameOnlineController {
   async createRoom(): Promise<Readonly<{roomId:string;version:number}>> {
     if (this.disposed) throw new Error('online controller disposed')
     const roomId = 'room-' + await secureRoomCommandIdentity(this.platform.random).newRequestId()
-    return this.rooms.create(roomId)
+    const room = await this.rooms.create(roomId)
+    this.membershipGeneration++
+    this.shell.useAuthoritativeHand(null)
+    return room
   }
   async logout(): Promise<void> {
     this.fairness.dispose()

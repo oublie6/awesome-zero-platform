@@ -36,7 +36,7 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 		if err != nil {
 			return fmt.Errorf("load authoritative hand %s: %w", id, err)
 		}
-		if !recoveryPhaseNeedsReplay(snapshot.Phase) && snapshot.Phase != domain.HandCompleted {
+		if !recoveryPhaseNeedsReplay(snapshot.Phase) && !snapshot.Phase.Terminal() {
 			// Terminal hands are owned by durable lifecycle records; never
 			// resurrect a finished game as an active executor.
 			continue
@@ -125,6 +125,23 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 		if err := validateReplayedPhase(snapshot.Phase, game.Phase(), finalOutcome.Terminal); err != nil {
 			return fmt.Errorf("replay phase mismatch for %s: %w", id, err)
 		}
+		// EXPIRED/ABORTED/CANCELLED may have accepted live actions but no
+		// terminal live action. A crash between the domain COMMIT and the
+		// runtime archive must be compensated before serving clients.
+		if snapshot.Phase.Terminal() && snapshot.Phase != domain.HandCompleted {
+			if err := c.directory.Add(game.Descriptor(), game); err != nil {
+				return fmt.Errorf("register terminal recovery %s: %w", id, err)
+			}
+			record, err := c.directory.Abort(gamecore.InstanceID(id), snapshot.TerminationReason)
+			if err != nil {
+				return fmt.Errorf("reconcile terminated archive %s: %w", id, err)
+			}
+			c.finish(id, record)
+			c.mu.Lock()
+			c.receipts[id] = recoveredReceipts
+			c.mu.Unlock()
+			continue
+		}
 		if finalOutcome.Terminal {
 			record, err := c.directory.ArchiveRecoveredFinal(game, finalOutcome)
 			if err != nil {
@@ -176,6 +193,13 @@ func recoveryPhaseNeedsReplay(phase domain.HandPhase) bool {
 }
 
 func validateReplayedPhase(persisted domain.HandPhase, replayed string, terminal bool) error {
+	if persisted.Terminal() && persisted != domain.HandCompleted {
+		if !terminal && (replayed == livehand.PhaseBidding ||
+			replayed == livehand.PhasePlaying || replayed == livehand.PhaseNoLandlord) {
+			return nil
+		}
+		return gamecore.ErrVerificationFailed
+	}
 	if terminal {
 		if replayed != livehand.PhaseCompleted || (!recoveryPhaseNeedsReplay(persisted) && persisted != domain.HandCompleted) {
 			return gamecore.ErrVerificationFailed
