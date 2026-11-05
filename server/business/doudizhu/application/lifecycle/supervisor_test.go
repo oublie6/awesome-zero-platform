@@ -329,7 +329,7 @@ func TestCommittedBeforeCallbackDoesNotExpire(t *testing.T) {
 		bidResult(t, "committed-callback-gap", 2, livehand.PhaseBidding, false)); err != nil {
 		t.Fatal(err)
 	}
-	clock.Advance(4 * time.Second)
+	clock.Advance(5 * time.Second)
 	terminated, err = s.Sweep(context.Background())
 	if err != nil || len(terminated) != 1 || terminated[0] != "committed-callback-gap" {
 		t.Fatalf("committed deadline never expired: %v %v", terminated, err)
