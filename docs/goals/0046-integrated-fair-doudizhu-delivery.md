@@ -387,3 +387,12 @@ Implementation is not an acceptance verdict. Run the full CI checks against
 one fixed source SHA, then ask Codex to reproduce the original regressions
 and qualify the actual Creator 3.8.8 generated product. The previously
 reported P1/P2 items remain open until independent evidence closes them.
+
+## Formatted Round 7 repair verification checkpoint
+
+The pending repair source at `f792216811c9b8e68165c3a64d98e77f9921cd6f`
+contains the three R7 P1/P2 fixes plus monotonic callback-order and
+expiry-candidate revalidation. Its one-time Go formatting workflow has
+self-deleted. A documentation-only commit triggers normal GitHub Actions
+against the same formatted product code. Passing CI does not substitute for
+Codex's independent actual Creator 3.8.8 and gameplay qualification.
