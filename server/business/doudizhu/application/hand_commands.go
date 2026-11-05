@@ -258,6 +258,7 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 					if durability, ok := s.liveHands.(interface{ DurabilityEnforced() bool }); ok && durability.DurabilityEnforced() {
 						guard, ok := tx.(interface {
 							LockLiveCommittedVersion(context.Context, domain.HandID) (uint64, error)
+							FenceLiveWriter(context.Context, domain.HandID) error
 						})
 						if !ok {
 							return mutationOutcome{}, fmt.Errorf("live writer lock unavailable for expiry")
@@ -268,6 +269,13 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 						}
 						if committed > input.ExpectedLiveVersion {
 							return mutationOutcome{}, ErrLiveProgressed
+						}
+						// Under the same row lock, advance the owner fence. Any
+						// live operation that starts after this transaction wins
+						// must fail the old-epoch check instead of committing
+						// an action to a now-terminal domain hand.
+						if err := guard.FenceLiveWriter(txCtx, handSnapshot.ID); err != nil {
+							return mutationOutcome{}, fmt.Errorf("fence live writer on expiry: %w", err)
 						}
 					}
 				}

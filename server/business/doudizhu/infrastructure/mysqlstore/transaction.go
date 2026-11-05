@@ -18,6 +18,25 @@ type transaction struct{ tx *sql.Tx }
 // LockLiveCommittedVersion participates in the existing command transaction.
 // LiveJournal.Append takes FOR UPDATE on the same writer row before updating
 // committed_version, making the expiry decision atomic with durable live writes.
+// FenceLiveWriter is called only inside a successful candidate expiry
+// transaction after holding LockLiveCommittedVersion's FOR UPDATE row lock.
+// Its epoch change rolls back if any later domain mutation fails.
+func (t *transaction) FenceLiveWriter(ctx context.Context, id domain.HandID) error {
+	result, err := t.tx.ExecContext(ctx,
+		"UPDATE doudizhu_live_writers SET owner_epoch=owner_epoch+1,updated_at=UTC_TIMESTAMP(6) WHERE hand_id=?", id)
+	if err != nil {
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return fmt.Errorf("live writer not found for expiry")
+	}
+	return nil
+}
+
 func (t *transaction) LockLiveCommittedVersion(ctx context.Context, id domain.HandID) (uint64, error) {
 	var version uint64
 	err := t.tx.QueryRowContext(ctx,

@@ -1,0 +1,26 @@
+name: One-shot Round 8 writer fence gofmt
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/goal0046-round8-writer-gofmt-once.yml']
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Format writer fence and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -w server/business/doudizhu/infrastructure/runtime/live_hand_coordinator.go server/business/doudizhu/application/hand_commands.go server/business/doudizhu/infrastructure/mysqlstore/transaction.go
+          git add -- server
+          git rm .github/workflows/goal0046-round8-writer-gofmt-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'style(go): format durable expiry writer fence'
+          git push origin HEAD:main
