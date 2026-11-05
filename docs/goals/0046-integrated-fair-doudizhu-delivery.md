@@ -421,3 +421,15 @@ Codex's independent actual Creator 3.8.8 and gameplay qualification.
 All changes are implementation candidates and cannot close the three Round8
 findings without exact-source CI, actual native SDK and Codex Round9 independent
 verification. Goals0045/0046 remain in_progress; no release approval.
+
+## Round 8 final formatted implementation checkpoint
+
+The current formatted code baseline is
+`79128467898fe89664687a1fa78c62f13fbbc5e4`.
+This includes the real durable runtime watermark guard and writer-epoch fence
+on expiry, protected by one MySQL transaction; the independent terminal
+evidence/room exit flow; and the Linux-native Cocos 4 project/CI migration.
+A documentation-only commit triggers all normal Actions checks for that exact
+code tree. Native WECHAT export remains a separate executable gated action:
+a hosted source-check SUCCESS does not claim an exact-source CLI4 export or
+a completed device acceptance.
