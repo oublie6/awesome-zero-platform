@@ -433,3 +433,24 @@ A documentation-only commit triggers all normal Actions checks for that exact
 code tree. Native WECHAT export remains a separate executable gated action:
 a hosted source-check SUCCESS does not claim an exact-source CLI4 export or
 a completed device acceptance.
+
+## Round9 ChatGPT remediation candidate — verification pending
+
+The eight defects recorded in Round9 have corresponding code changes and
+regression checks, with Go formatting applied. Hot terminal history is
+capped (64 hands), and cold history is recomputed from a bounded,
+authenticated MySQL log and persistent protected genesis material. The
+new integration test exercises an EXPIRED live hand and missing archive
+following its durable action, including exact historical replay after
+a new runtime is constructed.
+
+R9-N01 rejected expiry no longer updates the writer epoch before domain
+validation. R9-N02 and N06 use explicit hand identity and room generation
+checks. R9-N04 suppresses archive locator for undealt cancellations,
+R9-N05 accepts a vacant CLOSED owner seat, and R9-N03 provisions the
+source package dependencies in the isolated Linux copy.
+
+Passing compilation/CI does not prove the full real-MySQL process-crash
+matrix, the official native Linux export, SDK/device qualification, or
+independent product acceptance. Round9 FAIL and `in_progress` goals
+remain until a fixed exact-source Round10 independent verification.
