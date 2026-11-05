@@ -241,12 +241,6 @@ func (c *LiveHandCoordinator) RetryArchive(ctx context.Context, handID domain.Ha
 	return record, nil
 }
 
-// DurabilityEnforced lets the application require the durable writer
-// watermark guard on expiry. A missing journal is never treated as protected.
-func (c *LiveHandCoordinator) DurabilityEnforced() bool {
-	return c != nil && c.journal != nil
-}
-
 func (c *LiveHandCoordinator) Contains(handID domain.HandID) bool {
 	if c == nil {
 		return false
