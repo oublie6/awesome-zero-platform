@@ -127,7 +127,7 @@ func TestRoomHandSeatsAreFixed(t *testing.T) {
 }
 
 func TestCancelledBeforeDealDoesNotExposeUnarchivedLastHand(t *testing.T) {
-	room, err := NewRoom("room-predeal-cancel", "owner-predeal")
+	room, _, err := NewRoom("room-predeal-cancel", "owner-predeal")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -24,6 +24,7 @@ type LiveHandCoordinator struct {
 	journal         *mysqlstore.LiveJournal
 	epochs          map[domain.HandID]uint64
 	receipts        map[domain.HandID]map[string]liveReceipt
+	retiredOrder    []domain.HandID
 	checkpointSlots chan struct{}
 	commandStripes  [256]sync.Mutex
 }
@@ -324,17 +325,30 @@ func (c *LiveHandCoordinator) game(ctx context.Context, handID domain.HandID) (*
 	return game, nil
 }
 
+// Keep terminal metadata hot only for a bounded number of hands. Persisted
+// authenticated live receipts remain recoverable from the MySQL journal.
+const maxRetiredHotHands = 64
+
 func (c *LiveHandCoordinator) finish(handID domain.HandID, record gamecore.FinalRecord) {
 	c.mu.Lock()
 	delete(c.games, handID)
+	delete(c.epochs, handID)
+	if _, exists := c.finalized[handID]; !exists {
+		c.retiredOrder = append(c.retiredOrder, handID)
+	}
 	c.finalized[handID] = record
+	for len(c.retiredOrder) > maxRetiredHotHands {
+		oldest := c.retiredOrder[0]
+		c.retiredOrder = c.retiredOrder[1:]
+		delete(c.finalized, oldest)
+		delete(c.receipts, oldest)
+		delete(c.epochs, oldest)
+	}
 	c.mu.Unlock()
-	// The live action commit and domain HandCompleted transaction are separate.
-	// Do not erase the encrypted genesis seed after a live terminal result
-	// while the durable hand can still be BIDDING/PLAYING/SETTLING: restart
-	// must reproduce the exact archive and all acknowledged actions.
-	// Durable retention is handled only after final domain/evidence commit.
+	// Durable genesis material must remain in encrypted storage for
+	// historical receipt recovery after the hot cache has been evicted.
 	if c.journal != nil {
+		c.seeds.EvictCached(handID)
 		return
 	}
 	if err := c.seeds.Release(handID); err != nil && !errors.Is(err, ErrSeedNotFound) {

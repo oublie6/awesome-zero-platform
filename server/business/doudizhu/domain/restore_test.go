@@ -119,7 +119,7 @@ func advanceRestoreHandToBeacon(t *testing.T, hand *Hand) {
 }
 
 func TestRestoreClosedRoomWithVacantOwnerSeat(t *testing.T) {
-	room, err := NewRoom("room-closed-restore", "owner-closed")
+	room, _, err := NewRoom("room-closed-restore", "owner-closed")
 	if err != nil {
 		t.Fatal(err)
 	}
