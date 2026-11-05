@@ -1,18 +1,19 @@
-name: Cocos Creator Smoke
+name: Cocos Linux Native Client
 
 on:
   workflow_dispatch:
+    inputs:
+      native_export:
+        description: 'Run actual Linux native Cocos 4 WeChat export on an approved pinned self-hosted runner'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - '.github/workflows/cocos-client-smoke.yml'
-      - 'scripts/verify-cocos-*'
+      - 'scripts/cocos-linux-wechat/**'
       - 'scripts/verify-client-foundation.sh'
-      - 'clients/fair-doudizhu-cocos/assets/**'
-      - 'clients/fair-doudizhu-cocos/test/**'
-      - 'clients/fair-doudizhu-cocos/build-templates/**'
-      - 'clients/fair-doudizhu-cocos/package*.json'
-      - 'clients/fair-doudizhu-cocos/tsconfig*.json'
+      - 'clients/fair-doudizhu-cocos/**'
       - 'clients/packages/game-client-core/src/**'
       - 'clients/packages/game-client-core/package*.json'
       - 'clients/packages/doudizhu-client/src/**'
@@ -24,98 +25,54 @@ permissions:
   contents: read
 
 concurrency:
-  group: cocos-client-${{ github.ref }}
+  group: cocos-linux-native-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  creator_web:
-    runs-on: windows-2022
+  linux_source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+      - name: Validate Linux-only pinned engine and client project
+        run: node scripts/cocos-linux-wechat/verify-toolchain.cjs
+      - name: Validate native exporter scripts
+        run: |
+          node --check scripts/cocos-linux-wechat/install.cjs
+          node --check scripts/cocos-linux-wechat/build.cjs
+          node --check scripts/cocos-linux-wechat/hooks.cjs
+          node --check scripts/cocos-linux-wechat/audit.cjs
+      - name: Typecheck and test portable client and scene modules
+        run: bash scripts/verify-client-foundation.sh
+
+  linux_native_export:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.native_export }}
+    needs: linux_source
+    runs-on: [self-hosted, linux, x64, cocos-cli4]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22.23.4
-      - name: Prepare and verify client packages
-        shell: bash
-        run: bash scripts/verify-client-foundation.sh
-      - name: Restore official Creator archive
-        id: creator_archive
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ runner.temp }}/creator-3.8.8.zip
-          key: creator-3.8.8-win-121518-e365030aa4f24b515f499cf093cd86fdf38a0f763b5fbcacb20e96253e0fcc0b
-      - name: Install official Creator 3.8.8
-        timeout-minutes: 22
-        shell: pwsh
+      - name: Verify pinned native CLI environment and build actual WECHAT game
+        env:
+          COCOS_CLI_ROOT: ${{ vars.COCOS_CLI_ROOT }}
+          COCOS_ENGINE_ROOT: ${{ vars.COCOS_ENGINE_ROOT }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          $archive = Join-Path $env:RUNNER_TEMP 'creator-3.8.8.zip'
-          if (-not (Test-Path $archive)) {
-            for ($attempt = 0; $attempt -lt 2; $attempt++) {
-              curl.exe --fail --location --continue-at - --connect-timeout 30 --max-time 600 --speed-limit 102400 --speed-time 60 --output $archive 'https://download.cocos.com/CocosCreator/v3.8.8/CocosCreator-v3.8.8-win-121518.zip'
-              if ($LASTEXITCODE -eq 0) { break }
-              if ($attempt -eq 1) { throw 'Official Creator download failed within its bounded transfer deadline' }
-            }
-          }
-          $expected = 'e365030aa4f24b515f499cf093cd86fdf38a0f763b5fbcacb20e96253e0fcc0b'
-          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Creator archive hash mismatch' }
-          $creatorRoot = Join-Path $env:RUNNER_TEMP 'creator-3.8.8'
-          & 7z x -y "-o$creatorRoot" $archive | Out-Null
-          if ($LASTEXITCODE -ne 0) { throw 'Creator extraction failed' }
-          "COCOS_SMOKE_CREATOR=$creatorRoot\CocosCreator.exe" >> $env:GITHUB_ENV
-          "COCOS_SMOKE_OUTPUT=$env:RUNNER_TEMP\cocos-web-output" >> $env:GITHUB_ENV
-      - name: Cache verified official Creator archive
-        if: steps.creator_archive.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ runner.temp }}/creator-3.8.8.zip
-          key: creator-3.8.8-win-121518-e365030aa4f24b515f499cf093cd86fdf38a0f763b5fbcacb20e96253e0fcc0b
-      - name: Import actual project and build Web
-        id: web_build
-        shell: pwsh
-        run: ./scripts/verify-cocos-runtime.ps1 -CreatorExe $env:COCOS_SMOKE_CREATOR -OutputRoot $env:COCOS_SMOKE_OUTPUT
-      - name: Typecheck using Creator generated configuration
-        shell: pwsh
-        working-directory: clients/fair-doudizhu-cocos
-        run: npm run typecheck:creator
-      - name: Start the built scene in Chromium
-        if: ${{ !cancelled() && steps.web_build.outcome == 'success' }}
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $browser = Join-Path $env:RUNNER_TEMP 'cocos-browser'
-          New-Item -ItemType Directory -Force -Path $browser | Out-Null
-          Push-Location $browser
-          try {
-            npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.64.1
-            if ($LASTEXITCODE -ne 0) { throw 'Browser driver install failed' }
-          } finally { Pop-Location }
-          $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $env:RUNNER_TEMP 'cocos-browser-cache'
-          & "$browser\node_modules\.bin\playwright.cmd" install chromium
-          if ($LASTEXITCODE -ne 0) { throw 'Chromium install failed' }
-          $env:COCOS_SMOKE_PLAYWRIGHT_MODULE = "$browser\node_modules\playwright"
-          node scripts/verify-cocos-browser.cjs "$env:COCOS_SMOKE_OUTPUT\web-desktop" .runtime/goal0045-cocos
-          if ($LASTEXITCODE -ne 0) { throw 'Actual Cocos scene runtime failed' }
-      - name: Build mini-game artifacts sequentially
-        if: ${{ !cancelled() && env.COCOS_SMOKE_CREATOR != '' }}
-        shell: pwsh
-        run: |
-          $failed = @()
-          foreach ($target in @('wechatgame', 'bytedance-mini-game')) {
-            try {
-              ./scripts/verify-cocos-runtime.ps1 -CreatorExe $env:COCOS_SMOKE_CREATOR -OutputRoot $env:COCOS_SMOKE_OUTPUT -Platform $target
-            } catch {
-              Write-Warning $_.Exception.Message
-              $failed += $target
-            }
-          }
-          if ($failed.Count -gt 0) { throw "Mini-game builds failed: $($failed -join ', ')" }
-      - name: Preserve Creator and browser evidence
-        if: always()
+          set -euo pipefail
+          test -n "$COCOS_CLI_ROOT"
+          node scripts/cocos-linux-wechat/verify-toolchain.cjs
+          bash scripts/verify-client-foundation.sh
+          node --test scripts/cocos-linux-wechat/test.cjs
+          node scripts/cocos-linux-wechat/build.cjs "$RUNNER_TEMP/cocos-linux-wechat-output"
+      - name: Preserve actual Linux-native WeChat package
         uses: actions/upload-artifact@v4
         with:
-          name: cocos-creator-web-evidence
-          path: .runtime/goal0045-cocos/
-          if-no-files-found: warn
+          name: cocos-linux-wechat-native
+          path: ${{ runner.temp }}/cocos-linux-wechat-output/
+          if-no-files-found: error
           retention-days: 7

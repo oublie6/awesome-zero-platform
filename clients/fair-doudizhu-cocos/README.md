@@ -1,5 +1,21 @@
 # Fair Doudizhu Cocos Client
 
+**Current development build baseline (2026-11-05):** Official Linux-native
+`cocos-cli` pinned to `f506fa3de403b48b4833334fa48dddd27bb26364`,
+with the pinned Cocos engine package `4.0.0-beta.0`. The source declaration,
+scripts, and Linux CI policy now follow that version. The repository-owned
+`wechatgame` platform extension remains experimental and only supports the
+verified 2D/UI profile. See
+[Linux build instructions](../../docs/operations/cocos-linux-wechat.md).
+
+Portable typecheck still uses `@cocos/creator-types@3.8.8` as a **static
+compatibility aid**; it is not authoritative 4.0 engine typing. A real
+CLI4 export uses generated engine declarations and strict TypeScript settings.
+
+The text below preserves the **historical Creator 3.8.8** foundation and
+old workflows for audit, not for future routine build or release qualification.
+
+
 Cocos Creator **3.8.8** foundation with an entry status screen, not a playable table.
 Business state and transports are in small engine-independent packages; HPKE remains
 in the existing `@awesome-zero-platform/secure-envelope` package.

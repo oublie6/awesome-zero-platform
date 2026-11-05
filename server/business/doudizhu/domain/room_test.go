@@ -69,6 +69,13 @@ func TestRoomLifecycle(t *testing.T) {
 	if got := room.Snapshot().Status; got != RoomWaitingPlayers {
 		t.Fatalf("status after finish = %s, want %s", got, RoomWaitingPlayers)
 	}
+	if snapshot := room.Snapshot(); snapshot.LastHandID != "hand-1" || snapshot.ActiveHandID != "" {
+		t.Fatalf("finished hand locator missing from authoritative room: %+v", snapshot)
+	}
+	restored, err := RestoreRoom(room.Snapshot())
+	if err != nil || restored.Snapshot().LastHandID != "hand-1" {
+		t.Fatalf("last terminal hand not persisted: restored=%+v err=%v", restored, err)
+	}
 }
 
 func TestRoomOwnerAndVersionInvariants(t *testing.T) {

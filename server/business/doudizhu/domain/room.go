@@ -38,6 +38,7 @@ type RoomSnapshot struct {
 	Status       RoomStatus
 	Seats        [3]SeatSnapshot
 	ActiveHandID HandID
+	LastHandID   HandID // most recently finished hand; returned only to members
 	Version      uint64
 }
 
@@ -47,6 +48,7 @@ type Room struct {
 	status       RoomStatus
 	seats        [3]roomSeat
 	activeHandID HandID
+	lastHandID   HandID
 	version      uint64
 }
 
@@ -103,6 +105,7 @@ func (r *Room) Snapshot() RoomSnapshot {
 		Status:       r.status,
 		Seats:        seats,
 		ActiveHandID: r.activeHandID,
+		LastHandID:   r.lastHandID,
 		Version:      r.version,
 	}
 }
@@ -220,6 +223,7 @@ func (r *Room) FinishHand(handID HandID, expectedVersion uint64) ([]Event, error
 		return nil, ErrHandNotActive
 	}
 	r.activeHandID = ""
+	r.lastHandID = handID
 	r.recalculateStatus()
 	return []Event{r.record(EventRoomHandFinished, RoomHandPayload{HandID: handID})}, nil
 }

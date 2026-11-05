@@ -107,6 +107,7 @@ export class GameBootstrap extends Component {
         {name:'CreateRoom',caption:'创建房间',action:()=>void this.createRoom()},
         {name:'JoinRoom',caption:'加入房间',action:()=>void this.joinRoom()},
         {name:'ReadyRoom',caption:'准备',action:()=>void this.readyRoom()},
+        {name:'LeaveRoom',caption:'退出当前房间',action:()=>void this.leaveRoom()},
         {name:'StartHand',caption:'开始本局',action:()=>void this.startHand()},
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
         {name:'PrepareFairness',caption:'生成并备份恢复凭证',action:()=>void this.prepareFairness()},
@@ -123,14 +124,19 @@ export class GameBootstrap extends Component {
       const snapshot=this.online?.shell.hand.snapshot
       const pub=(snapshot?.view as PrivateHandProjection | undefined)?.public
       const me=snapshot?.view.position
-      this.title!.string = pub?.phase==='BIDDING' ? '公平斗地主 · 叫地主' :
-        pub?.phase==='PLAYING' ? '公平斗地主 · 出牌中' :
-        pub?.phase==='COMPLETED' ? '公平斗地主 · 已结算' : '公平斗地主 · 牌桌'
+      const final = snapshot?.phase === 'COMPLETED' || snapshot?.phase === 'ABORTED'
+      const terminal = snapshot?.view.terminalEvidence as
+        {winnerSeat:number|null;seatPoints:number[];recordDigest:string}|undefined
+      this.title!.string = final ? (snapshot?.phase === 'COMPLETED' ? '公平斗地主 · 已结算' : '公平斗地主 · 已结束') :
+        pub?.phase==='BIDDING' ? '公平斗地主 · 叫地主' :
+        pub?.phase==='PLAYING' ? '公平斗地主 · 出牌中' : '公平斗地主 · 牌桌'
       const seatInfo=pub?.seats?.map(seat=>`座位${seat.position}${seat.position===me?'（我）':''} ${seat.remainingCards}张`).join(' / ')
-      this.status!.string = snapshot
+      this.status!.string = final && terminal
+        ? `牌局 ${snapshot!.handId} · 已核验归档版本${snapshot!.version}\n积分${terminal.seatPoints.join('/')} · ${terminal.winnerSeat ? '胜者座位'+terminal.winnerSeat : '已结束'}\n证据摘要 ${terminal.recordDigest.slice(0,24)}…`
+        : snapshot
         ? `牌局 ${snapshot.handId} · 版本${snapshot.version}\n${seatInfo??''}\n${pub?.phase==='BIDDING'?'等待当前玩家叫地主':pub?.phase==='PLAYING'?('轮到座位'+String(pub.playingSeat??'?')):'等待服务端状态'}`
         : '等待服务端权威私有牌局快照，不展示模拟手牌'
-      const cards=Array.isArray(snapshot?.view.cards) ? snapshot!.view.cards as string[] : []
+      const cards=final?[]:Array.isArray(snapshot?.view.cards) ? snapshot!.view.cards as string[] : []
       this.selectedCards.forEach(selected => { if(!cards.includes(selected))this.selectedCards.delete(selected) })
       for (const card of cards) {
         this.addMenu([{name:'Card_'+card,caption:(this.selectedCards.has(card)?'✓ ':'')+card,
@@ -216,6 +222,10 @@ export class GameBootstrap extends Component {
       online.shell.events.on('doudizhu.hand.snapshot',()=>{
         if(this.screen==='table')this.renderScreen('table')
       })
+      online.shell.events.on('doudizhu.hand.evidence',payload=>{
+        const id=(payload as {handId?: string})?.handId
+        if(id && id===this.handID)void this.showEvidence()
+      })
       this.notice('已验证微信账号并连接游戏服务')
     } catch(error) {if(generation===this.requestGeneration)this.notice('登录失败：'+this.message(error))}
   }
@@ -224,7 +234,7 @@ export class GameBootstrap extends Component {
       const view=await this.requireOnline().reconnectAndResync(this.roomID || undefined)
       if(view) {
         this.roomID=view.roomId
-        if(view.activeHandId)this.handID=view.activeHandId
+        if(view.activeHandId || view.lastHandId)this.handID=view.activeHandId || view.lastHandId!
       }
       this.notice(view?'重连成功，已向服务器请求房间与牌局同步':'重连成功，等待创建或加入房间')
     }catch(error){this.notice('重连失败：'+this.message(error))}
@@ -254,6 +264,19 @@ export class GameBootstrap extends Component {
       this.roomID=room.roomId
       await this.refreshRoom()
     }catch(error){this.notice('加入失败：'+this.message(error))}
+  }
+  private async leaveRoom():Promise<void> {
+    try {
+      const online=this.requireOnline()
+      if(!this.roomID || online.rooms.state?.roomId!==this.roomID)
+        throw new Error('请先确认当前房间成员身份')
+      await online.leaveRoom()
+      this.roomID=''
+      this.handID=''
+      this.selectedCards.clear()
+      this.renderScreen('rooms')
+      this.notice('已退出房间，可重新创建或加入其他房间')
+    }catch(error){this.notice('退出房间失败：'+this.message(error))}
   }
   private async readyRoom():Promise<void> {
     try {
@@ -288,6 +311,11 @@ export class GameBootstrap extends Component {
         } else {
           this.notice(`公平洗牌阶段：${fairness.phase} · 座位${fairness.seat} · ${fairness.committed?'已承诺':'待承诺'} / ${fairness.revealed?'已贡献':'待贡献'}`)
         }
+      } else if(info.lastHandId){
+        this.handID=info.lastHandId
+        const evidence=await online.api.finalEvidence(info.lastHandId)
+        online.shell.acceptVerifiedFinalEvidence(evidence)
+        if(this.screen==='table')this.renderScreen('table')
       }
     }catch(error){this.notice('刷新失败：'+this.message(error))}
   }
@@ -341,7 +369,11 @@ export class GameBootstrap extends Component {
   private async showEvidence():Promise<void>{
     try{
       if(!this.handID)throw new Error('尚未创建牌局')
-      const data=await this.requireOnline().api.finalEvidence(this.handID)
+      const online=this.requireOnline()
+      const data=await online.api.finalEvidence(this.handID)
+      online.shell.acceptVerifiedFinalEvidence(data)
+      this.selectedCards.clear()
+      if(this.screen==='table')this.renderScreen('table')
       const verified=data.verification
       const winner=verified.winnerSeat?('获胜座位'+verified.winnerSeat):'已终止'
       this.notice(`已核验归档 · ${winner} · 积分${verified.seatPoints.join('/') } · 版本${data.finalVersion}\n校验摘要：${verified.recordDigest.slice(0,24)}…`)
@@ -351,7 +383,11 @@ export class GameBootstrap extends Component {
     try {
       const snapshot=this.requireOnline().shell.hand.snapshot
       if(!snapshot)throw new Error('尚无当前牌局 ID，请先刷新房间')
-      await this.requireOnline().shell.syncHand(snapshot.handId,snapshot.version)
+      if(snapshot.phase==='COMPLETED' || snapshot.phase==='ABORTED'){
+        await this.showEvidence()
+      }else{
+        await this.requireOnline().shell.syncHand(snapshot.handId,snapshot.version)
+      }
     }catch(error){this.notice('牌局同步失败：'+this.message(error))}
   }
   private async retryUnknownHand():Promise<void>{

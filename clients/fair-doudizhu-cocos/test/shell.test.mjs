@@ -173,3 +173,26 @@ test('R2 socket not ready or disconnected still refuses lobby commands',async()=
  await assert.rejects(s.submitCommand(input),/not ready/)
  s.dispose()
 })
+
+test('authenticated archive evidence changes terminal UI state without forging live cards',async()=>{
+  const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+  const opening=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await opening
+  s.acceptVerifiedSnapshot(snapshot)
+  const evidence={
+    handId:'hand-1',status:'completed',finalVersion:8,
+    verification:{handId:'hand-1',finalVersion:8,recordDigest:'a'.repeat(64),seatPoints:[6,-3,-3],winnerSeat:1},
+  }
+  s.acceptVerifiedFinalEvidence(evidence)
+  assert.equal(s.hand.snapshot.phase,'COMPLETED')
+  assert.equal(s.hand.snapshot.version,8)
+  assert.equal(s.hand.canSubmit,false)
+  assert.equal(s.hand.snapshot.view.terminalEvidence.recordDigest,'a'.repeat(64))
+  assert.equal(s.hand.snapshot.view.cards,undefined)
+  await assert.rejects(s.submitCommand({requestId:'end',type:'hand.pass',aggregateId:'hand-1',clientSeq:1,expectedVersion:8}),/not eligible/)
+  assert.throws(()=>s.acceptVerifiedFinalEvidence({...evidence,finalVersion:7,verification:{...evidence.verification,finalVersion:7}}),/stale/)
+  assert.throws(()=>s.acceptVerifiedFinalEvidence({...evidence,handId:'other-hand',verification:{...evidence.verification,handId:'other-hand'}}),/mismatch/)
+  s.clearHand()
+  assert.equal(s.hand.snapshot,null)
+  assert.equal(s.hand.status,'connected')
+  s.dispose()
+})

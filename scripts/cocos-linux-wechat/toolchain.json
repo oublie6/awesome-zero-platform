@@ -1,0 +1,10 @@
+{
+  "kind": "cocos-linux-native-wechat",
+  "engineVersion": "4.0.0-beta.0",
+  "cliRevision": "f506fa3de403b48b4833334fa48dddd27bb26364",
+  "engineRevision": "d0a696cfe63fd8d19c70d7913ba11aa641c2e3c7",
+  "platform": "wechatgame",
+  "nodeVersion": "22.23.4",
+  "project": "clients/fair-doudizhu-cocos",
+  "clientBuild": "2d-ui"
+}

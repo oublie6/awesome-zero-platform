@@ -64,6 +64,9 @@ export class GameOnlineController {
     this.rooms.restoreTrustedRoom(room.roomId, room.version, room.lastClientSequence)
     if (room.activeHandId) {
       await this.shell.syncHand(room.activeHandId)
+    } else if (room.lastHandId) {
+      const evidence = await this.api.finalEvidence(room.lastHandId)
+      this.shell.acceptVerifiedFinalEvidence(evidence)
     }
     return room
   }
@@ -89,6 +92,20 @@ export class GameOnlineController {
     return view
   }
   get pendingRoomId(): string | null { return this.rooms.pendingRoomId }
+  /** Reuse the original command ID if the previous leave ACK was lost. */
+  async leaveRoom(): Promise<void> {
+    if (this.disposed || !this.session.authenticated) throw new Error('authenticated session required')
+    if (this.actions.needsReconciliation || this.fairness.needsReconciliation)
+      throw new Error('hand or fairness outcome unknown; reconcile before leaving')
+    if (this.rooms.needsReconciliation) {
+      if (this.rooms.pendingCommandType !== 'room.leave') throw new Error('room outcome unknown; reconcile before leaving')
+      await this.rooms.retryUnknown()
+    } else {
+      if (!this.rooms.state) throw new Error('room not confirmed by server')
+      await this.rooms.leave()
+    }
+    this.shell.clearHand()
+  }
 
   private async lookupOrRetryPendingCreate(roomId:string):Promise<RoomRead>{
     try {

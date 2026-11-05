@@ -18,6 +18,11 @@ func RestoreRoom(snapshot RoomSnapshot) (*Room, error) {
 	if snapshot.Version == 0 {
 		return nil, fmt.Errorf("%w: room version must be positive", ErrInvalidArgument)
 	}
+	if snapshot.LastHandID != "" {
+		if err := validateIdentifier("lastHandId", string(snapshot.LastHandID)); err != nil {
+			return nil, err
+		}
+	}
 	if !validRoomStatus(snapshot.Status) {
 		return nil, fmt.Errorf("%w: invalid room status", ErrInvalidArgument)
 	}
@@ -27,6 +32,7 @@ func RestoreRoom(snapshot RoomSnapshot) (*Room, error) {
 		ownerID:      snapshot.OwnerID,
 		status:       snapshot.Status,
 		activeHandID: snapshot.ActiveHandID,
+		lastHandID:   snapshot.LastHandID,
 		version:      snapshot.Version,
 	}
 	seen := make(map[AccountID]struct{}, 3)

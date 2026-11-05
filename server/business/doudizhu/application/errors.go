@@ -16,6 +16,9 @@ var (
 	ErrRevealInvalid        = errors.New("invalid fairness reveal")
 	ErrProtectionFailed     = errors.New("contribution protection failed")
 	ErrRetryableTransaction = errors.New("doudizhu transaction should be retried")
+	// An expiry lost a race to a newly committed live action. This is a
+	// transient lifecycle decision, not a completed/rejected client command.
+	ErrLiveProgressed = errors.New("doudizhu live hand advanced before expiry")
 )
 
 const (

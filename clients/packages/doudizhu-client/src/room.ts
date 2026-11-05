@@ -33,6 +33,7 @@ export class RoomCoordinator {
   get needsReconciliation(): boolean { return this.uncertainOutcome }
   /** Keep the committed-or-unknown room locator after a lost create reply. */
   get pendingRoomId(): string | null { return this.pendingCommand?.aggregateId ?? null }
+  get pendingCommandType(): string | null { return this.pendingCommand?.type ?? null }
 
   /** Exact-ID resend is safe even if the prior request committed. Go owns the
    * durable dedup result; a new room command ID is never synthesized here. */

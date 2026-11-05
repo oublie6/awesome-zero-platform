@@ -286,6 +286,55 @@ func (g *gatedHandReader) LoadHand(ctx context.Context, id domain.HandID) (domai
 	return g.delegate.LoadHand(ctx, id)
 }
 
+// A low bid may commit at t4 while the dispatcher callback is held until
+// after the original t5 deadline. The authoritative committed live view must
+// be consulted before the old timer can initiate expiry.
+type committedViewTerminal struct {
+	*testTerminal
+	version uint64
+	phase   string
+}
+func (v *committedViewTerminal) GetHandPublicView(_ context.Context, _ domain.AccountID, id domain.HandID) (application.LiveHandView, error) {
+	payload, err := json.Marshal(struct {
+		HandID       string `json:"handId"`
+		StateVersion uint64 `json:"stateVersion"`
+		Phase        string `json:"phase"`
+	}{HandID: string(id), StateVersion: v.version, Phase: v.phase})
+	if err != nil {
+		return application.LiveHandView{}, err
+	}
+	return application.LiveHandView{Version: v.version, Payload: payload}, nil
+}
+func TestCommittedBeforeCallbackDoesNotExpire(t *testing.T) {
+	clock := &testClock{now: time.Unix(1800000070, 0)}
+	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{
+		"committed-callback-gap": testHand("committed-callback-gap", "seat-1", domain.HandBidding, 9),
+	}}
+	terminal := &committedViewTerminal{testTerminal: &testTerminal{}, version: 1, phase: livehand.PhaseBidding}
+	s := newTestSupervisor(t, hands, terminal, clock, &testIDs{prefix: "committed"})
+	if err := s.TrackBidding(context.Background(), "seat-1", "committed-callback-gap"); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(4 * time.Second)
+	// The real runtime publishes a committed candidate before it returns.
+	terminal.version = 2 // deliberately delay AfterBid callback
+	clock.Advance(2 * time.Second)
+	terminated, err := s.Sweep(context.Background())
+	if err != nil || len(terminated) != 0 || len(terminal.expireCalls) != 0 {
+		t.Fatalf("committed bid expired under old deadline: %v %v %+v", terminated, err, terminal.expireCalls)
+	}
+	// Late response is now stale and must not reset the already-refreshed timer.
+	if _, err := s.AfterBid(context.Background(), "seat-1", "committed-callback-gap",
+		bidResult(t, "committed-callback-gap", 2, livehand.PhaseBidding, false)); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(4 * time.Second)
+	terminated, err = s.Sweep(context.Background())
+	if err != nil || len(terminated) != 1 || terminated[0] != "committed-callback-gap" {
+		t.Fatalf("committed deadline never expired: %v %v", terminated, err)
+	}
+}
+
 func TestParticipantCancellationRequiresASeat(t *testing.T) {
 	clock := &testClock{now: time.UnixMilli(3_000).UTC()}
 	hands := &testHands{snapshots: map[domain.HandID]domain.HandSnapshot{

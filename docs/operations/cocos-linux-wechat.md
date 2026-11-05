@@ -1,5 +1,34 @@
 # Linux native Cocos Mini Game builder
 
+## Unified Linux development build baseline (2026-11-05)
+
+The user authorized one Linux-native build line. The Cocos project now
+declares engine package **4.0.0-beta.0**, matching the pinned official CLI.
+See `scripts/cocos-linux-wechat/toolchain.json` for the exact official CLI
+revision and engine checkout. Creator 3.8.8 is historical evidence only.
+Windows Creator, Wine and foreign-OS virtual machines are not part of the
+current routine build or CI pipeline.
+
+`node scripts/cocos-linux-wechat/verify-toolchain.cjs` checks the pinned
+source declarations; when `COCOS_CLI_ROOT` and `COCOS_ENGINE_ROOT` are set it
+also validates actual installed revisions. `node
+scripts/cocos-linux-wechat/build.cjs /private/native-output` performs an
+isolated **real WECHAT export** with the official CLI and the project-owned
+extension. The exporter requires an already-built pinned Linux CLI/engine,
+`xvfb-run`, Node 22.23.4, actual engine caches, and built portable
+packages. It exits nonzero when any are unavailable; no browser or fake
+mini-game output is substituted.
+
+The Linux GitHub workflow runs independent static/source validation on
+hosted Linux runners and exposes an explicit native export job for an
+approved `self-hosted,linux,x64,cocos-cli4` runner with the pinned toolchain
+installed. **A hosted static green check is not an actual native export.**
+The previous Creator3.8 evidence, below, remains intact for historical
+reference. Adoption of the beta exporter for release additionally requires
+a successful exact-source native build, real SDK complete game, genuine
+device/platform qualification, and independent Goal review.
+
+
 User authorization (2026-11-04): implement the missing Linux native Mini Game
 export path. Do not use Wine or Windows/macOS virtual machines. This is an
 experimental client toolchain extension, not independent product acceptance.

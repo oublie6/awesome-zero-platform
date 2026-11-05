@@ -83,9 +83,10 @@ type entry struct {
 }
 
 type pendingTermination struct {
-	kind    terminationKind
-	reason  string
-	command application.Command
+	kind        terminationKind
+	reason      string
+	liveVersion uint64
+	command     application.Command
 }
 
 type Outcome struct {
@@ -122,13 +123,27 @@ func (s *Supervisor) TrackBidding(ctx context.Context, actor domain.AccountID, h
 	if snapshot.Phase != domain.HandBidding {
 		return nil
 	}
+	// Capture the already committed game version when first arming the timer.
+	// The live executor can commit/publish before the transport's callback.
+	progress, hasProgress, err := s.committedProgress(ctx, actor, handID)
+	if err != nil {
+		return err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// The first successful registration owns the original deadline. A
 	// verified duplicate may repair a missing entry but must not extend or
 	// overwrite an existing bidding/playing timer.
 	if _, tracked := s.entries[handID]; !tracked {
-		s.entries[handID] = entry{actor: actor, phase: phaseBidding, deadline: s.clock.Now().UTC().Add(s.config.BiddingTimeout)}
+		current := entry{actor: actor, phase: phaseBidding, deadline: s.clock.Now().UTC().Add(s.config.BiddingTimeout)}
+		if hasProgress {
+			current.liveVersion = progress.version
+			if progress.phase == phasePlaying {
+				current.phase = phasePlaying
+				current.deadline = s.clock.Now().UTC().Add(s.config.PlayingTimeout)
+			}
+		}
+		s.entries[handID] = current
 	}
 	return nil
 }
@@ -230,6 +245,15 @@ func (s *Supervisor) Sweep(ctx context.Context) ([]domain.HandID, error) {
 
 	terminated := make([]domain.HandID, 0, len(due))
 	for _, candidate := range due {
+		// The committed live game may be newer than a timer whose callback is
+		// still blocked in the transport. Never use that stale deadline.
+		changed, err := s.refreshCommittedProgress(ctx, candidate.handID, candidate.state)
+		if err != nil {
+			return terminated, err
+		}
+		if changed {
+			continue
+		}
 		reason := ReasonPlayingTimeout
 		if candidate.state.phase == phaseBidding {
 			reason = ReasonBiddingTimeout
@@ -277,6 +301,77 @@ func (s *Supervisor) Pending(handID domain.HandID) bool {
 // schedule applies committed live callbacks in their state-version order, not
 // their asynchronous response order. A newer callback is allowed to renew the
 // current phase deadline, but an older callback cannot extend or regress it.
+// Committed state is a read-only application projection, never client-supplied.
+// In production the service delegates to the memory-authoritative runtime after
+// MySQL commit and before returning the transport callback.
+type committedState struct {
+	version uint64
+	phase   phase
+}
+
+func (s *Supervisor) committedProgress(ctx context.Context, actor domain.AccountID, handID domain.HandID) (committedState, bool, error) {
+	reader, ok := s.terminal.(interface {
+		GetHandPublicView(context.Context, domain.AccountID, domain.HandID) (application.LiveHandView, error)
+	})
+	if !ok {
+		return committedState{}, false, nil // isolated legacy lifecycle fixtures
+	}
+	view, err := reader.GetHandPublicView(ctx, actor, handID)
+	if err != nil {
+		return committedState{}, true, fmt.Errorf("read committed live hand progress: %w", err)
+	}
+	var payload struct {
+		HandID       string `json:"handId"`
+		Phase        string `json:"phase"`
+		StateVersion uint64 `json:"stateVersion"`
+	}
+	if err := json.Unmarshal(view.Payload, &payload); err != nil {
+		return committedState{}, true, fmt.Errorf("decode committed live progress: %w", err)
+	}
+	if payload.HandID != string(handID) || payload.StateVersion == 0 || payload.StateVersion != view.Version {
+		return committedState{}, true, fmt.Errorf("committed live progress identity mismatch")
+	}
+	if payload.Phase != livehand.PhaseBidding && payload.Phase != livehand.PhasePlaying {
+		return committedState{}, true, fmt.Errorf("committed live phase %q is not active", payload.Phase)
+	}
+	return committedState{version: view.Version, phase: phase(payload.Phase)}, true, nil
+}
+
+// A new durable action may already be published when the prior expiry timer
+// fires, but its dispatcher callback might be blocked. Detect that advanced
+// version and rearm from the observed committed state, never from the old one.
+// The separate MySQL writer watermark guard closes the race after this read.
+func (s *Supervisor) refreshCommittedProgress(ctx context.Context, handID domain.HandID, original entry) (bool, error) {
+	progress, available, err := s.committedProgress(ctx, original.actor, handID)
+	if err != nil {
+		return false, err
+	}
+	if !available {
+		return false, nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	current, exists := s.entries[handID]
+	if !exists || current.pending != nil || current.liveVersion != original.liveVersion ||
+		current.phase != original.phase || !current.deadline.Equal(original.deadline) {
+		return true, nil
+	}
+	if progress.version <= current.liveVersion && progress.phase == current.phase {
+		return false, nil
+	}
+	if progress.version < current.liveVersion || (current.phase == phasePlaying && progress.phase == phaseBidding) {
+		return false, fmt.Errorf("committed live state regressed")
+	}
+	current.liveVersion = progress.version
+	current.phase = progress.phase
+	current.deadline = s.clock.Now().UTC().Add(s.config.BiddingTimeout)
+	if progress.phase == phasePlaying {
+		current.deadline = s.clock.Now().UTC().Add(s.config.PlayingTimeout)
+	}
+	s.entries[handID] = current
+	return true, nil
+}
+
 func (s *Supervisor) schedule(handID domain.HandID, actor domain.AccountID, value phase, timeout time.Duration, version uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -361,8 +456,9 @@ func (s *Supervisor) terminateWhenDue(
 		name = application.CommandHandExpire
 	}
 	pending := pendingTermination{
-		kind:   kind,
-		reason: reason,
+		kind:        kind,
+		reason:      reason,
+		liveVersion: current.liveVersion,
 		command: application.Command{
 			Version:         application.CommandProtocolV1,
 			Name:            name,
@@ -394,6 +490,9 @@ func (s *Supervisor) terminateWhenDue(
 
 func (s *Supervisor) executePending(ctx context.Context, handID domain.HandID, pending pendingTermination) (Outcome, error) {
 	input := application.TerminateHandInput{ReasonCode: pending.reason}
+	if pending.kind == terminationExpire {
+		input.ExpectedLiveVersion = pending.liveVersion
+	}
 	var result application.CommandResult
 	var err error
 	switch pending.kind {
@@ -403,6 +502,21 @@ func (s *Supervisor) executePending(ctx context.Context, handID domain.HandID, p
 		result, err = s.terminal.ExpireHand(ctx, SystemActor, pending.command, input)
 	default:
 		return Outcome{}, fmt.Errorf("unsupported termination kind %q", pending.kind)
+	}
+	if errors.Is(err, application.ErrLiveProgressed) {
+		// Guarded MySQL transaction saw a newer committed action and rolled
+		// back expiry. Retire the stale pending ID before refreshing the timer.
+		s.mu.Lock()
+		current := s.entries[handID]
+		if current.pending != nil && current.pending.command.CommandID == pending.command.CommandID {
+			current.pending = nil
+			s.entries[handID] = current
+		}
+		s.mu.Unlock()
+		if _, refreshErr := s.refreshCommittedProgress(ctx, handID, current); refreshErr != nil {
+			return Outcome{}, refreshErr
+		}
+		return Outcome{}, nil
 	}
 	if err != nil {
 		return Outcome{Triggered: true, Result: result}, err

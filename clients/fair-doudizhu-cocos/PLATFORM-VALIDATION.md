@@ -1,5 +1,13 @@
 # Goal 0045 platform validation status
 
+**New development baseline (2026-11-05):** Linux-native official
+Cocos CLI4 / engine package 4.0.0-beta.0. The tests and Creator 3.8.8
+artifacts described below are retained as historical evidence only; no
+routine Windows/Wine build is maintained. See
+[the pinned Linux toolchain](../../docs/operations/cocos-linux-wechat.md).
+Native simulator and physical-device acceptance remain separate.
+
+
 This is a phase checkpoint, not full Goal 0045 acceptance. Do not archive the goal.
 See the [phase review](../../docs/operations/goal0045-client-foundation-review.md)
 for findings, source commits, evidence, SDK differences and handoff tasks.

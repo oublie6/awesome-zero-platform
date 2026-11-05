@@ -13,7 +13,11 @@ import (
 type SubmitCommitInput struct{ Commitment domain.Commitment }
 type SubmitRevealInput struct{ Envelope SecureEnvelope }
 type LockBeaconInput struct{ Value domain.BeaconValue }
-type TerminateHandInput struct{ ReasonCode string }
+type TerminateHandInput struct {
+	ReasonCode string
+	// Only the lifecycle supervisor sets this internal expiry watermark.
+	ExpectedLiveVersion uint64 `json:"expectedLiveVersion,omitempty"`
+}
 
 func (s *Service) SubmitHandCommit(ctx context.Context, actor domain.AccountID, command Command, input SubmitCommitInput) (CommandResult, error) {
 	return s.mutateHand(ctx, actor, command, CommandHandCommitSubmit, input, func(hand *domain.Hand) ([]domain.Event, error) {
@@ -245,6 +249,28 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 			handSnapshot, err := tx.LoadHandForUpdate(txCtx, domain.HandID(command.AggregateID))
 			if err != nil {
 				return mutationOutcome{}, err
+			}
+			// Serialize this expiry with the same durable live-writer row used
+			// by the acknowledged action journal. If a newer action committed,
+			// do not complete or cache a stale terminal command.
+			if name == CommandHandExpire {
+				if input, ok := payload.(TerminateHandInput); ok && input.ExpectedLiveVersion != 0 {
+					if durability, ok := s.liveHands.(interface{ DurabilityEnforced() bool }); ok && durability.DurabilityEnforced() {
+						guard, ok := tx.(interface {
+							LockLiveCommittedVersion(context.Context, domain.HandID) (uint64, error)
+						})
+						if !ok {
+							return mutationOutcome{}, fmt.Errorf("live writer lock unavailable for expiry")
+						}
+						committed, err := guard.LockLiveCommittedVersion(txCtx, handSnapshot.ID)
+						if err != nil {
+							return mutationOutcome{}, fmt.Errorf("lock live writer for expiry: %w", err)
+						}
+						if committed > input.ExpectedLiveVersion {
+							return mutationOutcome{}, ErrLiveProgressed
+						}
+					}
+				}
 			}
 			hand, err := domain.RestoreHand(handSnapshot)
 			if err != nil {

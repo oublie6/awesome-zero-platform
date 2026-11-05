@@ -142,6 +142,7 @@ export interface RoomRead {
   lastClientSequence: number
   seats?: ReadonlyArray<{position:number;accountId:string;ready:boolean}>
   activeHandId?: string
+  lastHandId?: string
 }
 function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
   if (!record(raw) || raw.roomId !== expectedID ||
@@ -157,14 +158,15 @@ function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
         (seat.accountId === undefined || typeof seat.accountId === 'string') && typeof seat.ready === 'boolean' &&
         (seat.accountId !== undefined && seat.accountId !== '' || seat.ready === false)) ||
         new Set(raw.seats.map(s => s.position)).size !== 3 ||
-        (raw.activeHandId !== undefined && typeof raw.activeHandId !== 'string')) {
+        (raw.activeHandId !== undefined && typeof raw.activeHandId !== 'string') ||
+        (raw.lastHandId !== undefined && (typeof raw.lastHandId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(raw.lastHandId)))) {
       throw new Error('invalid member room view')
     }
     const taken=raw.seats.filter(s=>typeof s.accountId==='string' && s.accountId!=='')
     if (taken.length!==raw.occupied || new Set(taken.map(s=>s.accountId)).size!==raw.occupied) {
       throw new Error('invalid room seat ownership')
     }
-  } else if (raw.seats !== undefined || raw.activeHandId !== undefined) {
+  } else if (raw.seats !== undefined || raw.activeHandId !== undefined || raw.lastHandId !== undefined) {
     throw new Error('room preview leaked private membership fields')
   }
   if (raw.member) {

@@ -1,5 +1,6 @@
 import { createWireCommand, parseWireResult, type WireCommand, type WireCommandResult } from '@awesome-zero-platform/doudizhu-client/wire'
 import { parsePrivateViewResult } from '@awesome-zero-platform/doudizhu-client/view'
+import type { FinalEvidenceRead } from '@awesome-zero-platform/doudizhu-client/api'
 import { HandStore, GameMessageRouter, type HandSnapshot } from '@awesome-zero-platform/doudizhu-client'
 import { ConnectionManager, type SocketTransport } from '@awesome-zero-platform/game-client-core'
 
@@ -127,6 +128,42 @@ export class GameClientShell {
       this.hand.setStatus('disconnected')
       throw error
     }
+  }
+  clearHand(): void {
+    if (this.pendingCommands.size) throw new Error('hand command still pending')
+    this.hand.clearHand()
+  }
+
+  /** Only call with authenticated HTTP evidence already validated by
+   * DoudizhuHTTPClient.finalEvidence. A terminal archive replaces live
+   * presentation state; no private hand/cards are invented after cleanup. */
+  acceptVerifiedFinalEvidence(evidence: FinalEvidenceRead): void {
+    if (this.disposed) return
+    const handId = evidence.handId
+    const phase = String(evidence.status).toUpperCase()
+    const verification = evidence.verification
+    if (!handId || !Number.isSafeInteger(evidence.finalVersion) || evidence.finalVersion < 1 ||
+        !['COMPLETED','ABORTED'].includes(phase) ||
+        verification.handId !== handId || verification.finalVersion !== evidence.finalVersion ||
+        typeof verification.recordDigest !== 'string' || !/^[0-9a-f]{64}$/.test(verification.recordDigest) ||
+        !Array.isArray(verification.seatPoints) || verification.seatPoints.length !== 3 ||
+        !verification.seatPoints.every(Number.isSafeInteger)) {
+      throw new Error('invalid verified final evidence')
+    }
+    const prior = this.hand.snapshot
+    if (prior && prior.handId !== handId) throw new Error('terminal evidence hand mismatch')
+    if (prior && evidence.finalVersion < prior.version) throw new Error('stale terminal evidence')
+    if (prior && prior.version === evidence.finalVersion && prior.phase === phase) return
+    if (prior && prior.version === evidence.finalVersion) throw new Error('terminal evidence version conflict')
+    const snapshot: HandSnapshot = {
+      handId, version: evidence.finalVersion, phase: phase as 'COMPLETED'|'ABORTED',
+      view: { terminalEvidence: {
+        winnerSeat: verification.winnerSeat ?? null,
+        seatPoints: verification.seatPoints,
+        recordDigest: verification.recordDigest,
+      } },
+    }
+    this.acceptVerifiedSnapshot(snapshot)
   }
   acceptVerifiedSnapshot(snapshot: HandSnapshot): void {
     if (this.disposed) return

@@ -19,6 +19,7 @@ type RoomView struct {
 	LastClientSequence uint64            `json:"lastClientSequence"`
 	Seats              []RoomSeatView    `json:"seats,omitempty"`
 	ActiveHandID       string            `json:"activeHandId,omitempty"`
+	LastHandID         string            `json:"lastHandId,omitempty"`
 }
 type RoomSeatView struct {
 	Position  uint8  `json:"position"`
@@ -77,6 +78,7 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 			view.Seats = append(view.Seats, RoomSeatView{Position: uint8(seat.Seat), AccountID: string(seat.AccountID), Ready: seat.Ready})
 		}
 		view.ActiveHandID = string(snapshot.ActiveHandID)
+		view.LastHandID = string(snapshot.LastHandID)
 	}
 	return view, nil
 }

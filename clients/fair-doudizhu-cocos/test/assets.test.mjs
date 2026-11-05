@@ -31,3 +31,11 @@ test('Creator 3.8 card selections use Set.forEach instead of downlevel-unsafe it
  assert.match(source,/this\.selectedCards\.forEach\(card\s*=>\s*selectedCards\.push\(card\)\)/)
  assert.match(source,/actions\.play\(selectedCards\)/)
 })
+
+test('native UI exposes a room leave control and displays verified archive completion',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(source,/name:'LeaveRoom'/)
+ assert.match(source,/online\.leaveRoom\(\)/)
+ assert.match(source,/terminalEvidence/)
+ assert.match(source,/api\.finalEvidence\(this\.handID\)/)
+})

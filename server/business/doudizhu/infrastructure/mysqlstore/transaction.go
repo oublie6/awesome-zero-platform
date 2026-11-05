@@ -15,6 +15,16 @@ import (
 
 type transaction struct{ tx *sql.Tx }
 
+// LockLiveCommittedVersion participates in the existing command transaction.
+// LiveJournal.Append takes FOR UPDATE on the same writer row before updating
+// committed_version, making the expiry decision atomic with durable live writes.
+func (t *transaction) LockLiveCommittedVersion(ctx context.Context, id domain.HandID) (uint64, error) {
+	var version uint64
+	err := t.tx.QueryRowContext(ctx,
+		"SELECT committed_version FROM doudizhu_live_writers WHERE hand_id=? FOR UPDATE", id).Scan(&version)
+	return version, err
+}
+
 func (t *transaction) ClaimCommand(
 	ctx context.Context,
 	actor domain.AccountID,

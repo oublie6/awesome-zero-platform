@@ -47,6 +47,8 @@ export class HandStore {
     return true
   }
   reset(): void { this.current = null; this.statusValue = 'disconnected' }
+  /** Clear a departed room's hand without disconnecting the socket. */
+  clearHand(): void { this.current = null }
 }
 export interface CommandEnvelope {
   v: 'fair-doudizhu-command-v1'

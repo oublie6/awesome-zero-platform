@@ -104,3 +104,26 @@ test('reconnect cannot silently restore an unconfirmed room membership',async()=
  assert.equal(online.rooms.state,null)
  online.dispose()
 })
+
+test('room exit is confirmed before local room identity is cleared',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  online.rooms.restoreTrustedRoom('room-rejoin',9,12)
+  const pending=online.leaveRoom()
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.equal(f.commands.length,1)
+  const cmd=f.commands[0].payload
+  assert.equal(cmd.type,'room.leave')
+  assert.equal(cmd.clientSeq,13)
+  assert.equal(online.rooms.state.roomId,'room-rejoin')
+  for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+    v:'doudizhu-api-command-result-v1',requestId:cmd.requestId,type:'room.leave',
+    durable:{v:'fair-doudizhu-command-result-v1',commandId:cmd.requestId,
+      aggregateId:'room-rejoin',aggregateVersion:10,accepted:true}
+  }}))
+  await pending
+  assert.equal(online.rooms.state,null)
+  assert.equal(online.shell.hand.snapshot,null)
+  online.dispose()
+})

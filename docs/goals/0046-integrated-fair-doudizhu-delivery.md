@@ -396,3 +396,28 @@ expiry-candidate revalidation. Its one-time Go formatting workflow has
 self-deleted. A documentation-only commit triggers normal GitHub Actions
 against the same formatted product code. Passing CI does not substitute for
 Codex's independent actual Creator 3.8.8 and gameplay qualification.
+
+## Round 8 findings: ChatGPT remediation and Linux-native build migration candidate
+
+- R8-N01: explicitly fence expiry against a newer committed live action. The
+  lifecycle supervisor reads authoritative live version before deadline
+  decisions, and the durable expiration transaction locks the same MySQL
+  writer row used by live append before applying an expiry. A newer committed
+  action must leave the old expiry unapplied and permit deadline reconciliation.
+- R8-N02: expose room.leave in the native room menu. Preserve the original
+  durable command ID when retrying a lost reply, clear local room/hand context
+  only on accepted leave, and preserve owner/active-hand backend rules.
+- R8-N03: map authenticated, verified final archive evidence to terminal
+  table state and owner action fences; persist a member-only reference to the
+  most recently finished hand in the room snapshot for reconnect and reentry.
+  Private cards after archival are not re-created.
+- User-authorized build migration: pin official Linux CLI and Cocos 4 engine
+  in a machine-readable toolchain file, declare the source project's matching
+  engine version, remove the routine Windows Creator workflow, provide a
+  Linux-native isolated WECHAT exporter and distinct hosted source vs actual
+  native-export checks. The platform extension remains experimental.
+  Creator 3.8.8 artifacts remain as historical evidence only.
+
+All changes are implementation candidates and cannot close the three Round8
+findings without exact-source CI, actual native SDK and Codex Round9 independent
+verification. Goals0045/0046 remain in_progress; no release approval.
