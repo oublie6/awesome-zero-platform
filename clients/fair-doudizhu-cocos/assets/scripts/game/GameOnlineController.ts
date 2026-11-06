@@ -1,10 +1,10 @@
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import { GameSession, type IdentityExchange } from '@awesome-zero-platform/game-client-core/session'
-import { RoomCoordinator, secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
+import { RoomCoordinator, secureRoomCommandIdentity, type RoomState } from '@awesome-zero-platform/doudizhu-client/room'
 import { DoudizhuHTTPClient, type RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 import { GameClientShell } from './GameClientShell.ts'
 import { GameHandActions } from './GameHandActions.ts'
-import { GameFairnessActions } from './GameFairnessActions.ts'
+import { DurableFairnessRejected, GameFairnessActions } from './GameFairnessActions.ts'
 
 /**
  * Real session -> authenticated socket -> server-command composition.
@@ -139,6 +139,40 @@ export class GameOnlineController {
       await this.rooms.retryUnknown()
       return this.api.room(roomId)
     }
+  }
+
+  /** Reconcile the prior hand before submitting a durable new-hand command.
+   * reserveHandTransition bars new fairness work during the async room send;
+   * after the server ACK, local binding and cleanup cannot fail due to an
+   * unobserved, newly-started fairness operation. */
+  async startHand(handId: string): Promise<Readonly<RoomState>> {
+    if (this.disposed || !this.session.authenticated)
+      throw new Error('authenticated session required')
+    const previous = this.fairness
+    if (previous.needsReconciliation) {
+      try {
+        // An exact-ID retry may return either the previously accepted receipt
+        // or a definitive durable rejection. Both settle the unknown outcome.
+        await previous.retryUnknown()
+      } catch (error) {
+        if (!(error instanceof DurableFairnessRejected) || previous.needsReconciliation)
+          throw error
+      }
+    }
+    if (this.disposed || this.fairness !== previous)
+      throw new Error('fairness session changed while reconciling; refresh room')
+    const release = previous.beginHandTransition()
+    try {
+      const room = await this.rooms.startHand(handId)
+      // The durable ACK has been accepted by RoomCoordinator. No await is
+      // allowed between confirmation and adopting the hand locally.
+      if (!this.disposed) {
+        this.confirmActiveFairnessHand(handId)
+        this.shell.useAuthoritativeHand(handId)
+        this.membershipGeneration++
+      }
+      return room
+    } finally { release() }
   }
 
   async createRoom(): Promise<Readonly<{roomId:string;version:number}>> {
