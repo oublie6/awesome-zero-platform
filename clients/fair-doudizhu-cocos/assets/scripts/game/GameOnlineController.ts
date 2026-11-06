@@ -149,39 +149,42 @@ export class GameOnlineController {
   async startHand(handId: string): Promise<Readonly<RoomState>> {
     if (this.disposed || !this.session.authenticated)
       throw new Error('authenticated session required')
-    const previous = this.fairness
-    if (previous.needsReconciliation) {
-      try {
-        // An exact-ID retry may return either the previously accepted receipt
-        // or a definitive durable rejection. Both settle the unknown outcome.
-        await previous.retryUnknown()
-      } catch (error) {
-        if (!(error instanceof DurableFairnessRejected) || previous.needsReconciliation)
-          throw error
-      }
-    }
-    if (this.disposed || this.fairness !== previous)
-      throw new Error('fairness session changed while reconciling; refresh room')
-    const release = previous.beginHandTransition()
-    if (this.startingHand !== null) {
-      release()
-      throw new Error('room hand start already in progress')
-    }
-    this.startingHand = handId
+    // Guard live Bid/Play/Pass as well as fairness. Either kind of pending
+    // command could make a post-ACK hand binding throw and desynchronize UI.
+    const releaseLive = this.actions.beginHandTransition()
     try {
-      const room = await this.rooms.startHand(handId)
-      // The durable ACK has been accepted by RoomCoordinator. No await is
-      // allowed between confirmation and adopting the hand locally.
-      if (!this.disposed) {
-        this.confirmActiveFairnessHand(handId)
-        this.shell.useAuthoritativeHand(handId)
-        this.membershipGeneration++
+      const previous = this.fairness
+      if (previous.needsReconciliation) {
+        try {
+          // Exact-ID retry can return an accepted receipt or a definitive
+          // durable rejection. Either settles the old unknown outcome.
+          await previous.retryUnknown()
+        } catch (error) {
+          if (!(error instanceof DurableFairnessRejected) || previous.needsReconciliation)
+            throw error
+        }
       }
-      return room
-    } finally {
-      this.startingHand = null
-      release()
-    }
+      if (this.disposed || this.fairness !== previous)
+        throw new Error('fairness session changed while reconciling; refresh room')
+      const releaseFairness = previous.beginHandTransition()
+      try {
+        if (this.startingHand !== null)
+          throw new Error('room hand start already in progress')
+        this.startingHand = handId
+        try {
+          const room = await this.rooms.startHand(handId)
+          // RoomCoordinator already accepted the server's durable ACK. No
+          // await between receipt and hand adoption; both old action families
+          // are still reserved so they cannot create fresh pending requests.
+          if (!this.disposed) {
+            this.confirmActiveFairnessHand(handId)
+            this.shell.useAuthoritativeHand(handId)
+            this.membershipGeneration++
+          }
+          return room
+        } finally { this.startingHand = null }
+      } finally { releaseFairness() }
+    } finally { releaseLive() }
   }
 
   async createRoom(): Promise<Readonly<{roomId:string;version:number}>> {
