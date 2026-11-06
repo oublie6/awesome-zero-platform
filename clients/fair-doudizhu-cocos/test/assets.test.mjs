@@ -41,3 +41,16 @@ test('native UI exposes a room leave control and displays verified archive compl
  assert.match(source,/useAuthoritativeHand/)
  assert.match(source,/api\.finalEvidence\(handID\)/)
 })
+
+test('native fairness backup gate requires explicit user-held re-entry before commitment',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(source,/name:'VerifyFairnessBackup'/)
+ assert.match(source,/beginFairnessBackupVerification\(\)/)
+ assert.match(source,/this\.roomInput\.string=''/)
+ assert.match(source,/backupVerificationPendingHand!==handID/)
+ assert.match(source,/this\.verifiedBackupController=online/)
+ assert.match(source,/this\.verifiedBackupHand!==this\.handID/)
+ assert.match(source,/this\.verifiedBackupController!==online/)
+ assert.match(source,/online\.fairness\.importRecoveryKit\(kit,handID\)/)
+ assert.match(source,/online\.fairness\.commit\(this\.handID\)/)
+})
