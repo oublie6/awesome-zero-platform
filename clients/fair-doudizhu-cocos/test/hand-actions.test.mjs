@@ -76,3 +76,22 @@ test('explicit server command rejection releases pending action but ambiguous fa
  f.actions.discardUnknownAfterSync()
  assert.equal(f.actions.needsReconciliation,false)
 })
+
+test('Round15 live hand reservation rejects unknown and in-flight commands',async()=>{
+ const f=fixture('PLAYING')
+ let finish
+ f.shell.submitCommand=()=>new Promise(resolve=>{finish=resolve})
+ const passing=f.actions.pass()
+ assert.throws(()=>f.actions.beginHandTransition(),/in progress/)
+ await new Promise(resolve=>setImmediate(resolve))
+ finish({v:'doudizhu-api-command-result-v1',requestId:'handled',type:'hand.pass'})
+ await passing
+ const release=f.actions.beginHandTransition()
+ await assert.rejects(f.actions.pass(),/already in flight/)
+ release()
+ f.shell.submitCommand=async()=>{throw Error('lost response')}
+ await assert.rejects(f.actions.pass(),/lost response/)
+ assert.equal(f.actions.needsReconciliation,true)
+ assert.throws(()=>f.actions.beginHandTransition(),/outcome unknown/)
+ assert.equal(f.actions.needsReconciliation,true)
+})
