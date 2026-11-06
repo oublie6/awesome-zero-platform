@@ -138,3 +138,19 @@ test('disposal during async preparation must not recreate or expose sensitive en
  assert.equal(flow.hasRecoverySecret,false)
  assert.equal(flow.recoveryKitPrepared,false)
 })
+
+test('Round15 hand-transition reservation prevents new fairness work and releases after failed start',async()=>{
+ const api={fairness:async()=>({handId:'hand-old',phase:'FAIRNESS_COMMITTING',
+   version:2,seat:1,committed:false,revealed:false,lastClientSequence:0})}
+ const flow=new GameFairnessActions(api,{random:{bytes:async n=>new Uint8Array(n).fill(7)}},{})
+ const original=await flow.prepareRecoveryKit('hand-old','user saved backup')
+ const release=flow.beginHandTransition()
+ assert.throws(()=>flow.beginHandTransition(),/in progress/)
+ await assert.rejects(flow.prepareRecoveryKit('hand-old'),/in progress/)
+ await assert.rejects(flow.commit('hand-old'),/in progress/)
+ assert.equal(flow.exportRecoveryKit(),original)
+ release()
+ const repeated=await flow.prepareRecoveryKit('hand-old','user saved backup')
+ assert.equal(repeated,original)
+ flow.dispose()
+})
