@@ -327,7 +327,9 @@ export class GameBootstrap extends Component {
       await this.refreshRoom()
     }catch(error){
       if(online===this.online && roomID===this.roomID && this.content?.isValid)
-        this.notice('开局失败：'+this.message(error))
+        this.notice(online?.rooms.needsReconciliation
+          ? '开局结果尚未确认，请重连并同步服务端状态，勿重复发起开局：'+this.message(error)
+          : '开局失败：'+this.message(error))
     }
   }
   private async refreshRoom():Promise<void> {
