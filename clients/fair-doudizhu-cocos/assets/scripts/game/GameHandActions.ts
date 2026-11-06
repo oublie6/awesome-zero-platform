@@ -10,6 +10,7 @@ import { GameClientShell, CommandRejectedError } from './GameClientShell.ts'
 export class GameHandActions {
   private seq = new Map<string, number>()
   private inFlight = false
+  private handTransition = false
   private pending: Omit<WireCommand, 'v'> | null = null
   private readonly identities
   constructor(private readonly shell: GameClientShell, random: SecureRandomSource) {
@@ -28,6 +29,17 @@ export class GameHandActions {
   }
   pass(): Promise<WireCommandResult> { return this.send('hand.pass', {}, 'PLAYING') }
   get needsReconciliation(): boolean { return this.pending !== null }
+
+  /** Prevent live Bid/Play/Pass from racing a new-hand room command.
+   * Unknown commands must be reconciled explicitly, never thrown away. */
+  beginHandTransition(): () => void {
+    if (this.inFlight || this.handTransition)
+      throw new Error('live hand action in progress; cannot start next hand')
+    if (this.pending)
+      throw new Error('live hand outcome unknown; reconcile the original request before starting next hand')
+    this.handTransition = true
+    return () => { this.handTransition = false }
+  }
 
   /** Retry only the exact originally transmitted request ID, actor hand,
    * sequence, payload and version. Reconnect may already have advanced the
@@ -60,7 +72,7 @@ export class GameHandActions {
   }
 
   private async send(type: 'hand.bid'|'hand.play'|'hand.pass', payload: Record<string, unknown>, phase: 'BIDDING'|'PLAYING'): Promise<WireCommandResult> {
-    if (this.inFlight) throw new Error('hand command already in flight; outcome may be unknown')
+    if (this.inFlight || this.handTransition) throw new Error('hand command already in flight; outcome may be unknown')
     if (this.pending) throw new Error('previous hand command outcome unknown; retry exact request or reconcile')
     const snapshot = this.shell.hand.snapshot
     if (!snapshot || snapshot.phase !== phase || !this.shell.hand.canSubmit) throw new Error('hand is not ready for this action')
