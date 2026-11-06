@@ -70,7 +70,13 @@ cold recovery with only the new root is safe.
 The command is read-only; `--execute` is forbidden for `key-audit`.
 Do not copy raw root material into support tickets or operator reports.
 
-## Explicit rotation and retirement (not yet fully qualified)
+## Current release decision: rotation and retirement deferred (2026-11-06)
+
+The user has explicitly removed full historical root migration (**C09**) and verified retirement (**C10**) from the current Goal 0046 release scope. Both are future optional enhancements, **not implemented or approved**, and require a new authorized Goal and independent acceptance before use. This does not change the original Round 12/13 audit evidence or reduce the protection of existing data.
+
+For the current release, retain the original administrator-managed root and its secure, separately backed-up recovery copy. Changing root configuration without a validated migration is **not supported**: a new root may be unable to authenticate historical Journal or decrypt seeds/checkpoints. Root loss or suspected compromise must be treated as an operational incident requiring a separate containment/recovery decision, not as a reason to re-enable the old partial rotation CLI.
+
+## Legacy rotation implementation and future requirements (not supported in current release)
 
 **The old `--mode rotate` entry point is disabled completely**, including
 dry runs and no-Journal hands. The CLI rejects it before opening MySQL or
