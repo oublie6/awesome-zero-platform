@@ -51,7 +51,8 @@ test('native fairness backup gate requires explicit user-held re-entry before co
  assert.match(source,/this\.verifiedBackupController=online/)
  assert.match(source,/this\.verifiedBackupHand!==this\.handID/)
  assert.match(source,/this\.verifiedBackupController!==online/)
- assert.match(source,/online\.fairness\.importRecoveryKit\(kit,handID\)/)
+ assert.match(source,/await fairness\.importRecoveryKit\(kit,handID\)/)
+ assert.match(source,/fairness!==online\.fairness/)
  assert.match(source,/online\.fairness\.commit\(this\.handID\)/)
 })
 
