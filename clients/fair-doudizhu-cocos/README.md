@@ -20,6 +20,34 @@ Cocos Creator **3.8.8** foundation with an entry status screen, not a playable t
 Business state and transports are in small engine-independent packages; HPKE remains
 in the existing `@awesome-zero-platform/secure-envelope` package.
 
+## Fairness contribution backup and restoration (current candidate)
+
+The current room UI provides an explicit user-held recovery step before the
+first irreversible fairness commitment:
+
+1. Select **生成并备份恢复凭证**. A per-hand, per-seat recovery kit is shown
+   in the room input field; copy it privately **outside the game**. Do not
+   send it to other players, publish it or rely only on a screenshot/log.
+2. Select **已保存备份，清空输入并校验**. The displayed kit is cleared.
+3. Paste the saved kit from the external copy, then select **从备份粘贴并验证恢复凭证**.
+   The client reimports it and checks it against the authenticated seat and
+   server commitment; this action is required before **提交洗牌承诺**.
+4. After a process restart, log in with the same account, restore the same
+   room/hand from the server, then paste and import the saved kit before
+   **加密提交随机贡献**. A different hand/seat/commitment is rejected.
+
+No kit is automatically placed into plaintext platform local storage.
+Re-entry demonstrates possession of a usable copy at verification time;
+it **cannot prove that the user saved it durably** or that a physical
+device's clipboard/backups are secure. The kit is secret: losing it before
+reveal can prevent that player's fairness contribution, and leaking it
+compromises the contribution's secrecy. Use an access-controlled backup.
+
+This is a development candidate for E03, **not yet a completed independent
+native-device UX acceptance**. The actual device copy/paste, process-restart
+and secret-handling tests remain to be verified; no external release
+qualification is implied.
+
 ## Reproducible source checks
 
 Use Node 22.23.4 from the repository root:
