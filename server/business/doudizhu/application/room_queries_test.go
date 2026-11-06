@@ -50,31 +50,49 @@ func TestRoomViewLastHandIsScopedToHistoricalParticipantsAfterSeatReplacement(t 
 	const roomID domain.RoomID = "history-room"
 	const handID domain.HandID = "history-hand"
 	room, _, err := domain.NewRoom(roomID, "account-A")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, actor := range []domain.AccountID{"account-B", "account-C"} {
-		if _, err := room.Join(actor, room.Snapshot().Version); err != nil { t.Fatal(err) }
+		if _, err := room.Join(actor, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
 	}
 	for _, actor := range []domain.AccountID{"account-A", "account-B", "account-C"} {
-		if _, err := room.SetReady(actor, true, room.Snapshot().Version); err != nil { t.Fatal(err) }
+		if _, err := room.SetReady(actor, true, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if _, err := room.StartHand("account-A", handID, room.Snapshot().Version); err != nil { t.Fatal(err) }
-	if _, err := room.FinishHand(handID, room.Snapshot().Version, true); err != nil { t.Fatal(err) }
-	if _, err := room.Leave("account-C", room.Snapshot().Version); err != nil { t.Fatal(err) }
-	if _, err := room.Join("account-D", room.Snapshot().Version); err != nil { t.Fatal(err) }
+	if _, err := room.StartHand("account-A", handID, room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := room.FinishHand(handID, room.Snapshot().Version, true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := room.Leave("account-C", room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := room.Join("account-D", room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
 	seats := [3]domain.HandSeat{
 		{Seat: 1, AccountID: "account-A"},
 		{Seat: 2, AccountID: "account-B"},
 		{Seat: 3, AccountID: "account-C"},
 	}
 	hand, _, err := domain.NewHand(handID, roomID, seats, domain.ServerCommitment{1},
-		"history-reveal-key", domain.BeaconPlan{Provider:"history-beacon", Round:"history-round"})
-	if err != nil { t.Fatal(err) }
-	if _, err := hand.Abort("history test archive", hand.Snapshot().Version); err != nil { t.Fatal(err) }
+		"history-reveal-key", domain.BeaconPlan{Provider: "history-beacon", Round: "history-round"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := hand.Abort("history test archive", hand.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
 	store := newTestStore()
 	store.state.rooms[string(roomID)] = room.Snapshot()
 	store.state.hands[string(handID)] = hand.Snapshot()
 	service := &Service{store: store}
-	for _, actor := range []domain.AccountID{"account-A","account-B"} {
+	for _, actor := range []domain.AccountID{"account-A", "account-B"} {
 		view, err := service.GetRoomView(ctx, actor, roomID)
 		if err != nil || !view.Member || view.LastHandID != string(handID) {
 			t.Fatalf("original hand member %s lost archive locator: %+v %v", actor, view, err)
