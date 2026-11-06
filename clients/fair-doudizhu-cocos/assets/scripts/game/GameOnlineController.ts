@@ -19,6 +19,7 @@ export class GameOnlineController {
   fairness: GameFairnessActions
   // Only an authenticated server result can advance this binding.
   private confirmedFairnessHand: string | null = null
+  private startingHand: string | null = null
   private disposed = false
   private membershipGeneration = 0
   constructor(
@@ -162,6 +163,11 @@ export class GameOnlineController {
     if (this.disposed || this.fairness !== previous)
       throw new Error('fairness session changed while reconciling; refresh room')
     const release = previous.beginHandTransition()
+    if (this.startingHand !== null) {
+      release()
+      throw new Error('room hand start already in progress')
+    }
+    this.startingHand = handId
     try {
       const room = await this.rooms.startHand(handId)
       // The durable ACK has been accepted by RoomCoordinator. No await is
@@ -172,7 +178,10 @@ export class GameOnlineController {
         this.membershipGeneration++
       }
       return room
-    } finally { release() }
+    } finally {
+      this.startingHand = null
+      release()
+    }
   }
 
   async createRoom(): Promise<Readonly<{roomId:string;version:number}>> {
@@ -189,6 +198,12 @@ export class GameOnlineController {
    * available for an authorized historical evidence read. */
   confirmActiveFairnessHand(handId: string | null): void {
     if (this.disposed) throw new Error('online controller disposed')
+    // A concurrent room refresh may observe the cancelled old hand while an
+    // authorized room.hand.start is still in flight. Do not replace the
+    // reserved session with an unrelated one before the command settles.
+    if (this.startingHand !== null && handId !== this.startingHand &&
+        handId !== this.confirmedFairnessHand)
+      throw new Error('room hand start in progress; wait for authoritative result')
     if (this.confirmedFairnessHand === handId) return
     this.resetFairnessAfterConfirmedTransition()
     this.confirmedFairnessHand = handId
