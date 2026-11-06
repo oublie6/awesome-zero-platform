@@ -70,6 +70,18 @@ test('delayed fairness kit UI updates are fenced after leave, hand and login rep
  assert.match(prepare,/fairness!==online\.fairness/)
  assert.match(prepare,/input!==this\.roomInput/)
  assert.ok(prepare.indexOf('generation!==this.roomGeneration')<prepare.indexOf('input.string=kit'))
- assert.match(source,/online\.confirmActiveFairnessHand\(handID\)/)
+ assert.match(source,/await online\.startHand\(handID\)/)
+ assert.match(source,/generation!==this\.roomGeneration/)
  assert.match(source,/online\.confirmActiveFairnessHand\(info\.activeHandId \|\| null\)/)
+})
+
+test('accepted room.hand.start receipt is adopted only after exact fairness preflight',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const start=source.split('private async startHand():Promise<void> {')[1].split('private async refreshRoom():Promise<void>')[0]
+ assert.match(start,/const generation=this\.roomGeneration/)
+ assert.match(start,/await online\.startHand\(handID\)/)
+ assert.match(start,/online!==this\.online \|\| roomID!==this\.roomID/)
+ assert.ok(start.indexOf('await online.startHand(handID)')<start.indexOf('this.handID=handID'))
+ assert.doesNotMatch(start,/await online\.rooms\.startHand\(handID\)/)
+ assert.doesNotMatch(start,/online\.confirmActiveFairnessHand\(handID\)/)
 })
