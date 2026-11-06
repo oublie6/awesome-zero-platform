@@ -520,3 +520,17 @@ closure **does not implement C09/C10** full HMAC reauthentication,
 new-only cold recovery or approved old-root retirement. Round12 FAIL
 (109PASS/1FAIL/4BLOCKED) remains the last independent verdict until
 further testing. Goals 0045/0046 stay `in_progress`.
+
+### Formatted Round12 remediation checkpoint
+
+Formatted candidate code baseline is `9ee0122e71d59d96fa85077c53d297c85a9b62ea`. The obsolete
+`rotate` CLI case and key-loading/rewrap code have been removed from the
+operator-maintenance command. All `--mode rotate` requests, including
+`--execute` and legacy `--epoch`, are rejected *before* database access.
+Go tests cover the fail-closed CLI behavior and preserve read-only
+`key-audit` and separately authorized `prune`.
+
+This documentation checkpoint triggers normal CI against the exact formatted
+source tree. Round12's independent FAIL remains authoritative until re-test.
+The user has not approved retiring keys or changing C09/C10's original
+complete-migration requirements; neither is represented as complete.
