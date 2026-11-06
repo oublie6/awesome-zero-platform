@@ -309,6 +309,9 @@ export class GameBootstrap extends Component {
       if(!this.platform)throw new Error('游戏平台未初始化')
       const handID='hand-'+await secureRoomCommandIdentity(this.platform.random).newRequestId()
       await online.rooms.startHand(handID)
+      // The durable start-hand receipt authorizes discarding prior terminal
+      // fairness material; never reuse it for this new hand.
+      online.confirmActiveFairnessHand(handID)
       this.roomGeneration++
       this.handID=handID
       this.selectedCards.clear()
@@ -325,6 +328,7 @@ export class GameBootstrap extends Component {
       const info=await online.roomInfo(roomID)
       if(generation!==this.roomGeneration || roomID!==this.roomID || online!==this.online)return
       if(!info.member)throw new Error('当前账号不属于该房间')
+      online.confirmActiveFairnessHand(info.activeHandId || null)
       online.rooms.restoreTrustedRoom(info.roomId,info.version,info.lastClientSequence)
       if(this.screen==='rooms')this.renderScreen('rooms')
       const seats=(info.seats||[]).map(s=>s.accountId ? `座位${s.position} ${s.ready?'已准备':'未准备'}`:`座位${s.position} 空`).join(' / ')
@@ -366,16 +370,34 @@ export class GameBootstrap extends Component {
     }catch(error){this.notice('公平阶段查询失败：'+this.message(error))}
   }
   private async prepareFairness():Promise<void>{
+    const online=this.online
+    const roomID=this.roomID
+    const handID=this.handID
+    const generation=this.roomGeneration
+    const screen=this.screen
+    const input=this.roomInput
+    const fairness=online?.fairness
     try{
-      if(!this.handID)throw new Error('尚未开始牌局')
-      const kit=await this.requireOnline().fairness.prepareRecoveryKit(this.handID)
-      if(!this.roomInput)throw new Error('恢复凭证输入框不可用')
+      if(!handID)throw new Error('尚未开始牌局')
+      if(!online?.session.authenticated || !fairness)throw new Error('请先完成微信登录')
+      const kit=await fairness.prepareRecoveryKit(handID)
+      // The reply may arrive after an authoritative cancel/leave, hand switch,
+      // session replacement or UI destruction. Never re-display old secrets.
+      if(generation!==this.roomGeneration || roomID!==this.roomID ||
+        handID!==this.handID || screen!==this.screen || this.screen!=='rooms' ||
+        online!==this.online || fairness!==online.fairness ||
+        input!==this.roomInput || !this.content?.isValid)return
+      if(!input)throw new Error('恢复凭证输入框不可用')
       this.verifiedBackupHand=''
       this.verifiedBackupController=null
       this.backupVerificationPendingHand=''
-      this.roomInput.string=kit
+      input.string=kit
       this.notice('请先将恢复凭证私密保存到游戏外，再点“已保存备份，清空输入并校验”，从备份重新粘贴验证。不要发给其他玩家')
-    }catch(error){this.notice('准备恢复凭证失败：'+this.message(error))}
+    }catch(error){
+      if(generation===this.roomGeneration && handID===this.handID &&
+        online===this.online && fairness===online?.fairness && this.content?.isValid)
+        this.notice('准备恢复凭证失败：'+this.message(error))
+    }
   }
   private beginFairnessBackupVerification():void {
     try {
@@ -406,8 +428,10 @@ export class GameBootstrap extends Component {
         throw new Error('请先点击“已保存备份，清空输入并校验”')
       const kit=this.roomInput?.string?.trim()
       if(!kit)throw new Error('请从游戏外备份粘贴原先保存的恢复凭证')
-      await online.fairness.importRecoveryKit(kit,handID)
-      if(generation!==this.roomGeneration || handID!==this.handID || online!==this.online)return
+      const fairness=online.fairness
+      await fairness.importRecoveryKit(kit,handID)
+      if(generation!==this.roomGeneration || handID!==this.handID ||
+        online!==this.online || fairness!==online.fairness)return
       if(this.roomInput)this.roomInput.string=''
       this.backupVerificationPendingHand=''
       this.verifiedBackupHand=handID
