@@ -350,3 +350,56 @@ test('Round15 active fairness operation blocks irreversible new-hand command',as
   assert.equal(online.fairness.hasRecoverySecret,true)
   online.dispose()
 })
+
+test('Round15 concurrent old authoritative refresh cannot invalidate an ACKed new hand',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-aborted')
+  const old=online.fairness
+  online.api.fairness=async handId=>({handId,phase:'FAIRNESS_COMMITTING',
+    version:2,seat:1,committed:false,revealed:false,lastClientSequence:0})
+  await old.prepareRecoveryKit('hand-aborted','external user backup')
+  const start=online.startHand('hand-new')
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.equal(f.commands.length,1)
+  // A stale room read with no active hand must not replace the session
+  // reserved for the already-transmitted hand-start command.
+  assert.throws(()=>online.confirmActiveFairnessHand(null),/start in progress/)
+  assert.equal(online.fairness,old)
+  assert.equal(old.hasRecoverySecret,true)
+  const request=f.commands[0].payload
+  for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+    v:'doudizhu-api-command-result-v1',requestId:request.requestId,type:'room.hand.start',
+    durable:{v:'fair-doudizhu-command-result-v1',commandId:request.requestId,
+      aggregateId:'room-rejoin',aggregateVersion:10,accepted:true}
+  }}))
+  await start
+  assert.equal(online.rooms.state.version,10)
+  assert.notEqual(online.fairness,old)
+  assert.equal(old.hasRecoverySecret,false)
+  online.confirmActiveFairnessHand('hand-new')
+  online.dispose()
+})
+
+test('Round15 failed room start retains original fairness secret and lifts reservation',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-aborted')
+  const old=online.fairness
+  online.api.fairness=async handId=>({handId,phase:'FAIRNESS_COMMITTING',
+    version:2,seat:1,committed:false,revealed:false,lastClientSequence:0})
+  const secret=await old.prepareRecoveryKit('hand-aborted','safe backup')
+  // Preflight succeeds, but no room command is accepted.
+  online.rooms.startHand=async()=>{throw Error('pre-ACK room failure')}
+  await assert.rejects(online.startHand('hand-new'),/pre-ACK room failure/)
+  assert.equal(old.exportRecoveryKit(),secret)
+  assert.equal(online.fairness,old)
+  assert.equal(online.rooms.state.version,9)
+  assert.equal(f.commands.length,0)
+  assert.equal(await old.prepareRecoveryKit('hand-aborted','safe backup'),secret)
+  online.dispose()
+})
