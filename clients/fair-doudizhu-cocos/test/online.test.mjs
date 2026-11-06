@@ -127,3 +127,33 @@ test('room exit is confirmed before local room identity is cleared',async()=>{
   assert.equal(online.shell.hand.snapshot,null)
   online.dispose()
 })
+
+test('replacement room member reconnects without reading a previous hand archive',async()=>{
+  const f=fixture()
+  const paths=[]
+  f.platform.http.request=async path=>{
+    paths.push(path)
+    if(path.includes('/evidence'))throw new Error('prior hand evidence must never be requested')
+    return {code:'OK',data:{
+      roomId:'room-rejoin',version:11,status:'WAITING_PLAYERS',occupied:3,
+      member:true,lastClientSequence:2,seats:[
+        {position:1,accountId:'account-A',ready:false},
+        {position:2,accountId:'account-B',ready:false},
+        {position:3,accountId:'account-D',ready:false}
+      ]
+      // The previous hand exists, but server deliberately omits lastHandId
+      // because account D was not seated during its completed game.
+    }}
+  }
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  const confirmed=await online.reconnectAndResync()
+  assert.equal(confirmed.member,true)
+  assert.equal(confirmed.lastHandId,undefined)
+  assert.equal(online.shell.hand.snapshot,null)
+  assert.equal(online.rooms.state.roomId,'room-rejoin')
+  assert.equal(paths.length,2)
+  assert.ok(paths.every(path=>path.endsWith('/rooms/room-rejoin')))
+  online.dispose()
+})

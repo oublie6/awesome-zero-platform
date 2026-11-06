@@ -250,36 +250,6 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 			if err != nil {
 				return mutationOutcome{}, err
 			}
-			// Serialize this expiry with the same durable live-writer row used
-			// by the acknowledged action journal. If a newer action committed,
-			// do not complete or cache a stale terminal command.
-			if name == CommandHandExpire {
-				if input, ok := payload.(TerminateHandInput); ok && input.ExpectedLiveVersion != 0 {
-					if durability, ok := s.liveHands.(interface{ DurabilityEnforced() bool }); ok && durability.DurabilityEnforced() {
-						guard, ok := tx.(interface {
-							LockLiveCommittedVersion(context.Context, domain.HandID) (uint64, error)
-							FenceLiveWriter(context.Context, domain.HandID) error
-						})
-						if !ok {
-							return mutationOutcome{}, fmt.Errorf("live writer lock unavailable for expiry")
-						}
-						committed, err := guard.LockLiveCommittedVersion(txCtx, handSnapshot.ID)
-						if err != nil {
-							return mutationOutcome{}, fmt.Errorf("lock live writer for expiry: %w", err)
-						}
-						if committed > input.ExpectedLiveVersion {
-							return mutationOutcome{}, ErrLiveProgressed
-						}
-						// Under the same row lock, advance the owner fence. Any
-						// live operation that starts after this transaction wins
-						// must fail the old-epoch check instead of committing
-						// an action to a now-terminal domain hand.
-						if err := guard.FenceLiveWriter(txCtx, handSnapshot.ID); err != nil {
-							return mutationOutcome{}, fmt.Errorf("fence live writer on expiry: %w", err)
-						}
-					}
-				}
-			}
 			hand, err := domain.RestoreHand(handSnapshot)
 			if err != nil {
 				return mutationOutcome{}, wrapInfrastructure("restore hand snapshot", err)
@@ -310,6 +280,39 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 			roomEvents, err := room.FinishHand(handSnapshot.ID, roomSnapshot.Version, archiveAvailable)
 			if err != nil {
 				return mutationOutcome{}, wrapInfrastructure("release terminal hand room", err)
+			}
+
+			// All domain and room checks have succeeded before acquiring the
+			// durable writer lock/fence. Business rejections are persisted as
+			// successful transactions by execute(), so fencing them earlier
+			// would silently disable an otherwise live writer. Keep the writer
+			// row lock through UpdateHand/UpdateRoom and transaction COMMIT.
+			if name == CommandHandExpire {
+				if input, ok := payload.(TerminateHandInput); ok && input.ExpectedLiveVersion != 0 {
+					if durability, ok := s.liveHands.(interface{ DurabilityEnforced() bool }); ok && durability.DurabilityEnforced() {
+						guard, ok := tx.(interface {
+							LockLiveCommittedVersion(context.Context, domain.HandID) (uint64, error)
+							FenceLiveWriter(context.Context, domain.HandID) error
+						})
+						if !ok {
+							return mutationOutcome{}, fmt.Errorf("live writer lock unavailable for expiry")
+						}
+						committed, err := guard.LockLiveCommittedVersion(txCtx, handSnapshot.ID)
+						if err != nil {
+							return mutationOutcome{}, fmt.Errorf("lock live writer for expiry: %w", err)
+						}
+						if committed > input.ExpectedLiveVersion {
+							return mutationOutcome{}, ErrLiveProgressed
+						}
+						// Under the same row lock, advance the owner fence. Any
+						// live operation that starts after this transaction wins
+						// must fail the old-epoch check instead of committing
+						// an action to a now-terminal domain hand.
+						if err := guard.FenceLiveWriter(txCtx, handSnapshot.ID); err != nil {
+							return mutationOutcome{}, fmt.Errorf("fence live writer on expiry: %w", err)
+						}
+					}
+				}
 			}
 
 			if err := tx.UpdateHand(txCtx, updatedHand, handSnapshot.Version, now); err != nil {

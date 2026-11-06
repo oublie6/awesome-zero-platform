@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -78,7 +79,34 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 			view.Seats = append(view.Seats, RoomSeatView{Position: uint8(seat.Seat), AccountID: string(seat.AccountID), Ready: seat.Ready})
 		}
 		view.ActiveHandID = string(snapshot.ActiveHandID)
-		view.LastHandID = string(snapshot.LastHandID)
+		// Room membership does not confer authorization to a previous hand's
+		// archive. A replacement player may join after the old hand finishes:
+		// giving them lastHandId would make reconnect request inaccessible
+		// evidence and fail with 403. Preserve strict archive permissions.
+		if snapshot.LastHandID != "" {
+			lastHand, err := s.store.LoadHand(ctx, snapshot.LastHandID)
+			switch {
+			case errors.Is(err, ErrNotFound):
+				// A pruned/not-retained historical hand cannot be restored.
+			case err != nil:
+				return RoomView{}, fmt.Errorf("load last room hand: %w", err)
+			default:
+				if lastHand.ID != snapshot.LastHandID || lastHand.RoomID != roomID {
+					return RoomView{}, fmt.Errorf("%w: last room hand identity mismatch", ErrInvalidCommand)
+				}
+				if _, err := domain.RestoreHand(lastHand); err != nil {
+					return RoomView{}, fmt.Errorf("restore last room hand: %w", err)
+				}
+				if lastHand.Phase.Terminal() {
+					for _, historicalSeat := range lastHand.Seats {
+						if historicalSeat.AccountID == actor {
+							view.LastHandID = string(snapshot.LastHandID)
+							break
+						}
+					}
+				}
+			}
+		}
 	}
 	return view, nil
 }
