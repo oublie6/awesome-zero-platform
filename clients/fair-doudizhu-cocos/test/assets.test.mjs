@@ -54,3 +54,21 @@ test('native fairness backup gate requires explicit user-held re-entry before co
  assert.match(source,/online\.fairness\.importRecoveryKit\(kit,handID\)/)
  assert.match(source,/online\.fairness\.commit\(this\.handID\)/)
 })
+
+test('delayed fairness kit UI updates are fenced after leave, hand and login replacement',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const prepare=source.split('private async prepareFairness():Promise<void>{')[1].split('private beginFairnessBackupVerification()')[0]
+ assert.match(prepare,/const roomID=this\.roomID/)
+ assert.match(prepare,/const handID=this\.handID/)
+ assert.match(prepare,/const generation=this\.roomGeneration/)
+ assert.match(prepare,/const fairness=online\?\.fairness/)
+ assert.match(prepare,/await fairness\.prepareRecoveryKit\(handID\)/)
+ assert.match(prepare,/generation!==this\.roomGeneration/)
+ assert.match(prepare,/handID!==this\.handID/)
+ assert.match(prepare,/roomID!==this\.roomID/)
+ assert.match(prepare,/fairness!==online\.fairness/)
+ assert.match(prepare,/input!==this\.roomInput/)
+ assert.ok(prepare.indexOf('generation!==this.roomGeneration')<prepare.indexOf('input.string=kit'))
+ assert.match(source,/online\.confirmActiveFairnessHand\(handID\)/)
+ assert.match(source,/online\.confirmActiveFairnessHand\(info\.activeHandId \|\| null\)/)
+})
