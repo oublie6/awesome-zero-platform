@@ -55,14 +55,20 @@ type maintenanceClock struct{}
 func (maintenanceClock) Now() time.Time { return time.Now().UTC() }
 
 func run() error {
-	mode := flag.String("mode", "", "rotate or prune")
+	mode := flag.String("mode", "", "key-audit, rotate or prune")
 	hand := flag.String("hand", "", "explicit hand ID")
 	epoch := flag.Uint64("epoch", 0, "currently fenced owner epoch; required for rotate")
 	retention := flag.Int("retention-days", 30, "minimum archived history age before pruning")
 	apply := flag.Bool("execute", false, "required to perform a mutation; without it this is a dry run")
 	flag.Parse()
-	if !safeHand.MatchString(*hand) || (*mode != "rotate" && *mode != "prune") {
-		return fmt.Errorf("invalid mode or hand ID")
+	if *mode != "rotate" && *mode != "prune" && *mode != "key-audit" {
+		return fmt.Errorf("invalid maintenance mode")
+	}
+	if *mode != "key-audit" && !safeHand.MatchString(*hand) {
+		return fmt.Errorf("rotate/prune require an explicit valid hand ID")
+	}
+	if *mode == "key-audit" && (*apply || (*hand != "" && !safeHand.MatchString(*hand))) {
+		return fmt.Errorf("key-audit is read-only and accepts only an optional valid hand ID")
 	}
 	if *mode == "rotate" && *epoch == 0 {
 		return fmt.Errorf("checkpoint rotation requires a positive fenced owner epoch")
@@ -70,8 +76,8 @@ func run() error {
 	if *mode == "prune" && (*retention < 30 || *retention > 3650) {
 		return fmt.Errorf("history retention must be between 30 and 3650 days")
 	}
-	if !*apply {
-		fmt.Printf("DRY_RUN: mode=%s hand=%s; rerun with --execute after verifying the archive and current owner\n", *mode, *hand)
+	if !*apply && *mode != "key-audit" {
+		fmt.Printf("DRY_RUN: mode=%s hand=%s; no database checked; run --mode key-audit and obtain operator approval before --execute\n", *mode, *hand)
 		return nil
 	}
 	dsn := os.Getenv("APP_MYSQL_DSN")
@@ -94,6 +100,16 @@ func run() error {
 	}
 	id := domain.HandID(*hand)
 	switch *mode {
+	case "key-audit":
+		inventory, err := inspectProtectionInventory(ctx, db, id)
+		if err != nil {
+			return err
+		}
+		// These are metadata counts, not a proof that every record can be
+		// recovered using the active root alone. Never print key material.
+		fmt.Printf("KEY_AUDIT hand=%s journal_actions=%d authenticated_v2=%d legacy_v1=%d seeds=%d checkpoints=%d old_root_retirement=UNVERIFIED (C09/C10)\n",
+			*hand, inventory.actions, inventory.authenticated, inventory.legacy, inventory.seeds, inventory.checkpoints)
+		return nil
 	case "prune":
 		archive, err := mysqlarchive.New(db, maintenanceClock{})
 		if err != nil {
@@ -101,6 +117,16 @@ func run() error {
 		}
 		return journal.PruneArchivedHand(ctx, id, time.Duration(*retention)*24*time.Hour, archive)
 	case "rotate":
+		// This legacy operation rewraps only the seed and checkpoint. Never
+		// allow an operator to mistake it for complete HMAC journal migration:
+		// deleting the historical root would otherwise break cold recovery.
+		inventory, err := inspectProtectionInventory(ctx, db, id)
+		if err != nil {
+			return err
+		}
+		if err := checkPartialRotationAllowed(inventory); err != nil {
+			return err
+		}
 		current, roots, err := previousRoots()
 		if err != nil {
 			return err
@@ -125,6 +151,9 @@ func run() error {
 		if err := journal.ReencryptCheckpoint(ctx, id, *epoch); err != nil {
 			return fmt.Errorf("rotate fenced checkpoint: %w", err)
 		}
+		// A no-journal per-hand rewrap is not proof that every old root
+		// can be retired across the entire database.
+		fmt.Println("PARTIAL_REWRAP completed for a no-journal hand; old-root retirement remains UNVERIFIED (C09/C10)")
 		return nil
 	}
 	return fmt.Errorf("unrecognized maintenance mode")

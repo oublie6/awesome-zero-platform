@@ -45,7 +45,7 @@ APP_DOUDIZHU_CONTRIBUTION_KEY_HEX=<exactly 64 lowercase hex characters>
 
 The production Compose baseline passes these variables to `app-api`, but leaves reveal keys and Doudizhu disabled unless the operator supplies them. The local `revealkeys/cmd/local-env` generator is development-only and must not be used as a production key-management process.
 
-The provider and round are locked into hand metadata. Changing them does not rewrite or migrate existing hands. Key rotation, retiring-key grace periods, retention, backup, and emergency revocation must be handled as an explicit operational procedure.
+The provider and round are locked into hand metadata. Changing them does not rewrite or migrate existing hands. **Use one stable administrator-managed Doudizhu protection root during normal operations**; the application does not rotate it automatically. Keep the same key ID and key across replicas and restarts, and separately back up the root and database. Journal commands remain plain structured records authenticated with root-derived HMAC; private seeds and checkpoints remain encrypted with purpose-separated AES-GCM. Do not replace this root or retire old roots without an approved, verified migration. See [Doudizhu protection-key runbook](doudizhu-protection-keys.md): the existing per-hand rotation command cannot migrate journal HMAC and will now reject affected hands, while C09/C10 remain BLOCKED.
 
 ## Production Compose
 
@@ -262,6 +262,7 @@ APP_DOUDIZHU_BEACON_ROUND
 APP_DOUDIZHU_BEACON_PROOF_SECRET
 APP_DOUDIZHU_CONTRIBUTION_KEY_ID
 APP_DOUDIZHU_CONTRIBUTION_KEY_HEX
+APP_DOUDIZHU_PREVIOUS_KEYS_JSON
 APP_COMPOSE_PROJECT_NAME
 APP_HTTPS_ENABLED
 APP_TLS_CERT_FILE
