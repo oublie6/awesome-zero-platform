@@ -16,7 +16,9 @@ export class GameOnlineController {
   readonly rooms: RoomCoordinator
   readonly api: DoudizhuHTTPClient
   readonly actions: GameHandActions
-  readonly fairness: GameFairnessActions
+  fairness: GameFairnessActions
+  // Only an authenticated server result can advance this binding.
+  private confirmedFairnessHand: string | null = null
   private disposed = false
   private membershipGeneration = 0
   constructor(
@@ -24,13 +26,13 @@ export class GameOnlineController {
     identity: IdentityExchange,
     private readonly socketEndpoint: string,
     onNotice: (message: string) => void,
-    trustedManifestRoots: Readonly<Record<string,string>> = {}
+    private readonly trustedManifestRoots: Readonly<Record<string,string>> = {}
   ) {
     this.session = new GameSession(platform, identity)
     this.shell = new GameClientShell(onNotice)
     this.actions = new GameHandActions(this.shell, platform.random)
     this.api = new DoudizhuHTTPClient(platform.http, () => this.session.token)
-    this.fairness = new GameFairnessActions(this.api,platform,trustedManifestRoots)
+    this.fairness = new GameFairnessActions(this.api,platform,this.trustedManifestRoots)
     this.rooms = new RoomCoordinator(
       {command: input => this.shell.submitCommand(input)},
       secureRoomCommandIdentity(platform.random)
@@ -64,6 +66,7 @@ export class GameOnlineController {
     const room = await this.lookupOrRetryPendingCreate(target)
     if (this.disposed || generation !== this.membershipGeneration) return null
     if (!room.member) throw new Error('room membership not confirmed after reconnect')
+    this.confirmActiveFairnessHand(room.activeHandId || null)
     this.rooms.restoreTrustedRoom(room.roomId, room.version, room.lastClientSequence)
     this.shell.useAuthoritativeHand(room.activeHandId || room.lastHandId || null)
     if (room.activeHandId) {
@@ -85,12 +88,14 @@ export class GameOnlineController {
     const view = await this.roomInfo(roomId)
     if (view.status === 'CLOSED' || view.status === 'HAND_ACTIVE') throw new Error('room not joinable')
     if (view.member) {
+      this.confirmActiveFairnessHand(view.activeHandId || null)
       this.rooms.restoreTrustedRoom(roomId, view.version, view.lastClientSequence)
       this.membershipGeneration++
       this.shell.useAuthoritativeHand(view.activeHandId || view.lastHandId || null)
       return this.rooms.state!
     }
     const joined = await this.rooms.join(roomId, view.version, view.lastClientSequence)
+    this.confirmActiveFairnessHand(null)
     this.membershipGeneration++
     this.shell.useAuthoritativeHand(null)
     return joined
@@ -115,6 +120,10 @@ export class GameOnlineController {
       if (!this.rooms.state) throw new Error('room not confirmed by server')
       await this.rooms.leave()
     }
+    // The room.leave receipt is definitive. Invalidate in-flight preparation
+    // and erase the old hand's secret, but never discard an unknown outcome.
+    this.resetFairnessAfterConfirmedTransition()
+    this.confirmedFairnessHand = null
     this.membershipGeneration++
     this.shell.clearHand()
   }
@@ -136,10 +145,28 @@ export class GameOnlineController {
     if (this.disposed) throw new Error('online controller disposed')
     const roomId = 'room-' + await secureRoomCommandIdentity(this.platform.random).newRequestId()
     const room = await this.rooms.create(roomId)
+    this.confirmActiveFairnessHand(null)
     this.membershipGeneration++
     this.shell.useAuthoritativeHand(null)
     return room
   }
+  /** Call only after the server has confirmed the active hand identity.
+   * A completed/cancelled hand has no active ID even if lastHandId remains
+   * available for an authorized historical evidence read. */
+  confirmActiveFairnessHand(handId: string | null): void {
+    if (this.disposed) throw new Error('online controller disposed')
+    if (this.confirmedFairnessHand === handId) return
+    this.resetFairnessAfterConfirmedTransition()
+    this.confirmedFairnessHand = handId
+  }
+  private resetFairnessAfterConfirmedTransition(): void {
+    if (this.fairness.needsReconciliation)
+      throw new Error('fairness result unknown; retry the original request before changing hand')
+    const previous = this.fairness
+    this.fairness = new GameFairnessActions(this.api, this.platform, this.trustedManifestRoots)
+    previous.dispose()
+  }
+
   async logout(): Promise<void> {
     this.fairness.dispose()
     this.shell.dispose()
