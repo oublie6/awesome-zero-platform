@@ -78,6 +78,9 @@ export class GameFairnessActions {
   private secret:PendingSecret|null=null
   private prepared=false
   private inFlight=false
+  // Synchronous lifecycle reservation prevents a new fairness operation from
+  // racing the asynchronous room.hand.start command after preflight.
+  private handTransition=false
   private disposed=false
   private generation=0
   private pending:Omit<WireCommand,'v'>|null=null
@@ -100,6 +103,19 @@ export class GameFairnessActions {
   get needsReconciliation():boolean{return this.pending!==null}
   get hasRecoverySecret():boolean{return this.secret!==null}
   get recoveryKitPrepared():boolean{return this.prepared}
+
+  /** Reserve an atomic transition from the old fairness session to a new hand.
+   * A pending exact-ID command must be reconciled first, not silently erased.
+   * The caller MUST release this reservation in a finally block. */
+  beginHandTransition():()=>void{
+    this.ensureActive()
+    if(this.inFlight || this.handTransition)
+      throw new Error('fairness action in progress; cannot start another hand')
+    if(this.pending)
+      throw new Error('fairness result unknown; retry the original request before changing hand')
+    this.handTransition=true
+    return ()=>{this.handTransition=false}
+  }
 
   /** Recovery material is never written into platform-local plaintext storage.
    * The user must explicitly save this high-entropy secret OUTSIDE the game
@@ -198,7 +214,7 @@ export class GameFairnessActions {
   }
   private assertAvailable():void{
     this.ensureActive()
-    if(this.inFlight)throw new Error('fairness action in progress')
+    if(this.inFlight || this.handTransition)throw new Error('fairness action in progress')
     if(this.pending)throw new Error('previous fairness result unknown; retry exact request first')
   }
   async commit(handId:string,phrase?:string):Promise<WireCommandResult> {
@@ -308,6 +324,7 @@ export class GameFairnessActions {
   }
   dispose():void{
     this.disposed=true
+    this.handTransition=false
     this.generation++
     this.clearSecret()
     this.pending=null
