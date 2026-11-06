@@ -304,20 +304,31 @@ export class GameBootstrap extends Component {
     }catch(error){this.notice('准备失败：'+this.message(error))}
   }
   private async startHand():Promise<void> {
+    const online=this.online
+    const roomID=this.roomID
+    const generation=this.roomGeneration
     try {
-      const online=this.requireOnline()
+      if(!online?.session.authenticated)throw new Error('请先完成微信登录')
       if(!this.platform)throw new Error('游戏平台未初始化')
+      if(!roomID || online.rooms.state?.roomId!==roomID)
+        throw new Error('请先确认当前房间成员身份')
       const handID='hand-'+await secureRoomCommandIdentity(this.platform.random).newRequestId()
-      await online.rooms.startHand(handID)
-      // The durable start-hand receipt authorizes discarding prior terminal
-      // fairness material; never reuse it for this new hand.
-      online.confirmActiveFairnessHand(handID)
+      if(online!==this.online || roomID!==this.roomID ||
+        generation!==this.roomGeneration || !this.content?.isValid)return
+      // Reconcile any prior unknown fairness receipt and reserve the old
+      // session before issuing the irreversible room.hand.start command.
+      await online.startHand(handID)
+      if(online!==this.online || roomID!==this.roomID || !this.content?.isValid)return
+      // A validated durable room.hand.start receipt must be adopted locally.
+      // Later HTTP refresh failures must not turn the accepted start into FAIL.
       this.roomGeneration++
       this.handID=handID
       this.selectedCards.clear()
-      online.shell.useAuthoritativeHand(handID)
       await this.refreshRoom()
-    }catch(error){this.notice('开局失败：'+this.message(error))}
+    }catch(error){
+      if(online===this.online && roomID===this.roomID && this.content?.isValid)
+        this.notice('开局失败：'+this.message(error))
+    }
   }
   private async refreshRoom():Promise<void> {
     try {
