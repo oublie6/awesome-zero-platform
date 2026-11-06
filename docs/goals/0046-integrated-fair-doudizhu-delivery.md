@@ -476,3 +476,26 @@ remain until a fixed exact-source Round10 independent verification.
   Round11 independent acceptance remain required. The current Round10 FAIL
   report is preserved; Goals 0045/0046 remain `in_progress` and release
   qualification is not asserted.
+
+## Operator-controlled stable protection roots — 2026-11-06
+
+The operator has chosen a stable administrator-provisioned 256-bit root for
+normal Doudizhu operation, without scheduled automatic rotation. Keep the
+existing independent journal HMAC authentication, protected seed AES-GCM and
+encrypted checkpoint AES-GCM; ordinary journal business fields remain
+structured, not encrypted. The API already loads the root and optional old
+readers from operator configuration and does not autonomously generate a new
+root on startup.
+
+This checkpoint adds a non-mutating `doudizhu-maintenance --mode key-audit`
+metadata inventory, and prohibits its older per-hand partial `rotate`
+command from rewrapping only seed/checkpoint when authenticated journal
+actions remain. This is deliberately fail-closed: journal HMAC migration and
+full old-root retirement have not been implemented by that command. See
+[operator runbook](../../docs/operations/doudizhu-protection-keys.md).
+
+**No production root rotation or database migration performed.** C09/C10
+remain BLOCKED pending independently verified offline authenticated journal
+migration, complete historic key inventory and new-only cold recovery, and
+administrator-approved retirement. C09/C10 are not reclassified or closed by
+this safety policy. Goals 0045/0046 remain `in_progress`.
