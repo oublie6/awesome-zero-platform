@@ -499,3 +499,24 @@ remain BLOCKED pending independently verified offline authenticated journal
 migration, complete historic key inventory and new-only cold recovery, and
 administrator-approved retirement. C09/C10 are not reclassified or closed by
 this safety policy. Goals 0045/0046 remain `in_progress`.
+
+## Round12 R12-N01 — disable unsafe legacy partial root rotation (2026-11-06)
+
+This development candidate implements the user's administrator-managed stable
+root decision by fully closing the historical maintenance `--mode rotate`
+entry point. It rejects before any MySQL connection, root-key decoding, seed
+rewrap or checkpoint mutation. Both `--execute` and dry-run use are
+rejected, including hands with no journal actions: the previous non-locking
+inventory check was a TOCTOU race against the first live Bid, and the seed
+and checkpoint rewrap steps were independently committed transactions.
+The read-only `key-audit` and separately authorized `prune` remain;
+normal stable HMAC/AES-GCM recovery is unchanged. Module-level legacy
+crypto primitives remain inaccessible through the operator CLI and must not
+be treated as a complete migration feature.
+
+R12-N01 requires fresh independent replay of the former real MySQL
+zero-action/Bid-concurrency and SIGKILL reproducers. This entry-point
+closure **does not implement C09/C10** full HMAC reauthentication,
+new-only cold recovery or approved old-root retirement. Round12 FAIL
+(109PASS/1FAIL/4BLOCKED) remains the last independent verdict until
+further testing. Goals 0045/0046 stay `in_progress`.

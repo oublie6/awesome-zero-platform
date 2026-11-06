@@ -1,47 +1,58 @@
 package main
 
 import (
+	"flag"
+	"os"
 	"strings"
 	"testing"
 )
 
-func TestRotationBlocksAnyPersistedJournalActions(t *testing.T) {
-	for _, tc := range []struct {
-		name      string
-		inventory protectionInventory
-		allowed   bool
-	}{
-		{name: "no live action rows", inventory: protectionInventory{seeds: 1}, allowed: true},
-		{name: "authenticated actions still need HMAC migration", inventory: protectionInventory{actions: 3, authenticated: 3}, allowed: false},
-		{name: "legacy actions cannot be silently resigned", inventory: protectionInventory{actions: 1, legacy: 1}, allowed: false},
-		{name: "mixed actions remain unsafe", inventory: protectionInventory{actions: 3, authenticated: 2, legacy: 1}, allowed: false},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			err := checkPartialRotationAllowed(tc.inventory)
-			if tc.allowed && err != nil {
-				t.Fatalf("allowed no-journal seed rewrap rejected: %v", err)
-			}
-			if !tc.allowed && (err == nil || !strings.Contains(err.Error(), "C09/C10")) {
-				t.Fatalf("journal rotation must fail closed with clear reason: %v", err)
-			}
-		})
+func TestMaintenanceModeRejectsAllPartialRotation(t *testing.T) {
+	for _, mode := range []string{"rotate", "ROTATE", "rotate-seed", "rotate-checkpoint", ""} {
+		err := validateMaintenanceMode(mode)
+		if err == nil {
+			t.Errorf("unsafe or unknown maintenance mode %q accepted", mode)
+		}
+		if mode == "rotate" && !strings.Contains(err.Error(), "C09/C10") {
+			t.Errorf("unsafe rotation rejection lacks migration explanation: %v", err)
+		}
+	}
+	for _, mode := range []string{"key-audit", "prune"} {
+		if err := validateMaintenanceMode(mode); err != nil {
+			t.Fatalf("supported mode %s rejected: %v", mode, err)
+		}
 	}
 }
 
-func TestPreviousRootsRequiresExplicitOperatorKey(t *testing.T) {
-	t.Setenv("APP_DOUDIZHU_CONTRIBUTION_KEY_ID", "")
-	t.Setenv("APP_DOUDIZHU_CONTRIBUTION_KEY_HEX", "")
-	t.Setenv("APP_DOUDIZHU_PREVIOUS_KEYS_JSON", "")
-	if _, _, err := previousRoots(); err == nil {
-		t.Fatal("maintenance must not manufacture a random replacement root")
+func TestRealMaintenanceCLIRejectsRotationBeforeDatabaseOrRootAccess(t *testing.T) {
+	oldArgs, oldFlags := os.Args, flag.CommandLine
+	defer func() { os.Args, flag.CommandLine = oldArgs, oldFlags }()
+	for _, args := range [][]string{
+		{"--mode", "rotate", "--hand", "valid-hand", "--epoch", "1", "--execute"},
+		{"--mode", "rotate", "--hand", "valid-hand", "--epoch", "1"},
+		{"--mode", "rotate", "--hand", "valid-hand", "--epoch", "1", "--execute", "--retention-days", "30"},
+	} {
+		flag.CommandLine = flag.NewFlagSet("maintenance-test", flag.ContinueOnError)
+		os.Args = append([]string{"doudizhu-maintenance"}, args...)
+		t.Setenv("APP_MYSQL_DSN", "")
+		t.Setenv("APP_DOUDIZHU_CONTRIBUTION_KEY_HEX", "")
+		if err := run(); err == nil || !strings.Contains(err.Error(), "partial protection-root rotation is disabled") {
+			t.Errorf("unsafe maintenance flags %v must reject before DB/root access: %v", args, err)
+		}
 	}
-	t.Setenv("APP_DOUDIZHU_CONTRIBUTION_KEY_ID", "stable-operator-v1")
-	t.Setenv("APP_DOUDIZHU_CONTRIBUTION_KEY_HEX", strings.Repeat("ab", 32))
-	active, roots, err := previousRoots()
-	if err != nil || active != "stable-operator-v1" || len(roots) != 1 {
-		t.Fatalf("stable operator-managed root did not load: %q %d %v", active, len(roots), err)
-	}
-	if _, _, err := previousRoots(); err != nil {
-		t.Fatalf("same operator root must not require rotation on repeated startup: %v", err)
+}
+
+func TestAuditStillReadOnlyAndRequiresOnlyValidHand(t *testing.T) {
+	oldArgs, oldFlags := os.Args, flag.CommandLine
+	defer func() { os.Args, flag.CommandLine = oldArgs, oldFlags }()
+	for _, args := range [][]string{
+		{"--mode", "key-audit", "--execute"},
+		{"--mode", "key-audit", "--hand", "invalid<>"},
+	} {
+		flag.CommandLine = flag.NewFlagSet("maintenance-test", flag.ContinueOnError)
+		os.Args = append([]string{"doudizhu-maintenance"}, args...)
+		if err := run(); err == nil {
+			t.Fatalf("unsafe audit arguments %v accepted", args)
+		}
 	}
 }

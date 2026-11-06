@@ -72,13 +72,28 @@ Do not copy raw root material into support tickets or operator reports.
 
 ## Explicit rotation and retirement (not yet fully qualified)
 
-The existing maintenance `--mode rotate --hand ... --epoch ... --execute`
-rewraps a protected seed and checkpoint but **does not reauthenticate live
-journal HMAC rows**. It now **fails closed** if that hand has any journal
-action rows, rather than offering a misleading partial success. A safe
-journal migration tool/whole-inventory retirement gate is still required
-for C09/C10. Existing HMAC data is **never** silently downgraded to unkeyed
-legacy v1 to bypass this condition.
+**The old `--mode rotate` entry point is disabled completely**, including
+dry runs and no-Journal hands. The CLI rejects it before opening MySQL or
+reading root keys, with a nonzero exit and a clear R12-N01/C09/C10 reason.
+No protected seed or Checkpoint is rewritten, regardless of whether a first
+live Bid races the command or the CLI process is killed. The previous
+per-hand implementation ran two separate transactions, did not
+reauthenticate the journal HMAC, and allowed a first action to arrive
+between the inventory check and rewrap. Merely counting journal rows or
+having an operator request quiescence cannot fix that race.
+
+The ordinary `key-audit` (read-only) and independently authorized
+`prune` modes remain available. `--mode rotate` is **not** an approved
+method of changing production protection roots. Existing encrypted records
+and HMAC data are not modified. A new complete migration command with
+quiesced/fenced writers, integrity-checked Journal reauthentication,
+atomicity/crash recovery, new-only restore and independent acceptance must
+be implemented separately before C09/C10 can be considered fulfilled.
+
+The module-internal re-encryption methods used by historical tests still
+exist as infrastructure primitives; their existence does not grant an
+operator-safe whole-root migration capability. They must not be wired into
+a new CLI or used against live data without completing the above design.
 
 If a migration is later explicitly authorized:
 
@@ -90,7 +105,7 @@ If a migration is later explicitly authorized:
 3. Keep the old root read-only while rewrapping encrypted data and
    **authenticating/re-signing** the durable action log under the new root.
    Migration must be idempotent, bounded, integrity-verified and recoverable
-   after interruption. The existing per-hand command does not do this.
+   after interruption. The disabled legacy command does not do this.
 4. Run a real isolated **new-root-only** cold recovery, historical exact
    command replay and final-evidence verification across the entire retained
    inventory, including failure injection and corrupt-data fail-closed cases.
@@ -106,11 +121,13 @@ the service: this can break durable recovery.
 
 ## Acceptance boundary
 
-Round 11 established **109 PASS / 0 FAIL / 5 BLOCKED**. C09 (journal HMAC
-root migration with new-only cold recovery) and C10 (complete key inventory,
-migration and authorized retirement) remain **BLOCKED**, not passed or
-removed. This policy/guard is **not** proof of full migration and does not
-by itself change Goal 0045/0046 from `in_progress`.
+Round 12 established **109 PASS / 1 FAIL / 4 BLOCKED** on its fixed
+candidate: R12-N01/P2 demonstrated the unsafe historical rotation race and
+a real C09 new-only recovery failure. The unsafe CLI entry is now disabled
+as a **subsequent repair candidate**, not independently accepted yet.
+C09/C10 still lack full migration/new-only recovery/retirement support;
+do not mark these as PASS or silently change their completion conditions.
+Goal 0045/0046 remain `in_progress`.
 
 No gameplay APIs, wire formats, domain logic or database schema are changed
 by this operator-policy work. It is intentionally outside the normal

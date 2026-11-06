@@ -53,12 +53,18 @@ FROM doudizhu_live_actions` + condition
 	return result, nil
 }
 
-// Safe until journal HMAC re-authentication and global new-only verification
-// are implemented: neither the maintenance CLI nor an operator should mistake
-// seed/checkpoint re-encryption for complete protection-root migration.
-func checkPartialRotationAllowed(inventory protectionInventory) error {
-	if inventory.actions != 0 {
-		return fmt.Errorf("protected root rotation blocked: %d existing journal actions are not reauthenticated by this command; keep the old root, do not retire it (C09/C10 pending)", inventory.actions)
+// validateMaintenanceMode rejects the old partial rewrap entry point even
+// with zero journal actions. A non-locking inventory check cannot establish
+// writer quiescence, and seed/checkpoint rewrap used separate transactions.
+// A future migration must be a different, atomic and independently verified
+// administrator workflow.
+func validateMaintenanceMode(mode string) error {
+	switch mode {
+	case "key-audit", "prune":
+		return nil
+	case "rotate":
+		return fmt.Errorf("partial protection-root rotation is disabled: unsafe with live writers or process interruption (R12-N01); no root migration or retirement is supported (C09/C10 pending)")
+	default:
+		return fmt.Errorf("invalid maintenance mode")
 	}
-	return nil
 }
