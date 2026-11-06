@@ -454,3 +454,25 @@ Passing compilation/CI does not prove the full real-MySQL process-crash
 matrix, the official native Linux export, SDK/device qualification, or
 independent product acceptance. Round9 FAIL and `in_progress` goals
 remain until a fixed exact-source Round10 independent verification.
+
+## Round 10 remaining findings — ChatGPT remediation candidate (2026-11-06)
+
+- R9-N01/P1: move the durable live-writer row lock and epoch mutation
+  **after** domain Expire/room FinishHand validation, and before
+  UpdateHand/UpdateRoom in the same SQL transaction. Business rejections
+  commit their durable receipt only, so no writer epoch mutation is allowed
+  on the rejected path. The new real MySQL regression covers a stale
+  ExpectedVersion with matching ExpectedLiveVersion, exact rejected replay,
+  unchanged owner epoch/watermark/hand, and a subsequent successful legal
+  live Bid. It also confirms a valid Expire still fences once.
+- R10-N01/P2: separate current room membership from historical hand
+  membership. lastHandId is included in an authenticated room view only when
+  that actor occupied a seat in the corresponding terminal hand. New
+  replacement members continue normal room refresh/reconnect with no
+  unauthorized historical archive fetch; the evidence endpoint's strict
+  actor authorization remains unchanged. Application, real MySQL, and
+  client regressions cover A/B/C completed -> C leaves -> D joins.
+- Format and targeted regressions are implemented; exact SHA full CI and
+  Round11 independent acceptance remain required. The current Round10 FAIL
+  report is preserved; Goals 0045/0046 remain `in_progress` and release
+  qualification is not asserted.
