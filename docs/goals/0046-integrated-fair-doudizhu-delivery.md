@@ -3,6 +3,19 @@
 ## State
 in_progress — authorized by user 2026-11-02. **This is a development plan, not completed functionality or acceptance.** Goal 0045 remains separately in_progress, with its historical Codex checkpoint PASS and remaining platform qualifications intact in `docs/goals/current.md`.
 
+## Scope amendment — 2026-11-06: stable protection root, deferred migration
+
+**Explicit user decision (2026-11-06):** For the current Goal 0046 delivery, administrators provision and securely back up one stable protection root. There is **no supported root rotation or replacement of historical protected data**. The following original Round 10–13 matrix items are formally **deferred out of the current Goal 0046 completion gate**, **not passed**:
+
+- **C09 — full old-root to new-root migration**, including seed/checkpoint re-encryption, authenticated v2 Journal HMAC reauthentication, crash-safe data transition, historical receipts and new-root-only cold recovery.
+- **C10 — verified old-root retirement**, including complete key-dependency inventory, backup/rollback, new-root-only proof and explicitly approved key retirement.
+
+Treat C09/C10 as **future optional enhancement scope** requiring a separately authorized Goal, design review and independent acceptance before implementation or use. No executable migration/rotation is authorized by this amendment; the old `maintenance --mode rotate` remains disabled, including dry-run. Do not remove or weaken HMAC, AES-GCM, wrong/missing-root fail-closed checks, journal/replay integrity, privilege boundaries or existing data retention. `key-audit` remains read-only; `prune` retains its independent safety/authorization gates.
+
+**Current mandatory operational contract:** Generate and configure a strong root manually, store an access-controlled independent backup, restore/restart with the original root, never silently generate or replace it, and never assume database backup alone is recoverable without the root. Loss or suspected compromise of the root requires an operational incident decision; simply changing the key will break historical recovery and is not a supported recovery/migration procedure. Continue validating encrypted checkpoints, authenticated Journal, real business recovery and wrong-root failure on the current release.
+
+Historical Round 12/13 114-item matrices and their original C09/C10 BLOCKED/FAIL classifications are immutable evidence of the **pre-amendment** scope. For the **post-amendment current in-scope gate**, there are 112 original items: 109 previously PASS and **E03/H05/GOAL8 still BLOCKED**, while C09/C10 are tracked separately as **2 DEFERRED**, not PASS. These are a scope-accounting baseline, **not a new Codex acceptance verdict**. Goal 0045/0046 remain `in_progress` pending real acceptance of remaining items and CI. Do not retrospectively rewrite previous Codex reports.
+
 ## Owner, boundaries, authority
 - Go `server/business/doudizhu`: room, fairness, live hand, gameplay and B-grade durable state authority. MySQL is the durable truth for acknowledged mutations; Redis is not authoritative. Reuse go-zero infrastructure in existing module ownership boundaries.
 - `server/apps/app-api` and `server/platform/authn`: authenticated identity-to-AccountID exchange, API/WSS composition; do not trust client-supplied account IDs or platform login codes.
