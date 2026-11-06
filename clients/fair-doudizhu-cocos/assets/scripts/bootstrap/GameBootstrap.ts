@@ -50,6 +50,9 @@ export class GameBootstrap extends Component {
   private selectedCards = new Set<string>()
   private roomID = ''
   private handID = ''
+  // A kit shown on this screen is not proof that the user kept a recovery copy.
+  private backupVerificationPendingHand = ''
+  private verifiedBackupHand = ''
   private requestGeneration = 0
   // Any leave, new hand or room switch invalidates older awaited HTTP replies.
   private roomGeneration = 0
@@ -113,7 +116,8 @@ export class GameBootstrap extends Component {
         {name:'StartHand',caption:'开始本局',action:()=>void this.startHand()},
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
         {name:'PrepareFairness',caption:'生成并备份恢复凭证',action:()=>void this.prepareFairness()},
-        {name:'ImportFairness',caption:'从输入框恢复洗牌贡献',action:()=>void this.importFairness()},
+        {name:'VerifyFairnessBackup',caption:'已保存备份，清空输入并校验',action:()=>this.beginFairnessBackupVerification()},
+        {name:'ImportFairness',caption:'从备份粘贴并验证恢复凭证',action:()=>void this.importFairness()},
         {name:'CommitFairness',caption:'提交洗牌承诺',action:()=>void this.commitFairness()},
         {name:'RevealFairness',caption:'加密提交随机贡献',action:()=>void this.revealFairness()},
         {name:'RetryUnknownFairness',caption:'重试未确认提交',action:()=>void this.retryUnknownFairness()},
@@ -365,26 +369,54 @@ export class GameBootstrap extends Component {
       if(!this.handID)throw new Error('尚未开始牌局')
       const kit=await this.requireOnline().fairness.prepareRecoveryKit(this.handID)
       if(!this.roomInput)throw new Error('恢复凭证输入框不可用')
+      this.verifiedBackupHand=''
+      this.backupVerificationPendingHand=''
       this.roomInput.string=kit
-      this.notice('恢复凭证仅在本机输入框显示，请先私密备份，再提交承诺；绝不可发送给其他玩家')
+      this.notice('请先将恢复凭证私密保存到游戏外，再点“已保存备份，清空输入并校验”，从备份重新粘贴验证。不要发给其他玩家')
     }catch(error){this.notice('准备恢复凭证失败：'+this.message(error))}
+  }
+  private beginFairnessBackupVerification():void {
+    try {
+      if(!this.handID)throw new Error('尚未开始牌局')
+      const online=this.requireOnline()
+      if(!online.fairness.recoveryKitPrepared || !online.fairness.hasRecoverySecret)
+        throw new Error('请先生成本局恢复凭证')
+      if(!this.roomInput)throw new Error('恢复凭证输入框不可用')
+      // Erase the displayed copy. Re-entry must come from a user-held copy;
+      // no automatic clipboard, localStorage, or plaintext persistence.
+      this.roomInput.string=''
+      this.verifiedBackupHand=''
+      this.backupVerificationPendingHand=this.handID
+      this.notice('已清空显示的凭证。请从游戏外的私密备份重新粘贴，再点击“从备份粘贴并验证恢复凭证”')
+    }catch(error){this.notice('备份校验无法开始：'+this.message(error))}
   }
   private async importFairness():Promise<void>{
     try{
       if(!this.handID)throw new Error('尚未开始牌局')
+      const online=this.requireOnline()
+      const handID=this.handID
+      const generation=this.roomGeneration
+      // If this session generated a secret, the visible export must first be
+      // cleared. A fresh/restarted session can import its external backup.
+      if(online.fairness.hasRecoverySecret &&
+        this.backupVerificationPendingHand!==handID)
+        throw new Error('请先点击“已保存备份，清空输入并校验”')
       const kit=this.roomInput?.string?.trim()
-      if(!kit)throw new Error('请在输入框粘贴原先备份的恢复凭证')
-      await this.requireOnline().fairness.importRecoveryKit(kit,this.handID)
+      if(!kit)throw new Error('请从游戏外备份粘贴原先保存的恢复凭证')
+      await online.fairness.importRecoveryKit(kit,handID)
+      if(generation!==this.roomGeneration || handID!==this.handID || online!==this.online)return
       this.roomInput!.string=''
-      this.notice('恢复凭证已通过当前账号、座位和服务端承诺验证，可继续提交或揭示')
+      this.backupVerificationPendingHand=''
+      this.verifiedBackupHand=handID
+      this.notice('恢复凭证已与当前账号、座位及服务端承诺匹配。请继续在游戏外妥善保存备份；现在可提交承诺或揭示')
     }catch(error){this.notice('恢复贡献失败：'+this.message(error))}
   }
   private async commitFairness():Promise<void>{
     try{
       if(!this.handID)throw new Error('尚未开始牌局')
       const online=this.requireOnline()
-      if(!online.fairness.recoveryKitPrepared)
-        throw new Error('请先生成并备份本局恢复凭证，避免应用退出后无法揭示')
+      if(!online.fairness.recoveryKitPrepared || this.verifiedBackupHand!==this.handID)
+        throw new Error('请先在游戏外保存恢复凭证，清空输入框并从备份重新粘贴验证；未经验证不能提交承诺')
       await online.fairness.commit(this.handID)
       await this.refreshFairness()
     }catch(error){this.notice('公平承诺失败：'+this.message(error))}
