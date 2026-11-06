@@ -403,3 +403,22 @@ test('Round15 failed room start retains original fairness secret and lifts reser
   assert.equal(await old.prepareRecoveryKit('hand-aborted','safe backup'),secret)
   online.dispose()
 })
+
+test('Round15 live pending preflight blocks new room.hand.start before ACK',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-old')
+  // Reproduce the state that GameHandActions obtains on an actual lost
+  // Bid/Play/Pass response; the GameHandActions unit suite drives the
+  // preceding send/timeout to establish the pending state independently.
+  const pendingAction={requestId:'cmd-original',type:'hand.pass',
+    aggregateId:'hand-old',clientSeq:1,expectedVersion:7,payload:{}}
+  online.actions.pending=pendingAction
+  await assert.rejects(online.startHand('hand-new'),/live hand outcome unknown/)
+  assert.equal(f.commands.length,0)
+  assert.equal(online.rooms.state.version,9)
+  assert.equal(online.actions.pending,pendingAction)
+  online.dispose()
+})
