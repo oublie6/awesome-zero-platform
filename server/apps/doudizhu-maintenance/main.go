@@ -42,7 +42,7 @@ func run() error {
 	if *mode == "key-audit" && (*apply || (*hand != "" && !safeHand.MatchString(*hand))) {
 		return fmt.Errorf("key-audit is read-only and accepts only an optional valid hand ID")
 	}
-		if *mode == "prune" && (*retention < 30 || *retention > 3650) {
+	if *mode == "prune" && (*retention < 30 || *retention > 3650) {
 		return fmt.Errorf("history retention must be between 30 and 3650 days")
 	}
 	if !*apply && *mode != "key-audit" {
