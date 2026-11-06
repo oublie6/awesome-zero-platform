@@ -235,3 +235,118 @@ test('unknown fairness command is never erased by a hand switch or leave attempt
   assert.equal(f.commands.length,0)
   online.dispose()
 })
+
+test('Round15 exact fairness reconciliation precedes ACKed new hand and adopts new state',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-cancelled')
+  const old=online.fairness
+  const fairnessCalls=[]
+  online.api.fairness=async()=>({handId:'hand-cancelled',phase:'FAIRNESS_COMMITTING',
+    version:3,seat:1,committed:false,revealed:false,lastClientSequence:4})
+  online.api.command=async command=>{
+    fairnessCalls.push(command)
+    if(fairnessCalls.length===1)throw Error('lost fairness response')
+    return {v:'doudizhu-api-command-result-v1',requestId:command.requestId,type:command.type,
+      durable:{v:'fair-doudizhu-command-result-v1',commandId:command.requestId,accepted:true}}
+  }
+  await assert.rejects(old.commit('hand-cancelled','offline phrase'),/lost fairness response/)
+  assert.equal(old.needsReconciliation,true)
+  const pending=online.startHand('hand-next')
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.equal(fairnessCalls.length,2)
+  assert.deepEqual(fairnessCalls[0],fairnessCalls[1])
+  assert.equal(f.commands.length,1)
+  assert.equal(f.commands[0].payload.type,'room.hand.start')
+  assert.equal(f.commands[0].payload.payload.handId,'hand-next')
+  assert.equal(online.rooms.state.version,9)
+  assert.equal(online.fairness,old)
+  await assert.rejects(old.prepareRecoveryKit('hand-cancelled'),/in progress/)
+  const request=f.commands[0].payload
+  for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+    v:'doudizhu-api-command-result-v1',requestId:request.requestId,type:'room.hand.start',
+    durable:{v:'fair-doudizhu-command-result-v1',commandId:request.requestId,
+      aggregateId:'room-rejoin',aggregateVersion:10,accepted:true}
+  }}))
+  const result=await pending
+  assert.equal(result.version,10)
+  assert.equal(online.rooms.state.version,10)
+  assert.equal(old.hasRecoverySecret,false)
+  assert.notEqual(online.fairness,old)
+  assert.equal(online.fairness.needsReconciliation,false)
+  online.dispose()
+})
+
+test('Round15 unresolved fairness response blocks room.hand.start before transmission',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-old')
+  const old=online.fairness
+  online.api.fairness=async()=>({handId:'hand-old',phase:'FAIRNESS_COMMITTING',
+    version:1,seat:1,committed:false,revealed:false,lastClientSequence:0})
+  online.api.command=async()=>{throw Error('no authoritative response')}
+  await assert.rejects(old.commit('hand-old','backup'),/no authoritative response/)
+  const secret=old.exportRecoveryKit()
+  await assert.rejects(online.startHand('hand-new'),/no authoritative response/)
+  assert.equal(f.commands.length,0)
+  assert.equal(online.rooms.state.version,9)
+  assert.equal(online.fairness,old)
+  assert.equal(old.exportRecoveryKit(),secret)
+  assert.equal(old.needsReconciliation,true)
+  online.dispose()
+})
+
+test('Round15 definitive prior fairness rejection permits a new ACKed hand without losing isolation',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-cancelled')
+  const old=online.fairness
+  online.api.fairness=async()=>({handId:'hand-cancelled',phase:'FAIRNESS_COMMITTING',
+    version:1,seat:1,committed:false,revealed:false,lastClientSequence:0})
+  let count=0
+  online.api.command=async command=>{
+    if(++count===1)throw Error('network timeout')
+    return {v:'doudizhu-api-command-result-v1',requestId:command.requestId,type:command.type,
+      durable:{v:'fair-doudizhu-command-result-v1',commandId:command.requestId,
+        accepted:false,failure:{code:'DDZ_VERSION_CONFLICT'}}}
+  }
+  await assert.rejects(old.commit('hand-cancelled','secret'),/network timeout/)
+  const pending=online.startHand('hand-new')
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.equal(count,2)
+  assert.equal(old.needsReconciliation,false)
+  assert.equal(f.commands.length,1)
+  const request=f.commands[0].payload
+  for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+    v:'doudizhu-api-command-result-v1',requestId:request.requestId,type:'room.hand.start',
+    durable:{v:'fair-doudizhu-command-result-v1',commandId:request.requestId,
+      aggregateId:'room-rejoin',aggregateVersion:10,accepted:true}
+  }}))
+  await pending
+  assert.equal(old.hasRecoverySecret,false)
+  online.dispose()
+})
+
+test('Round15 active fairness operation blocks irreversible new-hand command',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-old')
+  let respond
+  online.api.fairness=()=>new Promise(resolve=>{respond=resolve})
+  const preparing=online.fairness.prepareRecoveryKit('hand-old')
+  await assert.rejects(online.startHand('hand-new'),/action in progress/)
+  assert.equal(f.commands.length,0)
+  respond({handId:'hand-old',phase:'FAIRNESS_COMMITTING',version:1,
+    seat:1,committed:false,revealed:false,lastClientSequence:0})
+  await preparing
+  assert.equal(online.fairness.hasRecoverySecret,true)
+  online.dispose()
+})
