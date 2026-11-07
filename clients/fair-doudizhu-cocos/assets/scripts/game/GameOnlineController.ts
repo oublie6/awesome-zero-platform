@@ -71,16 +71,18 @@ export class GameOnlineController {
     if (this.pendingRecovery?.key === key) return this.pendingRecovery.promise
     const token = ++this.recoveryGeneration
     const membership = this.membershipGeneration
-    const promise = this.performRecovery(target,token,membership)
+    const commands = this.rooms.commandGeneration
+    const promise = this.performRecovery(target,token,membership,commands)
     this.pendingRecovery = {key,promise}
     void promise.finally(()=>{
       if(this.pendingRecovery?.promise===promise)this.pendingRecovery=null
     }).catch(()=>{})
     return promise
   }
-  private async performRecovery(target:string|undefined,token:number,membership:number):Promise<RoomRead|null>{
+  private async performRecovery(target:string|undefined,token:number,membership:number,commands:number):Promise<RoomRead|null>{
     const current=()=>!this.disposed && this.session.authenticated &&
-      token===this.recoveryGeneration && membership===this.membershipGeneration
+      token===this.recoveryGeneration && membership===this.membershipGeneration &&
+      commands===this.rooms.commandGeneration
     await this.shell.connect(this.platform.socket,this.socketEndpoint,this.session.token)
     if(!current())return null
     if(!target){
@@ -121,11 +123,7 @@ export class GameOnlineController {
        fresh.activeHandId!==initial.activeHandId ||
        fresh.lastHandId!==initial.lastHandId)
       throw new Error('room changed during recovery; retry authoritative lookup')
-    // The selected room must not erase an unrelated UNKNOWN durable command.
-    // Validate the authoritative adoption before any fairness/hand mutation.
-    this.rooms.restoreTrustedRoom(fresh.roomId,fresh.version,fresh.lastClientSequence)
-    this.confirmActiveFairnessHand(fresh.activeHandId||null)
-    this.shell.useAuthoritativeHand(fresh.activeHandId||fresh.lastHandId||null)
+    this.adoptAuthorizedRoom(fresh)
     // No suspension between final membership check and authoritative adoption.
     if(fresh.activeHandId && (phase==='BIDDING'||phase==='PLAYING'||phase==='SETTLING')){
       await this.shell.syncHand(fresh.activeHandId)
@@ -135,6 +133,23 @@ export class GameOnlineController {
     }
     return current()?fresh:null
   }
+  /** Check all mutating subsystems before adopting any new binding. The
+   * reservations and adoption are synchronous: no intermediate HTTP awaits. */
+  private adoptAuthorizedRoom(view: RoomRead): void {
+    this.rooms.assertCanRestoreTrustedRoom(view.roomId)
+    if (this.startingHand !== null && view.activeHandId !== this.confirmedFairnessHand)
+      throw new Error('room hand start in progress; wait for authoritative result')
+    const releaseHand = this.actions.beginHandTransition()
+    try {
+      const releaseFairness = this.fairness.beginHandTransition()
+      try {
+        this.rooms.restoreTrustedRoom(view.roomId, view.version, view.lastClientSequence)
+        this.confirmActiveFairnessHand(view.activeHandId || null)
+        this.shell.useAuthoritativeHand(view.activeHandId || view.lastHandId || null)
+      } finally { releaseFairness() }
+    } finally { releaseHand() }
+  }
+
   /** A later authoritative CLOSED/nonmember read must revoke an earlier
    * adopted locator, without discarding unresolved durable commands. */
   forgetInvalidRecoveredRoom(roomId:string):void{
@@ -198,9 +213,7 @@ export class GameOnlineController {
           fresh.lastHandId !== view.lastHandId)
         throw new Error('room changed during join; retry authoritative lookup')
       // No suspension between the final authorization read and adoption.
-      this.rooms.restoreTrustedRoom(roomId, fresh.version, fresh.lastClientSequence)
-      this.confirmActiveFairnessHand(fresh.activeHandId || null)
-      this.shell.useAuthoritativeHand(fresh.activeHandId || fresh.lastHandId || null)
+      this.adoptAuthorizedRoom(fresh)
       const generation = ++this.membershipGeneration
       if (fresh.activeHandId && (phase === 'BIDDING' || phase === 'PLAYING' ||
                                   phase === 'SETTLING')) {

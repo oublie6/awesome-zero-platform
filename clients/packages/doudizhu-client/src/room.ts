@@ -28,12 +28,23 @@ export class RoomCoordinator {
   private inFlight = false
   private uncertainOutcome = false
   private pendingCommand: Omit<WireCommand, 'v'> | null = null
+  // Increment before every durable command or retry; old HTTP reads cannot
+  // re-adopt a snapshot taken before a newer command lifecycle.
+  private commandEpoch = 0
   constructor(private readonly api: RoomCommandPort, private readonly ids: CommandIdentity) {}
   get state(): Readonly<RoomState> | null { return this.room ? Object.freeze({...this.room}) : null }
   get needsReconciliation(): boolean { return this.uncertainOutcome }
   /** Keep the committed-or-unknown room locator after a lost create reply. */
   get pendingRoomId(): string | null { return this.pendingCommand?.aggregateId ?? null }
   get pendingCommandType(): string | null { return this.pendingCommand?.type ?? null }
+  get commandGeneration(): number { return this.commandEpoch }
+
+  /** A room read cannot settle a durable UNKNOWN, even for the same room. */
+  assertCanRestoreTrustedRoom(roomId: string): void {
+    if (this.inFlight) throw new Error('cannot replace room while command outstanding')
+    if (this.uncertainOutcome || this.pendingCommand)
+      throw new Error('room outcome unknown; retry original request before restoring room')
+  }
 
   /** Exact-ID resend is safe even if the prior request committed. Go owns the
    * durable dedup result; a new room command ID is never synthesized here. */
@@ -41,6 +52,7 @@ export class RoomCoordinator {
     if (!this.uncertainOutcome || !this.pendingCommand || this.inFlight)
       throw new Error('no exact pending room request to retry')
     this.inFlight = true
+    ++this.commandEpoch
     try {
       const cmd = this.pendingCommand
       const response = await this.api.command(cmd)
@@ -52,11 +64,7 @@ export class RoomCoordinator {
   restoreTrustedRoom(roomId: string, version: number, lastClientSequence = 0): void {
     if (!validID(roomId) || !Number.isSafeInteger(version) || version < 1 ||
         !Number.isSafeInteger(lastClientSequence) || lastClientSequence < 0) throw new Error('invalid trusted room')
-    if (this.inFlight) throw new Error('cannot replace room while command outstanding')
-    // An authorized read of B does not settle the durable request for A.
-    // Preserve its exact request ID and payload until reconciled.
-    if (this.uncertainOutcome && this.pendingCommand?.aggregateId !== roomId)
-      throw new Error('room outcome unknown for another room; retry original request before switching')
+    this.assertCanRestoreTrustedRoom(roomId)
     this.room = Object.freeze({roomId, version})
     this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, lastClientSequence))
     this.uncertainOutcome = false
@@ -100,6 +108,7 @@ export class RoomCoordinator {
     if (type === 'room.create' && this.room) throw new Error('already managing a room')
     if (type !== 'room.create' && this.room && this.room.roomId !== roomId) throw new Error('room identity mismatch')
     this.inFlight = true
+    ++this.commandEpoch
     try {
       const seq = (this.lastSequence.get(roomId) ?? 0) + 1
       if (!Number.isSafeInteger(seq)) throw new Error('room sequence exhausted')

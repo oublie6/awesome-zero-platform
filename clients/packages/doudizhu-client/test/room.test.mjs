@@ -50,9 +50,10 @@ test('unknown transport outcome is not converted to confirmed state and sequence
  assert.equal(room.state,null)
  fail=false
  await assert.rejects(room.create('r'),/reconcile/)
- room.restoreTrustedRoom('r',1)
+ assert.throws(()=>room.restoreTrustedRoom('r',1),/outcome unknown/)
+ await room.retryUnknown()
  await room.ready(true)
- assert.equal(calls[1].clientSeq,2)
+ assert.equal(calls[2].clientSeq,2)
  assert.equal(room.state.version,2)
 })
 test('reject mismatched durable confirmation',async()=>{
@@ -162,4 +163,25 @@ test('G48-N02: recovering a different room cannot discard UNKNOWN request identi
  assert.equal(room.needsReconciliation,false)
  room.restoreTrustedRoom('B',5)
  assert.equal(room.state.roomId,'B')
+})
+
+test('G49-N01: same-room UNKNOWN survives old authorized room reads until exact retry',async()=>{
+ const {room,api,calls}=fixture()
+ room.restoreTrustedRoom('A',1,1)
+ const before=room.commandGeneration
+ let fail=true
+ const original=api.command
+ api.command=async cmd=>{if(fail){calls.push(cmd);throw Error('ACK lost')}return original(cmd)}
+ await assert.rejects(room.ready(true),/ACK lost/)
+ const originalCmd=calls[0]
+ assert.ok(room.commandGeneration>before)
+ assert.throws(()=>room.restoreTrustedRoom('A',1,1),/outcome unknown/)
+ assert.throws(()=>room.restoreTrustedRoom('B',1,1),/outcome unknown/)
+ assert.equal(room.needsReconciliation,true)
+ assert.equal(room.pendingRoomId,'A')
+ fail=false
+ await room.retryUnknown()
+ assert.deepEqual(calls[1],originalCmd)
+ room.restoreTrustedRoom('A',2,2)
+ assert.equal(room.state.version,2)
 })

@@ -734,3 +734,46 @@ test('G48-N03: logout revokes delayed member join before any room adoption',asyn
  await assert.rejects(pending,/selection superseded/)
  assert.equal(online.rooms.state,null)
 })
+
+test('G49-N01: delayed same-room recovery cannot settle a newer unknown ready',async()=>{
+ const f=fixture()
+ const view={roomId:'A',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,lastClientSequence:1,
+  seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'',ready:false},
+    {position:3,accountId:'',ready:false}]}
+ let release,reads=0
+ f.platform.http.request=async()=>{
+  if(++reads===2)return new Promise(resolve=>{release=()=>resolve({code:'OK',data:view})})
+  return {code:'OK',data:view}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ online.rooms.restoreTrustedRoom('A',1,1)
+ const recovery=online.reconnectAndResync('A')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof release,'function')
+ online.shell.submitCommand=async()=>{throw Error('lost ACK')}
+ await assert.rejects(online.rooms.ready(true),/lost ACK/)
+ const requestRoom=online.rooms.pendingRoomId
+ release()
+ assert.equal(await recovery,null)
+ assert.equal(online.rooms.pendingRoomId,requestRoom)
+ assert.equal(online.rooms.needsReconciliation,true)
+ assert.equal(online.rooms.state.version,1)
+ online.dispose()
+})
+test('G49-N02: fairness transition rejection cannot partially adopt another room',async()=>{
+ const f=fixture()
+ const room=id=>({roomId:id,version:1,status:'WAITING_PLAYERS',member:true,occupied:1,
+  lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},
+    {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]})
+ f.platform.http.request=async path=>({code:'OK',data:room(path.endsWith('/B')?'B':'A')})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ online.rooms.restoreTrustedRoom('A',1,1)
+ const before=online.fairness
+ before.beginHandTransition=()=>{throw Error('fairness result unknown; retry the original request before changing hand')}
+ await assert.rejects(online.reconnectAndResync('B'),/fairness result unknown/)
+ assert.equal(online.rooms.state.roomId,'A')
+ assert.equal(online.fairness,before)
+ online.dispose()
+})
