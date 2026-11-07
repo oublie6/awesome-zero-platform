@@ -112,7 +112,7 @@ type Hand struct {
 }
 
 type HandCreatedPayload struct {
-	FairnessMode FairnessMode `json:"fairnessMode,omitempty"`
+	FairnessMode          FairnessMode `json:"fairnessMode,omitempty"`
 	RoomID                RoomID
 	Seats                 [3]HandSeat
 	RevealKeyID           string
