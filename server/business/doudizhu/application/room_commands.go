@@ -51,7 +51,7 @@ func (s *Service) SetRoomReady(ctx context.Context, actor domain.AccountID, comm
 }
 
 func (s *Service) StartRoomHand(ctx context.Context, actor domain.AccountID, command Command, input StartHandInput) (CommandResult, error) {
-	if input.FairnessMode != "" && input.FairnessMode != domain.FairnessModeServerManaged {
+	if input.FairnessMode != "" && input.FairnessMode != domain.FairnessModeClientCustodied {
 		return CommandResult{}, fmt.Errorf("%w: unsupported fairness mode", ErrInvalidCommand)
 	}
 	return s.execute(ctx, actor, command, CommandRoomHandStart, domain.AggregateRoom, false, input,
@@ -91,15 +91,15 @@ func (s *Service) StartRoomHand(ctx context.Context, actor domain.AccountID, com
 			// Custodied entropy offers only server-auditable deterministic dealing.
 			// Require an independently verified, already-bound future drand round;
 			// never silently fall back to a server-chosen HMAC beacon.
-			if input.FairnessMode == domain.FairnessModeServerManaged &&
+			if input.FairnessMode == domain.FairnessModeClientCustodied &&
 				setup.BeaconPlan.Provider != "drand-quicknet" {
 				return failAfterPreparation(fmt.Errorf("%w: managed fairness requires public drand beacon", ErrInvalidCommand))
 			}
 			binding := domain.RevealKeyBinding{PublicKeySHA256: setup.RevealPublicKeySHA256, BoundAt: setup.RevealKeyBoundAt}
 			var hand *domain.Hand
 			var handEvents []domain.Event
-			if input.FairnessMode == domain.FairnessModeServerManaged {
-				hand, handEvents, err = domain.NewServerManagedHand(
+			if input.FairnessMode == domain.FairnessModeClientCustodied {
+				hand, handEvents, err = domain.NewClientCustodiedHand(
 					setup.HandID, roomSnapshot.ID, seats, setup.ServerCommitment,
 					setup.RevealKeyID, setup.BeaconPlan, binding)
 			} else {
@@ -109,13 +109,6 @@ func (s *Service) StartRoomHand(ctx context.Context, actor domain.AccountID, com
 			}
 			if err != nil {
 				return failAfterPreparation(wrapInfrastructure("construct prepared hand", err))
-			}
-			if input.FairnessMode == domain.FairnessModeServerManaged {
-				managedEvents, prepareErr := s.prepareManagedContributions(txCtx, tx, hand, seats, command.CommandID, now)
-				if prepareErr != nil {
-					return failAfterPreparation(wrapInfrastructure("prepare server-managed contributions", prepareErr))
-				}
-				handEvents = append(handEvents, managedEvents...)
 			}
 			if err := tx.InsertHand(txCtx, hand.Snapshot(), now); err != nil {
 				return failAfterPreparation(err)
