@@ -11,22 +11,22 @@ import (
 )
 
 type FairnessView struct {
-	FairnessMode         domain.FairnessMode `json:"fairnessMode,omitempty"`
-	HandID                string           `json:"handId"`
-	Phase                 domain.HandPhase `json:"phase"`
-	Version               uint64           `json:"version"`
-	Seat                  uint8            `json:"seat"`
-	Committed             bool             `json:"committed"`
-	Revealed              bool             `json:"revealed"`
-	Commitment            string           `json:"commitment,omitempty"`
-	ServerCommitment      string           `json:"serverCommitment"`
-	RevealKeyID           string           `json:"revealKeyId"`
-	RevealPublicKeySHA256 string           `json:"revealPublicKeySha256"`
-	RevealKeyBoundAt      time.Time        `json:"revealKeyBoundAt"`
-	LastClientSequence    uint64           `json:"lastClientSequence"`
-	BeaconProvider        string           `json:"beaconProvider"`
-	BeaconRound           string           `json:"beaconRound"`
-	BeaconReleaseAt       *time.Time       `json:"beaconReleaseAt,omitempty"`
+	FairnessMode          domain.FairnessMode `json:"fairnessMode,omitempty"`
+	HandID                string              `json:"handId"`
+	Phase                 domain.HandPhase    `json:"phase"`
+	Version               uint64              `json:"version"`
+	Seat                  uint8               `json:"seat"`
+	Committed             bool                `json:"committed"`
+	Revealed              bool                `json:"revealed"`
+	Commitment            string              `json:"commitment,omitempty"`
+	ServerCommitment      string              `json:"serverCommitment"`
+	RevealKeyID           string              `json:"revealKeyId"`
+	RevealPublicKeySHA256 string              `json:"revealPublicKeySha256"`
+	RevealKeyBoundAt      time.Time           `json:"revealKeyBoundAt"`
+	LastClientSequence    uint64              `json:"lastClientSequence"`
+	BeaconProvider        string              `json:"beaconProvider"`
+	BeaconRound           string              `json:"beaconRound"`
+	BeaconReleaseAt       *time.Time          `json:"beaconReleaseAt,omitempty"`
 }
 
 // GetFairnessView gives each player only their own contribution status. Do
