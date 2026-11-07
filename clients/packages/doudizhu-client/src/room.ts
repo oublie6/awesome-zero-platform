@@ -70,9 +70,9 @@ export class RoomCoordinator {
     if (typeof ready !== 'boolean') return Promise.reject(new Error('invalid ready flag'))
     return this.withRoom('room.ready', {ready})
   }
-  startHand(handId: string): Promise<RoomState> {
+  startHand(handId: string, fairnessMode?: 'server-managed-v1'): Promise<RoomState> {
     if (!validID(handId)) return Promise.reject(new Error('invalid hand id'))
-    return this.withRoom('room.hand.start', {handId})
+    return this.withRoom('room.hand.start', fairnessMode ? {handId, fairnessMode} : {handId})
   }
   leave(): Promise<RoomState> { return this.withRoom('room.leave', {}) }
 
