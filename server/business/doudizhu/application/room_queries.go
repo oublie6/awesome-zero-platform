@@ -110,3 +110,47 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 	}
 	return view, nil
 }
+
+
+// GetRecoverableRooms exposes only current, nonclosed room memberships for
+// this authenticated account. A discovered ID is merely a locator; the
+// ordinary room read rechecks membership and filters historical hand access.
+func (s *Service) GetRecoverableRooms(ctx context.Context, actor domain.AccountID) ([]RoomView, error) {
+	if s == nil || s.store == nil || strings.TrimSpace(string(actor)) == "" ||
+		string(actor) != strings.TrimSpace(string(actor)) || len(actor) > 128 {
+		return nil, fmt.Errorf("%w: invalid authenticated room discovery", ErrInvalidCommand)
+	}
+	reader, ok := s.store.(interface {
+		FindRecoverableRoomIDs(context.Context, domain.AccountID) ([]domain.RoomID, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("%w: recoverable room query unavailable", ErrInvalidCommand)
+	}
+	ids, err := reader.FindRecoverableRoomIDs(ctx, actor)
+	if err != nil { return nil, err }
+	if len(ids) > 32 {
+		return nil, fmt.Errorf("%w: recoverable room limit", ErrInvalidCommand)
+	}
+	views := make([]RoomView, 0, len(ids))
+	seen := make(map[domain.RoomID]bool, len(ids))
+	for _, id := range ids {
+		if id == "" || seen[id] {
+			return nil, fmt.Errorf("%w: invalid or repeated recoverable room ID", ErrInvalidCommand)
+		}
+		seen[id] = true
+		view, queryErr := s.GetRoomView(ctx, actor, id)
+		switch {
+		case errors.Is(queryErr, ErrNotFound):
+			// A concurrently closed/removed membership cannot be resurrected
+			// by a previously generated discovery locator.
+			continue
+		case queryErr != nil:
+			return nil, queryErr
+		case !view.Member || view.Status == domain.RoomClosed:
+			continue
+		default:
+			views = append(views, view)
+		}
+	}
+	return views, nil
+}

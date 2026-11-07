@@ -30,6 +30,7 @@ func Register(server *rest.Server, authService *authn.Service, dispatcher *Dispa
 	server.AddRoutes(rest.WithMiddleware(securityhttp.RequireAuthenticationMiddleware(authService), []rest.Route{
 		{Method: http.MethodPost, Path: "/v1/doudizhu/commands", Handler: commandHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/rooms/:roomId", Handler: roomViewHandler(dispatcher)},
+		{Method: http.MethodGet, Path: "/v1/doudizhu/me/rooms", Handler: recoverableRoomsHandler(dispatcher)},
 		{Method: http.MethodPost, Path: "/v1/doudizhu/hands/:handId/reveal-context", Handler: revealContextHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/fairness", Handler: fairnessViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/public", Handler: publicViewHandler(dispatcher)},
@@ -57,6 +58,27 @@ func commandHandler(dispatcher *Dispatcher) http.HandlerFunc {
 			return
 		}
 		platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), result))
+	}
+}
+
+// This actor-scoped discovery cannot enumerate other users' room IDs, seats,
+// previous hand archives, or active hand identifiers.
+func recoverableRoomsHandler(dispatcher *Dispatcher) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		actor, ok := authenticatedActor(r)
+		if !ok {
+			platformresponse.WriteError(r.Context(), w, apperrors.Unauthorized("authentication required"))
+			return
+		}
+		rooms, err := dispatcher.RecoverableRooms(r.Context(), actor)
+		if err != nil {
+			platformresponse.WriteError(r.Context(), w, mapHTTPError(err))
+			return
+		}
+		platformresponse.WriteJSON(r.Context(), w, http.StatusOK,
+			platformresponse.Success(r.Context(), struct {
+				Rooms []application.RoomView `json:"rooms"`
+			}{Rooms: rooms}))
 	}
 }
 
