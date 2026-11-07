@@ -1,0 +1,37 @@
+name: Temporary Custodied Gofmt
+
+on:
+  pull_request:
+    branches:
+      - acceptance/round17-frozen
+    paths:
+      - .github/workflows/temporary-custodied-gofmt.yml
+
+permissions:
+  contents: write
+
+jobs:
+  once:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'fix/custodied-player-contribution-from-round17'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout only the feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/custodied-player-contribution-from-round17
+          persist-credentials: true
+      - name: Format modified Go sources only
+        run: |
+          set -eu
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --name-only acceptance/round17-frozen...HEAD -- '*.go' > /tmp/changed_go
+          while IFS= read -r path; do
+            test -f "$path" && gofmt -w "$path"
+          done < /tmp/changed_go
+          git add -- '*.go'
+          if ! git diff --cached --quiet; then
+            git commit -m 'style(go): gofmt client-custodied contribution implementation'
+            git push origin HEAD:fix/custodied-player-contribution-from-round17
+          fi
