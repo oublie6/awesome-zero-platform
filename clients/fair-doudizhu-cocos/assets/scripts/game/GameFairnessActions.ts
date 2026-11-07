@@ -162,6 +162,7 @@ export class GameFairnessActions {
       const epoch=this.generation
       const view=await this.api.fairness(handId)
       this.ensureActive(epoch)
+      if(view.fairnessMode!==undefined)throw new Error('legacy recovery forbidden for server-custodied hand')
       if(view.phase!=='FAIRNESS_COMMITTING'||view.committed)
         throw new Error('fairness preparation phase unavailable')
       if(this.secret && this.secret.handId!==handId)
@@ -211,6 +212,7 @@ export class GameFairnessActions {
       const epoch=this.generation
       const view=await this.api.fairness(expectedHandId)
       this.ensureActive(epoch)
+      if(view.fairnessMode!==undefined)throw new Error('legacy recovery forbidden for server-custodied hand')
       if(view.seat!==kit.seat||view.revealed||
         (view.committed ? view.commitment!==commitment :
           view.phase!=='FAIRNESS_COMMITTING')||
@@ -333,6 +335,7 @@ export class GameFairnessActions {
       const epoch=this.generation
       const view=await this.api.fairness(handId)
       this.ensureActive(epoch)
+      if(view.fairnessMode!==undefined)throw new Error('legacy commit forbidden for server-custodied hand')
       if(view.phase!=='FAIRNESS_COMMITTING' || view.committed)throw new Error('fairness commit phase unavailable')
       if(this.secret && this.secret.handId!==handId)throw new Error('unrevealed contribution for a different hand')
       if(!this.secret){
@@ -369,6 +372,7 @@ export class GameFairnessActions {
       const epoch=this.generation
       const view=await this.api.fairness(handId)
       this.ensureActive(epoch)
+      if(view.fairnessMode!==undefined)throw new Error('legacy reveal forbidden for server-custodied hand')
       if(view.phase!=='FAIRNESS_REVEALING' || !view.committed || view.revealed ||
         view.seat!==secret.seat || view.commitment!==secret.commitment)
         throw new Error('server commitment does not match local fairness secret')
