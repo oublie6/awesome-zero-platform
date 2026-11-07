@@ -154,3 +154,20 @@ test('Round15 hand-transition reservation prevents new fairness work and release
  assert.equal(repeated,original)
  flow.dispose()
 })
+
+test('custodied final phrase verification recomputes canonical commitment locally',async()=>{
+ const {verifyOwnContribution,canonicalCustodiedAAD}=await import('../dist/game/GameFairnessActions.js')
+ const {encodeBase64Url}=await import('@awesome-zero-platform/secure-envelope')
+ const random=Uint8Array.from({length:32},(_,i)=>i+1)
+ const phrase='我亲自选的字符串'
+ const commitment=computeCommitment('hand-owned',2,random,phrase)
+ assert.equal(verifyOwnContribution('hand-owned',2,encodeBase64Url(random),phrase,commitment),true)
+ assert.equal(verifyOwnContribution('hand-owned',2,encodeBase64Url(random),'错误输入',commitment),false)
+ const claims={v:'doudizhu-custodied-context-v1',actor:'alice',handId:'hand-owned',
+  requestId:'req1',clientSeq:2,expectedVersion:3,seat:2,
+  commitment:'',keyId:'k',publicKeySha256:'a'.repeat(64),issuedAt:100000,expiresAt:160000}
+ const aad=canonicalCustodiedAAD(claims)
+ assert.ok(aad.length>80)
+ assert.ok(Buffer.from(aad).includes(Buffer.from('doudizhu.hand.fairness.contribution.submit.v1')))
+ assert.throws(()=>canonicalCustodiedAAD({...claims,v:'doudizhu-reveal-context-v1'}),/invalid/)
+})
