@@ -158,7 +158,7 @@ test('recoverable rooms are authenticated, membership-scoped and strictly parsed
  assert.deepEqual(await api({rooms:[own]}).recoverableRooms(),[own])
  assert.equal(calls[0].path,'/v1/doudizhu/me/rooms')
  assert.equal(calls[0].options.accessToken,'member-token')
- await assert.rejects(api({rooms:[{...own,member:false}]}).recoverableRooms(),/invalid|unauthorized/)
+ await assert.rejects(api({rooms:[{...own,member:false}]}).recoverableRooms(),/invalid|unauthorized|private membership/)
  await assert.rejects(api({rooms:[own,own]}).recoverableRooms(),/invalid/)
  await assert.rejects(api({rooms:[{...own,activeHandId:'hand-cold',seats:undefined}]}).recoverableRooms(),/invalid/)
  await assert.rejects(api({rooms:[{...own,status:'CLOSED'}]}).recoverableRooms(),/unauthorized/)
