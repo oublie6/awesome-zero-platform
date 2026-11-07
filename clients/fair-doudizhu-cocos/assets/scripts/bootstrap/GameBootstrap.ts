@@ -8,6 +8,7 @@ import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
+import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
 const { ccclass } = _decorator
 type Screen = 'home' | 'rooms' | 'rules' | 'table'
@@ -51,7 +52,9 @@ export class GameBootstrap extends Component {
   private selectedCards = new Set<string>()
   private roomID = ''
   private handID = ''
-  private fairnessMode:'client-contributed-server-custodied-v1'|''=''
+  // null is UNKNOWN; '' is a confirmed legacy hand.
+  private fairnessMode:'client-contributed-server-custodied-v1'|''|null=null
+  private recoverableRooms:RoomRead[]=[]
   // A kit shown on this screen is not proof that the user kept a recovery copy.
   private backupVerificationPendingHand = ''
   private verifiedBackupHand = ''
@@ -117,14 +120,18 @@ export class GameBootstrap extends Component {
         {name:'ReadyRoom',caption:'准备',action:()=>void this.readyRoom()},
         {name:'LeaveRoom',caption:'退出当前房间',action:()=>void this.leaveRoom()},
         {name:'StartHand',caption:'开始本局',action:()=>void this.startHand()},
-        {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()}
+        {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
+        {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.recoverMyRooms()}
       ]
+      for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
+        caption:(room.status==='HAND_ACTIVE'?'继续牌局 ':'恢复房间 ')+room.roomId,
+        action:()=>void this.resumeAuthorizedRoom(room.roomId)})
       if(this.fairnessMode==='client-contributed-server-custodied-v1'){
         actions.push(
           {name:'SubmitOwnContribution',caption:'提交我的随机验证字符串',action:()=>void this.submitOwnContribution()},
           {name:'VerifyOwnContribution',caption:'终局核验我的字符串',action:()=>void this.verifyMyPhrase()})
-      }else if(this.handID){
-        // Pre-upgrade hands retain their original explicit recovery flow.
+      }else if(this.handID && this.fairnessMode===''){
+        // Only confirmed legacy hands expose recovery controls.
         actions.push(
           {name:'PrepareFairness',caption:'生成并备份恢复凭证（旧局）',action:()=>void this.prepareFairness()},
           {name:'VerifyFairnessBackup',caption:'已备份并清空输入（旧局）',action:()=>this.beginFairnessBackupVerification()},
@@ -237,6 +244,12 @@ export class GameBootstrap extends Component {
       this.platform=platform
       this.online?.dispose()
       this.online=online
+      this.roomGeneration++
+      this.roomID=''
+      this.handID=''
+      this.fairnessMode=null
+      this.recoverableRooms=[]
+      this.selectedCards.clear()
       const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
       if(!restored)await online.loginAndConnect()
       if(generation!==this.requestGeneration || !this.content?.isValid)return
@@ -248,22 +261,48 @@ export class GameBootstrap extends Component {
         if(id && id===this.handID)void this.showEvidence()
       })
       this.notice('已验证微信账号并连接游戏服务')
+      try{await this.recoverMyRooms()}
+      catch(error){if(online===this.online && generation===this.requestGeneration)
+        this.notice('已登录，自动发现暂不可用：'+this.message(error))}
     } catch(error) {if(generation===this.requestGeneration)this.notice('登录失败：'+this.message(error))}
   }
-  private async reconnect():Promise<void> {
-    try {
-      const view=await this.requireOnline().reconnectAndResync(this.roomID || undefined)
-      if(view) {
-        const currentHand=view.activeHandId || view.lastHandId || ''
-        if(this.roomID!==view.roomId || this.handID!==currentHand) {
-          this.roomGeneration++
-          this.selectedCards.clear()
-        }
-        this.roomID=view.roomId
-        this.handID=currentHand
-      }
-      this.notice(view?'重连成功，已向服务器请求房间与牌局同步':'重连成功，等待创建或加入房间')
-    }catch(error){this.notice('重连失败：'+this.message(error))}
+  /** No game state or room locator is stored on the device. */
+  private async recoverMyRooms():Promise<void>{
+    const online=this.requireOnline()
+    const rooms=await online.discoverRecoverableRooms()
+    if(online!==this.online)return
+    this.recoverableRooms=rooms
+    const active=rooms.filter(room=>room.status==='HAND_ACTIVE')
+    const candidate=active.length===1?active[0]:
+      active.length===0 && rooms.length===1?rooms[0]:null
+    if(candidate)await this.resumeAuthorizedRoom(candidate.roomId)
+    else{
+      if(this.screen==='rooms')this.renderScreen('rooms')
+      this.notice(rooms.length?'发现多个未结束房间，请选择一个恢复':'当前账号没有未结束房间')
+    }
+  }
+  private async resumeAuthorizedRoom(roomID:string):Promise<void>{
+    const online=this.requireOnline()
+    const room=await online.reconnectAndResync(roomID)
+    if(online!==this.online || !room)return
+    const handID=room.activeHandId||room.lastHandId||''
+    if(this.roomID!==room.roomId || this.handID!==handID){
+      this.roomGeneration++
+      this.fairnessMode=null
+      this.selectedCards.clear()
+    }
+    this.roomID=room.roomId
+    this.handID=handID
+    this.recoverableRooms=[]
+    this.renderScreen('rooms')
+    await this.refreshRoom()
+    if(online===this.online && room.roomId===this.roomID)
+      this.notice('已通过服务器恢复本人房间和牌局')
+  }
+  private async reconnect():Promise<void>{
+    try{if(this.roomID)await this.resumeAuthorizedRoom(this.roomID)
+        else await this.recoverMyRooms()}
+    catch(error){this.notice('重连失败：'+this.message(error))}
   }
   private async retryUnknownFairness():Promise<void>{
     try{
@@ -280,6 +319,8 @@ export class GameBootstrap extends Component {
       this.roomGeneration++
       this.roomID=room.roomId
       this.handID=''
+      this.fairnessMode=null
+      this.recoverableRooms=[]
       this.selectedCards.clear()
       await this.refreshRoom()
     }catch(error){this.notice('建房失败：'+this.message(error))}
@@ -293,6 +334,8 @@ export class GameBootstrap extends Component {
       this.roomGeneration++
       this.roomID=room.roomId
       this.handID=''
+      this.fairnessMode=null
+      this.recoverableRooms=[]
       this.selectedCards.clear()
       await this.refreshRoom()
     }catch(error){this.notice('加入失败：'+this.message(error))}
@@ -306,6 +349,8 @@ export class GameBootstrap extends Component {
       this.roomGeneration++
       this.roomID=''
       this.handID=''
+      this.fairnessMode=null
+      this.recoverableRooms=[]
       this.selectedCards.clear()
       this.renderScreen('rooms')
       this.notice('已退出房间，可重新创建或加入其他房间')
@@ -362,16 +407,18 @@ export class GameBootstrap extends Component {
       if(online.handStartInProgress)return
       online.confirmActiveFairnessHand(info.activeHandId || null)
       online.rooms.restoreTrustedRoom(info.roomId,info.version,info.lastClientSequence)
-      if(this.screen==='rooms')this.renderScreen('rooms')
-      const seats=(info.seats||[]).map(s=>s.accountId ? `座位${s.position} ${s.ready?'已准备':'未准备'}`:`座位${s.position} 空`).join(' / ')
-      this.notice(`房间版本 ${info.version} · ${seats}`)
       const authorizedHand=info.activeHandId || info.lastHandId || ''
       if(authorizedHand!==this.handID){
         this.roomGeneration++
         this.handID=authorizedHand
-        this.fairnessMode=''
+        this.fairnessMode=null
         this.selectedCards.clear()
       }
+      // Adopt new hand as UNKNOWN before rendering. The authenticated mode
+      // read below determines which fairness buttons may be displayed.
+      if(this.screen==='rooms')this.renderScreen('rooms')
+      const seats=(info.seats||[]).map(s=>s.accountId ? `座位${s.position} ${s.ready?'已准备':'未准备'}`:`座位${s.position} 空`).join(' / ')
+      this.notice(`房间版本 ${info.version} · ${seats}`)
       online.shell.useAuthoritativeHand(authorizedHand || null)
       if(info.activeHandId){
         const handGeneration=this.roomGeneration
@@ -485,6 +532,7 @@ export class GameBootstrap extends Component {
     const input=this.roomInput
     const fairness=online?.fairness
     try{
+      if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
       if(!handID)throw new Error('尚未开始牌局')
       if(!online?.session.authenticated || !fairness)throw new Error('请先完成微信登录')
       const kit=await fairness.prepareRecoveryKit(handID)
@@ -508,6 +556,7 @@ export class GameBootstrap extends Component {
   }
   private beginFairnessBackupVerification():void {
     try {
+      if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
       if(!this.handID)throw new Error('尚未开始牌局')
       const online=this.requireOnline()
       if(!online.fairness.recoveryKitPrepared || !online.fairness.hasRecoverySecret)
@@ -524,6 +573,7 @@ export class GameBootstrap extends Component {
   }
   private async importFairness():Promise<void>{
     try{
+      if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
       if(!this.handID)throw new Error('尚未开始牌局')
       const online=this.requireOnline()
       const handID=this.handID
@@ -548,6 +598,7 @@ export class GameBootstrap extends Component {
   }
   private async commitFairness():Promise<void>{
     try{
+      if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
       if(!this.handID)throw new Error('尚未开始牌局')
       const online=this.requireOnline()
       if(!online.fairness.recoveryKitPrepared || this.verifiedBackupHand!==this.handID ||
@@ -559,6 +610,7 @@ export class GameBootstrap extends Component {
   }
   private async revealFairness():Promise<void>{
     try{
+      if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
       if(!this.handID)throw new Error('尚未开始牌局')
       await this.requireOnline().fairness.reveal(this.handID)
       await this.refreshFairness()
