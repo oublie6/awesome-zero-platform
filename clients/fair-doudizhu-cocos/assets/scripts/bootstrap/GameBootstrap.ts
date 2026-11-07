@@ -62,6 +62,9 @@ export class GameBootstrap extends Component {
   private requestGeneration = 0
   // Any leave, new hand or room switch invalidates older awaited HTTP replies.
   private roomGeneration = 0
+  // Explicit room recovery choices are distinct from ordinary UI refreshes.
+  private recoveryAttempt = 0
+  private sceneRecovery: {roomID:string;promise:Promise<void>}|null=null
 
   override start(): void {
     this.content = new Node('SafeContent')
@@ -242,6 +245,8 @@ export class GameBootstrap extends Component {
       const online=new GameOnlineController(platform,createWeChatIdentityExchange(platform),cfg.socketEndpoint,
         text=>this.notice(text),cfg.revealManifestRoots)
       this.platform=platform
+      ++this.recoveryAttempt
+      this.sceneRecovery=null
       this.online?.dispose()
       this.online=online
       this.roomGeneration++
@@ -266,11 +271,13 @@ export class GameBootstrap extends Component {
         this.notice('已登录，自动发现暂不可用：'+this.message(error))}
     } catch(error) {if(generation===this.requestGeneration)this.notice('登录失败：'+this.message(error))}
   }
-  /** No game state or room locator is stored on the device. */
+  /** No game room identifier or player entropy is persisted on the device.
+   * A slower account discovery must not supersede a later explicit selection. */
   private async recoverMyRooms():Promise<void>{
     const online=this.requireOnline()
+    const token=++this.recoveryAttempt
     const rooms=await online.discoverRecoverableRooms()
-    if(online!==this.online)return
+    if(online!==this.online || token!==this.recoveryAttempt)return
     this.recoverableRooms=rooms
     const active=rooms.filter(room=>room.status==='HAND_ACTIVE')
     const candidate=active.length===1?active[0]:
@@ -281,23 +288,75 @@ export class GameBootstrap extends Component {
       this.notice(rooms.length?'发现多个未结束房间，请选择一个恢复':'当前账号没有未结束房间')
     }
   }
-  private async resumeAuthorizedRoom(roomID:string):Promise<void>{
+  private resumeAuthorizedRoom(roomID:string):Promise<void>{
     const online=this.requireOnline()
-    const room=await online.reconnectAndResync(roomID)
-    if(online!==this.online || !room)return
-    const handID=room.activeHandId||room.lastHandId||''
-    if(this.roomID!==room.roomId || this.handID!==handID){
-      this.roomGeneration++
-      this.fairnessMode=null
-      this.selectedCards.clear()
+    if(this.sceneRecovery?.roomID===roomID)return this.sceneRecovery.promise
+    const token=++this.recoveryAttempt
+    const promise=this.performAuthorizedRoomRecovery(online,roomID,token)
+    this.sceneRecovery={roomID,promise}
+    void promise.finally(()=>{
+      if(this.sceneRecovery?.promise===promise)this.sceneRecovery=null
+    }).catch(()=>{})
+    return promise
+  }
+  private async performAuthorizedRoomRecovery(
+    online:GameOnlineController,roomID:string,token:number
+  ):Promise<void>{
+    const current=()=>online===this.online && token===this.recoveryAttempt && !!this.content?.isValid
+    try{
+      const room=await online.reconnectAndResync(roomID)
+      if(!current()||!room)return
+      const handID=room.activeHandId||room.lastHandId||''
+      if(this.roomID!==room.roomId || this.handID!==handID){
+        this.roomGeneration++
+        this.fairnessMode=null
+        this.selectedCards.clear()
+      }
+      this.roomID=room.roomId
+      this.handID=handID
+      this.recoverableRooms=[]
+      this.renderScreen('rooms')
+      // The normal screen refresh is best-effort. NEVER infer recovery
+      // success from its swallowed HTTP errors; verify membership again.
+      await this.refreshRoom()
+      if(!current())return
+      const verified=await online.roomInfo(roomID)
+      if(!current())return
+      if(!verified.member || verified.status==='CLOSED'){
+        this.revokeInvalidRecoveredRoom(online,roomID)
+        throw new Error('room closed or membership revoked during recovery')
+      }
+      if(verified.version<room.version ||
+         verified.activeHandId!==room.activeHandId ||
+         verified.lastHandId!==room.lastHandId)
+        throw new Error('room changed during recovery; refresh authoritative state')
+      if(online.rooms.state?.roomId!==roomID)
+        throw new Error('room changed while applying recovery')
+      if(online.rooms.state.version!==verified.version)
+        online.rooms.restoreTrustedRoom(roomID,verified.version,verified.lastClientSequence)
+      if(current())this.notice('已通过服务器恢复本人房间和牌局')
+    }catch(error){
+      if(current() && this.recoveryAuthorityRevoked(error))
+        this.revokeInvalidRecoveredRoom(online,roomID)
+      throw error
     }
-    this.roomID=room.roomId
-    this.handID=handID
+  }
+  private recoveryAuthorityRevoked(error:unknown):boolean{
+    if(!(error instanceof Error))return false
+    return /membership (not confirmed|revoked)|room closed|HTTP 403|HTTP 404|not a member/i.test(error.message)
+  }
+  private revokeInvalidRecoveredRoom(online:GameOnlineController,roomID:string):void{
+    if(online!==this.online || this.roomID!==roomID)return
+    // First revoke the controller's authoritative locator, leaving any
+    // unknown durable command intact instead of discarding its retry.
+    online.forgetInvalidRecoveredRoom(roomID)
+    this.roomGeneration++
+    this.roomID=''
+    this.handID=''
+    this.fairnessMode=null
     this.recoverableRooms=[]
+    this.selectedCards.clear()
     this.renderScreen('rooms')
-    await this.refreshRoom()
-    if(online===this.online && room.roomId===this.roomID)
-      this.notice('已通过服务器恢复本人房间和牌局')
   }
   private async reconnect():Promise<void>{
     try{if(this.roomID)await this.resumeAuthorizedRoom(this.roomID)
