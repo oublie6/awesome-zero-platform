@@ -654,3 +654,41 @@ test('R19-N02: later definitive CLOSED revokes an already adopted room',async()=
  assert.equal(online.rooms.state,null)
  online.dispose()
 })
+
+test('G47-N01: delayed member join A cannot overwrite newer recovery B',async()=>{
+ const f=fixture()
+ const room=id=>({roomId:id,version:1,status:'WAITING_PLAYERS',member:true,occupied:1,lastClientSequence:1})
+ let releaseA,firstA=true
+ f.platform.http.request=async path=>{
+  if(path==='/v1/doudizhu/rooms/A' && firstA){
+   firstA=false
+   return new Promise(resolve=>{releaseA=()=>resolve({code:'OK',data:room('A')})})
+  }
+  return {code:'OK',data:room(path.endsWith('/B')?'B':'A')}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const old=online.joinRoom('A')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof releaseA,'function')
+ const newer=await online.reconnectAndResync('B')
+ assert.equal(newer.roomId,'B')
+ releaseA()
+ await assert.rejects(old,/selection superseded/)
+ assert.equal(online.rooms.state.roomId,'B')
+ assert.equal(f.commands.length,0)
+ online.dispose()
+})
+test('G47-N01: late CLOSED recheck prevents stale existing-member join',async()=>{
+ const f=fixture()
+ const waiting={roomId:'A',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,lastClientSequence:1}
+ const closed={...waiting,version:2,status:'CLOSED',member:false,lastClientSequence:0}
+ let reads=0
+ f.platform.http.request=async()=>({code:'OK',data:++reads===1?waiting:closed})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await assert.rejects(online.joinRoom('A'),/membership revoked|room closed/)
+ assert.equal(reads,2)
+ assert.equal(online.rooms.state,null)
+ online.dispose()
+})

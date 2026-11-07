@@ -147,3 +147,11 @@ test('Round19 latest recovery choice and final membership verification are manda
  assert.ok(controller.indexOf('const fresh=await this.api.room(initial.roomId)') <
   controller.indexOf('this.rooms.restoreTrustedRoom(fresh.roomId'))
 })
+
+test('G47-N01: scene join shares latest room selection token',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const join=source.split('private async joinRoom():Promise<void> {')[1].split('private async leaveRoom():')[0]
+ assert.ok(join.includes('const token=++this.recoveryAttempt'))
+ assert.ok(join.includes('token!==this.recoveryAttempt'))
+ assert.ok(join.indexOf('token!==this.recoveryAttempt')<join.indexOf('this.roomID=room.roomId'))
+})

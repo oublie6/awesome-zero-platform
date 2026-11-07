@@ -155,8 +155,12 @@ export class GameOnlineController {
   }
   /** Secure join code is a locator; the Go server checks membership and version. */
   async joinRoom(roomId: string): Promise<Readonly<{roomId:string;version:number}>> {
-    ++this.recoveryGeneration
+    const token = ++this.recoveryGeneration
+    const membership = this.membershipGeneration
+    const current = () => !this.disposed && token === this.recoveryGeneration &&
+      membership === this.membershipGeneration
     const view = await this.roomInfo(roomId)
+    if (!current()) throw new Error('room selection superseded during join')
     if (view.status === 'CLOSED') throw new Error('room not joinable')
     // Current members can resume an already active hand. This does NOT allow
     // outsiders into HAND_ACTIVE or bypass the server's membership check.
@@ -164,26 +168,48 @@ export class GameOnlineController {
       // Re-adopt the authenticated room on the existing socket. Joining a
       // known member must not open a second connection or treat HAND_ACTIVE
       // as a new admission; the Go room query already verified membership.
-      this.confirmActiveFairnessHand(view.activeHandId || null)
-      this.rooms.restoreTrustedRoom(roomId, view.version, view.lastClientSequence)
-      const generation=++this.membershipGeneration
-      this.shell.useAuthoritativeHand(view.activeHandId || view.lastHandId || null)
-      if(view.activeHandId){
-        const fairness=await this.api.fairness(view.activeHandId)
-        if(this.disposed || generation!==this.membershipGeneration ||
-           this.rooms.state?.roomId!==roomId)throw new Error('room membership changed during recovery')
-        if(fairness.phase==='BIDDING' || fairness.phase==='PLAYING' ||
-           fairness.phase==='SETTLING')await this.shell.syncHand(view.activeHandId)
-      }else if(view.lastHandId){
-        const evidence=await this.api.finalEvidence(view.lastHandId)
-        if(this.disposed || generation!==this.membershipGeneration ||
-           this.rooms.state?.roomId!==roomId)throw new Error('room membership changed during recovery')
+      // Resolve metadata before the final membership read; stale responses
+      // must not mutate controller state after a newer room selection.
+      let phase: string | null = null
+      let evidence: Awaited<ReturnType<DoudizhuHTTPClient['finalEvidence']>> | null = null
+      if (view.activeHandId) {
+        const fairness = await this.api.fairness(view.activeHandId)
+        if (!current()) throw new Error('room selection superseded during join')
+        phase = fairness.phase
+      } else if (view.lastHandId) {
+        evidence = await this.api.finalEvidence(view.lastHandId)
+        if (!current()) throw new Error('room selection superseded during join')
+      }
+      const fresh = await this.roomInfo(roomId)
+      if (!current()) throw new Error('room selection superseded during join')
+      if (!fresh.member || fresh.status === 'CLOSED') {
+        this.forgetInvalidRecoveredRoom(roomId)
+        throw new Error('room membership revoked or room closed during join')
+      }
+      if (fresh.version < view.version || fresh.activeHandId !== view.activeHandId ||
+          fresh.lastHandId !== view.lastHandId)
+        throw new Error('room changed during join; retry authoritative lookup')
+      // No suspension between the final authorization read and adoption.
+      this.confirmActiveFairnessHand(fresh.activeHandId || null)
+      this.rooms.restoreTrustedRoom(roomId, fresh.version, fresh.lastClientSequence)
+      this.shell.useAuthoritativeHand(fresh.activeHandId || fresh.lastHandId || null)
+      const generation = ++this.membershipGeneration
+      if (fresh.activeHandId && (phase === 'BIDDING' || phase === 'PLAYING' ||
+                                  phase === 'SETTLING')) {
+        await this.shell.syncHand(fresh.activeHandId)
+        if (this.disposed || token !== this.recoveryGeneration ||
+            generation !== this.membershipGeneration ||
+            this.rooms.state?.roomId !== roomId)
+          throw new Error('room selection superseded during join')
+      } else if (evidence) {
         this.shell.acceptVerifiedFinalEvidence(evidence)
       }
-      return {roomId:view.roomId,version:view.version}
+      return {roomId:fresh.roomId,version:fresh.version}
     }
     if (view.status === 'HAND_ACTIVE') throw new Error('room not joinable')
     const joined = await this.rooms.join(roomId, view.version, view.lastClientSequence)
+    // Do not discard an accepted durable command if its UI choice is stale.
+    if (!current()) throw new Error('room selection superseded after join receipt')
     this.confirmActiveFairnessHand(null)
     this.membershipGeneration++
     this.shell.useAuthoritativeHand(null)

@@ -389,7 +389,9 @@ export class GameBootstrap extends Component {
       const online=this.requireOnline()
       const roomID=this.roomInput?.string?.trim() || this.roomID
       if(!roomID)throw new Error('请填写房间号')
+      const token=++this.recoveryAttempt
       const room=await online.joinRoom(roomID)
+      if(online!==this.online || token!==this.recoveryAttempt || !this.content?.isValid)return
       this.roomGeneration++
       this.roomID=room.roomId
       this.handID=''
@@ -397,7 +399,10 @@ export class GameBootstrap extends Component {
       this.recoverableRooms=[]
       this.selectedCards.clear()
       await this.refreshRoom()
-    }catch(error){this.notice('加入失败：'+this.message(error))}
+    }catch(error){
+      if(!(error instanceof Error && /selection superseded/.test(error.message)))
+        this.notice('加入失败：'+this.message(error))
+    }
   }
   private async leaveRoom():Promise<void> {
     try {
