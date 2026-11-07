@@ -88,6 +88,9 @@ func (s *FinalEvidenceService) Get(ctx context.Context, actor domain.AccountID, 
 	if err != nil {
 		return FinalEvidenceResult{}, fmt.Errorf("verify final evidence: %w", err)
 	}
+	if report.FairnessMode != hand.FairnessMode {
+		return FinalEvidenceResult{}, fmt.Errorf("%w: archived fairness mode differs from hand", ErrFinalEvidenceInvalid)
+	}
 	payload := record.Payload()
 	return FinalEvidenceResult{
 		FairnessMode: hand.FairnessMode,
