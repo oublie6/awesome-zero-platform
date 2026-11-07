@@ -150,9 +150,12 @@ func TestServerManagedStartRequiresPublicBeacon(t *testing.T) {
 	protector := &managedTestProtector{}
 	svc, store, clock, setup, version := managedStartFixture(t, "hmac", protector)
 	command := testCommand(clock.Now(), CommandRoomHandStart, domain.AggregateRoom, "room-managed", "start-hmac", 1, version)
-	_, err := svc.StartRoomHand(context.Background(), "seat-a", command,
+	result, err := svc.StartRoomHand(context.Background(), "seat-a", command,
 		StartHandInput{HandID: "hand-hmac", FairnessMode: domain.FairnessModeServerManaged})
-	if err == nil || protector.calls != 0 || len(store.state.hands) != 0 || setup.released != 1 {
-		t.Fatalf("untrusted managed beacon accepted: err=%v calls=%d release=%d", err, protector.calls, setup.released)
+	// Expected business rejection is a durable command result, not a Go error.
+	if err != nil || result.Accepted || result.Failure == nil || protector.calls != 0 ||
+		len(store.state.hands) != 0 || setup.released != 1 {
+		t.Fatalf("untrusted managed beacon accepted: result=%+v err=%v calls=%d release=%d",
+			result, err, protector.calls, setup.released)
 	}
 }
