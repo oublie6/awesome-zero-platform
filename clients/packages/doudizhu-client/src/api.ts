@@ -52,6 +52,7 @@ export class DoudizhuHTTPClient {
       !['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING','BIDDING','PLAYING','SETTLING','COMPLETED','CANCELLED','ABORTED','EXPIRED'].includes(data.phase as string) ||
       !Number.isSafeInteger(data.version) || (data.version as number)<1 ||
       !Number.isSafeInteger(data.seat) || (data.seat as number)<1 || (data.seat as number)>3 ||
+      (data.fairnessMode !== undefined && data.fairnessMode !== 'server-managed-v1') ||
       typeof data.committed!=='boolean' || typeof data.revealed!=='boolean' ||
       !Number.isSafeInteger(data.lastClientSequence) || (data.lastClientSequence as number)<0 ||
       typeof data.revealKeyId!=='string' || !data.revealKeyId ||
@@ -178,6 +179,7 @@ function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
 }
 
 export interface FairnessRead {
+ fairnessMode?:'server-managed-v1'
  handId:string
  phase:string
  version:number
