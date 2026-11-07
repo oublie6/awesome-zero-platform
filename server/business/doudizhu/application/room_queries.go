@@ -111,7 +111,6 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 	return view, nil
 }
 
-
 // GetRecoverableRooms exposes only current, nonclosed room memberships for
 // this authenticated account. A discovered ID is merely a locator; the
 // ordinary room read rechecks membership and filters historical hand access.
@@ -127,7 +126,9 @@ func (s *Service) GetRecoverableRooms(ctx context.Context, actor domain.AccountI
 		return nil, fmt.Errorf("%w: recoverable room query unavailable", ErrInvalidCommand)
 	}
 	ids, err := reader.FindRecoverableRoomIDs(ctx, actor)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	if len(ids) > 32 {
 		return nil, fmt.Errorf("%w: recoverable room limit", ErrInvalidCommand)
 	}

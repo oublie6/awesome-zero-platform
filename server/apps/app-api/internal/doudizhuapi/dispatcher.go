@@ -179,7 +179,9 @@ func (d *Dispatcher) RecoverableRooms(ctx context.Context, actor domain.AccountI
 	reader, ok := d.backend.(interface {
 		GetRecoverableRooms(context.Context, domain.AccountID) ([]application.RoomView, error)
 	})
-	if !ok { return nil, ErrInvalidRequest }
+	if !ok {
+		return nil, ErrInvalidRequest
+	}
 	return reader.GetRecoverableRooms(ctx, actor)
 }
 

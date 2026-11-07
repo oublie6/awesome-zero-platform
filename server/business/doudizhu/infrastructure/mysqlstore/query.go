@@ -109,16 +109,26 @@ WHERE status IN ('HAND_ACTIVE', 'READY', 'WAITING_PLAYERS')
 ORDER BY CASE status WHEN 'HAND_ACTIVE' THEN 0 WHEN 'READY' THEN 1 ELSE 2 END,
          updated_at DESC, room_id ASC
 LIMIT 33`, string(actor))
-	if err != nil { return nil, fmt.Errorf("find recoverable doudizhu rooms: %w", err) }
+	if err != nil {
+		return nil, fmt.Errorf("find recoverable doudizhu rooms: %w", err)
+	}
 	defer rows.Close()
 	ids := make([]domain.RoomID, 0, 8)
 	for rows.Next() {
 		var id string
-		if err := rows.Scan(&id); err != nil { return nil, fmt.Errorf("scan recoverable room: %w", err) }
-		if id == "" || len(id) > 128 { return nil, fmt.Errorf("invalid recoverable room identity") }
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scan recoverable room: %w", err)
+		}
+		if id == "" || len(id) > 128 {
+			return nil, fmt.Errorf("invalid recoverable room identity")
+		}
 		ids = append(ids, domain.RoomID(id))
 	}
-	if err := rows.Err(); err != nil { return nil, fmt.Errorf("iterate recoverable rooms: %w", err) }
-	if len(ids) > 32 { return nil, fmt.Errorf("too many recoverable rooms; narrow discovery") }
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate recoverable rooms: %w", err)
+	}
+	if len(ids) > 32 {
+		return nil, fmt.Errorf("too many recoverable rooms; narrow discovery")
+	}
 	return ids, nil
 }
