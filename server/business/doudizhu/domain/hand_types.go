@@ -209,18 +209,22 @@ func NewHand(
 // NewServerManagedHand binds the custody model before any commit/reveal data is
 // recorded. It intentionally does not alter historical NewHand behavior.
 func NewServerManagedHand(
-  id HandID, roomID RoomID, seats [3]HandSeat,
-  serverCommitment ServerCommitment, revealKeyID string,
-  beaconPlan BeaconPlan, binding RevealKeyBinding,
+	id HandID, roomID RoomID, seats [3]HandSeat,
+	serverCommitment ServerCommitment, revealKeyID string,
+	beaconPlan BeaconPlan, binding RevealKeyBinding,
 ) (*Hand, []Event, error) {
-  hand, events, err := NewHand(id, roomID, seats, serverCommitment, revealKeyID, beaconPlan, binding)
-  if err != nil { return nil, nil, err }
-  hand.fairnessMode = FairnessModeServerManaged
-  created, ok := events[0].Payload.(HandCreatedPayload)
-  if !ok { return nil, nil, fmt.Errorf("%w: created event", ErrInvalidArgument) }
-  created.FairnessMode = FairnessModeServerManaged
-  events[0].Payload = created
-  return hand, events, nil
+	hand, events, err := NewHand(id, roomID, seats, serverCommitment, revealKeyID, beaconPlan, binding)
+	if err != nil {
+		return nil, nil, err
+	}
+	hand.fairnessMode = FairnessModeServerManaged
+	created, ok := events[0].Payload.(HandCreatedPayload)
+	if !ok {
+		return nil, nil, fmt.Errorf("%w: created event", ErrInvalidArgument)
+	}
+	created.FairnessMode = FairnessModeServerManaged
+	events[0].Payload = created
+	return hand, events, nil
 }
 
 func (h *Hand) Snapshot() HandSnapshot {
