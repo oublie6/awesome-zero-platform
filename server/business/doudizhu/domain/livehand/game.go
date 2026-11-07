@@ -137,38 +137,38 @@ type PrivateView struct {
 }
 
 type TerminalPayload struct {
-	FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
-	Version          string      `json:"v"`
-	HandID           string      `json:"handId"`
-	Status           string      `json:"status"`
-	Reason           string      `json:"reason"`
-	StateVersion     uint64      `json:"stateVersion"`
-	SetupArtifact    string      `json:"setupArtifact"`
-	SetupDigest      string      `json:"setupDigest"`
-	Transcript       string      `json:"transcript"`
-	TranscriptDigest string      `json:"transcriptDigest"`
-	CurrentHands     [3][]string `json:"currentHands"`
-	LandlordCards    []string    `json:"landlordCards"`
+	FairnessMode     domain.FairnessMode `json:"fairnessMode,omitempty"`
+	Version          string              `json:"v"`
+	HandID           string              `json:"handId"`
+	Status           string              `json:"status"`
+	Reason           string              `json:"reason"`
+	StateVersion     uint64              `json:"stateVersion"`
+	SetupArtifact    string              `json:"setupArtifact"`
+	SetupDigest      string              `json:"setupDigest"`
+	Transcript       string              `json:"transcript"`
+	TranscriptDigest string              `json:"transcriptDigest"`
+	CurrentHands     [3][]string         `json:"currentHands"`
+	LandlordCards    []string            `json:"landlordCards"`
 }
 
 type CompletedPayload struct {
-	FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
-	Version          string            `json:"v"`
-	HandID           string            `json:"handId"`
-	Status           string            `json:"status"`
-	StateVersion     uint64            `json:"stateVersion"`
-	SetupArtifact    string            `json:"setupArtifact"`
-	SetupDigest      string            `json:"setupDigest"`
-	Transcript       string            `json:"transcript"`
-	TranscriptDigest string            `json:"transcriptDigest"`
-	Bidding          bidding.Snapshot  `json:"bidding"`
-	Playing          playing.Snapshot  `json:"playing"`
-	Settlement       settlement.Result `json:"settlement"`
-	FinalHands       [3][]string       `json:"finalHands"`
-	LandlordCards    []string          `json:"landlordCards"`
-	LandlordSeat     uint8             `json:"landlordSeat"`
-	WinningScore     bidding.Score     `json:"winningScore"`
-	WinnerSeat       uint8             `json:"winnerSeat"`
+	FairnessMode     domain.FairnessMode `json:"fairnessMode,omitempty"`
+	Version          string              `json:"v"`
+	HandID           string              `json:"handId"`
+	Status           string              `json:"status"`
+	StateVersion     uint64              `json:"stateVersion"`
+	SetupArtifact    string              `json:"setupArtifact"`
+	SetupDigest      string              `json:"setupDigest"`
+	Transcript       string              `json:"transcript"`
+	TranscriptDigest string              `json:"transcriptDigest"`
+	Bidding          bidding.Snapshot    `json:"bidding"`
+	Playing          playing.Snapshot    `json:"playing"`
+	Settlement       settlement.Result   `json:"settlement"`
+	FinalHands       [3][]string         `json:"finalHands"`
+	LandlordCards    []string            `json:"landlordCards"`
+	LandlordSeat     uint8               `json:"landlordSeat"`
+	WinningScore     bidding.Score       `json:"winningScore"`
+	WinnerSeat       uint8               `json:"winnerSeat"`
 }
 
 func New(snapshot domain.HandSnapshot, material gamecore.FairnessMaterial, artifact gamecore.SetupArtifact) (*Game, error) {
@@ -465,7 +465,7 @@ func (g *Game) buildCompletedPayload(version uint64, play playing.Snapshot, resu
 		return nil, err
 	}
 	return json.Marshal(CompletedPayload{
-		FairnessMode: g.origin.FairnessMode,
+		FairnessMode:     g.origin.FairnessMode,
 		Version:          CompletedPayloadV1,
 		HandID:           string(g.id),
 		Status:           string(gamecore.FinalStatusCompleted),
@@ -541,7 +541,7 @@ func (g *Game) Abort(reason string) (gamecore.AbortOutcome, error) {
 	}
 	g.version++
 	payload, err := json.Marshal(TerminalPayload{
-		FairnessMode: g.origin.FairnessMode,
+		FairnessMode:     g.origin.FairnessMode,
 		Version:          TerminalPayloadV1,
 		HandID:           string(g.id),
 		Status:           string(gamecore.FinalStatusAborted),
