@@ -116,3 +116,20 @@ test('real partially occupied Go room has omitted empty-seat account IDs',async(
   }})},()=> 'token')
  await assert.rejects(invalid.room('r-1'),/member room/)
 })
+
+test('authorized final evidence binds server custody to the signed archive verification result',async()=>{
+ const handId='hand-managed'
+ const base={handId,status:'completed',finalVersion:19,
+  verification:{handId,finalVersion:19,seatPoints:[0,0,0],recordDigest:'a'.repeat(64)}}
+ const api=value=>new DoudizhuHTTPClient({request:async(path,options)=>{
+  assert.equal(path,'/v1/doudizhu/hands/hand-managed/evidence')
+  assert.equal(options.accessToken,'my-auth-token')
+  return {code:'OK',data:value}
+ }},()=> 'my-auth-token')
+ const valid={...base,fairnessMode:'server-managed-v1',
+  verification:{...base.verification,fairnessMode:'server-managed-v1'}}
+ assert.equal((await api(valid).finalEvidence(handId)).fairnessMode,'server-managed-v1')
+ await assert.rejects(api({...valid,verification:{...base.verification}}).finalEvidence(handId),/invalid verified/)
+ await assert.rejects(api({...valid,fairnessMode:'unknown'}).finalEvidence(handId),/invalid verified/)
+ assert.equal((await api(base).finalEvidence(handId)).fairnessMode,undefined)
+})
