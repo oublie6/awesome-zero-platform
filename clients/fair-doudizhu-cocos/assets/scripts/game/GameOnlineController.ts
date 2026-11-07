@@ -22,6 +22,10 @@ export class GameOnlineController {
   private startingHand: string | null = null
   private disposed = false
   private membershipGeneration = 0
+  // The latest explicit recovery choice owns all post-await room/hand writes.
+  // Same-target concurrent recoveries share one operation and one socket.
+  private recoveryGeneration = 0
+  private pendingRecovery: {key:string;promise:Promise<RoomRead|null>} | null = null
   constructor(
     private readonly platform: GamePlatform,
     identity: IdentityExchange,
@@ -55,48 +59,90 @@ export class GameOnlineController {
     await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
     return true
   }
-  /** Re-establish authenticated transport, then trust only server-owned
-   * membership/version and private hand state. Never synthesize a successful
-   * result for commands whose response was lost on the old connection. */
-  async reconnectAndResync(roomId?: string): Promise<RoomRead | null> {
-    if (this.disposed || !this.session.authenticated) throw new Error('authenticated session required')
-    const generation = this.membershipGeneration
-    await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
-    let target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId
-    if (!target) {
-      const choices = await this.discoverRecoverableRooms()
-      if (this.disposed || generation !== this.membershipGeneration) return null
-      const active = choices.filter(view => view.status === 'HAND_ACTIVE')
-      if (active.length === 1) target = active[0].roomId
-      else if (active.length > 1) throw new Error('multiple active rooms; choose one to recover')
-      else if (choices.length === 1) target = choices[0].roomId
-      else if (choices.length > 1) throw new Error('multiple recoverable rooms; choose one to recover')
+  /** Recovery is read-only until its final authoritative membership check.
+   * Never adopt an earlier room response over a newer user selection. */
+  reconnectAndResync(roomId?: string): Promise<RoomRead | null> {
+    if (this.disposed || !this.session.authenticated)
+      return Promise.reject(new Error('authenticated session required'))
+    const target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId || undefined
+    const key = target ?? '#discover'
+    if (this.pendingRecovery?.key === key) return this.pendingRecovery.promise
+    const token = ++this.recoveryGeneration
+    const membership = this.membershipGeneration
+    const promise = this.performRecovery(target,token,membership)
+    this.pendingRecovery = {key,promise}
+    void promise.finally(()=>{
+      if(this.pendingRecovery?.promise===promise)this.pendingRecovery=null
+    }).catch(()=>{})
+    return promise
+  }
+  private async performRecovery(target:string|undefined,token:number,membership:number):Promise<RoomRead|null>{
+    const current=()=>!this.disposed && token===this.recoveryGeneration &&
+      membership===this.membershipGeneration
+    await this.shell.connect(this.platform.socket,this.socketEndpoint,this.session.token)
+    if(!current())return null
+    if(!target){
+      const choices=await this.discoverRecoverableRooms()
+      if(!current())return null
+      const active=choices.filter(view=>view.status==='HAND_ACTIVE')
+      if(active.length===1)target=active[0].roomId
+      else if(active.length>1)throw new Error('multiple active rooms; choose one to recover')
+      else if(choices.length===1)target=choices[0].roomId
+      else if(choices.length>1)throw new Error('multiple recoverable rooms; choose one to recover')
       else return null
     }
-    const room = await this.lookupOrRetryPendingCreate(target)
-    if (this.disposed || generation !== this.membershipGeneration) return null
-    if (!room.member) throw new Error('room membership not confirmed after reconnect')
-    this.confirmActiveFairnessHand(room.activeHandId || null)
-    this.rooms.restoreTrustedRoom(room.roomId, room.version, room.lastClientSequence)
-    this.shell.useAuthoritativeHand(room.activeHandId || room.lastHandId || null)
-    if (room.activeHandId) {
-      // In FAIRNESS_COMMITTING/WAITING_PUBLIC_BEACON there is no private dealt
-      // hand yet. Discover its authoritative mode first; avoid a premature
-      // /private read that would make a cold login look unrecoverable.
-      const fairness = await this.api.fairness(room.activeHandId)
-      if (this.disposed || generation !== this.membershipGeneration ||
-          this.rooms.state?.roomId !== room.roomId) return null
-      if (fairness.phase === 'BIDDING' || fairness.phase === 'PLAYING' ||
-          fairness.phase === 'SETTLING') {
-        await this.shell.syncHand(room.activeHandId)
-      }
-    } else if (room.lastHandId) {
-      const evidence = await this.api.finalEvidence(room.lastHandId)
-      if (this.disposed || generation !== this.membershipGeneration ||
-          this.rooms.state?.roomId !== room.roomId) return null
+    const initial=await this.lookupOrRetryPendingCreate(target)
+    if(!current())return null
+    if(!initial.member || initial.status==='CLOSED')
+      throw new Error('room membership not confirmed after reconnect')
+    // Establish whether a private view is available, without mutating
+    // controller state before final membership verification.
+    let phase:string|null=null
+    let evidence:Awaited<ReturnType<DoudizhuHTTPClient['finalEvidence']>>|null=null
+    if(initial.activeHandId){
+      const fairness=await this.api.fairness(initial.activeHandId)
+      if(!current())return null
+      phase=fairness.phase
+    }else if(initial.lastHandId){
+      evidence=await this.api.finalEvidence(initial.lastHandId)
+      if(!current())return null
+    }
+    // A delayed A/v1 result can predate a genuine CLOSED/v2 change.
+    // An independent fresh read is required BEFORE any authoritative adopt.
+    const fresh=await this.api.room(initial.roomId)
+    if(!current())return null
+    if(!fresh.member || fresh.status==='CLOSED'){
+      this.forgetInvalidRecoveredRoom(initial.roomId)
+      throw new Error('room membership revoked or room closed during recovery')
+    }
+    if(fresh.version<initial.version ||
+       fresh.activeHandId!==initial.activeHandId ||
+       fresh.lastHandId!==initial.lastHandId)
+      throw new Error('room changed during recovery; retry authoritative lookup')
+    this.confirmActiveFairnessHand(fresh.activeHandId||null)
+    this.rooms.restoreTrustedRoom(fresh.roomId,fresh.version,fresh.lastClientSequence)
+    this.shell.useAuthoritativeHand(fresh.activeHandId||fresh.lastHandId||null)
+    // No suspension between final membership check and authoritative adoption.
+    if(fresh.activeHandId && (phase==='BIDDING'||phase==='PLAYING'||phase==='SETTLING')){
+      await this.shell.syncHand(fresh.activeHandId)
+      if(!current())return null
+    }else if(evidence){
       this.shell.acceptVerifiedFinalEvidence(evidence)
     }
-    return room
+    return current()?fresh:null
+  }
+  /** A later authoritative CLOSED/nonmember read must revoke an earlier
+   * adopted locator, without discarding unresolved durable commands. */
+  forgetInvalidRecoveredRoom(roomId:string):void{
+    if(this.disposed || this.rooms.state?.roomId!==roomId)return
+    if(this.rooms.needsReconciliation || this.fairness.needsReconciliation ||
+       this.actions.needsReconciliation || this.startingHand!==null)
+      throw new Error('cannot discard room with an unresolved durable operation')
+    this.confirmActiveFairnessHand(null)
+    this.rooms.forgetTrustedRoom(roomId)
+    this.shell.clearHand()
+    this.membershipGeneration++
+    this.recoveryGeneration++
   }
   async discoverRecoverableRooms():Promise<RoomRead[]> {
     if(this.disposed || !this.session.authenticated)
@@ -109,6 +155,7 @@ export class GameOnlineController {
   }
   /** Secure join code is a locator; the Go server checks membership and version. */
   async joinRoom(roomId: string): Promise<Readonly<{roomId:string;version:number}>> {
+    ++this.recoveryGeneration
     const view = await this.roomInfo(roomId)
     if (view.status === 'CLOSED') throw new Error('room not joinable')
     // Current members can resume an already active hand. This does NOT allow
@@ -165,6 +212,7 @@ export class GameOnlineController {
       if (!this.rooms.state) throw new Error('room not confirmed by server')
       await this.rooms.leave()
     }
+    ++this.recoveryGeneration
     // The room.leave receipt is definitive. Invalidate in-flight preparation
     // and erase the old hand's secret, but never discard an unknown outcome.
     this.resetFairnessAfterConfirmedTransition()
@@ -193,6 +241,7 @@ export class GameOnlineController {
   async startHand(handId: string): Promise<Readonly<RoomState>> {
     if (this.disposed || !this.session.authenticated)
       throw new Error('authenticated session required')
+    ++this.recoveryGeneration
     // Guard live Bid/Play/Pass as well as fairness. Either kind of pending
     // command could make a post-ACK hand binding throw and desynchronize UI.
     const releaseLive = this.actions.beginHandTransition()
@@ -238,6 +287,7 @@ export class GameOnlineController {
   async createRoom(): Promise<Readonly<{roomId:string;version:number}>> {
     if (this.disposed) throw new Error('online controller disposed')
     const roomId = 'room-' + await secureRoomCommandIdentity(this.platform.random).newRequestId()
+    ++this.recoveryGeneration
     const room = await this.rooms.create(roomId)
     this.confirmActiveFairnessHand(null)
     this.membershipGeneration++
@@ -275,6 +325,7 @@ export class GameOnlineController {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
+    ++this.recoveryGeneration
     this.session.dispose()
     this.fairness.dispose()
     this.shell.dispose()

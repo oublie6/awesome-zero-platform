@@ -120,3 +120,22 @@ test('new custodial hand start keeps mode inside exact durable command identity'
    handId:'hand-new',fairnessMode:'client-contributed-server-custodied-v1'
  })
 })
+
+test('authoritative CLOSED clears only a confirmed room; never destroys unknown durable create',async()=>{
+ const {room,api}=fixture()
+ room.restoreTrustedRoom('room-valid',3,5)
+ room.forgetTrustedRoom('unrelated')
+ assert.equal(room.state.roomId,'room-valid')
+ room.forgetTrustedRoom('room-valid')
+ assert.equal(room.state,null)
+ let rejectSend
+ api.command=()=>new Promise((_,reject)=>{rejectSend=reject})
+ const create=room.create('room-unknown')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.throws(()=>room.forgetTrustedRoom('room-unknown'),/outstanding|unresolved/)
+ rejectSend(new Error('connection lost'))
+ await assert.rejects(create,/connection lost/)
+ assert.equal(room.needsReconciliation,true)
+ assert.throws(()=>room.forgetTrustedRoom('room-unknown'),/unresolved/)
+ assert.equal(room.pendingRoomId,'room-unknown')
+})
