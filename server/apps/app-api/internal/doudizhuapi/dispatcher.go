@@ -238,11 +238,14 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 		}
 	case TypeRoomStart:
 		var payload struct {
-			HandID string `json:"handId"`
+			HandID       string `json:"handId"`
+			FairnessMode string `json:"fairnessMode,omitempty"`
 		}
 		if err = decodePayload(request.Payload, &payload); err == nil {
 			command.Name, command.AggregateType = application.CommandRoomHandStart, domain.AggregateRoom
-			durable, err = d.backend.StartRoomHand(ctx, actor, command, application.StartHandInput{HandID: domain.HandID(payload.HandID)})
+			durable, err = d.backend.StartRoomHand(ctx, actor, command, application.StartHandInput{
+				HandID: domain.HandID(payload.HandID), FairnessMode: domain.FairnessMode(payload.FairnessMode),
+			})
 		}
 	case TypeHandCommit:
 		var payload struct {
