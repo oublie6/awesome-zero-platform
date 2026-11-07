@@ -78,7 +78,7 @@ type ContributionSnapshot struct {
 }
 
 type HandSnapshot struct {
-	FairnessMode FairnessMode `json:"fairnessMode,omitempty"`
+	FairnessMode          FairnessMode `json:"fairnessMode,omitempty"`
 	ID                    HandID
 	RoomID                RoomID
 	Phase                 HandPhase
@@ -95,7 +95,7 @@ type HandSnapshot struct {
 }
 
 type Hand struct {
-	fairnessMode FairnessMode
+	fairnessMode          FairnessMode
 	id                    HandID
 	roomID                RoomID
 	phase                 HandPhase
@@ -112,7 +112,7 @@ type Hand struct {
 }
 
 type HandCreatedPayload struct {
-	FairnessMode FairnessMode `json:"fairnessMode,omitempty"`
+	FairnessMode          FairnessMode `json:"fairnessMode,omitempty"`
 	RoomID                RoomID
 	Seats                 [3]HandSeat
 	RevealKeyID           string
@@ -209,17 +209,21 @@ func NewHand(
 // NewClientCustodiedHand preserves all existing setup semantics while binding
 // a new one-step, client-generated / server-protected contribution protocol.
 func NewClientCustodiedHand(id HandID, roomID RoomID, seats [3]HandSeat,
- serverCommitment ServerCommitment, revealKeyID string,
- beaconPlan BeaconPlan, binding RevealKeyBinding,
+	serverCommitment ServerCommitment, revealKeyID string,
+	beaconPlan BeaconPlan, binding RevealKeyBinding,
 ) (*Hand, []Event, error) {
- hand, events, err := NewHand(id,roomID,seats,serverCommitment,revealKeyID,beaconPlan,binding)
- if err != nil { return nil,nil,err }
- hand.fairnessMode=FairnessModeClientCustodied
- payload,ok:=events[0].Payload.(HandCreatedPayload)
- if !ok { return nil,nil,fmt.Errorf("%w: create event",ErrInvalidArgument) }
- payload.FairnessMode=FairnessModeClientCustodied
- events[0].Payload=payload
- return hand,events,nil
+	hand, events, err := NewHand(id, roomID, seats, serverCommitment, revealKeyID, beaconPlan, binding)
+	if err != nil {
+		return nil, nil, err
+	}
+	hand.fairnessMode = FairnessModeClientCustodied
+	payload, ok := events[0].Payload.(HandCreatedPayload)
+	if !ok {
+		return nil, nil, fmt.Errorf("%w: create event", ErrInvalidArgument)
+	}
+	payload.FairnessMode = FairnessModeClientCustodied
+	events[0].Payload = payload
+	return hand, events, nil
 }
 
 func (h *Hand) Snapshot() HandSnapshot {
@@ -241,7 +245,7 @@ func (h *Hand) Snapshot() HandSnapshot {
 		beacon = &copyValue
 	}
 	return HandSnapshot{
-		FairnessMode: h.fairnessMode,
+		FairnessMode:          h.fairnessMode,
 		ID:                    h.id,
 		RoomID:                h.roomID,
 		Phase:                 h.phase,

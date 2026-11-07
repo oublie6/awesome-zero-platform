@@ -70,9 +70,9 @@ func RestoreRoom(snapshot RoomSnapshot) (*Room, error) {
 // RestoreHand reconstructs a hand from a repository snapshot without emitting
 // a creation event. Sensitive reveal plaintext is intentionally absent.
 func RestoreHand(snapshot HandSnapshot) (*Hand, error) {
- if snapshot.FairnessMode != "" && snapshot.FairnessMode != FairnessModeClientCustodied {
-  return nil, fmt.Errorf("%w: unsupported fairness mode",ErrInvalidArgument)
- }
+	if snapshot.FairnessMode != "" && snapshot.FairnessMode != FairnessModeClientCustodied {
+		return nil, fmt.Errorf("%w: unsupported fairness mode", ErrInvalidArgument)
+	}
 	if err := validateIdentifier("handId", string(snapshot.ID)); err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func RestoreHand(snapshot HandSnapshot) (*Hand, error) {
 	}
 
 	hand := &Hand{
-		fairnessMode: snapshot.FairnessMode,
+		fairnessMode:          snapshot.FairnessMode,
 		id:                    snapshot.ID,
 		roomID:                snapshot.RoomID,
 		phase:                 snapshot.Phase,
@@ -229,12 +229,12 @@ func validateHandSnapshotState(hand *Hand) error {
 	}
 	switch hand.phase {
 	case HandFairnessCommitting:
-  if hand.fairnessMode == FairnessModeClientCustodied {
-   if commits>=3 || reveals != commits || hand.beacon != nil {
-    return fmt.Errorf("%w: custodied partial contribution state",ErrInvalidArgument)
-   }
-   break
-  }
+		if hand.fairnessMode == FairnessModeClientCustodied {
+			if commits >= 3 || reveals != commits || hand.beacon != nil {
+				return fmt.Errorf("%w: custodied partial contribution state", ErrInvalidArgument)
+			}
+			break
+		}
 		if commits >= 3 || reveals != 0 || hand.beacon != nil {
 			return fmt.Errorf("%w: committing hand snapshot", ErrInvalidArgument)
 		}

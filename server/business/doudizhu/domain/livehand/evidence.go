@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
-    "github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/bidding"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/bidding"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/carddeck"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/playing"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/randomizedsetup"
@@ -25,7 +25,7 @@ const FinalVerificationReportV1 = "doudizhu-final-verification-report-v1"
 var ErrInvalidFinalEvidence = errors.New("doudizhu live hand: invalid final evidence")
 
 type FinalVerificationReport struct {
- FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
+	FairnessMode     domain.FairnessMode  `json:"fairnessMode,omitempty"`
 	Version          string               `json:"v"`
 	HandID           string               `json:"handId"`
 	Status           gamecore.FinalStatus `json:"status"`
@@ -63,8 +63,8 @@ func verifyCompletedRecord(record gamecore.FinalRecord) (FinalVerificationReport
 	if err := decodeFinalEvidenceJSON(record.Payload(), &payload); err != nil {
 		return FinalVerificationReport{}, invalidEvidence("completed payload", err)
 	}
-	if (payload.FairnessMode!="" && payload.FairnessMode!=domain.FairnessModeClientCustodied) ||
-    payload.Version != CompletedPayloadV1 || payload.Status != string(gamecore.FinalStatusCompleted) ||
+	if (payload.FairnessMode != "" && payload.FairnessMode != domain.FairnessModeClientCustodied) ||
+		payload.Version != CompletedPayloadV1 || payload.Status != string(gamecore.FinalStatusCompleted) ||
 		payload.HandID != string(record.InstanceID()) || payload.StateVersion != record.Version() {
 		return FinalVerificationReport{}, invalidEvidence("completed identity", gamecore.ErrVerificationFailed)
 	}
@@ -110,7 +110,7 @@ func verifyCompletedRecord(record gamecore.FinalRecord) (FinalVerificationReport
 	}
 
 	return FinalVerificationReport{
-        FairnessMode:payload.FairnessMode,
+		FairnessMode:     payload.FairnessMode,
 		Version:          FinalVerificationReportV1,
 		HandID:           payload.HandID,
 		Status:           record.Status(),
@@ -131,8 +131,8 @@ func verifyAbortedRecord(record gamecore.FinalRecord) (FinalVerificationReport, 
 	if err := decodeFinalEvidenceJSON(record.Payload(), &payload); err != nil {
 		return FinalVerificationReport{}, invalidEvidence("aborted payload", err)
 	}
-	if (payload.FairnessMode!="" && payload.FairnessMode!=domain.FairnessModeClientCustodied) ||
-    payload.Version != TerminalPayloadV1 || payload.Status != string(gamecore.FinalStatusAborted) ||
+	if (payload.FairnessMode != "" && payload.FairnessMode != domain.FairnessModeClientCustodied) ||
+		payload.Version != TerminalPayloadV1 || payload.Status != string(gamecore.FinalStatusAborted) ||
 		payload.HandID != string(record.InstanceID()) || payload.StateVersion != record.Version() ||
 		strings.TrimSpace(payload.Reason) == "" || payload.Reason != strings.TrimSpace(payload.Reason) || len(payload.Reason) > 128 {
 		return FinalVerificationReport{}, invalidEvidence("aborted identity", gamecore.ErrVerificationFailed)
@@ -149,7 +149,7 @@ func verifyAbortedRecord(record gamecore.FinalRecord) (FinalVerificationReport, 
 		return FinalVerificationReport{}, invalidEvidence("current hands", err)
 	}
 	return FinalVerificationReport{
-        FairnessMode:payload.FairnessMode,
+		FairnessMode:     payload.FairnessMode,
 		Version:          FinalVerificationReportV1,
 		HandID:           payload.HandID,
 		Status:           record.Status(),

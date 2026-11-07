@@ -96,12 +96,12 @@ func (d *Dispatcher) IssueRevealContext(ctx context.Context, actor domain.Accoun
 		return RevealContextResponse{}, fmt.Errorf("%w: stale reveal binding", domain.ErrVersionConflict)
 	}
 	now := d.clock.Now().UTC().Truncate(time.Millisecond)
-    version:=RevealTicketV1
-    commitment:=hex.EncodeToString(binding.Commitment[:])
-    if binding.Mode==domain.FairnessModeClientCustodied {
-      version=CustodiedTicketV1
-      commitment=""
-    }
+	version := RevealTicketV1
+	commitment := hex.EncodeToString(binding.Commitment[:])
+	if binding.Mode == domain.FairnessModeClientCustodied {
+		version = CustodiedTicketV1
+		commitment = ""
+	}
 	ticket := SignedRevealContext{Claims: RevealTicketClaims{
 		Version: version, Actor: string(actor), HandID: string(handID), RequestID: request.RequestID,
 		ClientSeq: request.ClientSeq, ExpectedVersion: request.ExpectedVersion, Seat: uint8(binding.Seat),
@@ -122,25 +122,31 @@ func (s *revealTicketIssuer) sign(claims RevealTicketClaims) string {
 	mac.Write(encoded)
 	return hex.EncodeToString(mac.Sum(nil))
 }
-func revealTicketAAD(claims RevealTicketClaims) ([]byte,error) {
-  command:=application.Command{
-    Version:application.CommandProtocolV1,
-    CommandID:claims.RequestID,AggregateType:domain.AggregateHand,
-    AggregateID:claims.HandID,ClientSeq:claims.ClientSeq,ExpectedVersion:claims.ExpectedVersion,
-    IssuedAt:time.UnixMilli(claims.IssuedAt).UTC(),ExpiresAt:time.UnixMilli(claims.ExpiresAt).UTC(),
-  }
-  if claims.Version==CustodiedTicketV1 {
-    if claims.Commitment!="" { return nil,ErrInvalidRequest }
-    command.Name=application.CommandHandContributionSubmit
-    return application.BuildCustodiedAAD(command,domain.AccountID(claims.Actor),domain.Seat(claims.Seat),claims.KeyID)
-  }
-  if claims.Version!=RevealTicketV1 {return nil,ErrInvalidRequest}
-  var commitment domain.Commitment
-  decoded,err:=hex.DecodeString(claims.Commitment)
-  if err!=nil || len(decoded)!=32{return nil,ErrInvalidRequest}
-  copy(commitment[:],decoded)
-  command.Name=application.CommandHandRevealSubmit
-  return application.BuildRevealAAD(command,domain.AccountID(claims.Actor),domain.Seat(claims.Seat),commitment,claims.KeyID)
+func revealTicketAAD(claims RevealTicketClaims) ([]byte, error) {
+	command := application.Command{
+		Version:   application.CommandProtocolV1,
+		CommandID: claims.RequestID, AggregateType: domain.AggregateHand,
+		AggregateID: claims.HandID, ClientSeq: claims.ClientSeq, ExpectedVersion: claims.ExpectedVersion,
+		IssuedAt: time.UnixMilli(claims.IssuedAt).UTC(), ExpiresAt: time.UnixMilli(claims.ExpiresAt).UTC(),
+	}
+	if claims.Version == CustodiedTicketV1 {
+		if claims.Commitment != "" {
+			return nil, ErrInvalidRequest
+		}
+		command.Name = application.CommandHandContributionSubmit
+		return application.BuildCustodiedAAD(command, domain.AccountID(claims.Actor), domain.Seat(claims.Seat), claims.KeyID)
+	}
+	if claims.Version != RevealTicketV1 {
+		return nil, ErrInvalidRequest
+	}
+	var commitment domain.Commitment
+	decoded, err := hex.DecodeString(claims.Commitment)
+	if err != nil || len(decoded) != 32 {
+		return nil, ErrInvalidRequest
+	}
+	copy(commitment[:], decoded)
+	command.Name = application.CommandHandRevealSubmit
+	return application.BuildRevealAAD(command, domain.AccountID(claims.Actor), domain.Seat(claims.Seat), commitment, claims.KeyID)
 }
 func (d *Dispatcher) verifyRevealContext(actor domain.AccountID, request CommandRequest) (time.Time, time.Time, error) {
 	if d == nil || d.revealTickets == nil || request.RevealContext == nil {
@@ -156,9 +162,11 @@ func (d *Dispatcher) verifyRevealContext(actor domain.AccountID, request Command
 	if err != nil || !hmac.Equal(received, expected) {
 		return time.Time{}, time.Time{}, ErrInvalidRequest
 	}
-	expectedVersion:=RevealTicketV1
-    if request.Type==TypeHandContribution { expectedVersion=CustodiedTicketV1 }
-    if c.Version != expectedVersion || c.Actor != string(actor) || c.HandID != request.AggregateID ||
+	expectedVersion := RevealTicketV1
+	if request.Type == TypeHandContribution {
+		expectedVersion = CustodiedTicketV1
+	}
+	if c.Version != expectedVersion || c.Actor != string(actor) || c.HandID != request.AggregateID ||
 		c.RequestID != request.RequestID || c.ClientSeq != request.ClientSeq ||
 		c.ExpectedVersion != request.ExpectedVersion || !domain.Seat(c.Seat).Valid() ||
 		len(c.KeyID) == 0 || len(c.KeyID) > 128 || len(c.PublicKeySHA256) != 64 {

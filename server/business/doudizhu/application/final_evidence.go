@@ -45,7 +45,7 @@ type FinalEvidenceService struct {
 }
 
 type FinalEvidenceResult struct {
- FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
+	FairnessMode domain.FairnessMode              `json:"fairnessMode,omitempty"`
 	Version      string                           `json:"v"`
 	HandID       domain.HandID                    `json:"handId"`
 	Status       gamecore.FinalStatus             `json:"status"`
@@ -88,12 +88,12 @@ func (s *FinalEvidenceService) Get(ctx context.Context, actor domain.AccountID, 
 	if err != nil {
 		return FinalEvidenceResult{}, fmt.Errorf("verify final evidence: %w", err)
 	}
-    if report.FairnessMode!=hand.FairnessMode {
-      return FinalEvidenceResult{},fmt.Errorf("%w: archive custody mode mismatch",ErrFinalEvidenceInvalid)
-    }
+	if report.FairnessMode != hand.FairnessMode {
+		return FinalEvidenceResult{}, fmt.Errorf("%w: archive custody mode mismatch", ErrFinalEvidenceInvalid)
+	}
 	payload := record.Payload()
 	return FinalEvidenceResult{
-        FairnessMode:hand.FairnessMode,
+		FairnessMode: hand.FairnessMode,
 		Version:      FinalEvidenceResultV1,
 		HandID:       handID,
 		Status:       record.Status(),

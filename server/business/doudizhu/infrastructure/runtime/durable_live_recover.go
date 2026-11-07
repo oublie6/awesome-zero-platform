@@ -170,7 +170,7 @@ func (c *LiveHandCoordinator) RecoverActive(ctx context.Context,
 // intentionally excluded because lifecycle advances them after the genesis.
 func sameImmutableRecoveryHand(authoritative, genesis domain.HandSnapshot) bool {
 	return authoritative.ID == genesis.ID &&
-        authoritative.FairnessMode == genesis.FairnessMode &&
+		authoritative.FairnessMode == genesis.FairnessMode &&
 		authoritative.RoomID == genesis.RoomID &&
 		reflect.DeepEqual(authoritative.Seats, genesis.Seats) &&
 		authoritative.ServerCommitment == genesis.ServerCommitment &&
