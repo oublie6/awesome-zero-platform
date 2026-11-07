@@ -171,3 +171,18 @@ test('custodied final phrase verification recomputes canonical commitment locall
  assert.ok(Buffer.from(aad).includes(Buffer.from('doudizhu.hand.fairness.contribution.submit.v1')))
  assert.throws(()=>canonicalCustodiedAAD({...claims,v:'doudizhu-reveal-context-v1'}),/invalid/)
 })
+
+test('custodied H2 cannot initialize legacy recovery/commit even while UI mode is unknown',async()=>{
+ const view={handId:'H2',phase:'FAIRNESS_COMMITTING',version:1,seat:2,
+   fairnessMode:'client-contributed-server-custodied-v1',committed:false,revealed:false,
+   lastClientSequence:0}
+ let generated=0
+ const api={fairness:async()=>view,command:async()=>{throw Error('must not send legacy command')}}
+ const platform={random:{bytes:async n=>{generated++;return new Uint8Array(n).fill(5)}}}
+ const session=new GameFairnessActions(api,platform,{})
+ await assert.rejects(session.prepareRecoveryKit('H2'),/legacy recovery forbidden/)
+ await assert.rejects(session.commit('H2'),/legacy commit forbidden/)
+ assert.equal(generated,0,'managed H2 must not generate any legacy secret')
+ assert.equal(session.hasRecoverySecret,false)
+ session.dispose()
+})

@@ -115,3 +115,18 @@ test('new hands use player text and server custody without game-local backup',as
  assert.match(actions,/random\?\.fill\(0\)/)
  assert.doesNotMatch(actions.split('async submitCustodied(')[1].split('async retryUnknown(')[0],/localStorage|wx\.setStorage|exportRecoveryKit/)
 })
+
+test('R18 recovery UI gates unknown H2 mode and discovers rooms on fresh login',async()=>{
+ const bootstrap=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const core=await readFile(new URL('../assets/scripts/game/GameFairnessActions.ts',import.meta.url),'utf8')
+ assert.match(bootstrap,/private fairnessMode:'client-contributed-server-custodied-v1'\|''\|null=null/)
+ assert.match(bootstrap,/else if\(this\.handID && this\.fairnessMode===''/)
+ assert.ok(bootstrap.indexOf("this.fairnessMode=null\n        this.selectedCards.clear()")<
+    bootstrap.indexOf("if(this.screen==='rooms')this.renderScreen('rooms')",bootstrap.indexOf('private async refreshRoom')))
+ assert.match(bootstrap,/await this\.recoverMyRooms\(\)/)
+ assert.match(bootstrap,/online\.discoverRecoverableRooms\(\)/)
+ assert.match(bootstrap,/online\.reconnectAndResync\(roomID\)/)
+ for(const op of ['prepareRecoveryKit','importRecoveryKit','commit','reveal']){
+  assert.match(core,new RegExp('legacy (recovery|commit|reveal) forbidden for server-custodied hand'))
+ }
+})

@@ -41,6 +41,31 @@ export class DoudizhuHTTPClient {
     )
     return parseRoomRead(unwrap(raw), roomId)
   }
+
+  /** Authoritative account-scoped recovery locators. A device must not keep
+   * game room IDs just to survive a restart; each candidate is member-scoped
+   * and will be revalidated again before it can be adopted. */
+  async recoverableRooms():Promise<RoomRead[]> {
+    const raw=await this.transport.request<unknown>('/v1/doudizhu/me/rooms',
+      {accessToken:this.token()})
+    const data=unwrap(raw)
+    if(!record(data) || !Array.isArray(data.rooms) || data.rooms.length>32 ||
+      Object.keys(data).length!==1)
+      throw new Error('invalid authoritative recoverable rooms')
+    const seen=new Set<string>()
+    const rooms:RoomRead[]=[]
+    for(const value of data.rooms){
+      if(!record(value)||typeof value.roomId!=='string'||
+        !/^[A-Za-z0-9_-]{1,128}$/.test(value.roomId) || seen.has(value.roomId))
+        throw new Error('invalid recoverable room ID')
+      seen.add(value.roomId)
+      const room=parseRoomRead(value,value.roomId)
+      if(!room.member || room.status==='CLOSED')
+        throw new Error('unauthorized recoverable room projection')
+      rooms.push(room)
+    }
+    return rooms
+  }
   /** Pre-deal state must come from Go; the live-hand endpoint is unavailable until dealing. */
   async fairness(handId: string): Promise<FairnessRead> {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(handId)) throw new Error('invalid fairness hand id')

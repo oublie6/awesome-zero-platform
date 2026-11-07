@@ -173,6 +173,18 @@ func (d *Dispatcher) RoomView(ctx context.Context, actor domain.AccountID, roomI
 	return d.backend.GetRoomView(ctx, actor, roomID)
 }
 
+// RecoverableRooms is read-only, identity-scoped, and independently rechecks
+// each discovered room's membership and historical-hand authorization.
+func (d *Dispatcher) RecoverableRooms(ctx context.Context, actor domain.AccountID) ([]application.RoomView, error) {
+	reader, ok := d.backend.(interface {
+		GetRecoverableRooms(context.Context, domain.AccountID) ([]application.RoomView, error)
+	})
+	if !ok {
+		return nil, ErrInvalidRequest
+	}
+	return reader.GetRecoverableRooms(ctx, actor)
+}
+
 func (d *Dispatcher) PublicView(ctx context.Context, actor domain.AccountID, handID domain.HandID) (ViewResult, error) {
 	view, err := d.backend.GetHandPublicView(ctx, actor, handID)
 	if err != nil {

@@ -183,6 +183,10 @@ service main-api {
     @handler route_get_v1_doudizhu_rooms_roomId
     get /v1/doudizhu/rooms/:roomId
 
+    @doc "GET /v1/doudizhu/me/rooms"
+    @handler route_get_v1_doudizhu_me_rooms
+    get /v1/doudizhu/me/rooms
+
     @doc "POST /v1/doudizhu/commands"
     @handler route_post_v1_doudizhu_commands
     post /v1/doudizhu/commands
