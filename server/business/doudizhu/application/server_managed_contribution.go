@@ -79,9 +79,9 @@ func (s *Service) prepareManagedContributions(
 			Normalization string `json:"normalization"`
 		}{
 			Version: RevealPlaintextV1, HandID: string(hand.Snapshot().ID),
-			Seat: uint8(contribution.seat.Seat),
+			Seat:         uint8(contribution.seat.Seat),
 			SecureRandom: base64.RawURLEncoding.EncodeToString(contribution.random[:]),
-			Phrase: serverManagedPhrase, Normalization: revealNormalizationNFKCV1,
+			Phrase:       serverManagedPhrase, Normalization: revealNormalizationNFKCV1,
 		})
 		if err != nil {
 			return nil, err
@@ -107,7 +107,7 @@ func (s *Service) prepareManagedContributions(
 			CommandID: commandID, ContributionDigest: contribution.digest,
 			ProtectionKeyID: protected.KeyID, Nonce: append([]byte(nil), protected.Nonce...),
 			Ciphertext: append([]byte(nil), protected.Ciphertext...),
-			AADDigest: protected.AADDigest, CreatedAt: now,
+			AADDigest:  protected.AADDigest, CreatedAt: now,
 		}
 		if err := tx.InsertContributionRecord(ctx, record); err != nil {
 			return nil, err
