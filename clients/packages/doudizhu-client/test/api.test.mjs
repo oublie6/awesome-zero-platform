@@ -116,3 +116,32 @@ test('real partially occupied Go room has omitted empty-seat account IDs',async(
   }})},()=> 'token')
  await assert.rejects(invalid.room('r-1'),/member room/)
 })
+
+test('server-issued custodial HPKE ticket is authenticated and version separated',async()=>{
+ const request={requestId:'request-custody',clientSeq:2,expectedVersion:3}
+ const ticket={v:'doudizhu-custodied-context-v1',ticket:{
+  claims:{v:'doudizhu-custodied-context-v1',actor:'alice',handId:'hand-1',
+   requestId:'request-custody',clientSeq:2,expectedVersion:3,seat:1,
+   commitment:'',keyId:'key-one',publicKeySha256:'b'.repeat(64),
+   issuedAt:100000,expiresAt:160000},mac:'a'.repeat(64)},aad:'YWJj'}
+ const api=data=>new DoudizhuHTTPClient({request:async()=>({code:'OK',data})},()=> 'auth')
+ assert.equal((await api(ticket).revealContext('hand-1',request,'custodied')).v,'doudizhu-custodied-context-v1')
+ await assert.rejects(api(ticket).revealContext('hand-1',request),/signed reveal context/)
+ await assert.rejects(api({...ticket,ticket:{...ticket.ticket,claims:{
+  ...ticket.ticket.claims,commitment:'x'.repeat(64)}}}).revealContext('hand-1',request,'custodied'),/mismatched/)
+})
+test('account-authorized final own-random endpoint rejects malformed and mismatched material',async()=>{
+ const expected={v:'doudizhu-own-contribution-v1',fairnessMode:'client-contributed-server-custodied-v1',
+  handId:'hand-1',seat:1,secureRandom:'A'.repeat(43),commitment:'a'.repeat(64),
+  contributionDigest:'b'.repeat(64)}
+ const calls=[]
+ const api=data=>new DoudizhuHTTPClient({request:async(path,opts)=>{
+  calls.push({path,opts});return {code:'OK',data}
+ }},()=> 'private-access-token')
+ assert.equal((await api(expected).ownContribution('hand-1')).handId,'hand-1')
+ assert.equal(calls[0].path,'/v1/doudizhu/hands/hand-1/own-contribution')
+ assert.equal(calls[0].opts.accessToken,'private-access-token')
+ await assert.rejects(api({...expected,handId:'hand-other'}).ownContribution('hand-1'),/invalid own/)
+ await assert.rejects(api({...expected,phrase:'should never be returned',secureRandom:'bad'})
+   .ownContribution('hand-1'),/invalid own/)
+})
