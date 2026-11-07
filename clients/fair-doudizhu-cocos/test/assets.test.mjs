@@ -99,3 +99,14 @@ test('Round16 HTTP H2 refresh defers rebinding until durable WSS start receipt',
  const start=controller.split('async startHand(handId: string): Promise<Readonly<RoomState>> {')[1].split('async createRoom()')[0]
  assert.ok(start.indexOf('this.startingHand = null\n            this.confirmActiveFairnessHand(handId)') > start.indexOf('await this.rooms.startHand(handId)'))
 })
+
+test('server-managed fairness skips manual backup controls but keeps legacy compatibility',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(source,/if\(this\.fairnessMode!=='server-managed-v1'\)/)
+ assert.match(source,/this\.fairnessMode='server-managed-v1'/)
+ assert.match(source,/fairness\.fairnessMode/)
+ assert.match(source,/name:'RoomEvidence'/)
+ assert.match(source,/api\.finalEvidence\(handID\)/)
+ const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
+ assert.match(controller,/this\.rooms\.startHand\(handId, 'server-managed-v1'\)/)
+})
