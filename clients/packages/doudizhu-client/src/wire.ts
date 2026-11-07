@@ -8,7 +8,7 @@ export const WIRE_RESULT_VERSION = 'doudizhu-api-command-result-v1' as const
 
 export type WireCommandType =
   | 'room.create' | 'room.join' | 'room.leave' | 'room.ready' | 'room.hand.start'
-  | 'hand.commit' | 'hand.reveal' | 'hand.bid' | 'hand.play' | 'hand.pass' | 'hand.cancel'
+  | 'hand.commit' | 'hand.reveal' | 'hand.contribution' | 'hand.bid' | 'hand.play' | 'hand.pass' | 'hand.cancel'
 
 export interface WireCommand {
   v: typeof WIRE_REQUEST_VERSION
@@ -22,7 +22,7 @@ export interface WireCommand {
 }
 export interface SignedRevealContext {
  claims:{
-  v:'doudizhu-reveal-context-v1'
+  v:'doudizhu-reveal-context-v1'|'doudizhu-custodied-context-v1'
   actor:string
   handId:string
   requestId:string
@@ -49,7 +49,7 @@ export interface WireCommandResult {
 const commandTypes: Readonly<Record<WireCommandType, 'room' | 'hand'>> = {
   'room.create': 'room', 'room.join': 'room', 'room.leave': 'room',
   'room.ready': 'room', 'room.hand.start': 'room',
-  'hand.commit': 'hand', 'hand.reveal': 'hand',
+  'hand.commit': 'hand', 'hand.reveal': 'hand', 'hand.contribution': 'hand',
   'hand.bid': 'hand', 'hand.play': 'hand',
   'hand.pass': 'hand', 'hand.cancel': 'hand'
 }
@@ -72,7 +72,7 @@ export function createWireCommand(input: Omit<WireCommand, 'v'>): WireCommand {
     (input.type === 'room.create' && input.expectedVersion !== 0)) {
     throw new Error('invalid Go dispatcher command')
   }
-  if (input.type !== 'hand.reveal' && input.revealContext !== undefined)
+  if (input.type !== 'hand.reveal' && input.type !== 'hand.contribution' && input.revealContext !== undefined)
     throw new Error('unexpected reveal ticket on command')
   const payload = input.payload ?? {}
   if (!object(payload)) throw new Error('invalid command payload')
@@ -88,7 +88,10 @@ export function createWireCommand(input: Omit<WireCommand, 'v'>): WireCommand {
       if (!exactKeys(['ready']) || typeof payload.ready !== 'boolean') throw new Error('invalid ready payload')
       break
     case 'room.hand.start':
-      if (!exactKeys(['handId']) || !id(payload.handId as string)) throw new Error('invalid hand start payload')
+      if ((!exactKeys(['handId']) && !exactKeys(['handId','fairnessMode'])) ||
+          !id(payload.handId as string) ||
+          (payload.fairnessMode!==undefined && payload.fairnessMode!=='client-contributed-server-custodied-v1'))
+        throw new Error('invalid hand start payload')
       break
     case 'hand.commit':
       if (!exactKeys(['commitment']) || typeof payload.commitment !== 'string' ||
@@ -104,17 +107,18 @@ export function createWireCommand(input: Omit<WireCommand, 'v'>): WireCommand {
           card.trim() === card && card.length > 0 && card.length <= 3))
         throw new Error('invalid play cards')
       break
-    case 'hand.reveal': {
+    case 'hand.reveal': case 'hand.contribution': {
       const ticket=input.revealContext
       const claims=ticket?.claims
-      if(!ticket || !object(claims) || claims.v!=='doudizhu-reveal-context-v1' ||
+      if(!ticket || !object(claims) || claims.v!==(input.type==='hand.contribution'?'doudizhu-custodied-context-v1':'doudizhu-reveal-context-v1') ||
         typeof ticket.mac!=='string' || !/^[0-9a-f]{64}$/.test(ticket.mac) ||
         claims.handId!==input.aggregateId || claims.requestId!==input.requestId ||
         claims.clientSeq!==input.clientSeq || claims.expectedVersion!==input.expectedVersion ||
         typeof claims.actor!=='string' || !id(claims.actor) ||
         !integer(claims.seat,1) || claims.seat>3 ||
         typeof claims.keyId!=='string' || !id(claims.keyId) ||
-        typeof claims.commitment!=='string' || !/^[0-9a-f]{64}$/.test(claims.commitment) ||
+        typeof claims.commitment!=='string' ||
+        (input.type==='hand.contribution' ? claims.commitment!=='' : !/^[0-9a-f]{64}$/.test(claims.commitment)) ||
         typeof claims.publicKeySha256!=='string' || !/^[0-9a-f]{64}$/.test(claims.publicKeySha256) ||
         !integer(claims.issuedAt,0) || !integer(claims.expiresAt,1) ||
         claims.expiresAt<=claims.issuedAt)
