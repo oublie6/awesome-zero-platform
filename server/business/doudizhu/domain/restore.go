@@ -70,6 +70,9 @@ func RestoreRoom(snapshot RoomSnapshot) (*Room, error) {
 // RestoreHand reconstructs a hand from a repository snapshot without emitting
 // a creation event. Sensitive reveal plaintext is intentionally absent.
 func RestoreHand(snapshot HandSnapshot) (*Hand, error) {
+	if snapshot.FairnessMode != "" && snapshot.FairnessMode != FairnessModeServerManaged {
+		return nil, fmt.Errorf("%w: unsupported fairness mode", ErrInvalidArgument)
+	}
 	if err := validateIdentifier("handId", string(snapshot.ID)); err != nil {
 		return nil, err
 	}
@@ -99,6 +102,7 @@ func RestoreHand(snapshot HandSnapshot) (*Hand, error) {
 	}
 
 	hand := &Hand{
+		fairnessMode:          snapshot.FairnessMode,
 		id:                    snapshot.ID,
 		roomID:                snapshot.RoomID,
 		phase:                 snapshot.Phase,
