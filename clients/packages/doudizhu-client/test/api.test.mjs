@@ -145,3 +145,22 @@ test('account-authorized final own-random endpoint rejects malformed and mismatc
  await assert.rejects(api({...expected,phrase:'should never be returned',secureRandom:'bad'})
    .ownContribution('hand-1'),/invalid own/)
 })
+
+test('recoverable rooms are authenticated, membership-scoped and strictly parsed',async()=>{
+ const own={roomId:'room-cold',version:8,status:'HAND_ACTIVE',occupied:3,
+  member:true,lastClientSequence:6,activeHandId:'hand-cold',seats:[
+    {position:1,accountId:'a',ready:false},{position:2,accountId:'b',ready:false},
+    {position:3,accountId:'c',ready:false}]}
+ const calls=[]
+ const api=(data,token='member-token')=>new DoudizhuHTTPClient({
+  request:async(path,options)=>{calls.push({path,options});return {code:'OK',data}}
+ },()=>token)
+ assert.deepEqual(await api({rooms:[own]}).recoverableRooms(),[own])
+ assert.equal(calls[0].path,'/v1/doudizhu/me/rooms')
+ assert.equal(calls[0].options.accessToken,'member-token')
+ await assert.rejects(api({rooms:[{...own,member:false}]}).recoverableRooms(),/invalid|unauthorized/)
+ await assert.rejects(api({rooms:[own,own]}).recoverableRooms(),/invalid/)
+ await assert.rejects(api({rooms:[{...own,activeHandId:'hand-cold',seats:undefined}]}).recoverableRooms(),/invalid/)
+ await assert.rejects(api({rooms:[{...own,status:'CLOSED'}]}).recoverableRooms(),/unauthorized/)
+ await assert.rejects(api({rooms:[own]},'').recoverableRooms(),/token required/)
+})

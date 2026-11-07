@@ -502,3 +502,56 @@ test('Round16 failed hand start releases controller lock without clearing origin
   assert.equal(first.hasRecoverySecret,false)
   online.dispose()
 })
+
+test('cold controller discovers the authenticated active room without any device game locator',async()=>{
+ const f=fixture()
+ const room={roomId:'room-cold',version:18,status:'HAND_ACTIVE',occupied:3,
+  member:true,lastClientSequence:9,activeHandId:'hand-cold',seats:[
+   {position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:false},
+   {position:3,accountId:'third',ready:false}]}
+ const paths=[]
+ f.platform.http.request=async path=>{
+  paths.push(path)
+  return {code:'OK',data:path==='/v1/doudizhu/me/rooms'?{rooms:[room]}:room}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const synced=[]
+ online.shell.syncHand=async id=>{synced.push(id)}
+ assert.equal(online.rooms.state,null)
+ const result=await online.reconnectAndResync()
+ assert.equal(result.roomId,'room-cold')
+ assert.equal(online.rooms.state.roomId,'room-cold')
+ assert.equal(online.rooms.state.version,18)
+ assert.deepEqual(synced,['hand-cold'])
+ assert.deepEqual(paths,['/v1/doudizhu/me/rooms','/v1/doudizhu/rooms/room-cold'])
+ const joined=await online.joinRoom('room-cold')
+ assert.equal(joined.roomId,'room-cold','already seated HAND_ACTIVE player must be able to resume')
+ assert.deepEqual(synced,['hand-cold','hand-cold'])
+ online.dispose()
+})
+test('cold recovery refuses ambiguous active rooms instead of choosing wrong game',async()=>{
+ const f=fixture()
+ const v=id=>({roomId:id,version:1,status:'HAND_ACTIVE',occupied:3,member:true,
+  lastClientSequence:1,activeHandId:'hand-'+id,seats:[
+  {position:1,accountId:'actor',ready:false},{position:2,accountId:'b',ready:false},
+  {position:3,accountId:'c',ready:false}]})
+ f.platform.http.request=async()=>({code:'OK',data:{rooms:[v('first'),v('second')]}})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await assert.rejects(online.reconnectAndResync(),/multiple active rooms/)
+ assert.equal(online.rooms.state,null)
+ assert.equal((await online.discoverRecoverableRooms()).length,2)
+ online.dispose()
+})
+test('nonmember may not join an already active hand through a stale locator',async()=>{
+ const f=fixture({roomMember:false})
+ f.platform.http.request=async()=>({code:'OK',data:{
+  roomId:'room-rejoin',version:12,status:'HAND_ACTIVE',occupied:3,
+  member:false,lastClientSequence:0}})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await assert.rejects(online.joinRoom('room-rejoin'),/not joinable/)
+ assert.equal(online.rooms.state,null)
+ online.dispose()
+})
