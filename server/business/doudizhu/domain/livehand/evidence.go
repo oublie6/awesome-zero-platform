@@ -25,7 +25,7 @@ const FinalVerificationReportV1 = "doudizhu-final-verification-report-v1"
 var ErrInvalidFinalEvidence = errors.New("doudizhu live hand: invalid final evidence")
 
 type FinalVerificationReport struct {
-	FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
+	FairnessMode     domain.FairnessMode  `json:"fairnessMode,omitempty"`
 	Version          string               `json:"v"`
 	HandID           string               `json:"handId"`
 	Status           gamecore.FinalStatus `json:"status"`
@@ -110,7 +110,7 @@ func verifyCompletedRecord(record gamecore.FinalRecord) (FinalVerificationReport
 	}
 
 	return FinalVerificationReport{
-		FairnessMode: payload.FairnessMode,
+		FairnessMode:     payload.FairnessMode,
 		Version:          FinalVerificationReportV1,
 		HandID:           payload.HandID,
 		Status:           record.Status(),
@@ -149,7 +149,7 @@ func verifyAbortedRecord(record gamecore.FinalRecord) (FinalVerificationReport, 
 		return FinalVerificationReport{}, invalidEvidence("current hands", err)
 	}
 	return FinalVerificationReport{
-		FairnessMode: payload.FairnessMode,
+		FairnessMode:     payload.FairnessMode,
 		Version:          FinalVerificationReportV1,
 		HandID:           payload.HandID,
 		Status:           record.Status(),
