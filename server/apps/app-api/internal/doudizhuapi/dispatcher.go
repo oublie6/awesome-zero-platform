@@ -53,7 +53,6 @@ type Backend interface {
 	StartRoomHand(context.Context, domain.AccountID, application.Command, application.StartHandInput) (application.CommandResult, error)
 	SubmitHandCommit(context.Context, domain.AccountID, application.Command, application.SubmitCommitInput) (application.CommandResult, error)
 	SubmitHandReveal(context.Context, domain.AccountID, application.Command, application.SubmitRevealInput) (application.CommandResult, error)
-  SubmitHandContribution(context.Context,domain.AccountID,application.Command,application.SubmitContributionInput) (application.CommandResult,error)
 	LockHandBeacon(context.Context, domain.AccountID, application.Command, application.LockBeaconInput) (application.CommandResult, error)
 	MarkHandDealt(context.Context, domain.AccountID, application.Command) (application.CommandResult, error)
 	SubmitLiveHandBid(context.Context, domain.AccountID, domain.HandID, uint64, bidding.Score) (application.LiveHandCommandResult, error)
@@ -192,6 +191,21 @@ func (d *Dispatcher) FinalEvidence(ctx context.Context, actor domain.AccountID, 
 	return d.evidence.Get(ctx, actor, handID)
 }
 
+// OwnContribution is only available after verified final archive and only for
+// an authenticated seat. It never returns the phrase or other seats' secrets.
+func (d *Dispatcher) OwnContribution(ctx context.Context,actor domain.AccountID,
+ handID domain.HandID) (application.OwnContributionVerification,error) {
+ if d==nil || d.evidence==nil{return application.OwnContributionVerification{},ErrInvalidRequest}
+ final,err:=d.evidence.Get(ctx,actor,handID)
+ if err!=nil{return application.OwnContributionVerification{},err}
+ if final.Status!="completed" {return application.OwnContributionVerification{},ErrInvalidRequest}
+ reader,ok:=d.backend.(interface{
+  GetOwnContributionVerification(context.Context,domain.AccountID,domain.HandID)(application.OwnContributionVerification,error)
+ })
+ if !ok {return application.OwnContributionVerification{},ErrInvalidRequest}
+ return reader.GetOwnContributionVerification(ctx,actor,handID)
+}
+
 func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, request CommandRequest) (CommandResponse, error) {
 	response := CommandResponse{Version: CommandResponseV1, RequestID: request.RequestID, Type: request.Type}
 	command := application.Command{Version: application.CommandProtocolV1, CommandID: request.RequestID, AggregateID: request.AggregateID, ClientSeq: request.ClientSeq, ExpectedVersion: request.ExpectedVersion, IssuedAt: d.clock.Now().UTC().Truncate(time.Millisecond)}
@@ -273,13 +287,17 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
     }
     if err=decodePayload(request.Payload,&payload);err==nil {
       command.Name,command.AggregateType=application.CommandHandContributionSubmit,domain.AggregateHand
-      durable,err=d.backend.SubmitHandContribution(ctx,actor,command,application.SubmitContributionInput{
-        Envelope:application.SecureEnvelope{
-          Version:payload.Envelope.Version,KeyID:payload.Envelope.KeyID,
-          Suite:payload.Envelope.Suite,EncapsulatedKey:payload.Envelope.EncapsulatedKey,
-          Ciphertext:payload.Envelope.Ciphertext,
-        },
-      })
+      if backend,ok:=d.backend.(interface {
+        SubmitHandContribution(context.Context,domain.AccountID,application.Command,application.SubmitContributionInput)(application.CommandResult,error)
+      });ok {
+        durable,err=backend.SubmitHandContribution(ctx,actor,command,application.SubmitContributionInput{
+          Envelope:application.SecureEnvelope{
+            Version:payload.Envelope.Version,KeyID:payload.Envelope.KeyID,
+            Suite:payload.Envelope.Suite,EncapsulatedKey:payload.Envelope.EncapsulatedKey,
+            Ciphertext:payload.Envelope.Ciphertext,
+          },
+        })
+      }else{err=ErrInvalidRequest}
     }
 	case TypeHandReveal:
 		var payload struct {
