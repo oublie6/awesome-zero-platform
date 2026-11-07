@@ -59,6 +59,13 @@ export class RoomCoordinator {
     this.pendingCommand = null
   }
 
+  /** Clear only a confirmed stale room locator. Never drop an unknown
+   * command or its exact-ID retry context when invalidating a recovered view. */
+  forgetTrustedRoom(roomId: string): void {
+    if (this.inFlight || this.uncertainOutcome || this.pendingCommand)
+      throw new Error('room command unresolved; cannot invalidate room')
+    if (this.room?.roomId === roomId) this.room = null
+  }
   create(roomId: string): Promise<RoomState> { return this.perform('room.create', roomId, 0, {}) }
   join(roomId: string, expectedVersion: number, lastClientSequence = 0): Promise<RoomState> {
     if (!Number.isSafeInteger(lastClientSequence) || lastClientSequence < 0)
