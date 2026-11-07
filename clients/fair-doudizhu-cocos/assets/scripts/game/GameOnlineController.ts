@@ -64,7 +64,7 @@ export class GameOnlineController {
   reconnectAndResync(roomId?: string): Promise<RoomRead | null> {
     if (this.disposed || !this.session.authenticated)
       return Promise.reject(new Error('authenticated session required'))
-    const target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId
+    const target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId || undefined
     const key = target ?? '#discover'
     if (this.pendingRecovery?.key === key) return this.pendingRecovery.promise
     const token = ++this.recoveryGeneration
