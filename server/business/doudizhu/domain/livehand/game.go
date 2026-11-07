@@ -137,6 +137,7 @@ type PrivateView struct {
 }
 
 type TerminalPayload struct {
+	FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
 	Version          string      `json:"v"`
 	HandID           string      `json:"handId"`
 	Status           string      `json:"status"`
@@ -151,6 +152,7 @@ type TerminalPayload struct {
 }
 
 type CompletedPayload struct {
+	FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
 	Version          string            `json:"v"`
 	HandID           string            `json:"handId"`
 	Status           string            `json:"status"`
@@ -463,6 +465,7 @@ func (g *Game) buildCompletedPayload(version uint64, play playing.Snapshot, resu
 		return nil, err
 	}
 	return json.Marshal(CompletedPayload{
+		FairnessMode: g.origin.FairnessMode,
 		Version:          CompletedPayloadV1,
 		HandID:           string(g.id),
 		Status:           string(gamecore.FinalStatusCompleted),
@@ -538,6 +541,7 @@ func (g *Game) Abort(reason string) (gamecore.AbortOutcome, error) {
 	}
 	g.version++
 	payload, err := json.Marshal(TerminalPayload{
+		FairnessMode: g.origin.FairnessMode,
 		Version:          TerminalPayloadV1,
 		HandID:           string(g.id),
 		Status:           string(gamecore.FinalStatusAborted),
