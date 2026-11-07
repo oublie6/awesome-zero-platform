@@ -153,7 +153,7 @@ test('replacement room member reconnects without reading a previous hand archive
   assert.equal(confirmed.lastHandId,undefined)
   assert.equal(online.shell.hand.snapshot,null)
   assert.equal(online.rooms.state.roomId,'room-rejoin')
-  assert.equal(paths.length,3)
+  assert.equal(paths.length,4)
   assert.ok(paths.every(path=>path.endsWith('/rooms/room-rejoin')))
   online.dispose()
 })
@@ -657,7 +657,7 @@ test('R19-N02: later definitive CLOSED revokes an already adopted room',async()=
 
 test('G47-N01: delayed member join A cannot overwrite newer recovery B',async()=>{
  const f=fixture()
- const room=id=>({roomId:id,version:1,status:'WAITING_PLAYERS',member:true,occupied:1,lastClientSequence:1})
+ const room=id=>({roomId:id,version:1,status:'WAITING_PLAYERS',member:true,occupied:1,lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]})
  let releaseA,firstA=true
  f.platform.http.request=async path=>{
   if(path==='/v1/doudizhu/rooms/A' && firstA){
@@ -681,7 +681,7 @@ test('G47-N01: delayed member join A cannot overwrite newer recovery B',async()=
 })
 test('G47-N01: late CLOSED recheck prevents stale existing-member join',async()=>{
  const f=fixture()
- const waiting={roomId:'A',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,lastClientSequence:1}
+ const waiting={roomId:'A',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
  const closed={...waiting,version:2,status:'CLOSED',member:false,lastClientSequence:0}
  let reads=0
  f.platform.http.request=async()=>({code:'OK',data:++reads===1?waiting:closed})
