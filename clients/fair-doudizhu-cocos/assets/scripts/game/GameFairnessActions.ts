@@ -67,6 +67,31 @@ function assertDurable(result:WireCommandResult,expectedType:string):void {
     throw new DurableFairnessRejected(failure.code)
   }
 }
+/** Mirror application.BuildCustodiedAAD exactly. No prior commitment exists:
+ * the authenticated one-shot command is committed with its encrypted record. */
+export function canonicalCustodiedAAD(claims:RevealContextRead['ticket']['claims']):Uint8Array{
+ if(claims.v!=='doudizhu-custodied-context-v1' || claims.commitment!=='')
+  throw new Error('invalid signed custodial claims')
+ const strings=[
+  'fair-doudizhu/custodied-contribution-aad/v1','fair-doudizhu-command-v1',
+  'doudizhu.hand.fairness.contribution.submit.v1',claims.keyId,
+  claims.requestId,'hand',claims.handId,claims.actor
+ ]
+ return concat(...strings.map(v=>encodeLength(text.encode(v))),
+  new Uint8Array([claims.seat]),n64(claims.clientSeq),n64(claims.expectedVersion),
+  n64(claims.issuedAt),n64(claims.expiresAt))
+}
+
+/** The user re-enters only their own phrase, while the authenticated server
+ * supplies the once-protected random bytes after final archive verification. */
+export function verifyOwnContribution(handId:string,seat:number,
+ encodedRandom:string,phrase:string,commitment:string):boolean{
+ const random=decodeBase64Url(encodedRandom)
+ try {
+  if(random.length!==32)throw new Error('invalid disclosed contribution random')
+  return computeCommitment(handId,seat,random,phrase)===commitment
+ }finally{random.fill(0)}
+}
 export class DurableFairnessRejected extends Error {
   constructor(readonly code:string){super('fairness request rejected: '+code)}
 }
@@ -198,6 +223,90 @@ export class GameFairnessActions {
     }catch(error){random.fill(0);throw error}
     finally{this.inFlight=false}
   }
+  /** New mode: player contributes a string and fresh CSPRNG random together.
+   * No player phrase, random or external recovery kit is retained or written
+   * into local persistent storage. Only the already-encrypted exact-ID request
+   * may remain in memory until the original outcome is reconciled. */
+  async submitCustodied(handId:string,phrase:string):Promise<WireCommandResult>{
+    this.assertAvailable()
+    if(this.secret)throw new Error('historical fairness secret still active')
+    if(typeof phrase!=='string' || !phrase.normalize('NFKC').trim() ||
+      text.encode(phrase).length>256)throw new Error('请输入 1–256 字节的个人随机验证字符串')
+    this.inFlight=true
+    let random:Uint8Array|null=null
+    try{
+      const epoch=this.generation
+      const view=await this.api.fairness(handId)
+      this.ensureActive(epoch)
+      if(view.fairnessMode!=='client-contributed-server-custodied-v1' ||
+        view.phase!=='FAIRNESS_COMMITTING' || view.committed || view.revealed)
+        throw new Error('server does not accept a new player contribution')
+      random=await this.sealerRandom(32)
+      this.ensureActive(epoch)
+      const requestId=await this.ids.newRequestId()
+      this.ensureActive(epoch)
+      const clientSeq=view.lastClientSequence+1
+      const context=await this.api.revealContext(handId,{
+        requestId,clientSeq,expectedVersion:view.version
+      },'custodied')
+      this.ensureActive(epoch)
+      const claims=context.ticket.claims
+      if(claims.v!=='doudizhu-custodied-context-v1' || claims.commitment!=='' ||
+        claims.seat!==view.seat || claims.keyId!==view.revealKeyId ||
+        claims.publicKeySha256!==view.revealPublicKeySha256 ||
+        Date.now()>=claims.expiresAt || claims.expiresAt-claims.issuedAt>120000)
+        throw new Error('custodied signed context does not match hand')
+      const localAAD=canonicalCustodiedAAD(claims)
+      const receivedAAD=decodeBase64Url(context.aad)
+      if(!bytesEqual(localAAD,receivedAAD)){
+        localAAD.fill(0);receivedAAD.fill(0)
+        throw new Error('signed custodied AAD mismatch')
+      }
+      if(!Object.keys(this.trustedManifestRoots).length)
+        throw new Error('trusted reveal signing roots not configured')
+      const signedDocument=await this.api.revealManifest(claims.keyId)
+      this.ensureActive(epoch)
+      const manifest=verifyRevealKeyManifest(signedDocument,{
+        roots:this.trustedManifestRoots,versions:this.manifestVersions,mode:'pinned',
+        expectedKeyId:claims.keyId,
+        expectedPublicKeySha256:encodeBase64Url(
+          Uint8Array.from(view.revealPublicKeySha256.match(/../g)!.map(v=>parseInt(v,16)))),
+        boundAt:new Date(view.revealKeyBoundAt)
+      })
+      const payload={
+        v:'fair-doudizhu-reveal-v1',handId,seat:view.seat,
+        secureRandom:encodeBase64Url(random),phrase,normalization:'NFKC-v1'
+      }
+      const plaintext=text.encode(JSON.stringify(payload))
+      let envelope
+      try{
+        envelope=await this.sealer.seal({
+          recipient:{keyId:claims.keyId,publicKey:manifest.publicKeyBytes},
+          plaintext,aad:receivedAAD
+        })
+      }finally{
+        plaintext.fill(0);localAAD.fill(0);receivedAAD.fill(0)
+      }
+      this.ensureActive(epoch)
+      const command:Omit<WireCommand,'v'>={
+        requestId,type:'hand.contribution',aggregateId:handId,
+        clientSeq,expectedVersion:view.version,revealContext:context.ticket,
+        payload:{envelope:{
+          v:envelope.version,keyId:envelope.keyId,suite:envelope.suite,
+          encapsulatedKey:envelope.encapsulatedKey,ciphertext:envelope.ciphertext
+        }}
+      }
+      this.pending=command
+      const result=await this.api.command(command)
+      this.ensureActive(epoch)
+      this.settle(result,'hand.contribution')
+      return result
+    }finally{
+      random?.fill(0)
+      this.inFlight=false
+    }
+  }
+
   /** A network timeout must be retried with exactly the same signed request and payload. */
   async retryUnknown():Promise<WireCommandResult> {
     if(!this.pending || this.inFlight)throw new Error('no pending fairness request')

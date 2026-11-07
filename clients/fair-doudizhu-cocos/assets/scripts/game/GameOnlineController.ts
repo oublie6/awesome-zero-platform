@@ -175,7 +175,7 @@ export class GameOnlineController {
           throw new Error('room hand start already in progress')
         this.startingHand = handId
         try {
-          const room = await this.rooms.startHand(handId)
+          const room = await this.rooms.startHand(handId,'client-contributed-server-custodied-v1')
           // RoomCoordinator already accepted the server's durable ACK. No
           // await between receipt and hand adoption; both old action families
           // are still reserved so they cannot create fresh pending requests.

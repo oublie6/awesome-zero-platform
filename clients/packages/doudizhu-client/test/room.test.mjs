@@ -111,3 +111,12 @@ test('lost room.create acknowledgment preserves the exact request ID and locator
  assert.equal(room.state.roomId,'room-lost')
  assert.equal(room.state.version,1)
 })
+
+test('new custodial hand start keeps mode inside exact durable command identity',async()=>{
+ const {room,calls}=fixture()
+ await room.create('room-one')
+ await room.startHand('hand-new','client-contributed-server-custodied-v1')
+ assert.deepEqual(calls[1].payload,{
+   handId:'hand-new',fairnessMode:'client-contributed-server-custodied-v1'
+ })
+})

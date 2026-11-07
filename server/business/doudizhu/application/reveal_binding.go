@@ -13,6 +13,7 @@ import (
 // immutable hand-key binding. It never exposes another player's contribution,
 // protected reveal plaintext, server seed or private hand.
 type RevealBinding struct {
+	Mode            domain.FairnessMode
 	HandID          domain.HandID
 	Seat            domain.Seat
 	Version         uint64
@@ -37,13 +38,17 @@ func (s *Service) GetRevealBinding(ctx context.Context, actor domain.AccountID, 
 	if err != nil {
 		return RevealBinding{}, err
 	}
-	if snapshot.Phase != domain.HandFairnessRevealing || !contribution.Committed ||
-		contribution.Revealed || contribution.Commitment == (domain.Commitment{}) ||
-		snapshot.RevealKeyID == "" || snapshot.RevealPublicKeySHA256 == (domain.RevealPublicKeyHash{}) ||
+	custodied := snapshot.FairnessMode == domain.FairnessModeClientCustodied
+	eligible := custodied && snapshot.Phase == domain.HandFairnessCommitting && !contribution.Committed && !contribution.Revealed
+	legacy := !custodied && snapshot.Phase == domain.HandFairnessRevealing && contribution.Committed &&
+		!contribution.Revealed && contribution.Commitment != (domain.Commitment{})
+	if (!eligible && !legacy) || snapshot.RevealKeyID == "" ||
+		snapshot.RevealPublicKeySHA256 == (domain.RevealPublicKeyHash{}) ||
 		snapshot.RevealKeyBoundAt.IsZero() {
 		return RevealBinding{}, fmt.Errorf("%w: reveal not eligible", domain.ErrWrongPhase)
 	}
 	return RevealBinding{
+		Mode:   snapshot.FairnessMode,
 		HandID: handID, Seat: seat, Version: snapshot.Version, Commitment: contribution.Commitment,
 		KeyID: snapshot.RevealKeyID, PublicKeySHA256: snapshot.RevealPublicKeySHA256, BoundAt: snapshot.RevealKeyBoundAt,
 	}, nil

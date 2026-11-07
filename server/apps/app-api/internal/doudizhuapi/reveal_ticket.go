@@ -17,6 +17,7 @@ import (
 )
 
 const RevealTicketV1 = "doudizhu-reveal-context-v1"
+const CustodiedTicketV1 = "doudizhu-custodied-context-v1"
 const revealTicketDomain = "doudizhu/reveal-ticket/hmac-sha256/v1:"
 
 type RevealTicketClaims struct {
@@ -95,10 +96,16 @@ func (d *Dispatcher) IssueRevealContext(ctx context.Context, actor domain.Accoun
 		return RevealContextResponse{}, fmt.Errorf("%w: stale reveal binding", domain.ErrVersionConflict)
 	}
 	now := d.clock.Now().UTC().Truncate(time.Millisecond)
+	version := RevealTicketV1
+	commitment := hex.EncodeToString(binding.Commitment[:])
+	if binding.Mode == domain.FairnessModeClientCustodied {
+		version = CustodiedTicketV1
+		commitment = ""
+	}
 	ticket := SignedRevealContext{Claims: RevealTicketClaims{
-		Version: RevealTicketV1, Actor: string(actor), HandID: string(handID), RequestID: request.RequestID,
+		Version: version, Actor: string(actor), HandID: string(handID), RequestID: request.RequestID,
 		ClientSeq: request.ClientSeq, ExpectedVersion: request.ExpectedVersion, Seat: uint8(binding.Seat),
-		Commitment: hex.EncodeToString(binding.Commitment[:]), KeyID: binding.KeyID,
+		Commitment: commitment, KeyID: binding.KeyID,
 		PublicKeySHA256: hex.EncodeToString(binding.PublicKeySHA256[:]),
 		IssuedAt:        now.UnixMilli(), ExpiresAt: now.Add(d.revealTickets.ttl).UnixMilli(),
 	}}
@@ -107,7 +114,7 @@ func (d *Dispatcher) IssueRevealContext(ctx context.Context, actor domain.Accoun
 	if err != nil {
 		return RevealContextResponse{}, err
 	}
-	return RevealContextResponse{Version: RevealTicketV1, Ticket: ticket, AAD: base64.RawURLEncoding.EncodeToString(aad)}, nil
+	return RevealContextResponse{Version: version, Ticket: ticket, AAD: base64.RawURLEncoding.EncodeToString(aad)}, nil
 }
 func (s *revealTicketIssuer) sign(claims RevealTicketClaims) string {
 	encoded, _ := json.Marshal(claims)
@@ -116,17 +123,29 @@ func (s *revealTicketIssuer) sign(claims RevealTicketClaims) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 func revealTicketAAD(claims RevealTicketClaims) ([]byte, error) {
+	command := application.Command{
+		Version:   application.CommandProtocolV1,
+		CommandID: claims.RequestID, AggregateType: domain.AggregateHand,
+		AggregateID: claims.HandID, ClientSeq: claims.ClientSeq, ExpectedVersion: claims.ExpectedVersion,
+		IssuedAt: time.UnixMilli(claims.IssuedAt).UTC(), ExpiresAt: time.UnixMilli(claims.ExpiresAt).UTC(),
+	}
+	if claims.Version == CustodiedTicketV1 {
+		if claims.Commitment != "" {
+			return nil, ErrInvalidRequest
+		}
+		command.Name = application.CommandHandContributionSubmit
+		return application.BuildCustodiedAAD(command, domain.AccountID(claims.Actor), domain.Seat(claims.Seat), claims.KeyID)
+	}
+	if claims.Version != RevealTicketV1 {
+		return nil, ErrInvalidRequest
+	}
 	var commitment domain.Commitment
 	decoded, err := hex.DecodeString(claims.Commitment)
 	if err != nil || len(decoded) != 32 {
 		return nil, ErrInvalidRequest
 	}
 	copy(commitment[:], decoded)
-	command := application.Command{Version: application.CommandProtocolV1, Name: application.CommandHandRevealSubmit,
-		CommandID: claims.RequestID, AggregateType: domain.AggregateHand, AggregateID: claims.HandID,
-		ClientSeq: claims.ClientSeq, ExpectedVersion: claims.ExpectedVersion,
-		IssuedAt: time.UnixMilli(claims.IssuedAt).UTC(), ExpiresAt: time.UnixMilli(claims.ExpiresAt).UTC(),
-	}
+	command.Name = application.CommandHandRevealSubmit
 	return application.BuildRevealAAD(command, domain.AccountID(claims.Actor), domain.Seat(claims.Seat), commitment, claims.KeyID)
 }
 func (d *Dispatcher) verifyRevealContext(actor domain.AccountID, request CommandRequest) (time.Time, time.Time, error) {
@@ -143,7 +162,11 @@ func (d *Dispatcher) verifyRevealContext(actor domain.AccountID, request Command
 	if err != nil || !hmac.Equal(received, expected) {
 		return time.Time{}, time.Time{}, ErrInvalidRequest
 	}
-	if c.Version != RevealTicketV1 || c.Actor != string(actor) || c.HandID != request.AggregateID ||
+	expectedVersion := RevealTicketV1
+	if request.Type == TypeHandContribution {
+		expectedVersion = CustodiedTicketV1
+	}
+	if c.Version != expectedVersion || c.Actor != string(actor) || c.HandID != request.AggregateID ||
 		c.RequestID != request.RequestID || c.ClientSeq != request.ClientSeq ||
 		c.ExpectedVersion != request.ExpectedVersion || !domain.Seat(c.Seat).Valid() ||
 		len(c.KeyID) == 0 || len(c.KeyID) > 128 || len(c.PublicKeySHA256) != 64 {

@@ -1,6 +1,7 @@
 import { _decorator, Color, Component, Label, Layers, Node, SafeArea, UITransform, view, EventTouch, EditBox } from 'cc'
 import { GameClientShell } from '../game/GameClientShell.ts'
 import { GameOnlineController } from '../game/GameOnlineController.ts'
+import { verifyOwnContribution } from '../game/GameFairnessActions.ts'
 import { createWeChatIdentityExchange, validateWeChatAccess } from '../game/WeChatIdentityExchange.ts'
 import { createPlatform } from '../platform/createPlatform.ts'
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
@@ -50,6 +51,7 @@ export class GameBootstrap extends Component {
   private selectedCards = new Set<string>()
   private roomID = ''
   private handID = ''
+  private fairnessMode:'client-contributed-server-custodied-v1'|''=''
   // A kit shown on this screen is not proof that the user kept a recovery copy.
   private backupVerificationPendingHand = ''
   private verifiedBackupHand = ''
@@ -107,7 +109,7 @@ export class GameBootstrap extends Component {
       this.status!.string = this.online?.session.authenticated
         ? '连接服务端，可创建或加入真实好友房间' : '登录后才能创建或加入真实房间'
       this.roomInput=this.createRoomInput()
-      this.addMenu([
+      const actions:MenuAction[]=[
         {name:'LoginEntry',caption:'微信登录',action:()=>void this.login()},
         {name:'ReconnectRoom',caption:'重连并同步',action:()=>void this.reconnect()},
         {name:'CreateRoom',caption:'创建房间',action:()=>void this.createRoom()},
@@ -115,18 +117,28 @@ export class GameBootstrap extends Component {
         {name:'ReadyRoom',caption:'准备',action:()=>void this.readyRoom()},
         {name:'LeaveRoom',caption:'退出当前房间',action:()=>void this.leaveRoom()},
         {name:'StartHand',caption:'开始本局',action:()=>void this.startHand()},
-        {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
-        {name:'PrepareFairness',caption:'生成并备份恢复凭证',action:()=>void this.prepareFairness()},
-        {name:'VerifyFairnessBackup',caption:'已保存备份，清空输入并校验',action:()=>this.beginFairnessBackupVerification()},
-        {name:'ImportFairness',caption:'从备份粘贴并验证恢复凭证',action:()=>void this.importFairness()},
-        {name:'CommitFairness',caption:'提交洗牌承诺',action:()=>void this.commitFairness()},
-        {name:'RevealFairness',caption:'加密提交随机贡献',action:()=>void this.revealFairness()},
-        {name:'RetryUnknownFairness',caption:'重试未确认提交',action:()=>void this.retryUnknownFairness()},
+        {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()}
+      ]
+      if(this.fairnessMode==='client-contributed-server-custodied-v1'){
+        actions.push(
+          {name:'SubmitOwnContribution',caption:'提交我的随机验证字符串',action:()=>void this.submitOwnContribution()},
+          {name:'VerifyOwnContribution',caption:'终局核验我的字符串',action:()=>void this.verifyMyPhrase()})
+      }else if(this.handID){
+        // Pre-upgrade hands retain their original explicit recovery flow.
+        actions.push(
+          {name:'PrepareFairness',caption:'生成并备份恢复凭证（旧局）',action:()=>void this.prepareFairness()},
+          {name:'VerifyFairnessBackup',caption:'已备份并清空输入（旧局）',action:()=>this.beginFairnessBackupVerification()},
+          {name:'ImportFairness',caption:'导入恢复凭证（旧局）',action:()=>void this.importFairness()},
+          {name:'CommitFairness',caption:'提交承诺（旧局）',action:()=>void this.commitFairness()},
+          {name:'RevealFairness',caption:'揭示贡献（旧局）',action:()=>void this.revealFairness()})
+      }
+      actions.push(
+        {name:'RetryUnknownFairness',caption:'核对上一次未确认提交',action:()=>void this.retryUnknownFairness()},
         {name:'RefreshFairness',caption:'刷新洗牌阶段',action:()=>void this.refreshFairness()},
         {name:'RoomEvidence',caption:'查看结算证据',action:()=>void this.showEvidence()},
         {name:'OpenTable',caption:'查看牌桌',action:()=>this.renderScreen('table')},
-        {name:'BackHome',caption:'返回首页',action:()=>this.renderScreen('home')}
-      ])
+        {name:'BackHome',caption:'返回首页',action:()=>this.renderScreen('home')})
+      this.addMenu(actions)
     } else if (screen === 'table') {
       const snapshot=this.online?.shell.hand.snapshot
       const pub=(snapshot?.view as PrivateHandProjection | undefined)?.public
@@ -183,10 +195,10 @@ export class GameBootstrap extends Component {
     node.addComponent(UITransform)
     this.content!.addChild(node)
     const input=node.addComponent(EditBox)
-    // The same field also accepts the explicit, user-held 2048-character
-    // fairness recovery kit. Room IDs are validated independently by API.
-    input.maxLength=2048
-    input.string=this.roomID
+    // The active new hand accepts only an ephemeral personal phrase. The
+    // field is never saved to a platform vault or restored from storage.
+    input.maxLength=this.fairnessMode==='client-contributed-server-custodied-v1'?256:2048
+    input.string=this.fairnessMode==='client-contributed-server-custodied-v1'?'':this.roomID
     const labelNode=new Node('RoomCodeText')
     labelNode.layer=Layers.Enum.UI_2D
     labelNode.addComponent(UITransform)
@@ -194,7 +206,9 @@ export class GameBootstrap extends Component {
     const label=labelNode.addComponent(Label)
     label.fontSize=24
     label.color=new Color(220,235,245,255)
-    label.string=this.roomID || '输入好友房间号'
+    label.string=this.fairnessMode==='client-contributed-server-custodied-v1'
+      ? '输入本人字符串（只用于参与及终局核验）'
+      : (this.roomID || '输入好友房间号')
     input.textLabel=label
     this.inputNode=node
     return input
@@ -323,6 +337,7 @@ export class GameBootstrap extends Component {
       // Later HTTP refresh failures must not turn the accepted start into FAIL.
       this.roomGeneration++
       this.handID=handID
+      this.fairnessMode='client-contributed-server-custodied-v1'
       this.selectedCards.clear()
       await this.refreshRoom()
     }catch(error){
@@ -354,6 +369,7 @@ export class GameBootstrap extends Component {
       if(authorizedHand!==this.handID){
         this.roomGeneration++
         this.handID=authorizedHand
+        this.fairnessMode=''
         this.selectedCards.clear()
       }
       online.shell.useAuthoritativeHand(authorizedHand || null)
@@ -361,16 +377,26 @@ export class GameBootstrap extends Component {
         const handGeneration=this.roomGeneration
         const fairness=await online.api.fairness(info.activeHandId)
         if(handGeneration!==this.roomGeneration || info.activeHandId!==this.handID || online!==this.online)return
+        if(this.fairnessMode !== (fairness.fairnessMode||'')){
+          this.fairnessMode=fairness.fairnessMode||''
+          if(this.screen==='rooms')this.renderScreen('rooms')
+        }
         if(fairness.phase==='BIDDING' || fairness.phase==='PLAYING' || fairness.phase==='SETTLING'){
           await online.shell.syncHand(info.activeHandId)
         } else {
-          this.notice(`公平洗牌阶段：${fairness.phase} · 座位${fairness.seat} · ${fairness.committed?'已承诺':'待承诺'} / ${fairness.revealed?'已贡献':'待贡献'}`)
+          this.notice(fairness.fairnessMode==='client-contributed-server-custodied-v1'
+            ? `玩家随机贡献由服务器加密保存 · ${fairness.phase} · ${fairness.revealed?'本人已提交':'等待本人输入字符串并提交'}`
+            : `公平洗牌阶段：${fairness.phase} · 座位${fairness.seat} · ${fairness.committed?'已承诺':'待承诺'} / ${fairness.revealed?'已贡献':'待贡献'}`)
         }
       } else if(info.lastHandId){
         const handGeneration=this.roomGeneration
         const evidence=await online.api.finalEvidence(info.lastHandId)
         if(handGeneration!==this.roomGeneration || info.lastHandId!==this.handID || online!==this.online)return
         online.shell.acceptVerifiedFinalEvidence(evidence)
+        if(this.fairnessMode !== (evidence.fairnessMode||'')){
+          this.fairnessMode=evidence.fairnessMode||''
+          if(this.screen==='rooms')this.renderScreen('rooms')
+        }
         if(this.screen==='table')this.renderScreen('table')
       }
     }catch(error){this.notice('刷新失败：'+this.message(error))}
@@ -379,13 +405,77 @@ export class GameBootstrap extends Component {
     try {
       const online=this.requireOnline()
       if(!this.handID)throw new Error('尚未开始牌局，请刷新房间')
-      const view=await online.api.fairness(this.handID)
+      const handID=this.handID
+      const generation=this.roomGeneration
+      const view=await online.api.fairness(handID)
+      if(online!==this.online || handID!==this.handID || generation!==this.roomGeneration)return
+      if(this.fairnessMode !== (view.fairnessMode||'')){
+        this.fairnessMode=view.fairnessMode||''
+        if(this.screen==='rooms')this.renderScreen('rooms')
+      }
       const remaining=view.beaconReleaseAt ? Math.max(0,Math.ceil((Date.parse(view.beaconReleaseAt)-Date.now())/1000)) : null
       const cutoff=remaining!==null ? ` · 公共随机数公布前剩余 ${remaining} 秒` : ''
-      this.notice(`洗牌阶段 ${view.phase} · 座位${view.seat} · 版本${view.version} · ${view.committed?'承诺已确认':'待承诺'} / ${view.revealed?'贡献已确认':'待提交贡献'}${cutoff}`)
+      this.notice(view.fairnessMode==='client-contributed-server-custodied-v1'
+        ? `服务端已加密保存玩家贡献 · ${view.phase} · ${view.revealed?'本人已提交':'等待本人提交'}${cutoff}`
+        : `洗牌阶段 ${view.phase} · 座位${view.seat} · 版本${view.version} · ${view.committed?'承诺已确认':'待承诺'} / ${view.revealed?'贡献已确认':'待提交贡献'}${cutoff}`)
       if(view.phase==='BIDDING'||view.phase==='PLAYING')await online.shell.syncHand(this.handID)
     }catch(error){this.notice('公平阶段查询失败：'+this.message(error))}
   }
+  private async submitOwnContribution():Promise<void>{
+    const online=this.online
+    const handID=this.handID
+    const roomID=this.roomID
+    const generation=this.roomGeneration
+    const fairness=online?.fairness
+    const phrase=this.roomInput?.string||''
+    // Clear the field before the first asynchronous suspension; no client
+    // storage or backup of the phrase/random is created.
+    if(this.roomInput)this.roomInput.string=''
+    try{
+      if(this.fairnessMode!=='client-contributed-server-custodied-v1' ||
+        !handID || !online?.session.authenticated || !fairness)
+        throw new Error('当前牌局尚未进入个人贡献阶段')
+      await fairness.submitCustodied(handID,phrase)
+      if(generation!==this.roomGeneration || handID!==this.handID ||
+        roomID!==this.roomID || online!==this.online || fairness!==online.fairness)return
+      this.notice('个人随机贡献已由服务器加密保存，可正常退出或换设备恢复牌局。请记住自己的字符串用于终局核验')
+      await this.refreshFairness()
+    }catch(error){
+      if(generation===this.roomGeneration && handID===this.handID && online===this.online)
+        this.notice(fairness?.needsReconciliation
+          ? '提交结果未知，请核对原请求或重新登录查询服务端，不要盲目重复提交：'+this.message(error)
+          : '提交贡献失败：'+this.message(error))
+    }
+  }
+
+  private async verifyMyPhrase():Promise<void>{
+    const online=this.online
+    const roomID=this.roomID
+    const handID=this.handID
+    const generation=this.roomGeneration
+    const phrase=this.roomInput?.string||''
+    if(this.roomInput)this.roomInput.string=''
+    try{
+      if(!online?.session.authenticated || !handID ||
+        this.fairnessMode!=='client-contributed-server-custodied-v1' || !phrase)
+        throw new Error('请在终局后输入自己当初提交的字符串')
+      // Retrieve authenticated final evidence before the own-random record;
+      // independent cryptographic proof still depends on a verifiable transcript.
+      const evidence=await online.api.finalEvidence(handID)
+      const own=await online.api.ownContribution(handID)
+      if(online!==this.online || handID!==this.handID ||
+        roomID!==this.roomID || generation!==this.roomGeneration)return
+      if(evidence.fairnessMode!==own.fairnessMode ||
+        !verifyOwnContribution(handID,own.seat,own.secureRandom,phrase,own.commitment))
+        throw new Error('个人字符串与本局已归档的承诺不一致')
+      this.notice('个人字符串与服务器归档承诺匹配，终局记录校验摘要：'+
+        evidence.verification.recordDigest.slice(0,24)+'…（可另行核验公开信标和牌序）')
+    }catch(error){
+      if(generation===this.roomGeneration && handID===this.handID && online===this.online)
+        this.notice('个人字符串校验失败：'+this.message(error))
+    }
+  }
+
   private async prepareFairness():Promise<void>{
     const online=this.online
     const roomID=this.roomID
@@ -489,6 +579,10 @@ export class GameBootstrap extends Component {
       online.shell.acceptVerifiedFinalEvidence(data)
       this.selectedCards.clear()
       if(this.screen==='table')this.renderScreen('table')
+      if(this.fairnessMode !== (data.fairnessMode||'')){
+        this.fairnessMode=data.fairnessMode||''
+        if(this.screen==='rooms')this.renderScreen('rooms')
+      }
       const verified=data.verification
       const winner=verified.winnerSeat?('获胜座位'+verified.winnerSeat):'已终止'
       this.notice(`已核验归档 · ${winner} · 积分${verified.seatPoints.join('/') } · 版本${data.finalVersion}\n校验摘要：${verified.recordDigest.slice(0,24)}…`)

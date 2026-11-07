@@ -56,6 +56,34 @@ func BuildRevealAAD(command Command, actor domain.AccountID, seat domain.Seat, c
 	return buffer.Bytes(), nil
 }
 
+// BuildCustodiedAAD binds the encrypted one-shot participant contribution
+// to the exact authenticated action, preventing cross-hand / seat replays.
+// There is intentionally no prior commitment: this command atomically
+// commits and reveals the uploaded client-created randomness.
+func BuildCustodiedAAD(command Command, actor domain.AccountID, seat domain.Seat, revealKeyID string) ([]byte, error) {
+	if command.Name != CommandHandContributionSubmit || command.AggregateType != domain.AggregateHand || !seat.Valid() {
+		return nil, fmt.Errorf("%w: custodied AAD context", ErrRevealInvalid)
+	}
+	if strings.TrimSpace(revealKeyID) == "" || len(revealKeyID) > 128 {
+		return nil, fmt.Errorf("%w: custodied reveal key", ErrRevealInvalid)
+	}
+	buffer := bytes.NewBuffer(make([]byte, 0, 512))
+	writeCanonicalString(buffer, CustodiedAADV1)
+	writeCanonicalString(buffer, command.Version)
+	writeCanonicalString(buffer, command.Name)
+	writeCanonicalString(buffer, revealKeyID)
+	writeCanonicalString(buffer, command.CommandID)
+	writeCanonicalString(buffer, string(command.AggregateType))
+	writeCanonicalString(buffer, command.AggregateID)
+	writeCanonicalString(buffer, string(actor))
+	buffer.WriteByte(byte(seat))
+	writeCanonicalUint64(buffer, command.ClientSeq)
+	writeCanonicalUint64(buffer, command.ExpectedVersion)
+	writeCanonicalInt64(buffer, command.IssuedAt.UTC().UnixMilli())
+	writeCanonicalInt64(buffer, command.ExpiresAt.UTC().UnixMilli())
+	return buffer.Bytes(), nil
+}
+
 func BuildContributionRecordAAD(recordID string, handID domain.HandID, seat domain.Seat, actor domain.AccountID, commandID string, digest domain.ContributionDigest) ([]byte, error) {
 	if strings.TrimSpace(recordID) == "" || strings.TrimSpace(string(handID)) == "" || strings.TrimSpace(string(actor)) == "" || strings.TrimSpace(commandID) == "" || !seat.Valid() {
 		return nil, fmt.Errorf("%w: contribution record AAD", ErrProtectionFailed)

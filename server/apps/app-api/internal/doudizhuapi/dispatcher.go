@@ -23,19 +23,20 @@ const (
 	CommandRequestV1  = "doudizhu-api-command-v1"
 	CommandResponseV1 = "doudizhu-api-command-result-v1"
 
-	TypeRoomCreate = "room.create"
-	TypeRoomJoin   = "room.join"
-	TypeRoomLeave  = "room.leave"
-	TypeRoomReady  = "room.ready"
-	TypeRoomStart  = "room.hand.start"
-	TypeHandCommit = "hand.commit"
-	TypeHandReveal = "hand.reveal"
-	TypeHandBeacon = "hand.beacon"
-	TypeHandDealt  = "hand.dealt"
-	TypeHandBid    = "hand.bid"
-	TypeHandPlay   = "hand.play"
-	TypeHandPass   = "hand.pass"
-	TypeHandCancel = "hand.cancel"
+	TypeRoomCreate       = "room.create"
+	TypeRoomJoin         = "room.join"
+	TypeRoomLeave        = "room.leave"
+	TypeRoomReady        = "room.ready"
+	TypeRoomStart        = "room.hand.start"
+	TypeHandCommit       = "hand.commit"
+	TypeHandReveal       = "hand.reveal"
+	TypeHandContribution = "hand.contribution"
+	TypeHandBeacon       = "hand.beacon"
+	TypeHandDealt        = "hand.dealt"
+	TypeHandBid          = "hand.bid"
+	TypeHandPlay         = "hand.play"
+	TypeHandPass         = "hand.pass"
+	TypeHandCancel       = "hand.cancel"
 )
 
 var (
@@ -141,7 +142,7 @@ func (d *Dispatcher) Execute(ctx context.Context, actor domain.AccountID, reques
 	if err := validateRequest(actor, request); err != nil {
 		return CommandResponse{}, err
 	}
-	if request.Type == TypeHandReveal {
+	if request.Type == TypeHandReveal || request.Type == TypeHandContribution {
 		if _, _, err := d.verifyRevealContext(actor, request); err != nil {
 			return CommandResponse{}, err
 		}
@@ -190,6 +191,29 @@ func (d *Dispatcher) FinalEvidence(ctx context.Context, actor domain.AccountID, 
 	return d.evidence.Get(ctx, actor, handID)
 }
 
+// OwnContribution is only available after verified final archive and only for
+// an authenticated seat. It never returns the phrase or other seats' secrets.
+func (d *Dispatcher) OwnContribution(ctx context.Context, actor domain.AccountID,
+	handID domain.HandID) (application.OwnContributionVerification, error) {
+	if d == nil || d.evidence == nil {
+		return application.OwnContributionVerification{}, ErrInvalidRequest
+	}
+	final, err := d.evidence.Get(ctx, actor, handID)
+	if err != nil {
+		return application.OwnContributionVerification{}, err
+	}
+	if final.Status != "completed" {
+		return application.OwnContributionVerification{}, ErrInvalidRequest
+	}
+	reader, ok := d.backend.(interface {
+		GetOwnContributionVerification(context.Context, domain.AccountID, domain.HandID) (application.OwnContributionVerification, error)
+	})
+	if !ok {
+		return application.OwnContributionVerification{}, ErrInvalidRequest
+	}
+	return reader.GetOwnContributionVerification(ctx, actor, handID)
+}
+
 func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, request CommandRequest) (CommandResponse, error) {
 	response := CommandResponse{Version: CommandResponseV1, RequestID: request.RequestID, Type: request.Type}
 	command := application.Command{Version: application.CommandProtocolV1, CommandID: request.RequestID, AggregateID: request.AggregateID, ClientSeq: request.ClientSeq, ExpectedVersion: request.ExpectedVersion, IssuedAt: d.clock.Now().UTC().Truncate(time.Millisecond)}
@@ -198,10 +222,10 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 	// retransmission the freshly generated times must not change the durable
 	// request identity. Signed reveal context is different: its verified time
 	// binding is part of the authenticated command and stays strict.
-	if !isLiveType(request.Type) && request.Type != TypeHandReveal {
+	if !isLiveType(request.Type) && request.Type != TypeHandReveal && request.Type != TypeHandContribution {
 		command.ServerGeneratedTimes = true
 	}
-	if request.Type == TypeHandReveal {
+	if request.Type == TypeHandReveal || request.Type == TypeHandContribution {
 		issued, expires, err := d.verifyRevealContext(actor, request)
 		if err != nil {
 			return CommandResponse{}, err
@@ -238,11 +262,14 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 		}
 	case TypeRoomStart:
 		var payload struct {
-			HandID string `json:"handId"`
+			HandID       string `json:"handId"`
+			FairnessMode string `json:"fairnessMode,omitempty"`
 		}
 		if err = decodePayload(request.Payload, &payload); err == nil {
 			command.Name, command.AggregateType = application.CommandRoomHandStart, domain.AggregateRoom
-			durable, err = d.backend.StartRoomHand(ctx, actor, command, application.StartHandInput{HandID: domain.HandID(payload.HandID)})
+			durable, err = d.backend.StartRoomHand(ctx, actor, command, application.StartHandInput{
+				HandID: domain.HandID(payload.HandID), FairnessMode: domain.FairnessMode(payload.FairnessMode),
+			})
 		}
 	case TypeHandCommit:
 		var payload struct {
@@ -254,6 +281,32 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			if err == nil {
 				command.Name, command.AggregateType = application.CommandHandCommitSubmit, domain.AggregateHand
 				durable, err = d.backend.SubmitHandCommit(ctx, actor, command, application.SubmitCommitInput{Commitment: value})
+			}
+		}
+	case TypeHandContribution:
+		var payload struct {
+			Envelope struct {
+				Version         string `json:"v"`
+				KeyID           string `json:"keyId"`
+				Suite           string `json:"suite"`
+				EncapsulatedKey string `json:"encapsulatedKey"`
+				Ciphertext      string `json:"ciphertext"`
+			} `json:"envelope"`
+		}
+		if err = decodePayload(request.Payload, &payload); err == nil {
+			command.Name, command.AggregateType = application.CommandHandContributionSubmit, domain.AggregateHand
+			if backend, ok := d.backend.(interface {
+				SubmitHandContribution(context.Context, domain.AccountID, application.Command, application.SubmitContributionInput) (application.CommandResult, error)
+			}); ok {
+				durable, err = backend.SubmitHandContribution(ctx, actor, command, application.SubmitContributionInput{
+					Envelope: application.SecureEnvelope{
+						Version: payload.Envelope.Version, KeyID: payload.Envelope.KeyID,
+						Suite: payload.Envelope.Suite, EncapsulatedKey: payload.Envelope.EncapsulatedKey,
+						Ciphertext: payload.Envelope.Ciphertext,
+					},
+				})
+			} else {
+				err = ErrInvalidRequest
 			}
 		}
 	case TypeHandReveal:

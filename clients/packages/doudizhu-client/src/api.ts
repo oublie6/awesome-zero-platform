@@ -52,6 +52,7 @@ export class DoudizhuHTTPClient {
       !['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING','BIDDING','PLAYING','SETTLING','COMPLETED','CANCELLED','ABORTED','EXPIRED'].includes(data.phase as string) ||
       !Number.isSafeInteger(data.version) || (data.version as number)<1 ||
       !Number.isSafeInteger(data.seat) || (data.seat as number)<1 || (data.seat as number)>3 ||
+      (data.fairnessMode!==undefined && data.fairnessMode!=='client-contributed-server-custodied-v1') ||
       typeof data.committed!=='boolean' || typeof data.revealed!=='boolean' ||
       !Number.isSafeInteger(data.lastClientSequence) || (data.lastClientSequence as number)<0 ||
       typeof data.revealKeyId!=='string' || !data.revealKeyId ||
@@ -64,7 +65,8 @@ export class DoudizhuHTTPClient {
     }
     return JSON.parse(JSON.stringify(data)) as FairnessRead
   }
-  async revealContext(handId: string,request:RevealContextInput):Promise<RevealContextRead> {
+  async revealContext(handId: string,request:RevealContextInput,
+    mode: 'legacy'|'custodied'='legacy'):Promise<RevealContextRead> {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(handId) ||
       typeof request.requestId!=='string' || !request.requestId || request.requestId.length>128 ||
       !Number.isSafeInteger(request.clientSeq) || request.clientSeq<1 ||
@@ -74,17 +76,19 @@ export class DoudizhuHTTPClient {
       '/v1/doudizhu/hands/'+encodeURIComponent(handId)+'/reveal-context',
       {method:'POST',body:request,accessToken:this.token()})
     const data=unwrap(raw)
-    if(!record(data) || data.v!=='doudizhu-reveal-context-v1' || !record(data.ticket) ||
+    const version=mode==='custodied'?'doudizhu-custodied-context-v1':'doudizhu-reveal-context-v1'
+    if(!record(data) || data.v!==version || !record(data.ticket) ||
        !record(data.ticket.claims) || typeof data.ticket.mac!=='string' ||
        !/^[0-9a-f]{64}$/.test(data.ticket.mac) ||
        typeof data.aad!=='string' || !/^[A-Za-z0-9_-]+$/.test(data.aad)) throw new Error('invalid signed reveal context')
     const claims=data.ticket.claims
-    if(claims.v!=='doudizhu-reveal-context-v1' ||
+    if(claims.v!==version ||
        claims.handId!==handId || claims.requestId!==request.requestId ||
        claims.clientSeq!==request.clientSeq || claims.expectedVersion!==request.expectedVersion ||
        typeof claims.actor!=='string' || !claims.actor ||
        !Number.isSafeInteger(claims.seat) || (claims.seat as number)<1 || (claims.seat as number)>3 ||
-       typeof claims.commitment!=='string' || !/^[0-9a-f]{64}$/.test(claims.commitment) ||
+       typeof claims.commitment!=='string' ||
+       (mode==='custodied' ? claims.commitment!=='' : !/^[0-9a-f]{64}$/.test(claims.commitment)) ||
        typeof claims.publicKeySha256!=='string' || !/^[0-9a-f]{64}$/.test(claims.publicKeySha256) ||
        typeof claims.keyId!=='string' || !claims.keyId ||
        !Number.isSafeInteger(claims.issuedAt) || !Number.isSafeInteger(claims.expiresAt) ||
@@ -110,6 +114,8 @@ export class DoudizhuHTTPClient {
       '/v1/doudizhu/hands/'+encodeURIComponent(handId)+'/evidence',{accessToken:this.token()})
     const data=unwrap(raw)
     if(!record(data)||data.handId!==handId || !record(data.verification) ||
+      (data.fairnessMode!==undefined && data.fairnessMode!=='client-contributed-server-custodied-v1') ||
+      data.verification.fairnessMode!==data.fairnessMode ||
       !Number.isSafeInteger(data.finalVersion)||(data.finalVersion as number)<1 ||
       data.verification.handId!==handId ||
       data.verification.finalVersion!==data.finalVersion ||
@@ -122,6 +128,24 @@ export class DoudizhuHTTPClient {
       throw new Error('invalid verified final game evidence')
     }
     return JSON.parse(JSON.stringify(data)) as FinalEvidenceRead
+  }
+  /** Final-only authenticated proof material for this account's own seat.
+   * Never returns the stored phrase. Re-entry must be checked locally. */
+  async ownContribution(handId:string):Promise<OwnContributionRead> {
+    if(!/^[A-Za-z0-9_-]{1,128}$/.test(handId))throw new Error('invalid own contribution hand')
+    const raw=await this.transport.request<unknown>(
+      '/v1/doudizhu/hands/'+encodeURIComponent(handId)+'/own-contribution',
+      {accessToken:this.token()})
+    const data=unwrap(raw)
+    if(!record(data) || data.v!=='doudizhu-own-contribution-v1' ||
+      data.fairnessMode!=='client-contributed-server-custodied-v1' ||
+      data.handId!==handId ||
+      !Number.isSafeInteger(data.seat) || (data.seat as number)<1 || (data.seat as number)>3 ||
+      typeof data.secureRandom!=='string' || !/^[A-Za-z0-9_-]{43}$/.test(data.secureRandom) ||
+      typeof data.commitment!=='string' || !/^[0-9a-f]{64}$/.test(data.commitment) ||
+      typeof data.contributionDigest!=='string' || !/^[0-9a-f]{64}$/.test(data.contributionDigest))
+      throw new Error('invalid own contribution verification material')
+    return JSON.parse(JSON.stringify(data)) as OwnContributionRead
   }
   async privateHand(handId: string): Promise<{version: number; view: PrivateHandProjection}> {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(handId)) throw new Error('invalid hand id')
@@ -178,6 +202,7 @@ function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
 }
 
 export interface FairnessRead {
+ fairnessMode?:'client-contributed-server-custodied-v1'
  handId:string
  phase:string
  version:number
@@ -196,12 +221,12 @@ export interface FairnessRead {
 }
 export interface RevealContextInput {requestId:string;clientSeq:number;expectedVersion:number}
 export interface RevealContextRead {
- v:'doudizhu-reveal-context-v1'
+ v:'doudizhu-reveal-context-v1'|'doudizhu-custodied-context-v1'
  aad:string
  ticket:{
   mac:string
   claims:{
-   v:'doudizhu-reveal-context-v1'
+   v:'doudizhu-reveal-context-v1'|'doudizhu-custodied-context-v1'
    actor:string
    handId:string
    requestId:string
@@ -218,10 +243,12 @@ export interface RevealContextRead {
 }
 
 export interface FinalEvidenceRead {
+ fairnessMode?:'client-contributed-server-custodied-v1'
  handId:string
  status:string
  finalVersion:number
  verification:{
+  fairnessMode?:'client-contributed-server-custodied-v1'
   handId:string
   finalVersion:number
   completed:boolean
@@ -232,4 +259,14 @@ export interface FinalEvidenceRead {
   setupDigest:string
   transcriptDigest:string
  }
+}
+
+export interface OwnContributionRead {
+ v:'doudizhu-own-contribution-v1'
+ fairnessMode:'client-contributed-server-custodied-v1'
+ handId:string
+ seat:number
+ secureRandom:string
+ commitment:string
+ contributionDigest:string
 }
