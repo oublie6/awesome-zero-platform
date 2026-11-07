@@ -20,7 +20,7 @@ func (s *managedTestSetup) PrepareHand(_ context.Context, _ domain.RoomSnapshot,
 		HandID: id, ServerCommitment: domain.ServerCommitment{1},
 		RevealKeyID: "reveal-test", RevealPublicKeySHA256: domain.RevealPublicKeyHash{1},
 		RevealKeyBoundAt: time.Now().UTC(),
-		BeaconPlan: domain.BeaconPlan{Provider: s.provider, Round: "future-round"},
+		BeaconPlan:       domain.BeaconPlan{Provider: s.provider, Round: "future-round"},
 	}, nil
 }
 func (s *managedTestSetup) ReleaseHand(context.Context, domain.HandID) error {
@@ -29,9 +29,10 @@ func (s *managedTestSetup) ReleaseHand(context.Context, domain.HandID) error {
 }
 
 type managedTestProtector struct {
-	fail bool
+	fail  bool
 	calls int
 }
+
 func (p *managedTestProtector) Seal(_ context.Context, plaintext, aad []byte) (ProtectedPayload, error) {
 	p.calls++
 	if p.fail {
