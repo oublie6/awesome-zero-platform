@@ -422,3 +422,83 @@ test('Round15 live pending preflight blocks new room.hand.start before ACK',asyn
   assert.equal(online.actions.pending,pendingAction)
   online.dispose()
 })
+
+test('Round16 early authoritative H2 HTTP refresh cannot replace reserved fairness before WSS ACK',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-cancelled')
+  const previous=online.fairness
+  let projections=0
+  online.api.fairness=async handId=>{
+    projections++
+    return {handId,phase:'FAIRNESS_COMMITTING',version:1,seat:1,
+      committed:false,revealed:false,lastClientSequence:0}
+  }
+  const oldKit=await previous.prepareRecoveryKit('hand-cancelled','user-held backup')
+  assert.ok(oldKit.length>48)
+  const start=online.startHand('hand-H2')
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.equal(f.commands.length,1)
+  assert.equal(f.commands[0].payload.type,'room.hand.start')
+  assert.equal(online.handStartInProgress,true)
+  // The real authenticated HTTP room projection can expose H2 before the
+  // corresponding WSS durable ACK is delivered to RoomCoordinator.
+  f.platform.http.request=async()=>({code:'OK',data:{
+    roomId:'room-rejoin',version:10,status:'HAND_ACTIVE',occupied:3,member:true,
+    activeHandId:'hand-H2',lastClientSequence:13,seats:[
+      {position:1,accountId:'actor',ready:false},
+      {position:2,accountId:'friend',ready:false},
+      {position:3,accountId:'third',ready:false}
+    ]
+  }})
+  const ahead=await online.roomInfo('room-rejoin')
+  assert.equal(ahead.activeHandId,'hand-H2')
+  assert.throws(()=>online.confirmActiveFairnessHand(ahead.activeHandId),/room hand start in progress/)
+  assert.equal(online.fairness,previous,'HTTP H2 must not replace reserved old session')
+  assert.equal(previous.exportRecoveryKit(),oldKit,'old secret remains held until ACK')
+  const before=projections
+  await assert.rejects(online.fairness.prepareRecoveryKit('hand-H2'),/in progress/)
+  await assert.rejects(online.fairness.commit('hand-H2'),/in progress/)
+  assert.equal(projections,before,'no H2 fairness projection may start before ACK')
+  assert.equal(online.rooms.state.version,9,'in-flight room coordinator remains untouched')
+  assert.equal(online.handStartInProgress,true)
+  const req=f.commands[0].payload
+  for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+    v:'doudizhu-api-command-result-v1',requestId:req.requestId,type:'room.hand.start',
+    durable:{v:'fair-doudizhu-command-result-v1',commandId:req.requestId,
+      aggregateId:'room-rejoin',aggregateVersion:10,accepted:true}
+  }}))
+  const accepted=await start
+  assert.equal(accepted.version,10)
+  assert.equal(online.rooms.state.version,10)
+  assert.equal(online.handStartInProgress,false)
+  assert.notEqual(online.fairness,previous)
+  assert.equal(previous.hasRecoverySecret,false)
+  assert.equal(online.fairness.hasRecoverySecret,false)
+  const newKit=await online.fairness.prepareRecoveryKit('hand-H2')
+  assert.ok(newKit.length>48)
+  assert.notEqual(newKit,oldKit)
+  online.dispose()
+})
+
+test('Round16 failed hand start releases controller lock without clearing original secret',async()=>{
+  const f=fixture()
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  await online.joinRoom('room-rejoin')
+  online.confirmActiveFairnessHand('hand-cancelled')
+  online.api.fairness=async handId=>({handId,phase:'FAIRNESS_COMMITTING',
+    version:1,seat:1,committed:false,revealed:false,lastClientSequence:0})
+  const first=online.fairness
+  const backup=await first.prepareRecoveryKit('hand-cancelled','external backup')
+  online.rooms.startHand=async()=>{throw Error('authoritative start rejected')}
+  await assert.rejects(online.startHand('hand-H2'),/authoritative start rejected/)
+  assert.equal(online.handStartInProgress,false)
+  assert.equal(online.fairness,first)
+  assert.equal(first.exportRecoveryKit(),backup)
+  online.confirmActiveFairnessHand(null)
+  assert.equal(first.hasRecoverySecret,false)
+  online.dispose()
+})
