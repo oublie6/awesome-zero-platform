@@ -10,7 +10,12 @@ import (
 )
 
 type SetReadyInput struct{ Ready bool }
-type StartHandInput struct{ HandID domain.HandID }
+type StartHandInput struct {
+	HandID domain.HandID
+	// Omitted for historical client commit/reveal hands. Only the exact
+	// versioned server-managed mode is supported as an alternative.
+	FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
+}
 
 func (s *Service) CreateRoom(ctx context.Context, actor domain.AccountID, command Command) (CommandResult, error) {
 	return s.execute(ctx, actor, command, CommandRoomCreate, domain.AggregateRoom, true, struct{}{},
@@ -46,6 +51,9 @@ func (s *Service) SetRoomReady(ctx context.Context, actor domain.AccountID, comm
 }
 
 func (s *Service) StartRoomHand(ctx context.Context, actor domain.AccountID, command Command, input StartHandInput) (CommandResult, error) {
+	if input.FairnessMode != "" && input.FairnessMode != domain.FairnessModeServerManaged {
+		return CommandResult{}, fmt.Errorf("%w: unsupported fairness mode", ErrInvalidCommand)
+	}
 	return s.execute(ctx, actor, command, CommandRoomHandStart, domain.AggregateRoom, false, input,
 		func(txCtx context.Context, tx Transaction, now time.Time) (mutationOutcome, error) {
 			roomSnapshot, err := tx.LoadRoomForUpdate(txCtx, domain.RoomID(command.AggregateID))
@@ -80,12 +88,27 @@ func (s *Service) StartRoomHand(ctx context.Context, actor domain.AccountID, com
 			if setup.HandID != input.HandID || setup.HandID == "" {
 				return failAfterPreparation(wrapInfrastructure("prepare hand setup", fmt.Errorf("%w: hand setup ID mismatch", ErrInvalidCommand)))
 			}
-			hand, handEvents, err := domain.NewHand(
-				setup.HandID, roomSnapshot.ID, seats, setup.ServerCommitment, setup.RevealKeyID, setup.BeaconPlan,
-				domain.RevealKeyBinding{PublicKeySHA256: setup.RevealPublicKeySHA256, BoundAt: setup.RevealKeyBoundAt},
-			)
+			binding := domain.RevealKeyBinding{PublicKeySHA256: setup.RevealPublicKeySHA256, BoundAt: setup.RevealKeyBoundAt}
+			var hand *domain.Hand
+			var handEvents []domain.Event
+			if input.FairnessMode == domain.FairnessModeServerManaged {
+				hand, handEvents, err = domain.NewServerManagedHand(
+					setup.HandID, roomSnapshot.ID, seats, setup.ServerCommitment,
+					setup.RevealKeyID, setup.BeaconPlan, binding)
+			} else {
+				hand, handEvents, err = domain.NewHand(
+					setup.HandID, roomSnapshot.ID, seats, setup.ServerCommitment,
+					setup.RevealKeyID, setup.BeaconPlan, binding)
+			}
 			if err != nil {
 				return failAfterPreparation(wrapInfrastructure("construct prepared hand", err))
+			}
+			if input.FairnessMode == domain.FairnessModeServerManaged {
+				managedEvents, prepareErr := s.prepareManagedContributions(txCtx, tx, hand, seats, command.CommandID, now)
+				if prepareErr != nil {
+					return failAfterPreparation(wrapInfrastructure("prepare server-managed contributions", prepareErr))
+				}
+				handEvents = append(handEvents, managedEvents...)
 			}
 			if err := tx.InsertHand(txCtx, hand.Snapshot(), now); err != nil {
 				return failAfterPreparation(err)
