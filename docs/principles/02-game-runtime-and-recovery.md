@@ -1,5 +1,15 @@
 # 02 — Game Runtime, Performance and B-Level Recovery
 
+> **Fairness custody amendment (2026-11-07).** Explicitly versioned
+> `server-managed-v1` hands use server-generated, encrypted seat contributions
+> and an independently verified future drand beacon; their random contributions
+> are **not** player-independent. Authenticated participant credentials
+> authorize access to final evidence, not cryptographic proof by themselves.
+> Historical client-controlled hands keep their exact commit/reveal and
+> recovery semantics. Do not weaken transaction atomicity, protected storage,
+> immutable per-hand mode, unknown-outcome retries or checkpoint integrity.
+> See [managed fairness architecture](../architecture/doudizhu-server-managed-fairness-v1.md).
+
 Status: **target architecture**. Today's live-hand state is in process memory and does **not yet guarantee** recovery after a process crash. Implementing this document requires a separate, explicitly authorized Goal, schema changes and failure-injection tests.
 
 ## Non-negotiable invariants
