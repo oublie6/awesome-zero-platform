@@ -111,6 +111,8 @@ export class DoudizhuHTTPClient {
       '/v1/doudizhu/hands/'+encodeURIComponent(handId)+'/evidence',{accessToken:this.token()})
     const data=unwrap(raw)
     if(!record(data)||data.handId!==handId || !record(data.verification) ||
+      (data.fairnessMode!==undefined && data.fairnessMode!=='server-managed-v1') ||
+      data.verification.fairnessMode!==data.fairnessMode ||
       !Number.isSafeInteger(data.finalVersion)||(data.finalVersion as number)<1 ||
       data.verification.handId!==handId ||
       data.verification.finalVersion!==data.finalVersion ||
@@ -220,10 +222,12 @@ export interface RevealContextRead {
 }
 
 export interface FinalEvidenceRead {
+ fairnessMode?:'server-managed-v1'
  handId:string
  status:string
  finalVersion:number
  verification:{
+  fairnessMode?:'server-managed-v1'
   handId:string
   finalVersion:number
   completed:boolean
