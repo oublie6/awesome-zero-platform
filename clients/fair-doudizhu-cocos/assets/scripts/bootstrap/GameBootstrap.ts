@@ -341,6 +341,10 @@ export class GameBootstrap extends Component {
       const info=await online.roomInfo(roomID)
       if(generation!==this.roomGeneration || roomID!==this.roomID || online!==this.online)return
       if(!info.member)throw new Error('当前账号不属于该房间')
+      // The HTTP read can see a newly accepted H2 while the WSS start ACK is
+      // still withheld. Do not rebind fairness or restore a room coordinator
+      // that still owns an in-flight command. startHand() will refresh on ACK.
+      if(online.handStartInProgress)return
       online.confirmActiveFairnessHand(info.activeHandId || null)
       online.rooms.restoreTrustedRoom(info.roomId,info.version,info.lastClientSequence)
       if(this.screen==='rooms')this.renderScreen('rooms')
