@@ -153,7 +153,7 @@ test('G48-N02: recovering a different room cannot discard UNKNOWN request identi
  const originalRequest=calls[0]
  assert.equal(room.pendingRoomId,'A')
  assert.equal(room.pendingCommandType,'room.join')
- assert.throws(()=>room.restoreTrustedRoom('B',5),/unknown for another room/)
+ assert.throws(()=>room.restoreTrustedRoom('B',5),/outcome unknown/)
  assert.equal(room.state,null)
  assert.equal(room.pendingRoomId,'A')
  assert.equal(room.needsReconciliation,true)
