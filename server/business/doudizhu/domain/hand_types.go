@@ -35,7 +35,11 @@ const (
 // historical client-contributed snapshots and their canonical encoding.
 type FairnessMode string
 
-const FairnessModeServerManaged FairnessMode = "server-managed-v1"
+const (
+	// Kept only for recovery of previously written experimental hands.
+	FairnessModeServerManaged FairnessMode = "server-managed-v1"
+	FairnessModeClientCustodied FairnessMode = "client-contributed-server-custodied-v1"
+)
 
 type HandSeat struct {
 	Seat      Seat
@@ -225,6 +229,23 @@ func NewServerManagedHand(
 	created.FairnessMode = FairnessModeServerManaged
 	events[0].Payload = created
 	return hand, events, nil
+}
+
+// NewClientCustodiedHand retains the legacy domain invariants while recording
+// the immutable client-generated/server-stored contribution mode.
+func NewClientCustodiedHand(
+ id HandID, roomID RoomID, seats [3]HandSeat,
+ serverCommitment ServerCommitment, revealKeyID string,
+ beaconPlan BeaconPlan, binding RevealKeyBinding,
+) (*Hand, []Event, error) {
+ hand, events, err := NewHand(id, roomID, seats, serverCommitment, revealKeyID, beaconPlan, binding)
+ if err != nil { return nil, nil, err }
+ hand.fairnessMode = FairnessModeClientCustodied
+ created, ok := events[0].Payload.(HandCreatedPayload)
+ if !ok { return nil, nil, fmt.Errorf("%w: invalid creation event", ErrInvalidArgument) }
+ created.FairnessMode = FairnessModeClientCustodied
+ events[0].Payload = created
+ return hand, events, nil
 }
 
 func (h *Hand) Snapshot() HandSnapshot {
