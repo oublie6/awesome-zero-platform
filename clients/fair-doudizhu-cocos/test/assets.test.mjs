@@ -130,3 +130,20 @@ test('R18 recovery UI gates unknown H2 mode and discovers rooms on fresh login',
   assert.match(core,new RegExp('legacy (recovery|commit|reveal) forbidden for server-custodied hand'))
  }
 })
+
+test('Round19 latest recovery choice and final membership verification are mandatory',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
+ const part=ui.split('private async performAuthorizedRoomRecovery(')[1].split('private async reconnect():')[0]
+ assert.match(part,/token===this\.recoveryAttempt/)
+ assert.match(part,/await online\.roomInfo\(roomID\)/)
+ assert.match(part,/if\(!verified\.member \|\| verified\.status==='CLOSED'\)/)
+ assert.match(part,/this\.revokeInvalidRecoveredRoom\(online,roomID\)/)
+ assert.ok(part.indexOf('await online.roomInfo(roomID)')<part.indexOf("this.notice('已通过服务器恢复本人房间和牌局')"))
+ assert.match(controller,/private recoveryGeneration = 0/)
+ assert.match(controller,/this\.pendingRecovery\?\.key === key/)
+ assert.match(controller,/token===this\.recoveryGeneration/)
+ assert.match(controller,/const fresh=await this\.api\.room\(initial\.roomId\)/)
+ assert.ok(controller.indexOf('const fresh=await this.api.room(initial.roomId)') <
+  controller.indexOf('this.rooms.restoreTrustedRoom(fresh.roomId'))
+})

@@ -153,7 +153,7 @@ test('replacement room member reconnects without reading a previous hand archive
   assert.equal(confirmed.lastHandId,undefined)
   assert.equal(online.shell.hand.snapshot,null)
   assert.equal(online.rooms.state.roomId,'room-rejoin')
-  assert.equal(paths.length,2)
+  assert.equal(paths.length,3)
   assert.ok(paths.every(path=>path.endsWith('/rooms/room-rejoin')))
   online.dispose()
 })
@@ -526,7 +526,7 @@ test('cold controller discovers the authenticated active room without any device
  assert.equal(online.rooms.state.roomId,'room-cold')
  assert.equal(online.rooms.state.version,18)
  assert.deepEqual(synced,[],'predeal fairness is recoverable without an unavailable private hand')
- assert.deepEqual(paths,['/v1/doudizhu/me/rooms','/v1/doudizhu/rooms/room-cold'])
+ assert.deepEqual(paths,['/v1/doudizhu/me/rooms','/v1/doudizhu/rooms/room-cold','/v1/doudizhu/rooms/room-cold'])
  const joined=await online.joinRoom('room-cold')
  assert.equal(joined.roomId,'room-cold','already seated HAND_ACTIVE player must be able to resume')
  assert.deepEqual(synced,[])
@@ -557,6 +557,98 @@ test('nonmember may not join an already active hand through a stale locator',asy
  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
  await online.loginAndConnect()
  await assert.rejects(online.joinRoom('room-rejoin'),/not joinable/)
+ assert.equal(online.rooms.state,null)
+ online.dispose()
+})
+
+test('R19-N01: older A HTTP response cannot overwrite newer explicit room B recovery',async()=>{
+ const f=fixture()
+ const room=id=>({roomId:id,version:5,status:'WAITING_PLAYERS',occupied:2,member:true,
+  lastClientSequence:3,seats:[{position:1,accountId:'actor',ready:false},
+   {position:2,accountId:'friend',ready:false},{position:3,accountId:'',ready:false}]})
+ let releaseA,firstA=true
+ const urls=[]
+ f.platform.http.request=async path=>{
+  urls.push(path)
+  if(path==='/v1/doudizhu/rooms/A'&&firstA){
+   firstA=false
+   return new Promise(resolve=>{releaseA=()=>resolve({code:'OK',data:room('A')})})
+  }
+  return {code:'OK',data:room(path.endsWith('/B')?'B':'A')}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const pendingA=online.reconnectAndResync('A')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof releaseA,'function')
+ const b=await online.reconnectAndResync('B')
+ assert.equal(b.roomId,'B')
+ assert.equal(online.rooms.state.roomId,'B')
+ releaseA()
+ assert.equal(await pendingA,null,'older result must lose ownership')
+ assert.equal(online.rooms.state.roomId,'B')
+ assert.equal(online.rooms.state.version,5)
+ assert.ok(urls.filter(url=>url.endsWith('/rooms/A')).length===1)
+ online.dispose()
+})
+
+test('R19-N01: duplicate same-room recovery coalesces and creates one reconnect socket',async()=>{
+ const f=fixture()
+ const view={roomId:'room-single',version:4,status:'WAITING_PLAYERS',member:true,
+   occupied:2,lastClientSequence:1,seats:[
+    {position:1,accountId:'actor',ready:false},{position:2,accountId:'b',ready:true},
+    {position:3,accountId:'',ready:false}]}
+ const urls=[]
+ let release
+ f.platform.http.request=async path=>{
+  urls.push(path)
+  if(urls.length===1)return new Promise(resolve=>{release=()=>resolve({code:'OK',data:view})})
+  return {code:'OK',data:view}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const a=online.reconnectAndResync('room-single')
+ const b=online.reconnectAndResync('room-single')
+ assert.strictEqual(a,b,'same target must share the exact pending operation')
+ assert.equal(f.auth.length,2,'login + one recovery connection')
+ release()
+ const result=await Promise.all([a,b])
+ assert.equal(result[0].roomId,'room-single')
+ assert.equal(urls.length,2,'a second fresh authorization read, not duplicate recoveries')
+ assert.equal(f.auth.length,2)
+ online.dispose()
+})
+
+test('R19-N02: fresh CLOSED/nonmember read rejects stale WAITING and never adopts it',async()=>{
+ const f=fixture()
+ const waiting={roomId:'room-closed',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,
+   lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},
+     {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
+ const closed={roomId:'room-closed',version:2,status:'CLOSED',member:false,occupied:0}
+ let n=0
+ f.platform.http.request=async()=>({code:'OK',data:++n===1?waiting:closed})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await assert.rejects(online.reconnectAndResync('room-closed'),/room closed|membership revoked/)
+ assert.equal(n,2,'must verify twice against actual authoritative room endpoint')
+ assert.equal(online.rooms.state,null)
+ assert.equal(online.shell.hand.snapshot,null)
+ online.dispose()
+})
+
+test('R19-N02: later definitive CLOSED revokes an already adopted room',async()=>{
+ const f=fixture()
+ const waiting={roomId:'room-revoked',version:5,status:'WAITING_PLAYERS',member:true,occupied:1,
+   lastClientSequence:2,seats:[{position:1,accountId:'actor',ready:false},
+     {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
+ const closed={roomId:'room-revoked',version:6,status:'CLOSED',member:false,occupied:0}
+ let reads=0
+ f.platform.http.request=async()=>({code:'OK',data:++reads<4?waiting:closed})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await online.reconnectAndResync('room-revoked')
+ assert.equal(online.rooms.state.roomId,'room-revoked')
+ await assert.rejects(online.reconnectAndResync('room-revoked'),/room closed|membership revoked/)
  assert.equal(online.rooms.state,null)
  online.dispose()
 })
