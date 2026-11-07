@@ -88,7 +88,10 @@ export function createWireCommand(input: Omit<WireCommand, 'v'>): WireCommand {
       if (!exactKeys(['ready']) || typeof payload.ready !== 'boolean') throw new Error('invalid ready payload')
       break
     case 'room.hand.start':
-      if (!exactKeys(['handId']) || !id(payload.handId as string)) throw new Error('invalid hand start payload')
+      if ((!exactKeys(['handId']) && !exactKeys(['handId','fairnessMode'])) ||
+          !id(payload.handId as string) ||
+          (payload.fairnessMode !== undefined && payload.fairnessMode !== 'server-managed-v1'))
+        throw new Error('invalid hand start payload')
       break
     case 'hand.commit':
       if (!exactKeys(['commitment']) || typeof payload.commitment !== 'string' ||
