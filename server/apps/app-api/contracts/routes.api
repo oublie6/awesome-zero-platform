@@ -207,6 +207,10 @@ service main-api {
     @handler route_get_v1_doudizhu_hands_handId_evidence
     get /v1/doudizhu/hands/:handId/evidence
 
+    @doc "GET /v1/doudizhu/hands/:handId/own-contribution"
+    @handler route_get_v1_doudizhu_hands_handId_own_contribution
+    get /v1/doudizhu/hands/:handId/own-contribution
+
     @doc "GET /health/live"
     @handler route_get_health_live
     get /health/live

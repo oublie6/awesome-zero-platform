@@ -1,5 +1,11 @@
 # Goal 0046 — Integrated playable Fair Doudizhu and B-grade recovery
 
+## Scope amendment — 2026-11-07: player contribution, server-owned storage and verification
+
+**Explicit user correction:** New hands must solicit an arbitrary personal phrase, have the client generate 32 secure random bytes and submit both in a single encrypted request. The server must encrypt and durably retain both original values, and continue owning all authoritative room/hand/journal/checkpoint recovery. The client must persist no per-hand secret, state or backup. After a completed game, the authenticated original seat may retrieve only their random, re-enter their own remembered phrase and locally recompute the original commitment. Archive/drand verification remains separate. Server-known participant entropy is honestly disclosed as a weaker trust model than the historical unrevealed client contribution.
+
+This supersedes the mistakenly implemented server-generated `server-managed-v1` and the former mandatory external recovery-kit gate **for new games only**. Preserve previous verified Round 17 snapshot and existing two-stage legacy hands. The corrected candidate is built from accepted `31f9f9d27af28ecbb405667fcc678e7298ac5c9a` on an isolated branch. Do not label E03 PASS without live authorized three-player, MySQL recovery and proof acceptance. C09/C10 remain DEFERRED, H05/GOAL8 remain BLOCKED. See [implementation design](../architecture/doudizhu-client-custodied-fairness-v1.md).
+
 ## State
 in_progress — authorized by user 2026-11-02. **This is a development plan, not completed functionality or acceptance.** Goal 0045 remains separately in_progress, with its historical Codex checkpoint PASS and remaining platform qualifications intact in `docs/goals/current.md`.
 

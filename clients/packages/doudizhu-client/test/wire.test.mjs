@@ -35,3 +35,25 @@ test('correlation required before accepting server command result', () => {
   assert.deepEqual(parseWireResult(result, command), result)
   assert.throws(() => parseWireResult({ ...result, requestId: 'other' }, command), /uncorrelated/)
 })
+
+test('client-created custodial hand version and HPKE contribution have strict wire bindings',()=>{
+ const req={...base,expectedVersion:3,type:'room.hand.start',
+   payload:{handId:'hand-2',fairnessMode:'client-contributed-server-custodied-v1'}}
+ assert.deepEqual(createWireCommand(req).payload,req.payload)
+ assert.throws(()=>createWireCommand({...req,payload:{handId:'hand-2',fairnessMode:'server-managed-v1'}}),/invalid/)
+ const contribution={...base,aggregateId:'hand-2',expectedVersion:1,type:'hand.contribution',
+   revealContext:{claims:{
+     v:'doudizhu-custodied-context-v1',actor:'alice',handId:'hand-2',
+     requestId:base.requestId,clientSeq:1,expectedVersion:1,seat:1,
+     commitment:'',keyId:'key-1',publicKeySha256:'0'.repeat(64),
+     issuedAt:100000,expiresAt:160000},mac:'a'.repeat(64)},
+   payload:{envelope:{v:'secure-envelope-v1',keyId:'key-1',
+     suite:'hpke-x25519-hkdf-sha256-aes-256-gcm',
+     encapsulatedKey:'YWJj',ciphertext:'YWJj'}}}
+ assert.equal(createWireCommand(contribution).type,'hand.contribution')
+ assert.throws(()=>createWireCommand({...contribution,revealContext:undefined}),/AAD/)
+ assert.throws(()=>createWireCommand({...contribution,revealContext:{
+   ...contribution.revealContext,
+   claims:{...contribution.revealContext.claims,v:'doudizhu-reveal-context-v1'}}}),/AAD/)
+ assert.throws(()=>createWireCommand({...contribution,payload:{...contribution.payload,phrase:'secret'}}),/envelope/)
+})
