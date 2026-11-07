@@ -30,6 +30,7 @@ const (
 	TypeRoomStart  = "room.hand.start"
 	TypeHandCommit = "hand.commit"
 	TypeHandReveal = "hand.reveal"
+  TypeHandContribution = "hand.contribution"
 	TypeHandBeacon = "hand.beacon"
 	TypeHandDealt  = "hand.dealt"
 	TypeHandBid    = "hand.bid"
@@ -52,6 +53,7 @@ type Backend interface {
 	StartRoomHand(context.Context, domain.AccountID, application.Command, application.StartHandInput) (application.CommandResult, error)
 	SubmitHandCommit(context.Context, domain.AccountID, application.Command, application.SubmitCommitInput) (application.CommandResult, error)
 	SubmitHandReveal(context.Context, domain.AccountID, application.Command, application.SubmitRevealInput) (application.CommandResult, error)
+  SubmitHandContribution(context.Context,domain.AccountID,application.Command,application.SubmitContributionInput) (application.CommandResult,error)
 	LockHandBeacon(context.Context, domain.AccountID, application.Command, application.LockBeaconInput) (application.CommandResult, error)
 	MarkHandDealt(context.Context, domain.AccountID, application.Command) (application.CommandResult, error)
 	SubmitLiveHandBid(context.Context, domain.AccountID, domain.HandID, uint64, bidding.Score) (application.LiveHandCommandResult, error)
@@ -141,7 +143,7 @@ func (d *Dispatcher) Execute(ctx context.Context, actor domain.AccountID, reques
 	if err := validateRequest(actor, request); err != nil {
 		return CommandResponse{}, err
 	}
-	if request.Type == TypeHandReveal {
+	if request.Type == TypeHandReveal || request.Type == TypeHandContribution {
 		if _, _, err := d.verifyRevealContext(actor, request); err != nil {
 			return CommandResponse{}, err
 		}
@@ -198,10 +200,10 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 	// retransmission the freshly generated times must not change the durable
 	// request identity. Signed reveal context is different: its verified time
 	// binding is part of the authenticated command and stays strict.
-	if !isLiveType(request.Type) && request.Type != TypeHandReveal {
+	if !isLiveType(request.Type) && request.Type != TypeHandReveal && request.Type != TypeHandContribution {
 		command.ServerGeneratedTimes = true
 	}
-	if request.Type == TypeHandReveal {
+	if request.Type == TypeHandReveal || request.Type == TypeHandContribution {
 		issued, expires, err := d.verifyRevealContext(actor, request)
 		if err != nil {
 			return CommandResponse{}, err
@@ -237,13 +239,16 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 			durable, err = d.backend.SetRoomReady(ctx, actor, command, application.SetReadyInput{Ready: payload.Ready})
 		}
 	case TypeRoomStart:
-		var payload struct {
-			HandID string `json:"handId"`
-		}
-		if err = decodePayload(request.Payload, &payload); err == nil {
-			command.Name, command.AggregateType = application.CommandRoomHandStart, domain.AggregateRoom
-			durable, err = d.backend.StartRoomHand(ctx, actor, command, application.StartHandInput{HandID: domain.HandID(payload.HandID)})
-		}
+        var payload struct {
+          HandID string `json:"handId"`
+          FairnessMode string `json:"fairnessMode,omitempty"`
+        }
+        if err=decodePayload(request.Payload,&payload);err==nil {
+          command.Name,command.AggregateType=application.CommandRoomHandStart,domain.AggregateRoom
+          durable,err=d.backend.StartRoomHand(ctx,actor,command,application.StartHandInput{
+            HandID:domain.HandID(payload.HandID),FairnessMode:domain.FairnessMode(payload.FairnessMode),
+          })
+        }
 	case TypeHandCommit:
 		var payload struct {
 			Commitment string `json:"commitment"`
@@ -256,6 +261,26 @@ func (d *Dispatcher) execute(ctx context.Context, actor domain.AccountID, reques
 				durable, err = d.backend.SubmitHandCommit(ctx, actor, command, application.SubmitCommitInput{Commitment: value})
 			}
 		}
+	case TypeHandContribution:
+    var payload struct {
+      Envelope struct {
+        Version string `json:"v"`
+        KeyID string `json:"keyId"`
+        Suite string `json:"suite"`
+        EncapsulatedKey string `json:"encapsulatedKey"`
+        Ciphertext string `json:"ciphertext"`
+      } `json:"envelope"`
+    }
+    if err=decodePayload(request.Payload,&payload);err==nil {
+      command.Name,command.AggregateType=application.CommandHandContributionSubmit,domain.AggregateHand
+      durable,err=d.backend.SubmitHandContribution(ctx,actor,command,application.SubmitContributionInput{
+        Envelope:application.SecureEnvelope{
+          Version:payload.Envelope.Version,KeyID:payload.Envelope.KeyID,
+          Suite:payload.Envelope.Suite,EncapsulatedKey:payload.Envelope.EncapsulatedKey,
+          Ciphertext:payload.Envelope.Ciphertext,
+        },
+      })
+    }
 	case TypeHandReveal:
 		var payload struct {
 			Envelope struct {
