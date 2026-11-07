@@ -85,3 +85,17 @@ test('accepted room.hand.start receipt is adopted only after exact fairness pref
  assert.doesNotMatch(start,/await online\.rooms\.startHand\(handID\)/)
  assert.doesNotMatch(start,/online\.confirmActiveFairnessHand\(handID\)/)
 })
+
+test('Round16 HTTP H2 refresh defers rebinding until durable WSS start receipt',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
+ const refresh=ui.split('private async refreshRoom():Promise<void> {')[1].split('private async refreshFairness():Promise<void>')[0]
+ assert.match(refresh,/if\(online\.handStartInProgress\)return/)
+ assert.ok(refresh.indexOf('if(online.handStartInProgress)return')<refresh.indexOf('online.confirmActiveFairnessHand(info.activeHandId || null)'))
+ assert.ok(refresh.indexOf('if(online.handStartInProgress)return')<refresh.indexOf('online.rooms.restoreTrustedRoom('))
+ const guard=controller.split('confirmActiveFairnessHand(handId: string | null): void {')[1].split('private resetFairnessAfterConfirmedTransition()')[0]
+ assert.match(guard,/this\.startingHand !== null && handId !== this\.confirmedFairnessHand/)
+ assert.doesNotMatch(guard,/handId !== this\.startingHand/)
+ const start=controller.split('async startHand(handId: string): Promise<Readonly<RoomState>> {')[1].split('async createRoom()')[0]
+ assert.ok(start.indexOf('this.startingHand = null\n            this.confirmActiveFairnessHand(handId)') > start.indexOf('await this.rooms.startHand(handId)'))
+})
