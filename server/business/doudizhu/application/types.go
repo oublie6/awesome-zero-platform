@@ -14,6 +14,7 @@ const (
 	RevealAADV1       = "fair-doudizhu/reveal-aad/v1"
 	ContributionV1    = "fair-doudizhu/contribution/v1"
 	RecordAADV1       = "fair-doudizhu/contribution-record-aad/v1"
+	CustodiedAADV1 = "fair-doudizhu/custodied-contribution-aad/v1"
 )
 
 const (
@@ -23,6 +24,7 @@ const (
 	CommandRoomReadySet     = "doudizhu.room.ready.set.v1"
 	CommandRoomHandStart    = "doudizhu.room.hand.start.v1"
 	CommandHandCommitSubmit = "doudizhu.hand.fairness.commit.submit.v1"
+	CommandHandContributionSubmit = "doudizhu.hand.fairness.contribution.submit.v1"
 	CommandHandRevealSubmit = "doudizhu.hand.fairness.reveal.submit.v1"
 	CommandHandBeaconLock   = "doudizhu.hand.beacon.lock.v1"
 	CommandHandDealt        = "doudizhu.hand.dealt.v1"
