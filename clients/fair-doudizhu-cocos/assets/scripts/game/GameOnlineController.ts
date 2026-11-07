@@ -62,8 +62,17 @@ export class GameOnlineController {
     if (this.disposed || !this.session.authenticated) throw new Error('authenticated session required')
     const generation = this.membershipGeneration
     await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
-    const target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId
-    if (!target) return null
+    let target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId
+    if (!target) {
+      const choices = await this.discoverRecoverableRooms()
+      if (this.disposed || generation !== this.membershipGeneration) return null
+      const active = choices.filter(view => view.status === 'HAND_ACTIVE')
+      if (active.length === 1) target = active[0].roomId
+      else if (active.length > 1) throw new Error('multiple active rooms; choose one to recover')
+      else if (choices.length === 1) target = choices[0].roomId
+      else if (choices.length > 1) throw new Error('multiple recoverable rooms; choose one to recover')
+      else return null
+    }
     const room = await this.lookupOrRetryPendingCreate(target)
     if (this.disposed || generation !== this.membershipGeneration) return null
     if (!room.member) throw new Error('room membership not confirmed after reconnect')
@@ -80,6 +89,11 @@ export class GameOnlineController {
     }
     return room
   }
+  async discoverRecoverableRooms():Promise<RoomRead[]> {
+    if(this.disposed || !this.session.authenticated)
+      throw new Error('authenticated session required for recovery discovery')
+    return this.api.recoverableRooms()
+  }
   async roomInfo(roomId: string): Promise<RoomRead> {
     if (this.disposed) throw new Error('online controller disposed')
     return this.api.room(roomId)
@@ -87,14 +101,16 @@ export class GameOnlineController {
   /** Secure join code is a locator; the Go server checks membership and version. */
   async joinRoom(roomId: string): Promise<Readonly<{roomId:string;version:number}>> {
     const view = await this.roomInfo(roomId)
-    if (view.status === 'CLOSED' || view.status === 'HAND_ACTIVE') throw new Error('room not joinable')
+    if (view.status === 'CLOSED') throw new Error('room not joinable')
+    // Current members can resume an already active hand. This does NOT allow
+    // outsiders into HAND_ACTIVE or bypass the server's membership check.
     if (view.member) {
-      this.confirmActiveFairnessHand(view.activeHandId || null)
-      this.rooms.restoreTrustedRoom(roomId, view.version, view.lastClientSequence)
+      const restored=await this.reconnectAndResync(roomId)
+      if(!restored || !restored.member)throw new Error('room member recovery failed')
       this.membershipGeneration++
-      this.shell.useAuthoritativeHand(view.activeHandId || view.lastHandId || null)
-      return this.rooms.state!
+      return {roomId:restored.roomId,version:restored.version}
     }
+    if (view.status === 'HAND_ACTIVE') throw new Error('room not joinable')
     const joined = await this.rooms.join(roomId, view.version, view.lastClientSequence)
     this.confirmActiveFairnessHand(null)
     this.membershipGeneration++
