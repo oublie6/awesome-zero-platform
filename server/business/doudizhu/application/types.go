@@ -24,6 +24,7 @@ const (
 	CommandRoomReadySet     = "doudizhu.room.ready.set.v1"
 	CommandRoomHandStart    = "doudizhu.room.hand.start.v1"
 	CommandHandCommitSubmit = "doudizhu.hand.fairness.commit.submit.v1"
+	CommandHandCustodySubmit = "doudizhu.hand.fairness.custody.submit.v1"
 	CommandHandContributionSubmit = "doudizhu.hand.fairness.contribution.submit.v1"
 	CommandHandRevealSubmit = "doudizhu.hand.fairness.reveal.submit.v1"
 	CommandHandBeaconLock   = "doudizhu.hand.beacon.lock.v1"
