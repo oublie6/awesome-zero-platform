@@ -99,3 +99,19 @@ test('Round16 HTTP H2 refresh defers rebinding until durable WSS start receipt',
  const start=controller.split('async startHand(handId: string): Promise<Readonly<RoomState>> {')[1].split('async createRoom()')[0]
  assert.ok(start.indexOf('this.startingHand = null\n            this.confirmActiveFairnessHand(handId)') > start.indexOf('await this.rooms.startHand(handId)'))
 })
+
+test('new hands use player text and server custody without game-local backup',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const actions=await readFile(new URL('../assets/scripts/game/GameFairnessActions.ts',import.meta.url),'utf8')
+ const online=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
+ assert.match(ui,/name:'SubmitOwnContribution'/)
+ assert.match(ui,/name:'VerifyOwnContribution'/)
+ assert.match(ui,/if\(this\.fairnessMode==='client-contributed-server-custodied-v1'\)/)
+ assert.match(ui,/if\(this\.roomInput\)this\.roomInput\.string=''/)
+ assert.match(ui,/await fairness\.submitCustodied\(handID,phrase\)/)
+ assert.match(ui,/verifyOwnContribution\(handID,own\.seat,own\.secureRandom,phrase,own\.commitment\)/)
+ assert.match(online,/this\.rooms\.startHand\(handId,'client-contributed-server-custodied-v1'\)/)
+ assert.match(actions,/async submitCustodied\(handId:string,phrase:string\)/)
+ assert.match(actions,/random\?\.fill\(0\)/)
+ assert.doesNotMatch(actions.split('async submitCustodied(')[1].split('async retryUnknown(')[0],/localStorage|wx\.setStorage|exportRecoveryKit/)
+})
