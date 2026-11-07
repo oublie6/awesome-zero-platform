@@ -31,6 +31,12 @@ const (
 	EventHandTerminated         = "doudizhu.hand.terminated.v1"
 )
 
+// FairnessMode is fixed at hand creation. The empty legacy value preserves
+// historical client-contributed snapshots and their canonical encoding.
+type FairnessMode string
+
+const FairnessModeServerManaged FairnessMode = "server-managed-v1"
+
 type HandSeat struct {
 	Seat      Seat
 	AccountID AccountID
@@ -72,6 +78,7 @@ type ContributionSnapshot struct {
 }
 
 type HandSnapshot struct {
+	FairnessMode          FairnessMode `json:"fairnessMode,omitempty"`
 	ID                    HandID
 	RoomID                RoomID
 	Phase                 HandPhase
@@ -88,6 +95,7 @@ type HandSnapshot struct {
 }
 
 type Hand struct {
+	fairnessMode          FairnessMode
 	id                    HandID
 	roomID                RoomID
 	phase                 HandPhase
@@ -104,6 +112,7 @@ type Hand struct {
 }
 
 type HandCreatedPayload struct {
+	FairnessMode FairnessMode `json:"fairnessMode,omitempty"`
 	RoomID                RoomID
 	Seats                 [3]HandSeat
 	RevealKeyID           string
@@ -197,6 +206,23 @@ func NewHand(
 	return hand, []Event{event}, nil
 }
 
+// NewServerManagedHand binds the custody model before any commit/reveal data is
+// recorded. It intentionally does not alter historical NewHand behavior.
+func NewServerManagedHand(
+  id HandID, roomID RoomID, seats [3]HandSeat,
+  serverCommitment ServerCommitment, revealKeyID string,
+  beaconPlan BeaconPlan, binding RevealKeyBinding,
+) (*Hand, []Event, error) {
+  hand, events, err := NewHand(id, roomID, seats, serverCommitment, revealKeyID, beaconPlan, binding)
+  if err != nil { return nil, nil, err }
+  hand.fairnessMode = FairnessModeServerManaged
+  created, ok := events[0].Payload.(HandCreatedPayload)
+  if !ok { return nil, nil, fmt.Errorf("%w: created event", ErrInvalidArgument) }
+  created.FairnessMode = FairnessModeServerManaged
+  events[0].Payload = created
+  return hand, events, nil
+}
+
 func (h *Hand) Snapshot() HandSnapshot {
 	var contributions [3]ContributionSnapshot
 	for index, seat := range fixedSeats {
@@ -216,6 +242,7 @@ func (h *Hand) Snapshot() HandSnapshot {
 		beacon = &copyValue
 	}
 	return HandSnapshot{
+		FairnessMode:          h.fairnessMode,
 		ID:                    h.id,
 		RoomID:                h.roomID,
 		Phase:                 h.phase,
