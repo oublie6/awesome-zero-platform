@@ -53,6 +53,10 @@ export class RoomCoordinator {
     if (!validID(roomId) || !Number.isSafeInteger(version) || version < 1 ||
         !Number.isSafeInteger(lastClientSequence) || lastClientSequence < 0) throw new Error('invalid trusted room')
     if (this.inFlight) throw new Error('cannot replace room while command outstanding')
+    // An authorized read of B does not settle the durable request for A.
+    // Preserve its exact request ID and payload until reconciled.
+    if (this.uncertainOutcome && this.pendingCommand?.aggregateId !== roomId)
+      throw new Error('room outcome unknown for another room; retry original request before switching')
     this.room = Object.freeze({roomId, version})
     this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, lastClientSequence))
     this.uncertainOutcome = false

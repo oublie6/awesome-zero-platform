@@ -139,3 +139,27 @@ test('authoritative CLOSED clears only a confirmed room; never destroys unknown 
  assert.throws(()=>room.forgetTrustedRoom('room-unknown'),/unresolved/)
  assert.equal(room.pendingRoomId,'room-unknown')
 })
+
+test('G48-N02: recovering a different room cannot discard UNKNOWN request identity',async()=>{
+ const {room,api,calls}=fixture()
+ let fail=true
+ const original=api.command
+ api.command=async command=>{
+  if(fail){calls.push(command);throw Error('lost ACK')}
+  return original(command)
+ }
+ await assert.rejects(room.join('A',3),/lost ACK/)
+ const originalRequest=calls[0]
+ assert.equal(room.pendingRoomId,'A')
+ assert.equal(room.pendingCommandType,'room.join')
+ assert.throws(()=>room.restoreTrustedRoom('B',5),/unknown for another room/)
+ assert.equal(room.state,null)
+ assert.equal(room.pendingRoomId,'A')
+ assert.equal(room.needsReconciliation,true)
+ fail=false
+ await room.retryUnknown()
+ assert.deepEqual(calls[1],originalRequest)
+ assert.equal(room.needsReconciliation,false)
+ room.restoreTrustedRoom('B',5)
+ assert.equal(room.state.roomId,'B')
+})

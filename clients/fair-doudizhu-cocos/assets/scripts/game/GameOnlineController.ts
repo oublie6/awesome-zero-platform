@@ -65,6 +65,8 @@ export class GameOnlineController {
     if (this.disposed || !this.session.authenticated)
       return Promise.reject(new Error('authenticated session required'))
     const target = roomId || this.rooms.state?.roomId || this.rooms.pendingRoomId || undefined
+    if (this.rooms.needsReconciliation && this.rooms.pendingRoomId !== target)
+      return Promise.reject(new Error('room outcome unknown for another room; retry original request before switching'))
     const key = target ?? '#discover'
     if (this.pendingRecovery?.key === key) return this.pendingRecovery.promise
     const token = ++this.recoveryGeneration
@@ -77,8 +79,8 @@ export class GameOnlineController {
     return promise
   }
   private async performRecovery(target:string|undefined,token:number,membership:number):Promise<RoomRead|null>{
-    const current=()=>!this.disposed && token===this.recoveryGeneration &&
-      membership===this.membershipGeneration
+    const current=()=>!this.disposed && this.session.authenticated &&
+      token===this.recoveryGeneration && membership===this.membershipGeneration
     await this.shell.connect(this.platform.socket,this.socketEndpoint,this.session.token)
     if(!current())return null
     if(!target){
@@ -119,8 +121,10 @@ export class GameOnlineController {
        fresh.activeHandId!==initial.activeHandId ||
        fresh.lastHandId!==initial.lastHandId)
       throw new Error('room changed during recovery; retry authoritative lookup')
-    this.confirmActiveFairnessHand(fresh.activeHandId||null)
+    // The selected room must not erase an unrelated UNKNOWN durable command.
+    // Validate the authoritative adoption before any fairness/hand mutation.
     this.rooms.restoreTrustedRoom(fresh.roomId,fresh.version,fresh.lastClientSequence)
+    this.confirmActiveFairnessHand(fresh.activeHandId||null)
     this.shell.useAuthoritativeHand(fresh.activeHandId||fresh.lastHandId||null)
     // No suspension between final membership check and authoritative adoption.
     if(fresh.activeHandId && (phase==='BIDDING'||phase==='PLAYING'||phase==='SETTLING')){
@@ -155,10 +159,14 @@ export class GameOnlineController {
   }
   /** Secure join code is a locator; the Go server checks membership and version. */
   async joinRoom(roomId: string): Promise<Readonly<{roomId:string;version:number}>> {
+    if (this.disposed || !this.session.authenticated)
+      throw new Error('authenticated session required')
+    if (this.rooms.needsReconciliation && this.rooms.pendingRoomId !== roomId)
+      throw new Error('room outcome unknown for another room; retry original request before switching')
     const token = ++this.recoveryGeneration
     const membership = this.membershipGeneration
-    const current = () => !this.disposed && token === this.recoveryGeneration &&
-      membership === this.membershipGeneration
+    const current = () => !this.disposed && this.session.authenticated &&
+      token === this.recoveryGeneration && membership === this.membershipGeneration
     const view = await this.roomInfo(roomId)
     if (!current()) throw new Error('room selection superseded during join')
     if (view.status === 'CLOSED') throw new Error('room not joinable')
@@ -190,8 +198,8 @@ export class GameOnlineController {
           fresh.lastHandId !== view.lastHandId)
         throw new Error('room changed during join; retry authoritative lookup')
       // No suspension between the final authorization read and adoption.
-      this.confirmActiveFairnessHand(fresh.activeHandId || null)
       this.rooms.restoreTrustedRoom(roomId, fresh.version, fresh.lastClientSequence)
+      this.confirmActiveFairnessHand(fresh.activeHandId || null)
       this.shell.useAuthoritativeHand(fresh.activeHandId || fresh.lastHandId || null)
       const generation = ++this.membershipGeneration
       if (fresh.activeHandId && (phase === 'BIDDING' || phase === 'PLAYING' ||
@@ -344,6 +352,11 @@ export class GameOnlineController {
   }
 
   async logout(): Promise<void> {
+    // Revoke every pending recovery/join before logout suspends for token
+    // revocation. A delayed HTTP reply cannot adopt state after this point.
+    this.disposed = true
+    ++this.recoveryGeneration
+    ++this.membershipGeneration
     this.fairness.dispose()
     this.shell.dispose()
     await this.session.logout()

@@ -682,7 +682,7 @@ test('G47-N01: delayed member join A cannot overwrite newer recovery B',async()=
 test('G47-N01: late CLOSED recheck prevents stale existing-member join',async()=>{
  const f=fixture()
  const waiting={roomId:'A',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},{position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
- const closed={...waiting,version:2,status:'CLOSED',member:false,lastClientSequence:0}
+ const closed={roomId:'A',version:2,status:'CLOSED',member:false,occupied:0,lastClientSequence:0}
  let reads=0
  f.platform.http.request=async()=>({code:'OK',data:++reads===1?waiting:closed})
  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
@@ -691,4 +691,46 @@ test('G47-N01: late CLOSED recheck prevents stale existing-member join',async()=
  assert.equal(reads,2)
  assert.equal(online.rooms.state,null)
  online.dispose()
+})
+
+test('G48-N02: controller refuses cross-room recovery while exact join result is UNKNOWN',async()=>{
+ const f=fixture()
+ let lostRequest
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const original=online.shell.submitCommand.bind(online.shell)
+ online.shell.submitCommand=async command=>{lostRequest=command;throw Error('ACK lost')}
+ await assert.rejects(online.rooms.join('A',5),/ACK lost/)
+ assert.equal(online.rooms.pendingRoomId,'A')
+ assert.equal(online.rooms.needsReconciliation,true)
+ await assert.rejects(online.reconnectAndResync('B'),/unknown for another room/)
+ await assert.rejects(online.joinRoom('B'),/unknown for another room/)
+ assert.equal(online.rooms.pendingRoomId,'A')
+ assert.equal(online.rooms.state,null)
+ assert.equal(online.rooms.needsReconciliation,true)
+ assert.equal(lostRequest.aggregateId,'A')
+ online.shell.submitCommand=original
+ online.dispose()
+})
+test('G48-N03: logout revokes delayed member join before any room adoption',async()=>{
+ const f=fixture()
+ const waiting={roomId:'A',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,
+   lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},
+     {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
+ let release
+ let reads=0
+ f.platform.http.request=async()=> {
+   if(++reads===2)return new Promise(resolve=>{release=()=>resolve({code:'OK',data:waiting})})
+   return {code:'OK',data:waiting}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const pending=online.joinRoom('A')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof release,'function')
+ await online.logout()
+ assert.equal(online.session.authenticated,false)
+ release()
+ await assert.rejects(pending,/selection superseded/)
+ assert.equal(online.rooms.state,null)
 })

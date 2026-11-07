@@ -155,3 +155,12 @@ test('G47-N01: scene join shares latest room selection token',async()=>{
  assert.ok(join.includes('token!==this.recoveryAttempt'))
  assert.ok(join.indexOf('token!==this.recoveryAttempt')<join.indexOf('this.roomID=room.roomId'))
 })
+
+test('G48-N03: online join rejects stale results after logout',async()=>{
+ const source=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
+ const join=source.split('async joinRoom(roomId: string):')[1].split('async reconcileRoom(')[0]
+ assert.ok(join.includes('this.session.authenticated'))
+ const logout=source.split('async logout(): Promise<void> {')[1].split('dispose(): void')[0]
+ assert.ok(logout.indexOf('this.disposed = true')<logout.indexOf('await this.session.logout()'))
+ assert.ok(logout.includes('++this.recoveryGeneration'))
+})
