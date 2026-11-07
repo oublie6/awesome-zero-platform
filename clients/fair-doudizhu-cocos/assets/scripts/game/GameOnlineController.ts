@@ -175,7 +175,9 @@ export class GameOnlineController {
           throw new Error('room hand start already in progress')
         this.startingHand = handId
         try {
-          const room = await this.rooms.startHand(handId)
+          // The server owns each seat's encrypted contribution in this
+          // explicit versioned mode; players do not need to export secrets.
+          const room = await this.rooms.startHand(handId, 'server-managed-v1')
           // RoomCoordinator already accepted the server's durable ACK. No
           // await between receipt and hand adoption; both old action families
           // are still reserved so they cannot create fresh pending requests.
