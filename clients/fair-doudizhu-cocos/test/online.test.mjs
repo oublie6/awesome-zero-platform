@@ -517,17 +517,22 @@ test('cold controller discovers the authenticated active room without any device
  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
  await online.loginAndConnect()
  const synced=[]
+ let phase='FAIRNESS_COMMITTING'
+ online.api.fairness=async()=>({handId:'hand-cold',phase})
  online.shell.syncHand=async id=>{synced.push(id)}
  assert.equal(online.rooms.state,null)
  const result=await online.reconnectAndResync()
  assert.equal(result.roomId,'room-cold')
  assert.equal(online.rooms.state.roomId,'room-cold')
  assert.equal(online.rooms.state.version,18)
- assert.deepEqual(synced,['hand-cold'])
+ assert.deepEqual(synced,[],'predeal fairness is recoverable without an unavailable private hand')
  assert.deepEqual(paths,['/v1/doudizhu/me/rooms','/v1/doudizhu/rooms/room-cold'])
  const joined=await online.joinRoom('room-cold')
  assert.equal(joined.roomId,'room-cold','already seated HAND_ACTIVE player must be able to resume')
- assert.deepEqual(synced,['hand-cold','hand-cold'])
+ assert.deepEqual(synced,[])
+ phase='PLAYING'
+ await online.reconnectAndResync('room-cold')
+ assert.deepEqual(synced,['hand-cold'],'dealt private hand is synced after the authoritative phase advances')
  online.dispose()
 })
 test('cold recovery refuses ambiguous active rooms instead of choosing wrong game',async()=>{

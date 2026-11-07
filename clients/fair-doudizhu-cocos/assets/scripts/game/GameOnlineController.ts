@@ -80,7 +80,16 @@ export class GameOnlineController {
     this.rooms.restoreTrustedRoom(room.roomId, room.version, room.lastClientSequence)
     this.shell.useAuthoritativeHand(room.activeHandId || room.lastHandId || null)
     if (room.activeHandId) {
-      await this.shell.syncHand(room.activeHandId)
+      // In FAIRNESS_COMMITTING/WAITING_PUBLIC_BEACON there is no private dealt
+      // hand yet. Discover its authoritative mode first; avoid a premature
+      // /private read that would make a cold login look unrecoverable.
+      const fairness = await this.api.fairness(room.activeHandId)
+      if (this.disposed || generation !== this.membershipGeneration ||
+          this.rooms.state?.roomId !== room.roomId) return null
+      if (fairness.phase === 'BIDDING' || fairness.phase === 'PLAYING' ||
+          fairness.phase === 'SETTLING') {
+        await this.shell.syncHand(room.activeHandId)
+      }
     } else if (room.lastHandId) {
       const evidence = await this.api.finalEvidence(room.lastHandId)
       if (this.disposed || generation !== this.membershipGeneration ||
