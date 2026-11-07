@@ -109,6 +109,9 @@ export class GameOnlineController {
     return view
   }
   get pendingRoomId(): string | null { return this.rooms.pendingRoomId }
+  /** While the room.hand.start ACK is outstanding, defer HTTP-derived hand
+   * rebinding. A read may see the new hand before the WSS command completes. */
+  get handStartInProgress(): boolean { return this.startingHand !== null }
   /** Reuse the original command ID if the previous leave ACK was lost. */
   async leaveRoom(): Promise<void> {
     if (this.disposed || !this.session.authenticated) throw new Error('authenticated session required')
@@ -177,6 +180,10 @@ export class GameOnlineController {
           // await between receipt and hand adoption; both old action families
           // are still reserved so they cannot create fresh pending requests.
           if (!this.disposed) {
+            // The accepted durable receipt is the transition barrier. Clear
+            // the controller-owned guard synchronously, before binding H2;
+            // no other JS task can interleave before the next synchronous step.
+            this.startingHand = null
             this.confirmActiveFairnessHand(handId)
             this.shell.useAuthoritativeHand(handId)
             this.membershipGeneration++
@@ -201,11 +208,11 @@ export class GameOnlineController {
    * available for an authorized historical evidence read. */
   confirmActiveFairnessHand(handId: string | null): void {
     if (this.disposed) throw new Error('online controller disposed')
-    // A concurrent room refresh may observe the cancelled old hand while an
-    // authorized room.hand.start is still in flight. Do not replace the
-    // reserved session with an unrelated one before the command settles.
-    if (this.startingHand !== null && handId !== this.startingHand &&
-        handId !== this.confirmedFairnessHand)
+    // Even an authenticated HTTP read of H2 may arrive BEFORE the room.hand.start
+    // WSS ACK. Its freshness does not authorize replacing the reserved fairness
+    // instance: the replacement would otherwise have no transition lock.
+    // Only startHand() itself may adopt H2 after a validated durable receipt.
+    if (this.startingHand !== null && handId !== this.confirmedFairnessHand)
       throw new Error('room hand start in progress; wait for authoritative result')
     if (this.confirmedFairnessHand === handId) return
     this.resetFairnessAfterConfirmedTransition()
