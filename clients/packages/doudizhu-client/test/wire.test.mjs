@@ -35,3 +35,13 @@ test('correlation required before accepting server command result', () => {
   assert.deepEqual(parseWireResult(result, command), result)
   assert.throws(() => parseWireResult({ ...result, requestId: 'other' }, command), /uncorrelated/)
 })
+
+test('server-managed hand mode is explicit, versioned and immutable within a command',()=>{
+ const original={...base,expectedVersion:4,type:'room.hand.start',
+   payload:{handId:'hand-new',fairnessMode:'server-managed-v1'}}
+ const valid=createWireCommand(original)
+ assert.deepEqual(valid.payload,original.payload)
+ assert.throws(()=>createWireCommand({...original,payload:{handId:'hand-new',fairnessMode:'unknown'}}),/invalid/)
+ assert.throws(()=>createWireCommand({...original,payload:{handId:'hand-new',fairnessMode:'server-managed-v1',secret:'leak'}}),/invalid/)
+ assert.deepEqual(createWireCommand({...original,payload:{handId:'hand-legacy'}}).payload,{handId:'hand-legacy'})
+})
