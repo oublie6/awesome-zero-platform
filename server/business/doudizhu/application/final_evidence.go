@@ -45,7 +45,7 @@ type FinalEvidenceService struct {
 }
 
 type FinalEvidenceResult struct {
-	FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
+	FairnessMode domain.FairnessMode              `json:"fairnessMode,omitempty"`
 	Version      string                           `json:"v"`
 	HandID       domain.HandID                    `json:"handId"`
 	Status       gamecore.FinalStatus             `json:"status"`
