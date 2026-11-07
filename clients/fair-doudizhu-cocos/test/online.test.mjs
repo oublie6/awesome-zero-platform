@@ -611,6 +611,8 @@ test('R19-N01: duplicate same-room recovery coalesces and creates one reconnect 
  const b=online.reconnectAndResync('room-single')
  assert.strictEqual(a,b,'same target must share the exact pending operation')
  assert.equal(f.auth.length,2,'login + one recovery connection')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof release,'function','first room read is now pending')
  release()
  const result=await Promise.all([a,b])
  assert.equal(result[0].roomId,'room-single')
@@ -624,7 +626,7 @@ test('R19-N02: fresh CLOSED/nonmember read rejects stale WAITING and never adopt
  const waiting={roomId:'room-closed',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,
    lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},
      {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
- const closed={roomId:'room-closed',version:2,status:'CLOSED',member:false,occupied:0}
+ const closed={roomId:'room-closed',version:2,status:'CLOSED',member:false,occupied:0,lastClientSequence:0}
  let n=0
  f.platform.http.request=async()=>({code:'OK',data:++n===1?waiting:closed})
  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
@@ -641,7 +643,7 @@ test('R19-N02: later definitive CLOSED revokes an already adopted room',async()=
  const waiting={roomId:'room-revoked',version:5,status:'WAITING_PLAYERS',member:true,occupied:1,
    lastClientSequence:2,seats:[{position:1,accountId:'actor',ready:false},
      {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
- const closed={roomId:'room-revoked',version:6,status:'CLOSED',member:false,occupied:0}
+ const closed={roomId:'room-revoked',version:6,status:'CLOSED',member:false,occupied:0,lastClientSequence:0}
  let reads=0
  f.platform.http.request=async()=>({code:'OK',data:++reads<4?waiting:closed})
  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
