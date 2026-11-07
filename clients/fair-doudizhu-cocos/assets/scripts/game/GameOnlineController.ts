@@ -114,10 +114,26 @@ export class GameOnlineController {
     // Current members can resume an already active hand. This does NOT allow
     // outsiders into HAND_ACTIVE or bypass the server's membership check.
     if (view.member) {
-      const restored=await this.reconnectAndResync(roomId)
-      if(!restored || !restored.member)throw new Error('room member recovery failed')
-      this.membershipGeneration++
-      return {roomId:restored.roomId,version:restored.version}
+      // Re-adopt the authenticated room on the existing socket. Joining a
+      // known member must not open a second connection or treat HAND_ACTIVE
+      // as a new admission; the Go room query already verified membership.
+      this.confirmActiveFairnessHand(view.activeHandId || null)
+      this.rooms.restoreTrustedRoom(roomId, view.version, view.lastClientSequence)
+      const generation=++this.membershipGeneration
+      this.shell.useAuthoritativeHand(view.activeHandId || view.lastHandId || null)
+      if(view.activeHandId){
+        const fairness=await this.api.fairness(view.activeHandId)
+        if(this.disposed || generation!==this.membershipGeneration ||
+           this.rooms.state?.roomId!==roomId)throw new Error('room membership changed during recovery')
+        if(fairness.phase==='BIDDING' || fairness.phase==='PLAYING' ||
+           fairness.phase==='SETTLING')await this.shell.syncHand(view.activeHandId)
+      }else if(view.lastHandId){
+        const evidence=await this.api.finalEvidence(view.lastHandId)
+        if(this.disposed || generation!==this.membershipGeneration ||
+           this.rooms.state?.roomId!==roomId)throw new Error('room membership changed during recovery')
+        this.shell.acceptVerifiedFinalEvidence(evidence)
+      }
+      return {roomId:view.roomId,version:view.version}
     }
     if (view.status === 'HAND_ACTIVE') throw new Error('room not joinable')
     const joined = await this.rooms.join(roomId, view.version, view.lastClientSequence)
