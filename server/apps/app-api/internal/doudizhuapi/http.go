@@ -35,6 +35,7 @@ func Register(server *rest.Server, authService *authn.Service, dispatcher *Dispa
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/public", Handler: publicViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/private", Handler: privateViewHandler(dispatcher)},
 		{Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/evidence", Handler: evidenceHandler(dispatcher)},
+        {Method: http.MethodGet, Path: "/v1/doudizhu/hands/:handId/own-contribution", Handler: ownContributionHandler(dispatcher)},
 	}...))
 }
 
@@ -231,4 +232,24 @@ func mapHTTPError(err error) error {
 	default:
 		return apperrors.Internal(err)
 	}
+}
+
+// The player's original phrase is NEVER returned. The authenticated participant
+// can fetch their own completed hand's randomness for local hash verification.
+func ownContributionHandler(dispatcher *Dispatcher) http.HandlerFunc {
+ return func(w http.ResponseWriter,r *http.Request){
+  actor,ok:=authenticatedActor(r)
+  if !ok{
+   platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("authentication required"))
+   return
+  }
+  handID:=domain.HandID(pathvar.Vars(r)["handId"])
+  if handID==""||len(handID)>128||handID!=domain.HandID(strings.TrimSpace(string(handID))){
+   platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid handId"))
+   return
+  }
+  material,err:=dispatcher.OwnContribution(r.Context(),actor,handID)
+  if err!=nil {platformresponse.WriteError(r.Context(),w,mapHTTPError(err));return}
+  platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),material))
+ }
 }
