@@ -517,7 +517,10 @@ export class GameBootstrap extends Component {
       if(this.screen==='table')this.renderScreen('table')
       const verified=data.verification
       const winner=verified.winnerSeat?('获胜座位'+verified.winnerSeat):'已终止'
-      this.notice(`已核验归档 · ${winner} · 积分${verified.seatPoints.join('/') } · 版本${data.finalVersion}\n校验摘要：${verified.recordDigest.slice(0,24)}…`)
+      const custody=data.fairnessMode==='server-managed-v1'
+        ? '服务端托管随机贡献 · 公开信标/归档一致性核验（非玩家独立随机贡献）'
+        : '玩家随机贡献 · 已核验归档'
+      this.notice(`${custody} · ${winner} · 积分${verified.seatPoints.join('/') } · 版本${data.finalVersion}\n校验摘要：${verified.recordDigest.slice(0,24)}…`)
     }catch(error){this.notice('结算证据暂不可用：'+this.message(error))}
   }
   private async refreshHand():Promise<void> {
