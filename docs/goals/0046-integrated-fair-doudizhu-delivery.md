@@ -1,5 +1,30 @@
 # Goal 0046 — Integrated playable Fair Doudizhu and B-grade recovery
 
+## Scope amendment — 2026-11-07: server-managed contributions and account-authorized verification
+
+The user authorized removing the mandatory **per-player recovery-kit backup** for new games.
+New Cocos hands explicitly request `server-managed-v1`: the server generates
+and AES-GCM protects all three seat-bound contributions atomically during
+`room.hand.start`, then uses the already pinned future publicly verifiable
+drand beacon for deterministic dealing. The original `client` mode is retained
+for hands created before the change; their historical evidence and unknown
+command handling must not be reinterpreted.
+
+**Changed trust claim:** the server knows every managed contribution before
+the future beacon. Do not claim that new hands retain player-independent
+commit/reveal entropy. Players authenticate with their own platform/account
+credentials to read authorization-protected final verification evidence; the
+credential is an authorization mechanism, not a cryptographic proof by itself.
+
+The former E03 requirement to manually copy/re-enter a high-entropy local kit
+is **superseded for new managed hands**, not retroactively marked PASS. This
+replacement must independently pass secure persistence, complete server
+recovery, three-user real integration and authorized evidence checks before
+E03 is accepted under the amended requirements. Do not change Round 17
+historical results. C09/C10 remain formally DEFERRED, H05/GOAL8 remain
+unfinished. See [server-managed fairness v1](../architecture/doudizhu-server-managed-fairness-v1.md).
+
+
 ## State
 in_progress — authorized by user 2026-11-02. **This is a development plan, not completed functionality or acceptance.** Goal 0045 remains separately in_progress, with its historical Codex checkpoint PASS and remaining platform qualifications intact in `docs/goals/current.md`.
 
