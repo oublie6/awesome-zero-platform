@@ -7,6 +7,7 @@ import (
 )
 
 func (h *Hand) SubmitCommit(actor AccountID, commitment Commitment, expectedVersion uint64) ([]Event, error) {
+ if h.fairnessMode == FairnessModeClientCustodied { return nil,ErrWrongPhase }
 	if err := h.prepareMutation(expectedVersion, HandFairnessCommitting); err != nil {
 		return nil, err
 	}
@@ -30,6 +31,7 @@ func (h *Hand) SubmitCommit(actor AccountID, commitment Commitment, expectedVers
 }
 
 func (h *Hand) SubmitReveal(actor AccountID, digest ContributionDigest, recordRef string, expectedVersion uint64) ([]Event, error) {
+ if h.fairnessMode == FairnessModeClientCustodied { return nil,ErrWrongPhase }
 	if err := h.prepareMutation(expectedVersion, HandFairnessRevealing); err != nil {
 		return nil, err
 	}
@@ -63,6 +65,33 @@ func (h *Hand) SubmitReveal(actor AccountID, digest ContributionDigest, recordRe
 		events = append(events, h.changePhase(HandWaitingPublicBeacon))
 	}
 	return events, nil
+}
+
+// SubmitCustodiedContribution atomically commits and reveals a single
+// authenticated player's client-generated material. All three such actions
+// must finish before the immutable future public beacon can be locked.
+func (h *Hand) SubmitCustodiedContribution(actor AccountID, digest ContributionDigest,
+ recordRef string, expectedVersion uint64,
+) ([]Event,error) {
+ if h==nil || h.fairnessMode != FairnessModeClientCustodied { return nil,ErrWrongPhase }
+ if err:=h.prepareMutation(expectedVersion,HandFairnessCommitting);err!=nil{return nil,err}
+ seat,err:=h.resolveSeat(actor);if err!=nil{return nil,err}
+ recordRef=strings.TrimSpace(recordRef)
+ if recordRef==""||len(recordRef)>256||allZero32([32]byte(digest)){
+  return nil,fmt.Errorf("%w: invalid custodied contribution",ErrInvalidArgument)
+ }
+ current:=&h.contributions[seat-1]
+ if current.Commitment!=(Commitment{})||current.Revealed{return nil,ErrDuplicateContribution}
+ current.Commitment=ComputeClientCommitment(h.id,seat,digest)
+ current.Revealed=true
+ current.Digest=digest
+ current.RecordRef=recordRef
+ events:=[]Event{
+  h.record(EventFairnessCommitAccepted,FairnessSeatPayload{Seat:seat}),
+  h.record(EventFairnessRevealAccepted,FairnessSeatPayload{Seat:seat}),
+ }
+ if h.revealCount()==3{events=append(events,h.changePhase(HandWaitingPublicBeacon))}
+ return events,nil
 }
 
 func (h *Hand) LockPublicBeacon(value BeaconValue, expectedVersion uint64) ([]Event, error) {
