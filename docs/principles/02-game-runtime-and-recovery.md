@@ -2,6 +2,18 @@
 
 Status: **target architecture**. Today's live-hand state is in process memory and does **not yet guarantee** recovery after a process crash. Implementing this document requires a separate, explicitly authorized Goal, schema changes and failure-injection tests.
 
+> **2026-11-07 user-authorized fairness custody:** New
+> `client-contributed-server-custodied-v1` hands use client-generated
+> randomness plus a user-entered phrase, encrypted in transit and at rest
+> by the game server; clients persist no per-hand state or contribution kit.
+> The player phrase is used only for after-hand local verification, never
+> for active game recovery. The server receives the entire contribution
+> before the future pinned drand round, so client-independent secrecy is
+> **not** a property of this mode. Historical two-stage hands remain
+> unchanged; accepted commands still require MySQL commit-before-ACK and
+> exact-ID reconciliation. See
+> [custodied fairness](../architecture/doudizhu-client-custodied-fairness-v1.md).
+
 ## Non-negotiable invariants
 
 1. **One authoritative state per hand.** The server owns rules, private cards, turn order, settlement and fairness; never trust client-reported results.
