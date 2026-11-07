@@ -88,6 +88,13 @@ func (s *Service) StartRoomHand(ctx context.Context, actor domain.AccountID, com
 			if setup.HandID != input.HandID || setup.HandID == "" {
 				return failAfterPreparation(wrapInfrastructure("prepare hand setup", fmt.Errorf("%w: hand setup ID mismatch", ErrInvalidCommand)))
 			}
+			// Custodied entropy offers only server-auditable deterministic dealing.
+			// Require an independently verified, already-bound future drand round;
+			// never silently fall back to a server-chosen HMAC beacon.
+			if input.FairnessMode == domain.FairnessModeServerManaged &&
+				setup.BeaconPlan.Provider != "drand-quicknet" {
+				return failAfterPreparation(fmt.Errorf("%w: managed fairness requires public drand beacon", ErrInvalidCommand))
+			}
 			binding := domain.RevealKeyBinding{PublicKeySHA256: setup.RevealPublicKeySHA256, BoundAt: setup.RevealKeyBoundAt}
 			var hand *domain.Hand
 			var handEvents []domain.Event
