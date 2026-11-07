@@ -11,6 +11,7 @@ import (
 )
 
 type FairnessView struct {
+	FairnessMode         domain.FairnessMode `json:"fairnessMode,omitempty"`
 	HandID                string           `json:"handId"`
 	Phase                 domain.HandPhase `json:"phase"`
 	Version               uint64           `json:"version"`
@@ -53,7 +54,7 @@ func (s *Service) GetFairnessView(ctx context.Context, actor domain.AccountID, i
 	if err != nil {
 		return FairnessView{}, err
 	}
-	view := FairnessView{HandID: string(id), Phase: snapshot.Phase, Version: snapshot.Version, Seat: uint8(seat),
+	view := FairnessView{HandID: string(id), FairnessMode: snapshot.FairnessMode, Phase: snapshot.Phase, Version: snapshot.Version, Seat: uint8(seat),
 		Committed: own.Committed, Revealed: own.Revealed, LastClientSequence: last,
 		BeaconProvider:   snapshot.BeaconPlan.Provider,
 		BeaconRound:      snapshot.BeaconPlan.Round,
