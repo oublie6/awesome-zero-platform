@@ -171,3 +171,47 @@ comments; source-map text inside string literals is preserved.
   nodes remained Ready; no swap; main available memory returned to about4.5GiB.
   Private raw logs, provenance, artifact hashes and screenshots are under
   `/root/.config/awesome-zero-platform/linux-native-minigame` and are not committed.
+
+## Goal0055 G55-N01/N02 concentrated remediation (2026-11-08)
+
+The original candidate `a4551b77d375` failed on WeChat preview despite a
+successful Linux Cocos4 export:
+
+- `G55-N01`: raw exported `assets/main/index.js` retained `??`, which
+  the real WeChat preview syntax gate rejected.
+- `G55-N02`: enabling WeChat developer-tool `es6=true` transformed native
+  `2n ** 256n` into invalid `Math.pow(2n,256n)`, so the simulator and the
+  user's real device could not enter the game scene.
+
+The owned exporter now targets **Chrome 79**: esbuild lowers `??` and `?.`
+for that target while retaining native BigInt exponentiation. The generated
+WeChat project config keeps approved-domain enforcement (`urlCheck=true`),
+**disables WeChat's second ES6 transform** (`es6=false`), and enables
+**WeChat minification** (`minified=true`) for the preview size gate.
+This choice is based on the Goal0055 private A/B result: minified,
+ES6-disabled local output preserved the actual scene and native HPKE. It is
+not yet a claim that the new export has passed a real preview/upload/device
+test.
+
+A parser-based audit of every exported JS file now rejects nullish coalescing,
+optional chaining, and BigInt passed to `Math.pow`. This fails closed if a
+CLI-generated or copied adapter file escapes the chosen syntax target. The
+standalone audit can also be invoked on the **actual WeChat-processed**
+directory after the tool's build:
+
+```sh
+# First build from this exact source SHA with the pinned Linux-native CLI:
+node scripts/cocos-linux-wechat/build.cjs /private/verified-export
+
+# Then (after the authorized WeChat developer-tool compilation), audit
+# the *processed* src/chunks directory or its parent, not raw output alone:
+node scripts/cocos-linux-wechat/audit.cjs /private/actual-wechat-processed-code
+```
+
+This is source/build-level remediation and regression checking, not automatic
+proof of running the Linux developer tool. Next verification must record an
+actual matching-SHA native export, actual WeChat preview syntax/size result,
+the compiled BigInt/HPKE execution, actual simulator startup, and a freshly
+authorized device preview. WeChat HTTPS/WSS with approved public TLS remains
+a distinct external integration blocker; do not weaken `urlCheck` or bundle
+AppSecret to bypass it.

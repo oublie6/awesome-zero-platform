@@ -41,10 +41,11 @@ exports.onAfterBundleInit = function (options) {
   options.buildScriptParam.system = { preset: 'commonjs-like' };
   options.buildScriptParam.importMapFormat = 'commonjs';
   options.buildScriptParam.flags.WEBGPU = false;
-  // This client already requires native BigInt for HPKE/BLS. Preserve native
-  // exponentiation instead of lowering it to Number-only Math.pow. Device
-  // compatibility beyond the tested SDK runtime remains a separate gate.
-  options.buildScriptParam.targets = { chrome: '90' };
+  // Chrome 79 supports native BigInt exponentiation but predates ??/?..
+  // Lower unsupported preview syntax *in the owned Cocos bundle*, never
+  // by enabling WeChat's ES6 transpiler (which changes 2n ** 256n to
+  // Number-only Math.pow(2n,256n)). Actual device support remains a gate.
+  options.buildScriptParam.targets = { chrome: '79' };
 };
 
 exports.onBeforeCompressSettings = function (options, result) {
@@ -91,7 +92,9 @@ System.import(${JSON.stringify(relative(result.paths.applicationJS))})
   fs.writeFileSync(path.join(root, 'project.config.json'), JSON.stringify({
     appid: options.packages.wechatgame.appid,
     projectname: 'fair-doudizhu-linux', compileType: 'game', miniprogramRoot: './',
-    setting: { urlCheck: true, enhance: false, es6: false, minified: false },
+    // Minify for WeChat's preview size gate, but NEVER enable its separate
+    // ES6 transform: it rewrites required native BigInt exponentiation.
+    setting: { urlCheck: true, enhance: false, es6: false, minified: true },
   }, null, 2));
   fs.writeFileSync(path.join(root, 'linux-builder.json'), JSON.stringify({
     builder: 'awesome-zero-platform-linux-wechat-0.1.0',
@@ -99,5 +102,5 @@ System.import(${JSON.stringify(relative(result.paths.applicationJS))})
     engineVersion: options.engineInfo.version || null,
   }, null, 2));
   const checked = require('./audit.cjs').audit(root, { stripInlineMaps: !options.debug });
-  console.log('Parsed ' + checked + ' generated JS files; BigInt exponent audit passed');
+  console.log('Parsed ' + checked + ' generated JS files; preview syntax/BigInt exponent audit passed');
 };

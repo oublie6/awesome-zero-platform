@@ -57,9 +57,13 @@ test('generated Mini Game entry boots through CommonJS SystemJS and official-ada
   assert.equal(generated.types[0], path.join(temp, 'temp/declarations/cc'));
   assert.equal(options.buildEngineParam.platform, 'WECHAT');
   assert.equal(options.buildScriptParam.importMapFormat, 'commonjs');
-  assert.deepEqual(options.buildScriptParam.targets, { chrome: '90' });
+  assert.deepEqual(options.buildScriptParam.targets, { chrome: '79' });
   hooks.onAfterBuild(options, { paths: { dir: root, systemJs: path.join(root, 'system.js'), importMap: path.join(root, 'map.js'), applicationJS: path.join(root, 'app.js') } });
   assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'game.json'))).deviceOrientation, 'landscape');
+  const projectConfig=JSON.parse(fs.readFileSync(path.join(root,'project.config.json'),'utf8'));
+  assert.equal(projectConfig.setting.urlCheck,true);
+  assert.equal(projectConfig.setting.es6,false);
+  assert.equal(projectConfig.setting.minified,true);
   const events = [], engine = {};
   class Application { init(cc) { assert.equal(cc, engine); events.push('init'); } start() { events.push('start'); } }
   const system = { warmup(data) { assert.deepEqual(data.importMap, { imports: {} }); events.push('warmup'); },
@@ -84,6 +88,20 @@ test('generated crypto audit distinguishes minified numeric powers and rejects B
   for (const bad of ['Math.pow(2n,256n)', 'Math["pow"](2n,256n)', 'const x=BigInt(2);Math.pow(x,BigInt(256))', 'Math.pow(c.Fn.ORDER,n)']) {
     fs.writeFileSync(file, bad); assert.throws(() => audit(root), /BigInt/);
   }
+  for (const bad of [
+    'const v=missing ?? 1',
+    'const x=some?.value',
+    'const x=some?.(42)',
+  ]) {
+    fs.writeFileSync(file, bad);
+    assert.throws(() => audit(root), /preview-incompatible/);
+  }
+  // Native BigInt exponentiation must continue to execute with exact results.
+  fs.writeFileSync(file, 'globalThis.cryptoOrder=2n ** 256n;');
+  assert.equal(audit(root),1);
+  const context = {};
+  vm.runInNewContext(fs.readFileSync(file,'utf8'),context);
+  assert.equal(context.cryptoOrder,2n ** 256n);
   fs.writeFileSync(file, 'const url="//# sourceMappingURL=data:abc";\n//# sourceMappingURL=data:application/json;base64,e30=');
   audit(root, { stripInlineMaps: true });
   assert.equal(fs.readFileSync(file, 'utf8'), 'const url="//# sourceMappingURL=data:abc";\n\n');
@@ -95,3 +113,21 @@ test('cold Linux exporter provisions the copied file-linked portable dependencie
  assert.match(source,/package-lock=false/)
  assert.ok(source.indexOf("'--prefix',project")>source.indexOf("'--package-lock=false'"))
 })
+
+test('preview bundle rejects the actual BigInt-breaking WeChat ES6 rewriter and enforces configuration',t=>{
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'azp-wx-preview-'));
+ t.after(()=>fs.rmSync(temp,{recursive:true,force:true}));
+ fs.mkdirSync(path.join(temp,'src/chunks'),{recursive:true});
+ const file=path.join(temp,'src/chunks/bundle.js');
+ const {audit}=require('./audit.cjs');
+ fs.writeFileSync(file,'const c=2n ** 256n;globalThis.result=c');
+ assert.equal(audit(temp),1);
+ fs.writeFileSync(file,'const c=Math.pow(2n,256n);');
+ assert.throws(()=>audit(temp),/Math.pow receives BigInt/);
+ fs.writeFileSync(file,'const a={}; const c=a?.value ?? 0');
+ assert.throws(()=>audit(temp),/preview-incompatible/);
+ const script=fs.readFileSync(path.join(__dirname,'build.cjs'),'utf8');
+ assert.match(script,/preview\.setting\.es6,false/);
+ assert.match(script,/preview\.setting\.minified,true/);
+ assert.match(script,/require\('\.\/audit\.cjs'\)\.audit\(pkg\)/);
+});

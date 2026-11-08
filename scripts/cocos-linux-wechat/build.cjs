@@ -73,7 +73,13 @@ try {
   assert.equal(result.enginePlatform,'WECHAT');
   for(const file of ['game.js','game.json','project.config.json','engine-adapter.js','web-adapter.js'])
     assert.ok(fs.statSync(path.join(pkg,file)).size>0,'Missing native entry: '+file);
-  console.log('Pinned Linux-native WECHAT export verified: '+pkg);
+  const preview=JSON.parse(fs.readFileSync(path.join(pkg,'project.config.json'),'utf8'));
+  assert.equal(preview.setting.urlCheck,true,'Never disable HTTPS/domain qualification');
+  assert.equal(preview.setting.es6,false,'WeChat ES6 transpilation destroys native BigInt');
+  assert.equal(preview.setting.minified,true,'Preview package must enable size-conscious minification');
+  const checked=require('./audit.cjs').audit(pkg);
+  console.log('Pinned Linux-native WECHAT export verified: '+pkg+' ('+checked+' audited JS files)');
+  console.log('After real WeChat preview compilation, audit the processed JS separately.');
 }finally{
   if(preserve){console.log('Isolated build inputs retained: '+work)}
   else fs.rmSync(work,{recursive:true,force:true});
