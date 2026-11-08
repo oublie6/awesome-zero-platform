@@ -222,3 +222,26 @@ test('Round9 explicitly bound second hand rejects old finished snapshots and sta
  assert.equal(s.hand.snapshot.handId,'hand-3')
  s.dispose()
 })
+
+test('audit: buffered messages from a replaced socket cannot mutate the current hand or notices',async()=>{
+ const notices=[],shell=new GameClientShell(message=>notices.push(message))
+ await shell.initialize()
+ const t=transport()
+ const first=shell.connect(t,'wss://example.org/ws','token')
+ t.tasks[0].resolve();await first
+ shell.acceptVerifiedSnapshot(snapshot)
+ const oldMessage=[...t.tasks[0].c.messages][0]
+ assert.equal(typeof oldMessage,'function')
+ const second=shell.connect(t,'wss://example.org/ws','token')
+ t.tasks[1].resolve();await second
+ shell.acceptVerifiedSnapshot(snapshot)
+ assert.equal(shell.hand.status,'connected')
+ const priorNotices=notices.length
+ oldMessage(JSON.stringify({type:'doudizhu.hand.changed',payload:{
+  v:'doudizhu-realtime-event-v1',handId:'hand-1'}}))
+ oldMessage(JSON.stringify({type:'doudizhu.error',payload:{
+  v:'doudizhu-realtime-event-v1',code:'INTERNAL',message:'obsolete socket'}}))
+ assert.equal(shell.hand.status,'connected','obsolete socket must not force syncing')
+ assert.equal(notices.length,priorNotices,'obsolete socket must not notify current session')
+ shell.dispose()
+})

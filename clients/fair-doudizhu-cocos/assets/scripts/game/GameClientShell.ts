@@ -126,7 +126,10 @@ export class GameClientShell {
     this.hand.setStatus('reconnecting')
     try {
       await connection.open(endpoint, token,
-        raw => { try { this.events.receive(raw) } catch { this.notify('收到不合法的服务器消息') } },
+        raw => {
+          if (this.disposed || generation !== this.generation) return
+          try { this.events.receive(raw) } catch { this.notify('收到不合法的服务器消息') }
+        },
         () => { if (!this.disposed && generation === this.generation) { this.transportReady = false; this.rejectPending('connection lost; command outcome unknown'); this.hand.setStatus('disconnected'); this.notify('连接中断，请重连') } })
       if (this.disposed || generation !== this.generation) return
       this.transportReady = true

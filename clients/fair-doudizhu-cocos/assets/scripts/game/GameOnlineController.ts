@@ -396,7 +396,7 @@ export class GameOnlineController {
     // its stale controller cleanup clobber a newer accepted room binding.
     if (this.disposed || token !== this.recoveryGeneration ||
         membership !== this.membershipGeneration ||
-        this.rooms.state?.roomId !== roomId)
+        (this.rooms.state as Readonly<RoomState> | null)?.roomId !== roomId)
       throw new Error('room selection superseded after create receipt')
     this.confirmActiveFairnessHand(null)
     this.membershipGeneration++
