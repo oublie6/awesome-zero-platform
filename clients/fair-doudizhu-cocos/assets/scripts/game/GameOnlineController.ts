@@ -23,9 +23,13 @@ export class GameOnlineController {
   private disposed = false
   private membershipGeneration = 0
   // The latest explicit recovery choice owns all post-await room/hand writes.
-  // Same-target concurrent recoveries share one operation and one socket.
+  // Same-target concurrent recoveries share one operation only while its
+  // controller selection, confirmed membership and room commands are current.
   private recoveryGeneration = 0
-  private pendingRecovery: {key:string;promise:Promise<RoomRead|null>} | null = null
+  private pendingRecovery: {
+    key:string;token:number;membership:number;commands:number;
+    promise:Promise<RoomRead|null>
+  } | null = null
   constructor(
     private readonly platform: GamePlatform,
     identity: IdentityExchange,
@@ -68,12 +72,18 @@ export class GameOnlineController {
     if (this.rooms.needsReconciliation && this.rooms.pendingRoomId !== target)
       return Promise.reject(new Error('room outcome unknown for another room; retry original request before switching'))
     const key = target ?? '#discover'
-    if (this.pendingRecovery?.key === key) return this.pendingRecovery.promise
-    const token = ++this.recoveryGeneration
     const membership = this.membershipGeneration
     const commands = this.rooms.commandGeneration
+    const pending = this.pendingRecovery
+    // A matching locator is not sufficient: join(B), startHand(), an
+    // exact-ID retry, or a committed room command can revoke old recovery.
+    // Never coalesce a new explicit choice onto that obsolete promise.
+    if (pending?.key === key && pending.token === this.recoveryGeneration &&
+        pending.membership === membership && pending.commands === commands)
+      return pending.promise
+    const token = ++this.recoveryGeneration
     const promise = this.performRecovery(target,token,membership,commands)
-    this.pendingRecovery = {key,promise}
+    this.pendingRecovery = {key,token,membership,commands,promise}
     void promise.finally(()=>{
       if(this.pendingRecovery?.promise===promise)this.pendingRecovery=null
     }).catch(()=>{})
@@ -318,7 +328,11 @@ export class GameOnlineController {
   async startHand(handId: string): Promise<Readonly<RoomState>> {
     if (this.disposed || !this.session.authenticated)
       throw new Error('authenticated session required')
-    ++this.recoveryGeneration
+    const sourceRoom = this.rooms.state?.roomId
+    if (!sourceRoom) throw new Error('room not confirmed by server')
+    const token = ++this.recoveryGeneration
+    const membership = this.membershipGeneration
+    const commands = this.rooms.commandGeneration
     // Guard live Bid/Play/Pass as well as fairness. Either kind of pending
     // command could make a post-ACK hand binding throw and desynchronize UI.
     const releaseLive = this.actions.beginHandTransition()
@@ -334,8 +348,10 @@ export class GameOnlineController {
             throw error
         }
       }
-      if (this.disposed || this.fairness !== previous)
-        throw new Error('fairness session changed while reconciling; refresh room')
+      if (this.disposed || this.fairness !== previous ||
+          token !== this.recoveryGeneration || membership !== this.membershipGeneration ||
+          commands !== this.rooms.commandGeneration || this.rooms.state?.roomId !== sourceRoom)
+        throw new Error('room selection superseded while reconciling fairness; refresh room')
       const releaseFairness = previous.beginHandTransition()
       try {
         if (this.startingHand !== null)
@@ -362,10 +378,26 @@ export class GameOnlineController {
   }
 
   async createRoom(): Promise<Readonly<{roomId:string;version:number}>> {
-    if (this.disposed) throw new Error('online controller disposed')
+    if (this.disposed || !this.session.authenticated)
+      throw new Error('authenticated session required')
+    if (this.rooms.state) throw new Error('already managing a room')
+    // Reserve the caller's selection before awaiting CSPRNG. Otherwise an
+    // older Create can send after a newer member Join/Recover has won.
+    const token = ++this.recoveryGeneration
+    const membership = this.membershipGeneration
+    const commands = this.rooms.commandGeneration
     const roomId = 'room-' + await secureRoomCommandIdentity(this.platform.random).newRequestId()
-    ++this.recoveryGeneration
+    if (this.disposed || token !== this.recoveryGeneration ||
+        membership !== this.membershipGeneration ||
+        commands !== this.rooms.commandGeneration)
+      throw new Error('room selection superseded during create')
     const room = await this.rooms.create(roomId)
+    // The ACK is durable; preserve its RoomCoordinator result. Do not let
+    // its stale controller cleanup clobber a newer accepted room binding.
+    if (this.disposed || token !== this.recoveryGeneration ||
+        membership !== this.membershipGeneration ||
+        this.rooms.state?.roomId !== roomId)
+      throw new Error('room selection superseded after create receipt')
     this.confirmActiveFairnessHand(null)
     this.membershipGeneration++
     this.shell.useAuthoritativeHand(null)

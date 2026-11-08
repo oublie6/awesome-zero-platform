@@ -846,3 +846,144 @@ test('audit: direct scene refresh cannot partially adopt room when fairness pref
  fairness.beginHandTransition=original
  online.dispose()
 })
+
+test('G53-N01: a new A recovery after a real member join B must not reuse obsolete core A',async()=>{
+ const f=fixture()
+ const room=id=>({roomId:id,version:1,status:'WAITING_PLAYERS',member:true,occupied:1,
+  lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},
+   {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]})
+ let aReads=0,releaseOld
+ const urls=[]
+ f.platform.http.request=async path=>{
+  urls.push(path)
+  const id=path.endsWith('/B')?'B':'A'
+  if(id==='A' && ++aReads===2)
+   return new Promise(resolve=>{releaseOld=()=>resolve({code:'OK',data:room('A')})})
+  return {code:'OK',data:room(id)}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const old=online.reconnectAndResync('A')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(aReads,2)
+ assert.equal(typeof releaseOld,'function')
+ await online.joinRoom('B')
+ assert.equal(online.rooms.state.roomId,'B')
+ const newer=online.reconnectAndResync('A')
+ assert.notStrictEqual(newer,old,'different membership epoch must create a new recovery')
+ const fresh=await newer
+ assert.equal(fresh.roomId,'A')
+ assert.equal(aReads,4,'new A must perform two new authority reads without old Promise')
+ assert.equal(online.rooms.state.roomId,'A')
+ releaseOld()
+ assert.equal(await old,null,'old A must remain invalid after B join')
+ assert.equal(online.rooms.state.roomId,'A')
+ assert.equal(f.commands.length,0,'member rejoin and recovery are read-only')
+ online.dispose()
+})
+
+test('audit: a room command epoch revokes an in-flight same-key recovery while retaining exact room identity',async()=>{
+ const f=fixture()
+ let version=1,reads=0,releaseOld
+ const view=v=>({roomId:'A',version:v,status:'WAITING_PLAYERS',member:true,occupied:1,
+  lastClientSequence:v,seats:[{position:1,accountId:'actor',ready:v>1},
+   {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]})
+ f.platform.http.request=async()=>{
+  if(++reads===2)return new Promise(resolve=>{releaseOld=()=>resolve({code:'OK',data:view(1)})})
+  return {code:'OK',data:view(version)}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ online.rooms.restoreTrustedRoom('A',1,1)
+ const old=online.reconnectAndResync('A')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(reads,2)
+ const ready=online.rooms.ready(true)
+ await new Promise(resolve=>setImmediate(resolve))
+ const cmd=f.commands.at(-1).payload
+ version=2
+ for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+  v:'doudizhu-api-command-result-v1',requestId:cmd.requestId,type:'room.ready',
+  durable:{v:'fair-doudizhu-command-result-v1',commandId:cmd.requestId,
+   aggregateId:'A',aggregateVersion:2,accepted:true}}}))
+ await ready
+ const newer=online.reconnectAndResync('A')
+ assert.notStrictEqual(newer,old,'command start and settlement invalidate stale same-key reads')
+ assert.equal((await newer).version,2)
+ assert.equal(reads,4)
+ releaseOld()
+ assert.equal(await old,null)
+ assert.equal(online.rooms.state.version,2)
+ online.dispose()
+})
+
+test('audit: delayed create CSPRNG cannot steal a newer member room selection',async()=>{
+ const f=fixture()
+ let resolveRandom
+ f.platform.random.bytes=async n=>new Promise(resolve=>{resolveRandom=()=>resolve(new Uint8Array(n).fill(3))})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const older=online.createRoom()
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof resolveRandom,'function')
+ await online.joinRoom('room-rejoin')
+ assert.equal(online.rooms.state.roomId,'room-rejoin')
+ resolveRandom()
+ await assert.rejects(older,/selection superseded/)
+ assert.equal(online.rooms.state.roomId,'room-rejoin')
+ assert.equal(f.commands.length,0,'no room.create is sent after newer member choice')
+ online.dispose()
+})
+
+test('audit: current create still commits after CSPRNG and accepted server receipt',async()=>{
+ const f=fixture()
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const pending=online.createRoom()
+ await new Promise(resolve=>setImmediate(resolve))
+ const cmd=f.commands.at(-1).payload
+ assert.equal(cmd.type,'room.create')
+ assert.equal(cmd.aggregateId,'room-cmd-000102030405060708090a0b0c0d0e0f')
+ for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+  v:'doudizhu-api-command-result-v1',requestId:cmd.requestId,type:cmd.type,
+  durable:{v:'fair-doudizhu-command-result-v1',commandId:cmd.requestId,
+   aggregateId:cmd.aggregateId,aggregateVersion:1,accepted:true}}}))
+ const room=await pending
+ assert.equal(room.roomId,cmd.aggregateId)
+ assert.equal(online.rooms.state.roomId,cmd.aggregateId)
+ online.dispose()
+})
+
+test('audit: superseded startHand after waiting for old fairness reconciliation does not send hand start to B',async()=>{
+ const f=fixture()
+ const view=id=>({roomId:id,version:1,status:'WAITING_PLAYERS',member:true,occupied:1,
+  lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},
+   {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]})
+ let releaseB
+ f.platform.http.request=async path=>path.endsWith('/B')
+  ? new Promise(resolve=>{releaseB=()=>resolve({code:'OK',data:view('B')})})
+  : {code:'OK',data:view('A')}
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ online.rooms.restoreTrustedRoom('A',1,1)
+ const oldFairness=online.fairness
+ let releaseFairness,unknown=true
+ Object.defineProperty(oldFairness,'needsReconciliation',{get:()=>unknown})
+ oldFairness.retryUnknown=()=>new Promise(resolve=>{releaseFairness=()=>{unknown=false;resolve({})}})
+ const start=online.startHand('hand-H2')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof releaseFairness,'function')
+ const join=online.joinRoom('B')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof releaseB,'function')
+ releaseFairness()
+ await assert.rejects(start,/selection superseded/)
+ // Both B reads must be authorized before it can be adopted.
+ releaseB()
+ await new Promise(resolve=>setImmediate(resolve))
+ releaseB()
+ await join
+ assert.equal(online.rooms.state.roomId,'B')
+ assert.equal(f.commands.length,0,'no room.hand.start can be sent to the newer room')
+ online.dispose()
+})
