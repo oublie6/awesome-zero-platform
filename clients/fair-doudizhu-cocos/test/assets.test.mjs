@@ -80,7 +80,7 @@ test('accepted room.hand.start receipt is adopted only after exact fairness pref
  const start=source.split('private async startHand():Promise<void> {')[1].split('private async refreshRoom():Promise<void>')[0]
  assert.match(start,/const generation=this\.roomGeneration/)
  assert.match(start,/await online\.startHand\(handID\)/)
- assert.match(start,/this\.currentRoom\(online,epoch,roomID,generation\)/)
+ assert.match(start,/this\.currentRoom\(online,epoch,roomID,generation,selection\)/)
  assert.ok(start.indexOf('await online.startHand(handID)')<start.indexOf('this.handID=handID'))
  assert.doesNotMatch(start,/await online\.rooms\.startHand\(handID\)/)
  assert.doesNotMatch(start,/online\.confirmActiveFairnessHand\(handID\)/)
@@ -123,7 +123,7 @@ test('R18 recovery UI gates unknown H2 mode and discovers rooms on fresh login',
  assert.match(bootstrap,/else if\(this\.handID && this\.fairnessMode===''/)
  assert.ok(bootstrap.indexOf("this.fairnessMode=null\n        this.selectedCards.clear()")<
     bootstrap.indexOf("if(this.screen==='rooms')this.renderScreen('rooms')",bootstrap.indexOf('private async refreshRoom')))
- assert.match(bootstrap,/await this\.recoverMyRooms\(\)/)
+ assert.match(bootstrap,/await this\.recoverMyRooms\(token=>\{selection=token\}\)/)
  assert.match(bootstrap,/online\.discoverRecoverableRooms\(\)/)
  assert.match(bootstrap,/online\.reconnectAndResync\(roomID\)/)
  for(const op of ['prepareRecoveryKit','importRecoveryKit','commit','reveal']){
@@ -179,7 +179,7 @@ test('G50-N02: scene offers exact room UNKNOWN reconciliation before discovery',
  const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
  assert.match(ui,/name:'RetryUnknownRoom'/)
  const reconnect=ui.split('private async reconnect():Promise<void>{')[1].split('private async retryUnknownFairness():')[0]
- assert.ok(reconnect.indexOf('online.retryUnknownRoom()')<reconnect.indexOf('this.recoverMyRooms()'))
+ assert.ok(reconnect.indexOf('online.retryUnknownRoom()')<reconnect.indexOf('this.recoverMyRooms('))
  assert.match(controller,/return this\.rooms\.retryUnknown\(\)/)
 })
 test('audit: Scene refresh does not bypass command generation or preflight barriers',async()=>{
@@ -197,7 +197,7 @@ test('audit: Scene refresh does not bypass command generation or preflight barri
 test('audit: pending Scene refresh is fenced when newer room selection begins',async()=>{
  const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
  const refresh=source.split('private async refreshRoom():Promise<void> {')[1].split('private async refreshFairness():')[0]
- assert.match(refresh,/const selection=this\.recoveryAttempt/)
+ assert.match(refresh,/const roomID=this\.roomID,selection=this\.recoveryAttempt/)
  assert.match(refresh,/selection!==this\.recoveryAttempt/)
  assert.match(refresh,/online\.rooms\.state\.roomId!==roomID/)
 })
@@ -208,7 +208,7 @@ test('G51-N01: stale account reconciliation callbacks cannot replace another acc
  assert.match(reconnect,/const owner=this\.online,epoch=this\.requestGeneration/)
  assert.ok(reconnect.indexOf('if(!this.currentAccount(owner,epoch)') <
    reconnect.indexOf("this.notice('原房间操作已明确拒绝"))
- assert.match(reconnect,/if\(this\.currentAccount\(owner,epoch\)\)\s*this\.notice\('重连失败：/)
+ assert.match(reconnect,/if\(this\.currentAccount\(owner,epoch\) && ownedSelection===this\.recoveryAttempt\)\s*this\.notice\('重连失败：/)
  const login=ui.split('private async login():Promise<void> {')[1].split('private async discoverMyRoomsSafely():')[0]
  assert.match(login,/text=>\{if\(this\.currentAccount\(online,generation\)\)this\.notice\(text\)\}/)
  assert.match(login,/if\(this\.currentAccount\(online,generation\) && this\.screen==='table'\)/)
@@ -258,4 +258,68 @@ test('G51 audit: failed login preflight leaves the previous account event epoch 
  assert.ok(login.indexOf('if(!globals.wx)throw')<login.indexOf('generation=++this.requestGeneration'))
  assert.ok(login.indexOf('online=new GameOnlineController')<login.indexOf('generation=++this.requestGeneration'))
  assert.ok(login.indexOf('generation=++this.requestGeneration')<login.indexOf('this.online=online'))
+})
+
+test('G52-N01: stale same-account failures compare the same room/selection lifetime as successes',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const section=(a,b)=>src.split(a)[1].split(b)[0]
+ const discover=section('private async discoverMyRoomsSafely():Promise<void>{','private async resumeSelectedRoom(')
+ assert.match(discover,/this\.recoverMyRooms\(token=>\{selection=token\}\)/)
+ assert.match(discover,/this\.currentAccount\(owner,epoch\) && selection===this\.recoveryAttempt/)
+ const reconnect=section('private async reconnect():Promise<void>{','private async retryUnknownFairness():')
+ assert.match(reconnect,/let ownedSelection=this\.recoveryAttempt/)
+ assert.match(reconnect,/ownedSelection=this\.recoveryAttempt/)
+ assert.match(reconnect,/this\.recoverMyRooms\(token=>\{ownedSelection=token\}\)/)
+ assert.match(reconnect,/this\.currentAccount\(owner,epoch\) && ownedSelection===this\.recoveryAttempt/)
+ const refresh=section('private async refreshRoom():Promise<void> {','private async refreshFairness():')
+ assert.match(refresh,/let generation=this\.roomGeneration/)
+ assert.match(refresh,/generation=this\.roomGeneration \/\/ Our own adopted hand/)
+ assert.match(refresh,/this\.currentRoom\(owner,epoch,roomID,generation,selection\)/)
+ assert.match(refresh,/selection!==this\.recoveryAttempt \|\| !this\.currentAccount\(owner,epoch\)/)
+})
+test('G52: same-Hand A-B-A stale errors and successful reads share selection barrier',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const section=(a,b)=>src.split(a)[1].split(b)[0]
+ for(const [start,end] of [
+  ['private async retryUnknownFairness():Promise<void>{','private async createRoom():'],
+  ['private async refreshFairness():Promise<void>{','private async submitOwnContribution():'],
+  ['private async importFairness():Promise<void>{','private async commitFairness():'],
+  ['private async showEvidence():Promise<void>{','private async refreshHand():']
+ ]){
+  const body=section(start,end)
+  assert.match(body,/selection=this\.recoveryAttempt/)
+  assert.ok(body.includes('generation,selection)'),start)
+  assert.match(body,/catch\(error\)\{/)
+  assert.match(body.split('catch(error){').at(-1),/this\.currentRoom\([^)]*generation,selection\)/)
+ }
+})
+test('G52: recovery coalescing honors owner and selection, so stale A is not reused after B',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const sub=src.split('private resumeAuthorizedRoom(roomID:string):Promise<void>{')[1]
+  .split('private async performAuthorizedRoomRecovery(')[0]
+ assert.match(sub,/this\.sceneRecovery\.owner===online/)
+ assert.match(sub,/this\.sceneRecovery\.selection===this\.recoveryAttempt/)
+ assert.match(sub,/this\.sceneRecovery=\{roomID,owner:online,selection:token,promise\}/)
+ assert.match(sub,/if\(this\.sceneRecovery\?\.promise===promise\)this\.sceneRecovery=null/)
+})
+test('G52: changed selection stops delayed Hand/Fairness commands from writing UI',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const section=(a,b)=>src.split(a)[1].split(b)[0]
+ for(const [start,end] of [
+  ['private async readyRoom():Promise<void> {','private async startHand():'],
+  ['private async startHand():Promise<void> {','private async refreshRoom():'],
+  ['private async submitOwnContribution():Promise<void>{','private async verifyMyPhrase():'],
+  ['private async verifyMyPhrase():Promise<void>{','private async prepareFairness():'],
+  ['private async commitFairness():Promise<void>{','private async revealFairness():'],
+  ['private async revealFairness():Promise<void>{','private async showEvidence():'],
+  ['private async refreshHand():Promise<void> {','private async retryUnknownHand():'],
+  ['private async retryUnknownHand():Promise<void>{','private discardUnknownHand():'],
+  ['private async bid(score:number):Promise<void> {','private async play():'],
+  ['private async play():Promise<void> {','private async pass():'],
+  ['private async pass():Promise<void> {','private requireOnline():']
+ ]){
+  const body=section(start,end)
+  assert.match(body,/selection=this\.recoveryAttempt/,start)
+  assert.ok(body.includes('generation,selection)'),start)
+ }
 })
