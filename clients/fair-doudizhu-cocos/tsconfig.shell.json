@@ -16,6 +16,7 @@
   "include": [
     "assets/scripts/game/**/*.ts",
     "assets/scripts/platform/**/*.ts",
-    "assets/scripts/foundation/**/*.ts"
+    "assets/scripts/foundation/**/*.ts",
+    "assets/scripts/bootstrap/MenuPagination.ts"
   ]
 }

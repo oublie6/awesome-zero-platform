@@ -7,6 +7,7 @@ import { createPlatform } from '../platform/createPlatform.ts'
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
+import { menuWindow } from './MenuPagination.ts'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
 import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
@@ -46,6 +47,9 @@ export class GameBootstrap extends Component {
   private title: Label | null = null
   private status: Label | null = null
   private buttons: Node[] = []
+  // Keep the full accessible action set even when it does not fit in one view.
+  private menuActions: MenuAction[] = []
+  private menuPage = 0
   private inputNode: Node | null = null
   private roomInput: EditBox | null = null
   private screen: Screen = 'home'
@@ -102,9 +106,11 @@ export class GameBootstrap extends Component {
     return label
   }
   private renderScreen(screen: Screen): void {
+    if(this.screen!==screen)this.menuPage=0
     this.screen = screen
     for (const button of this.buttons) if (button.isValid) button.destroy()
     this.buttons = []
+    this.menuActions = []
     this.inputNode?.destroy()
     this.inputNode = null
     this.roomInput = null
@@ -231,14 +237,9 @@ export class GameBootstrap extends Component {
     return input
   }
   private addMenu(actions: MenuAction[]): void {
-    for (const item of actions) {
-      const label=this.createLabel(item.name,item.caption,24,new Color(245,221,165,255))
-      const node=label.node
-      node.on(Node.EventType.TOUCH_END,(_event:EventTouch)=>{
-        if(this.content?.isValid)item.action()
-      },this)
-      this.buttons.push(node)
-    }
+    // Collect first; layout() materializes only the current viewport. Large
+    // room menus and 17-card hands must remain reachable, not shrink to 9px.
+    this.menuActions.push(...actions)
   }
   private notice(message:string):void {if(this.status?.isValid)this.status.string=message}
   /** Every async UI callback belongs to one authenticated controller and one
@@ -988,20 +989,39 @@ export class GameBootstrap extends Component {
       this.inputNode.getComponent(UITransform)!.setContentSize(Math.min(width,460),Math.max(48,height*0.075))
       this.inputNode.setPosition(0,height*0.015,0)
     }
-    const columns=this.screen==='home'||this.screen==='rules'?1:this.screen==='table'?(portrait?5:10):(portrait?3:4)
-    const rows=Math.max(1,Math.ceil(this.buttons.length/columns))
-    // Both a 15-control room lobby and a full 20-card table must fit inside
-    // the safe-area bottom half, including on compact landscape viewports.
-    const rowPitch=Math.min(height*0.106,height*0.34/Math.max(1,rows-1))
-    const buttonHeight=Math.max(28,Math.min(58,rowPitch-6))
-    this.buttons.forEach((button,index)=>{
+    const window=menuWindow(this.menuActions.length,width,height,portrait,this.screen,this.menuPage)
+    this.menuPage=window.page
+    const visible=this.menuActions.slice(window.start,window.end)
+    if(window.pages>1){
+      if(window.rows===1){
+        // Very short viewports have room for only one navigation control.
+        visible.push({name:'NextMenuPage',caption:`下一页 ${window.page+1}/${window.pages}`,
+          action:()=>{this.menuPage=(this.menuPage+1)%window.pages;this.layout()}})
+      }else{
+        if(window.page>0)visible.push({name:'PreviousMenuPage',caption:`上一页 ${window.page+1}/${window.pages}`,
+          action:()=>{this.menuPage--;this.layout()}})
+        if(window.page<window.pages-1)visible.push({name:'NextMenuPage',caption:`下一页 ${window.page+1}/${window.pages}`,
+          action:()=>{this.menuPage++;this.layout()}})
+      }
+    }
+    // Resizing and paging replace only presentation buttons. Never reset
+    // the text input, selected cards, account, room or in-flight commands.
+    for(const button of this.buttons)if(button.isValid)button.destroy()
+    this.buttons=[]
+    for(const [index,item] of visible.entries()){
+      const label=this.createLabel(item.name,item.caption,24,new Color(245,221,165,255))
+      const button=label.node
+      button.on(Node.EventType.TOUCH_END,(_event:EventTouch)=>{
+        if(this.content?.isValid)item.action()
+      },this)
+      this.buttons.push(button)
       const transform=button.getComponent(UITransform)!
-      const cellWidth=width/columns
-      transform.setContentSize(Math.max(20,cellWidth-8),buttonHeight)
-      button.getComponent(Label)!.fontSize=portrait?Math.max(18,Math.min(30,cellWidth*0.16)):Math.max(18,Math.min(26,cellWidth*0.17))
-      const col=index%columns,row=Math.floor(index/columns)
-      button.setPosition(-width/2+cellWidth*(col+0.5),-height*0.105-row*rowPitch,0)
-    })
+      const cellWidth=width/window.columns
+      transform.setContentSize(Math.max(20,cellWidth-8),window.buttonHeight)
+      label.fontSize=Math.max(18,Math.min(26,cellWidth*0.14))
+      const col=index%window.columns,row=Math.floor(index/window.columns)
+      button.setPosition(-width/2+cellWidth*(col+0.5),window.firstY-row*window.rowPitch,0)
+    }
   }
   override onDestroy(): void {
     this.requestGeneration++
@@ -1009,6 +1029,7 @@ export class GameBootstrap extends Component {
     view.off('design-resolution-changed',this.layout,this)
     for(const button of this.buttons)if(button.isValid)button.off(Node.EventType.TOUCH_END)
     this.buttons=[]
+    this.menuActions=[]
     this.online?.dispose()
     this.online=null
     this.platform=null
