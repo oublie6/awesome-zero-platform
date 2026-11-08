@@ -487,9 +487,12 @@ export class GameBootstrap extends Component {
       if(!this.roomID)throw new Error('还没有房间')
       const roomID=this.roomID
       const generation=this.roomGeneration
+      const selection=this.recoveryAttempt
       const commandGeneration=online.rooms.commandGeneration
       const info=await online.roomInfo(roomID)
-      if(generation!==this.roomGeneration || roomID!==this.roomID || online!==this.online)return
+      if(generation!==this.roomGeneration || selection!==this.recoveryAttempt ||
+        roomID!==this.roomID || online!==this.online ||
+        (online.rooms.state!==null && online.rooms.state.roomId!==roomID))return
       if(!info.member)throw new Error('当前账号不属于该房间')
       // The HTTP read can see a newly accepted H2 while the WSS start ACK is
       // still withheld. Do not rebind fairness or restore a room coordinator

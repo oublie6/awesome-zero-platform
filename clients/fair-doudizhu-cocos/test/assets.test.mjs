@@ -193,3 +193,11 @@ test('audit: Scene refresh does not bypass command generation or preflight barri
  assert.match(member,/const readCurrent/)
  assert.match(member,/commands === this\.rooms\.commandGeneration/)
 })
+
+test('audit: pending Scene refresh is fenced when newer room selection begins',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const refresh=source.split('private async refreshRoom():Promise<void> {')[1].split('private async refreshFairness():')[0]
+ assert.match(refresh,/const selection=this\.recoveryAttempt/)
+ assert.match(refresh,/selection!==this\.recoveryAttempt/)
+ assert.match(refresh,/online\.rooms\.state\.roomId!==roomID/)
+})

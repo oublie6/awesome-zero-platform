@@ -221,3 +221,13 @@ test('audit: command generation advances after definite rejection and exact UNKN
  await room.ready(true)
  assert.equal(room.state.version,4)
 })
+
+test('audit: A to B to A cannot discard the prior confirmed A version watermark',async()=>{
+ const {room}=fixture()
+ room.restoreTrustedRoom('A',4,2)
+ room.restoreTrustedRoom('B',2,1)
+ assert.throws(()=>room.restoreTrustedRoom('A',3,2),/stale room version/)
+ assert.deepEqual(room.state,{roomId:'B',version:2})
+ room.restoreTrustedRoom('A',5,3)
+ assert.deepEqual(room.state,{roomId:'A',version:5})
+})

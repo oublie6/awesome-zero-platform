@@ -25,6 +25,9 @@ export class DurableRoomRejected extends Error {
 export class RoomCoordinator {
   private room: RoomState | null = null
   private lastSequence = new Map<string, number>()
+  // Remember versions for every previously confirmed room, not just the
+  // current selection. Switching A -> B -> A cannot re-adopt an old A view.
+  private knownVersions = new Map<string, number>()
   private inFlight = false
   private uncertainOutcome = false
   private pendingCommand: Omit<WireCommand, 'v'> | null = null
@@ -65,9 +68,10 @@ export class RoomCoordinator {
     if (!validID(roomId) || !Number.isSafeInteger(version) || version < 1 ||
         !Number.isSafeInteger(lastClientSequence) || lastClientSequence < 0) throw new Error('invalid trusted room')
     this.assertCanRestoreTrustedRoom(roomId)
-    if (this.room?.roomId === roomId && version < this.room.version)
+    if (version < (this.knownVersions.get(roomId) ?? 0))
       throw new Error('stale room version; refresh authoritative state')
     this.room = Object.freeze({roomId, version})
+    this.knownVersions.set(roomId, version)
     this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, lastClientSequence))
     this.uncertainOutcome = false
     this.pendingCommand = null
@@ -163,7 +167,13 @@ export class RoomCoordinator {
       this.uncertainOutcome = true
       throw new Error('non-monotonic room version; outcome unknown')
     }
-    this.room = type === 'room.leave' ? null : Object.freeze({roomId,version:d.aggregateVersion as number})
+    const acceptedVersion = d.aggregateVersion as number
+    if (acceptedVersion < (this.knownVersions.get(roomId) ?? 0)) {
+      this.uncertainOutcome = true
+      throw new Error('durable result older than confirmed room version; outcome requires reconciliation')
+    }
+    this.knownVersions.set(roomId, acceptedVersion)
+    this.room = type === 'room.leave' ? null : Object.freeze({roomId,version:acceptedVersion})
     this.uncertainOutcome = false
     this.pendingCommand = null
     return Object.freeze({roomId,version:d.aggregateVersion as number})
