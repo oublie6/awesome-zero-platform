@@ -185,3 +185,39 @@ test('G49-N01: same-room UNKNOWN survives old authorized room reads until exact 
  room.restoreTrustedRoom('A',2,2)
  assert.equal(room.state.version,2)
 })
+
+test('G50-N01: an older authorized read cannot roll back a confirmed room version',async()=>{
+ const {room}=fixture()
+ room.restoreTrustedRoom('A',1,1)
+ const initial=room.commandGeneration
+ await room.ready(true)
+ assert.ok(room.commandGeneration>=initial+2)
+ assert.deepEqual(room.state,{roomId:'A',version:2})
+ assert.throws(()=>room.restoreTrustedRoom('A',1,1),/stale room version/)
+ assert.equal(room.state.version,2)
+ room.restoreTrustedRoom('A',3,3)
+ assert.equal(room.state.version,3)
+})
+test('audit: rejected join must not poison a different room command sequence',async()=>{
+ const {room,calls}=fixture()
+ room.restoreTrustedRoom('A',3,2)
+ await assert.rejects(room.join('B',3,800),/room identity mismatch/)
+ await assert.rejects(room.join('A',0,900),/invalid room version/)
+ await room.ready(true)
+ assert.equal(calls.at(-1).clientSeq,3)
+ assert.equal(room.state.version,4)
+})
+test('audit: command generation advances after definite rejection and exact UNKNOWN retry',async()=>{
+ const {room,api}=fixture()
+ room.restoreTrustedRoom('A',3,1)
+ const accepted=api.command
+ api.command=async c=>({v:'doudizhu-api-command-result-v1',requestId:c.requestId,type:c.type,
+  durable:{v:'fair-doudizhu-command-result-v1',commandId:c.requestId,aggregateId:'A',aggregateVersion:3,
+   accepted:false,failure:{code:'CONFLICT',currentVersion:4}}})
+ const before=room.commandGeneration
+ await assert.rejects(room.ready(true),/CONFLICT/)
+ assert.equal(room.commandGeneration,before+2)
+ api.command=accepted
+ await room.ready(true)
+ assert.equal(room.state.version,4)
+})

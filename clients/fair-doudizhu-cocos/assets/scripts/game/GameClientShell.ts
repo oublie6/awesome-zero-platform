@@ -23,6 +23,7 @@ export class GameClientShell {
   private disposed = false
   private initialized = false
   private transportReady = false
+  get commandTransportReady(): boolean { return !this.disposed && this.transportReady && this.connection !== null }
   private generation = 0
   private syncSequence = 0
   // Bound only by authenticated room/start-hand evidence, not a realtime

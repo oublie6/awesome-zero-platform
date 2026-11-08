@@ -126,6 +126,8 @@ export class GameBootstrap extends Component {
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
         {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.recoverMyRooms()}
       ]
+      if(this.online?.rooms.needsReconciliation)
+        actions.push({name:'RetryUnknownRoom',caption:'核对未确认房间命令',action:()=>void this.reconnect()})
       for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
         caption:(room.status==='HAND_ACTIVE'?'继续牌局 ':'恢复房间 ')+room.roomId,
         action:()=>void this.resumeAuthorizedRoom(room.roomId)})
@@ -333,7 +335,7 @@ export class GameBootstrap extends Component {
       if(online.rooms.state?.roomId!==roomID)
         throw new Error('room changed while applying recovery')
       if(online.rooms.state.version!==verified.version)
-        online.rooms.restoreTrustedRoom(roomID,verified.version,verified.lastClientSequence)
+        throw new Error('room version changed after recovery; retry authoritative lookup')
       if(current())this.notice('已通过服务器恢复本人房间和牌局')
     }catch(error){
       if(current() && this.recoveryAuthorityRevoked(error))
@@ -359,9 +361,29 @@ export class GameBootstrap extends Component {
     this.renderScreen('rooms')
   }
   private async reconnect():Promise<void>{
-    try{if(this.roomID)await this.resumeAuthorizedRoom(this.roomID)
-        else await this.recoverMyRooms()}
-    catch(error){this.notice('重连失败：'+this.message(error))}
+    try{
+      const online=this.requireOnline()
+      if(online.rooms.needsReconciliation){
+        const commandType=online.rooms.pendingCommandType
+        try{await online.retryUnknownRoom()}
+        catch(error){
+          if(online.rooms.needsReconciliation)throw error
+          // The original durable receipt definitively rejected this command.
+          this.notice('原房间操作已明确拒绝：'+this.message(error))
+        }
+        if(online!==this.online || !this.content?.isValid)return
+        if(commandType==='room.leave' && !online.rooms.state){
+          this.roomGeneration++
+          this.roomID=''
+          this.handID=''
+          this.fairnessMode=null
+          this.selectedCards.clear()
+        }
+        if(this.screen==='rooms')this.renderScreen('rooms')
+      }
+      if(this.roomID)await this.resumeAuthorizedRoom(this.roomID)
+      else await this.recoverMyRooms()
+    }catch(error){this.notice('重连失败：'+this.message(error))}
   }
   private async retryUnknownFairness():Promise<void>{
     try{
@@ -382,7 +404,10 @@ export class GameBootstrap extends Component {
       this.recoverableRooms=[]
       this.selectedCards.clear()
       await this.refreshRoom()
-    }catch(error){this.notice('建房失败：'+this.message(error))}
+    }catch(error){
+      if(this.online?.rooms.needsReconciliation && this.screen==='rooms')this.renderScreen('rooms')
+      this.notice('建房失败：'+this.message(error))
+    }
   }
   private async joinRoom():Promise<void> {
     try {
@@ -462,6 +487,7 @@ export class GameBootstrap extends Component {
       if(!this.roomID)throw new Error('还没有房间')
       const roomID=this.roomID
       const generation=this.roomGeneration
+      const commandGeneration=online.rooms.commandGeneration
       const info=await online.roomInfo(roomID)
       if(generation!==this.roomGeneration || roomID!==this.roomID || online!==this.online)return
       if(!info.member)throw new Error('当前账号不属于该房间')
@@ -469,8 +495,7 @@ export class GameBootstrap extends Component {
       // still withheld. Do not rebind fairness or restore a room coordinator
       // that still owns an in-flight command. startHand() will refresh on ACK.
       if(online.handStartInProgress)return
-      online.confirmActiveFairnessHand(info.activeHandId || null)
-      online.rooms.restoreTrustedRoom(info.roomId,info.version,info.lastClientSequence)
+      online.adoptAuthorizedRoomRefresh(info,commandGeneration)
       const authorizedHand=info.activeHandId || info.lastHandId || ''
       if(authorizedHand!==this.handID){
         this.roomGeneration++
@@ -483,7 +508,6 @@ export class GameBootstrap extends Component {
       if(this.screen==='rooms')this.renderScreen('rooms')
       const seats=(info.seats||[]).map(s=>s.accountId ? `座位${s.position} ${s.ready?'已准备':'未准备'}`:`座位${s.position} 空`).join(' / ')
       this.notice(`房间版本 ${info.version} · ${seats}`)
-      online.shell.useAuthoritativeHand(authorizedHand || null)
       if(info.activeHandId){
         const handGeneration=this.roomGeneration
         const fairness=await online.api.fairness(info.activeHandId)

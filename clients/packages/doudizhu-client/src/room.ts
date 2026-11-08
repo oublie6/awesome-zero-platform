@@ -57,7 +57,7 @@ export class RoomCoordinator {
       const cmd = this.pendingCommand
       const response = await this.api.command(cmd)
       return this.acceptResult(cmd, response)
-    } finally { this.inFlight = false }
+    } finally { this.inFlight = false; ++this.commandEpoch }
   }
 
   /** Adopt only a version from a trusted, authorized server-side room query. */
@@ -65,6 +65,8 @@ export class RoomCoordinator {
     if (!validID(roomId) || !Number.isSafeInteger(version) || version < 1 ||
         !Number.isSafeInteger(lastClientSequence) || lastClientSequence < 0) throw new Error('invalid trusted room')
     this.assertCanRestoreTrustedRoom(roomId)
+    if (this.room?.roomId === roomId && version < this.room.version)
+      throw new Error('stale room version; refresh authoritative state')
     this.room = Object.freeze({roomId, version})
     this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, lastClientSequence))
     this.uncertainOutcome = false
@@ -82,8 +84,7 @@ export class RoomCoordinator {
   join(roomId: string, expectedVersion: number, lastClientSequence = 0): Promise<RoomState> {
     if (!Number.isSafeInteger(lastClientSequence) || lastClientSequence < 0)
       return Promise.reject(new Error('invalid client sequence'))
-    this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, lastClientSequence))
-    return this.perform('room.join', roomId, expectedVersion, {})
+    return this.perform('room.join', roomId, expectedVersion, {}, lastClientSequence)
   }
   ready(ready: boolean): Promise<RoomState> {
     if (typeof ready !== 'boolean') return Promise.reject(new Error('invalid ready flag'))
@@ -100,13 +101,15 @@ export class RoomCoordinator {
     return this.perform(type, this.room.roomId, this.room.version, payload)
   }
 
-  private async perform(type: RoomCommandType, roomId: string, expectedVersion: number, payload: Record<string, unknown>): Promise<RoomState> {
+  private async perform(type: RoomCommandType, roomId: string, expectedVersion: number,
+    payload: Record<string, unknown>, joinSequence = 0): Promise<RoomState> {
     if (!validID(roomId) || !Number.isSafeInteger(expectedVersion) || expectedVersion < (type === 'room.create' ? 0 : 1) ||
       (type === 'room.create' && expectedVersion !== 0)) throw new Error('invalid room version or ID')
     if (this.inFlight) throw new Error('room command outstanding; outcome may be unknown')
     if (this.uncertainOutcome) throw new Error('room outcome unknown; reconcile with an authoritative server room query before continuing')
     if (type === 'room.create' && this.room) throw new Error('already managing a room')
     if (type !== 'room.create' && this.room && this.room.roomId !== roomId) throw new Error('room identity mismatch')
+    if (type === 'room.join') this.lastSequence.set(roomId, Math.max(this.lastSequence.get(roomId) ?? 0, joinSequence))
     this.inFlight = true
     ++this.commandEpoch
     try {
@@ -129,7 +132,7 @@ export class RoomCoordinator {
         throw error
       }
       return this.acceptResult(command, result)
-    } finally { this.inFlight = false }
+    } finally { this.inFlight = false; ++this.commandEpoch }
   }
   private acceptResult(command: Omit<WireCommand, 'v'>, result: WireCommandResult): RoomState {
     const {roomId, type, expectedVersion, requestId} = {

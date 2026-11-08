@@ -133,6 +133,17 @@ export class GameOnlineController {
     }
     return current()?fresh:null
   }
+  /** Scene refresh must obey the same pending-command/fairness/hand barriers.
+   * Do not adopt HTTP data if a command changed while the read was in flight. */
+  adoptAuthorizedRoomRefresh(view: RoomRead, commandGeneration: number): void {
+    if (this.disposed || !this.session.authenticated ||
+        commandGeneration !== this.rooms.commandGeneration)
+      throw new Error('room changed while refreshing; retry authoritative lookup')
+    if (!view.member || view.status === 'CLOSED')
+      throw new Error('room membership revoked or room closed during refresh')
+    this.adoptAuthorizedRoom(view)
+  }
+
   /** Check all mutating subsystems before adopting any new binding. The
    * reservations and adoption are synchronous: no intermediate HTTP awaits. */
   private adoptAuthorizedRoom(view: RoomRead): void {
@@ -180,10 +191,12 @@ export class GameOnlineController {
       throw new Error('room outcome unknown for another room; retry original request before switching')
     const token = ++this.recoveryGeneration
     const membership = this.membershipGeneration
+    const commands = this.rooms.commandGeneration
     const current = () => !this.disposed && this.session.authenticated &&
       token === this.recoveryGeneration && membership === this.membershipGeneration
+    const readCurrent = () => current() && commands === this.rooms.commandGeneration
     const view = await this.roomInfo(roomId)
-    if (!current()) throw new Error('room selection superseded during join')
+    if (!readCurrent()) throw new Error('room selection superseded during join')
     if (view.status === 'CLOSED') throw new Error('room not joinable')
     // Current members can resume an already active hand. This does NOT allow
     // outsiders into HAND_ACTIVE or bypass the server's membership check.
@@ -197,14 +210,14 @@ export class GameOnlineController {
       let evidence: Awaited<ReturnType<DoudizhuHTTPClient['finalEvidence']>> | null = null
       if (view.activeHandId) {
         const fairness = await this.api.fairness(view.activeHandId)
-        if (!current()) throw new Error('room selection superseded during join')
+        if (!readCurrent()) throw new Error('room selection superseded during join')
         phase = fairness.phase
       } else if (view.lastHandId) {
         evidence = await this.api.finalEvidence(view.lastHandId)
-        if (!current()) throw new Error('room selection superseded during join')
+        if (!readCurrent()) throw new Error('room selection superseded during join')
       }
       const fresh = await this.roomInfo(roomId)
-      if (!current()) throw new Error('room selection superseded during join')
+      if (!readCurrent()) throw new Error('room selection superseded during join')
       if (!fresh.member || fresh.status === 'CLOSED') {
         this.forgetInvalidRecoveredRoom(roomId)
         throw new Error('room membership revoked or room closed during join')
@@ -236,11 +249,28 @@ export class GameOnlineController {
     this.shell.useAuthoritativeHand(null)
     return joined
   }
-  /** Resolve an ambiguous command only from an authenticated, authoritative room read. */
+  /** Settle only by the original durable request ID, never by a room read. */
+  async retryUnknownRoom(): Promise<Readonly<RoomState>> {
+    if (this.disposed || !this.session.authenticated)
+      throw new Error('authenticated session required')
+    if (!this.rooms.needsReconciliation)
+      throw new Error('no pending room request to reconcile')
+    const selection = ++this.recoveryGeneration
+    if (!this.shell.commandTransportReady)
+      await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
+    if (this.disposed || !this.session.authenticated || selection !== this.recoveryGeneration)
+      throw new Error('room reconciliation superseded')
+    return this.rooms.retryUnknown()
+  }
+  /** Recheck authoritative membership after an exact unknown receipt. */
   async reconcileRoom(roomId: string): Promise<RoomRead> {
-    const view = await this.lookupOrRetryPendingCreate(roomId)
-    if (!view.member) throw new Error('room membership not confirmed; outcome still unknown')
-    this.rooms.restoreTrustedRoom(roomId, view.version, view.lastClientSequence)
+    if (this.rooms.needsReconciliation) {
+      if (this.rooms.pendingRoomId !== roomId)
+        throw new Error('room outcome unknown for another room; retry original request before switching')
+      await this.retryUnknownRoom()
+    }
+    const view = await this.reconnectAndResync(roomId)
+    if (!view) throw new Error('room recovery superseded or no authorized room')
     return view
   }
   get pendingRoomId(): string | null { return this.rooms.pendingRoomId }

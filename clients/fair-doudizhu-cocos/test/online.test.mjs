@@ -777,3 +777,72 @@ test('G49-N02: fairness transition rejection cannot partially adopt another room
  assert.equal(online.fairness,before)
  online.dispose()
 })
+
+test('G50-N01: delayed member join cannot overwrite a newer confirmed ready ACK',async()=>{
+ const f=fixture()
+ const waiting={roomId:'A',version:1,status:'WAITING_PLAYERS',member:true,occupied:1,
+  lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},
+    {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
+ let release,reads=0
+ f.platform.http.request=async()=> {
+  if(++reads===2)return new Promise(resolve=>{release=()=>resolve({code:'OK',data:waiting})})
+  return {code:'OK',data:waiting}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ online.rooms.restoreTrustedRoom('A',1,1)
+ const joining=online.joinRoom('A')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(typeof release,'function')
+ const ready=online.rooms.ready(true)
+ await new Promise(resolve=>setImmediate(resolve))
+ const cmd=f.commands.at(-1).payload
+ for(const listener of f.messages)listener(JSON.stringify({type:'doudizhu.command.result',payload:{
+  v:'doudizhu-api-command-result-v1',requestId:cmd.requestId,type:'room.ready',
+  durable:{v:'fair-doudizhu-command-result-v1',commandId:cmd.requestId,
+   aggregateId:'A',aggregateVersion:2,accepted:true}}}))
+ await ready
+ release()
+ await assert.rejects(joining,/selection superseded/)
+ assert.equal(online.rooms.state.version,2)
+ online.dispose()
+})
+test('G50-N02: room UNKNOWN can be retried from authenticated controller with same request ID',async()=>{
+ const f=fixture()
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ let oldRequest
+ const original=online.shell.submitCommand.bind(online.shell)
+ online.shell.submitCommand=async cmd=>{oldRequest=cmd;throw Error('ACK lost')}
+ await assert.rejects(online.rooms.create('room-pending'),/ACK lost/)
+ assert.equal(online.rooms.needsReconciliation,true)
+ online.shell.submitCommand=original
+ const retry=online.retryUnknownRoom()
+ await new Promise(resolve=>setImmediate(resolve))
+ const replay=f.commands.at(-1).payload
+ assert.deepEqual({...replay,v:undefined},{...oldRequest,v:undefined})
+ for(const listener of f.messages)listener(JSON.stringify({type:'doudizhu.command.result',payload:{
+  v:'doudizhu-api-command-result-v1',requestId:replay.requestId,type:'room.create',
+  durable:{v:'fair-doudizhu-command-result-v1',commandId:replay.requestId,
+   aggregateId:'room-pending',aggregateVersion:1,accepted:true}}}))
+ assert.deepEqual(await retry,{roomId:'room-pending',version:1})
+ assert.equal(online.rooms.needsReconciliation,false)
+ online.dispose()
+})
+test('audit: direct scene refresh cannot partially adopt room when fairness preflight rejects',async()=>{
+ const f=fixture()
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ online.rooms.restoreTrustedRoom('A',2,1)
+ const fairness=online.fairness
+ const original=fairness.beginHandTransition.bind(fairness)
+ fairness.beginHandTransition=()=>{throw Error('fairness result unknown; retry exact request')}
+ const view={roomId:'B',version:2,status:'WAITING_PLAYERS',member:true,occupied:1,
+  lastClientSequence:1,seats:[{position:1,accountId:'actor',ready:false},
+   {position:2,accountId:'',ready:false},{position:3,accountId:'',ready:false}]}
+ await assert.rejects(Promise.resolve().then(()=>online.adoptAuthorizedRoomRefresh(view,online.rooms.commandGeneration)),/fairness result unknown/)
+ assert.equal(online.rooms.state.roomId,'A')
+ assert.equal(online.fairness,fairness)
+ fairness.beginHandTransition=original
+ online.dispose()
+})

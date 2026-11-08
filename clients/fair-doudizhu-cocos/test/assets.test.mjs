@@ -38,7 +38,7 @@ test('native UI exposes a room leave control and displays verified archive compl
  assert.match(source,/online\.leaveRoom\(\)/)
  assert.match(source,/terminalEvidence/)
  assert.match(source,/roomGeneration/)
- assert.match(source,/useAuthoritativeHand/)
+ assert.match(source,/adoptAuthorizedRoomRefresh/)
  assert.match(source,/api\.finalEvidence\(handID\)/)
 })
 
@@ -72,7 +72,7 @@ test('delayed fairness kit UI updates are fenced after leave, hand and login rep
  assert.ok(prepare.indexOf('generation!==this.roomGeneration')<prepare.indexOf('input.string=kit'))
  assert.match(source,/await online\.startHand\(handID\)/)
  assert.match(source,/generation!==this\.roomGeneration/)
- assert.match(source,/online\.confirmActiveFairnessHand\(info\.activeHandId \|\| null\)/)
+ assert.match(source,/online\.adoptAuthorizedRoomRefresh\(info,commandGeneration\)/)
 })
 
 test('accepted room.hand.start receipt is adopted only after exact fairness preflight',async()=>{
@@ -91,8 +91,8 @@ test('Round16 HTTP H2 refresh defers rebinding until durable WSS start receipt',
  const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
  const refresh=ui.split('private async refreshRoom():Promise<void> {')[1].split('private async refreshFairness():Promise<void>')[0]
  assert.match(refresh,/if\(online\.handStartInProgress\)return/)
- assert.ok(refresh.indexOf('if(online.handStartInProgress)return')<refresh.indexOf('online.confirmActiveFairnessHand(info.activeHandId || null)'))
- assert.ok(refresh.indexOf('if(online.handStartInProgress)return')<refresh.indexOf('online.rooms.restoreTrustedRoom('))
+ assert.ok(refresh.indexOf('if(online.handStartInProgress)return')<refresh.indexOf('online.adoptAuthorizedRoomRefresh(info,commandGeneration)'))
+ assert.doesNotMatch(refresh,/online\.rooms\.restoreTrustedRoom\(/)
  const guard=controller.split('confirmActiveFairnessHand(handId: string | null): void {')[1].split('private resetFairnessAfterConfirmedTransition()')[0]
  assert.match(guard,/this\.startingHand !== null && handId !== this\.confirmedFairnessHand/)
  assert.doesNotMatch(guard,/handId !== this\.startingHand/)
@@ -172,4 +172,24 @@ test('G48-N03: online join rejects stale results after logout',async()=>{
  const logout=source.split('async logout(): Promise<void> {')[1].split('dispose(): void')[0]
  assert.ok(logout.indexOf('this.disposed = true')<logout.indexOf('await this.session.logout()'))
  assert.ok(logout.includes('++this.recoveryGeneration'))
+})
+
+test('G50-N02: scene offers exact room UNKNOWN reconciliation before discovery',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
+ assert.match(ui,/name:'RetryUnknownRoom'/)
+ const reconnect=ui.split('private async reconnect():Promise<void>{')[1].split('private async retryUnknownFairness():')[0]
+ assert.ok(reconnect.indexOf('online.retryUnknownRoom()')<reconnect.indexOf('this.recoverMyRooms()'))
+ assert.match(controller,/return this\.rooms\.retryUnknown\(\)/)
+})
+test('audit: Scene refresh does not bypass command generation or preflight barriers',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
+ const refresh=ui.split('private async refreshRoom():Promise<void> {')[1].split('private async refreshFairness():')[0]
+ assert.match(refresh,/const commandGeneration=online\.rooms\.commandGeneration/)
+ assert.match(refresh,/online\.adoptAuthorizedRoomRefresh\(info,commandGeneration\)/)
+ assert.doesNotMatch(refresh,/online\.rooms\.restoreTrustedRoom\(/)
+ const member=controller.split('async joinRoom(roomId: string):')[1].split('async retryUnknownRoom(')[0]
+ assert.match(member,/const readCurrent/)
+ assert.match(member,/commands === this\.rooms\.commandGeneration/)
 })
