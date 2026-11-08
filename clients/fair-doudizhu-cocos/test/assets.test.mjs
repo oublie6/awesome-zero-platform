@@ -49,11 +49,11 @@ test('native fairness backup gate requires explicit user-held re-entry before co
  assert.match(source,/this\.roomInput\.string=''/)
  assert.match(source,/backupVerificationPendingHand!==handID/)
  assert.match(source,/this\.verifiedBackupController=online/)
- assert.match(source,/this\.verifiedBackupHand!==this\.handID/)
+ assert.match(source,/this\.verifiedBackupHand!==handID/)
  assert.match(source,/this\.verifiedBackupController!==online/)
  assert.match(source,/await fairness\.importRecoveryKit\(kit,handID\)/)
  assert.match(source,/fairness!==online\.fairness/)
- assert.match(source,/online\.fairness\.commit\(this\.handID\)/)
+ assert.match(source,/await fairness\.commit\(handID\)/)
 })
 
 test('delayed fairness kit UI updates are fenced after leave, hand and login replacement',async()=>{
@@ -80,7 +80,7 @@ test('accepted room.hand.start receipt is adopted only after exact fairness pref
  const start=source.split('private async startHand():Promise<void> {')[1].split('private async refreshRoom():Promise<void>')[0]
  assert.match(start,/const generation=this\.roomGeneration/)
  assert.match(start,/await online\.startHand\(handID\)/)
- assert.match(start,/online!==this\.online \|\| roomID!==this\.roomID/)
+ assert.match(start,/this\.currentRoom\(online,epoch,roomID,generation\)/)
  assert.ok(start.indexOf('await online.startHand(handID)')<start.indexOf('this.handID=handID'))
  assert.doesNotMatch(start,/await online\.rooms\.startHand\(handID\)/)
  assert.doesNotMatch(start,/online\.confirmActiveFairnessHand\(handID\)/)
@@ -200,4 +200,52 @@ test('audit: pending Scene refresh is fenced when newer room selection begins',a
  assert.match(refresh,/const selection=this\.recoveryAttempt/)
  assert.match(refresh,/selection!==this\.recoveryAttempt/)
  assert.match(refresh,/online\.rooms\.state\.roomId!==roomID/)
+})
+
+test('G51-N01: stale account reconciliation callbacks cannot replace another account notice',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const reconnect=ui.split('private async reconnect():Promise<void>{')[1].split('private async retryUnknownFairness():')[0]
+ assert.match(reconnect,/const owner=this\.online,epoch=this\.requestGeneration/)
+ assert.ok(reconnect.indexOf('if(!this.currentAccount(owner,epoch)') <
+   reconnect.indexOf("this.notice('原房间操作已明确拒绝"))
+ assert.match(reconnect,/if\(this\.currentAccount\(owner,epoch\)\)this\.notice\('重连失败:/)
+ const login=ui.split('private async login():Promise<void> {')[1].split('private async discoverMyRoomsSafely():')[0]
+ assert.match(login,/text=>\{if\(this\.currentAccount\(online,generation\)\)this\.notice\(text\)\}/)
+ assert.match(login,/if\(this\.currentAccount\(online,generation\) && this\.screen==='table'\)/)
+})
+test('G51 audit: async room and hand callbacks require their original session and room',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const section=(a,b)=>ui.split(a)[1]?.split(b)[0]||''
+ for(const [start,end] of [
+  ['private async createRoom():Promise<void> {','private async joinRoom():'],
+  ['private async joinRoom():Promise<void> {','private async leaveRoom():'],
+  ['private async leaveRoom():Promise<void> {','private async readyRoom():'],
+  ['private async readyRoom():Promise<void> {','private async startHand():'],
+  ['private async startHand():Promise<void> {','private async refreshRoom():'],
+  ['private async refreshRoom():Promise<void> {','private async refreshFairness():'],
+  ['private async refreshFairness():Promise<void>{','private async submitOwnContribution():'],
+  ['private async retryUnknownHand():Promise<void>{','private discardUnknownHand():'],
+  ['private async bid(score:number):Promise<void> {','private async play():'],
+  ['private async play():Promise<void> {','private async pass():'],
+  ['private async pass():Promise<void> {','private requireOnline():'],
+  ['private async importFairness():Promise<void>{','private async commitFairness():'],
+  ['private async commitFairness():Promise<void>{','private async revealFairness():'],
+  ['private async revealFairness():Promise<void>{','private async showEvidence():'],
+  ['private async showEvidence():Promise<void>{','private async refreshHand():']
+ ])assert.match(section(start,end),/this\.current(Account|Room)\(/,start+' must fence stale callbacks')
+})
+test('G51 audit: repeat create/leave taps and menu recovery errors are controlled',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(ui,/private roomMutation:/)
+ for(const [start,end] of [
+  ['private async createRoom():Promise<void> {','private async joinRoom():'],
+  ['private async leaveRoom():Promise<void> {','private async readyRoom():']
+ ]) {
+  const body=ui.split(start)[1].split(end)[0]
+  assert.match(body,/if\(this\.roomMutation\?\.owner===owner\)return/)
+  assert.ok(body.indexOf('this.roomMutation=mutation')<body.indexOf('++this.recoveryAttempt'))
+  assert.match(body,/if\(this\.roomMutation===mutation\)this\.roomMutation=null/)
+ }
+ assert.match(ui,/action:\(\)=>void this\.discoverMyRoomsSafely\(\)/)
+ assert.match(ui,/action:\(\)=>void this\.resumeSelectedRoom\(room\.roomId\)/)
 })

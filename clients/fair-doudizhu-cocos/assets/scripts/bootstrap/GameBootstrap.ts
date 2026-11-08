@@ -65,6 +65,9 @@ export class GameBootstrap extends Component {
   // Explicit room recovery choices are distinct from ordinary UI refreshes.
   private recoveryAttempt = 0
   private sceneRecovery: {roomID:string;promise:Promise<void>}|null=null
+  // Coalesce duplicate create/leave taps so an already-accepted receipt
+  // cannot lose its scene adoption to a later local conflict.
+  private roomMutation:{owner:GameOnlineController|null;kind:'create'|'leave'}|null=null
 
   override start(): void {
     this.content = new Node('SafeContent')
@@ -124,13 +127,13 @@ export class GameBootstrap extends Component {
         {name:'LeaveRoom',caption:'退出当前房间',action:()=>void this.leaveRoom()},
         {name:'StartHand',caption:'开始本局',action:()=>void this.startHand()},
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
-        {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.recoverMyRooms()}
+        {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.discoverMyRoomsSafely()}
       ]
       if(this.online?.rooms.needsReconciliation)
         actions.push({name:'RetryUnknownRoom',caption:'核对未确认房间命令',action:()=>void this.reconnect()})
       for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
         caption:(room.status==='HAND_ACTIVE'?'继续牌局 ':'恢复房间 ')+room.roomId,
-        action:()=>void this.resumeAuthorizedRoom(room.roomId)})
+        action:()=>void this.resumeSelectedRoom(room.roomId)})
       if(this.fairnessMode==='client-contributed-server-custodied-v1'){
         actions.push(
           {name:'SubmitOwnContribution',caption:'提交我的随机验证字符串',action:()=>void this.submitOwnContribution()},
@@ -236,6 +239,15 @@ export class GameBootstrap extends Component {
     }
   }
   private notice(message:string):void {if(this.status?.isValid)this.status.string=message}
+  /** Every async UI callback belongs to one authenticated controller and one
+   * Scene login epoch. Disposed/replaced accounts may finish their requests,
+   * but must never modify the current account's UI. */
+  private currentAccount(online:GameOnlineController|null,epoch:number):boolean{
+    return online===this.online && epoch===this.requestGeneration && !!this.content?.isValid
+  }
+  private currentRoom(online:GameOnlineController|null,epoch:number,roomID:string,generation:number):boolean{
+    return this.currentAccount(online,epoch) && roomID===this.roomID && generation===this.roomGeneration
+  }
   private async login():Promise<void> {
     const generation=++this.requestGeneration
     try {
@@ -244,8 +256,9 @@ export class GameBootstrap extends Component {
       const globals=globalThis as typeof globalThis & {wx?:MiniPlatformSDK}
       if(!globals.wx)throw new Error('当前尚未配置网页账号登录，请使用微信小游戏')
       const platform=createPlatform({apiBase:cfg.apiBase,sdk:globals.wx})
-      const online=new GameOnlineController(platform,createWeChatIdentityExchange(platform),cfg.socketEndpoint,
-        text=>this.notice(text),cfg.revealManifestRoots)
+      let online:GameOnlineController
+      online=new GameOnlineController(platform,createWeChatIdentityExchange(platform),cfg.socketEndpoint,
+        text=>{if(this.currentAccount(online,generation))this.notice(text)},cfg.revealManifestRoots)
       this.platform=platform
       ++this.recoveryAttempt
       this.sceneRecovery=null
@@ -259,19 +272,37 @@ export class GameBootstrap extends Component {
       this.selectedCards.clear()
       const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
       if(!restored)await online.loginAndConnect()
-      if(generation!==this.requestGeneration || !this.content?.isValid)return
+      if(!this.currentAccount(online,generation))return
       online.shell.events.on('doudizhu.hand.snapshot',()=>{
-        if(this.screen==='table')this.renderScreen('table')
+        if(this.currentAccount(online,generation) && this.screen==='table')this.renderScreen('table')
       })
       online.shell.events.on('doudizhu.hand.evidence',payload=>{
         const id=(payload as {handId?: string})?.handId
-        if(id && id===this.handID)void this.showEvidence()
+        if(this.currentAccount(online,generation) && id && id===this.handID)void this.showEvidence()
       })
       this.notice('已验证微信账号并连接游戏服务')
       try{await this.recoverMyRooms()}
-      catch(error){if(online===this.online && generation===this.requestGeneration)
+      catch(error){if(this.currentAccount(online,generation))
         this.notice('已登录，自动发现暂不可用：'+this.message(error))}
-    } catch(error) {if(generation===this.requestGeneration)this.notice('登录失败：'+this.message(error))}
+    } catch(error) {if(generation===this.requestGeneration && this.content?.isValid)
+      this.notice('登录失败：'+this.message(error))}
+  }
+  private async discoverMyRoomsSafely():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    try{await this.recoverMyRooms()}
+    catch(error){if(this.currentAccount(owner,epoch))this.notice('查询房间失败：'+this.message(error))}
+  }
+  private async resumeSelectedRoom(roomID:string):Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    let selection=this.recoveryAttempt
+    try{
+      const pending=this.resumeAuthorizedRoom(roomID)
+      selection=this.recoveryAttempt
+      await pending
+    }catch(error){
+      if(this.currentAccount(owner,epoch) && selection===this.recoveryAttempt)
+        this.notice('恢复房间失败：'+this.message(error))
+    }
   }
   /** No game room identifier or player entropy is persisted on the device.
    * A slower account discovery must not supersede a later explicit selection. */
@@ -279,7 +310,7 @@ export class GameBootstrap extends Component {
     const online=this.requireOnline()
     const token=++this.recoveryAttempt
     const rooms=await online.discoverRecoverableRooms()
-    if(online!==this.online || token!==this.recoveryAttempt)return
+    if(online!==this.online || token!==this.recoveryAttempt || !this.content?.isValid)return
     this.recoverableRooms=rooms
     const active=rooms.filter(room=>room.status==='HAND_ACTIVE')
     const candidate=active.length===1?active[0]:
@@ -361,17 +392,21 @@ export class GameBootstrap extends Component {
     this.renderScreen('rooms')
   }
   private async reconnect():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    const initialChoice=this.recoveryAttempt
     try{
       const online=this.requireOnline()
       if(online.rooms.needsReconciliation){
         const commandType=online.rooms.pendingCommandType
         try{await online.retryUnknownRoom()}
         catch(error){
+          if(!this.currentAccount(owner,epoch) || initialChoice!==this.recoveryAttempt)return
           if(online.rooms.needsReconciliation)throw error
-          // The original durable receipt definitively rejected this command.
+          // A durable rejection settles the original ID; do not tell a
+          // replacement account about an old account's result.
           this.notice('原房间操作已明确拒绝：'+this.message(error))
         }
-        if(online!==this.online || !this.content?.isValid)return
+        if(!this.currentAccount(owner,epoch) || initialChoice!==this.recoveryAttempt)return
         if(commandType==='room.leave' && !online.rooms.state){
           this.roomGeneration++
           this.roomID=''
@@ -381,22 +416,39 @@ export class GameBootstrap extends Component {
         }
         if(this.screen==='rooms')this.renderScreen('rooms')
       }
+      if(!this.currentAccount(owner,epoch))return
       if(this.roomID)await this.resumeAuthorizedRoom(this.roomID)
       else await this.recoverMyRooms()
-    }catch(error){this.notice('重连失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentAccount(owner,epoch))this.notice('重连失败：'+this.message(error))
+    }
   }
   private async retryUnknownFairness():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    const handID=this.handID,generation=this.roomGeneration
     try{
       const online=this.requireOnline()
-      if(!online.fairness.needsReconciliation)throw new Error('没有待确认的公平提交')
-      await online.fairness.retryUnknown()
+      const fairness=online.fairness
+      if(!fairness.needsReconciliation)throw new Error('没有待确认的公平提交')
+      await fairness.retryUnknown()
+      if(!this.currentRoom(owner,epoch,this.roomID,generation) ||
+         handID!==this.handID || fairness!==online.fairness)return
       await this.refreshFairness()
-    }catch(error){this.notice('未确认提交重试失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentAccount(owner,epoch) && handID===this.handID)
+        this.notice('未确认提交重试失败：'+this.message(error))
+    }
   }
   private async createRoom():Promise<void> {
+    const owner=this.online,epoch=this.requestGeneration
+    if(this.roomMutation?.owner===owner)return
+    const mutation:{owner:GameOnlineController|null;kind:'create'|'leave'}={owner,kind:'create'}
+    this.roomMutation=mutation
+    const selection=++this.recoveryAttempt
     try {
       const online=this.requireOnline()
       const room=await online.createRoom()
+      if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
       this.roomGeneration++
       this.roomID=room.roomId
       this.handID=''
@@ -405,18 +457,23 @@ export class GameBootstrap extends Component {
       this.selectedCards.clear()
       await this.refreshRoom()
     }catch(error){
+      if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
       if(this.online?.rooms.needsReconciliation && this.screen==='rooms')this.renderScreen('rooms')
       this.notice('建房失败：'+this.message(error))
+    }finally{
+      if(this.roomMutation===mutation)this.roomMutation=null
     }
   }
   private async joinRoom():Promise<void> {
+    const owner=this.online,epoch=this.requestGeneration
+    if(this.roomMutation?.owner===owner)return
+    const token=++this.recoveryAttempt
     try {
       const online=this.requireOnline()
       const roomID=this.roomInput?.string?.trim() || this.roomID
       if(!roomID)throw new Error('请填写房间号')
-      const token=++this.recoveryAttempt
       const room=await online.joinRoom(roomID)
-      if(online!==this.online || token!==this.recoveryAttempt || !this.content?.isValid)return
+      if(!this.currentAccount(owner,epoch) || token!==this.recoveryAttempt)return
       this.roomGeneration++
       this.roomID=room.roomId
       this.handID=''
@@ -425,16 +482,25 @@ export class GameBootstrap extends Component {
       this.selectedCards.clear()
       await this.refreshRoom()
     }catch(error){
-      if(!(error instanceof Error && /selection superseded/.test(error.message)))
+      if(this.currentAccount(owner,epoch) && token===this.recoveryAttempt &&
+         !(error instanceof Error && /selection superseded/.test(error.message)))
         this.notice('加入失败：'+this.message(error))
     }
   }
   private async leaveRoom():Promise<void> {
+    const owner=this.online,epoch=this.requestGeneration
+    if(this.roomMutation?.owner===owner)return
+    const mutation:{owner:GameOnlineController|null;kind:'create'|'leave'}={owner,kind:'leave'}
+    this.roomMutation=mutation
+    const roomID=this.roomID
+    const selection=++this.recoveryAttempt
     try {
       const online=this.requireOnline()
-      if(!this.roomID || online.rooms.state?.roomId!==this.roomID)
+      if(!roomID || online.rooms.state?.roomId!==roomID)
         throw new Error('请先确认当前房间成员身份')
       await online.leaveRoom()
+      if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt ||
+         roomID!==this.roomID)return
       this.roomGeneration++
       this.roomID=''
       this.handID=''
@@ -443,16 +509,28 @@ export class GameBootstrap extends Component {
       this.selectedCards.clear()
       this.renderScreen('rooms')
       this.notice('已退出房间，可重新创建或加入其他房间')
-    }catch(error){this.notice('退出房间失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentAccount(owner,epoch) && selection===this.recoveryAttempt &&
+         roomID===this.roomID)this.notice('退出房间失败：'+this.message(error))
+    }finally{
+      if(this.roomMutation===mutation)this.roomMutation=null
+    }
   }
   private async readyRoom():Promise<void> {
+    const owner=this.online,epoch=this.requestGeneration
+    const roomID=this.roomID,generation=this.roomGeneration
     try {
       await this.requireOnline().rooms.ready(true)
+      if(!this.currentRoom(owner,epoch,roomID,generation))return
       await this.refreshRoom()
-    }catch(error){this.notice('准备失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentRoom(owner,epoch,roomID,generation))
+        this.notice('准备失败：'+this.message(error))
+    }
   }
   private async startHand():Promise<void> {
     const online=this.online
+    const epoch=this.requestGeneration
     const roomID=this.roomID
     const generation=this.roomGeneration
     try {
@@ -461,12 +539,11 @@ export class GameBootstrap extends Component {
       if(!roomID || online.rooms.state?.roomId!==roomID)
         throw new Error('请先确认当前房间成员身份')
       const handID='hand-'+await secureRoomCommandIdentity(this.platform.random).newRequestId()
-      if(online!==this.online || roomID!==this.roomID ||
-        generation!==this.roomGeneration || !this.content?.isValid)return
+      if(!this.currentRoom(online,epoch,roomID,generation))return
       // Reconcile any prior unknown fairness receipt and reserve the old
       // session before issuing the irreversible room.hand.start command.
       await online.startHand(handID)
-      if(online!==this.online || roomID!==this.roomID || !this.content?.isValid)return
+      if(!this.currentRoom(online,epoch,roomID,generation))return
       // A validated durable room.hand.start receipt must be adopted locally.
       // Later HTTP refresh failures must not turn the accepted start into FAIL.
       this.roomGeneration++
@@ -475,13 +552,15 @@ export class GameBootstrap extends Component {
       this.selectedCards.clear()
       await this.refreshRoom()
     }catch(error){
-      if(online===this.online && roomID===this.roomID && this.content?.isValid)
+      if(this.currentRoom(online,epoch,roomID,generation))
         this.notice(online?.rooms.needsReconciliation
           ? '开局结果尚未确认，请重连并同步服务端状态，勿重复发起开局：'+this.message(error)
           : '开局失败：'+this.message(error))
     }
   }
   private async refreshRoom():Promise<void> {
+    const owner=this.online,epoch=this.requestGeneration
+    const originalRoom=this.roomID
     try {
       const online=this.requireOnline()
       if(!this.roomID)throw new Error('还没有房间')
@@ -537,16 +616,21 @@ export class GameBootstrap extends Component {
         }
         if(this.screen==='table')this.renderScreen('table')
       }
-    }catch(error){this.notice('刷新失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentAccount(owner,epoch) && originalRoom===this.roomID)
+        this.notice('刷新失败：'+this.message(error))
+    }
   }
   private async refreshFairness():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    const originalHand=this.handID
     try {
       const online=this.requireOnline()
       if(!this.handID)throw new Error('尚未开始牌局，请刷新房间')
       const handID=this.handID
       const generation=this.roomGeneration
       const view=await online.api.fairness(handID)
-      if(online!==this.online || handID!==this.handID || generation!==this.roomGeneration)return
+      if(!this.currentAccount(owner,epoch) || handID!==this.handID || generation!==this.roomGeneration)return
       if(this.fairnessMode !== (view.fairnessMode||'')){
         this.fairnessMode=view.fairnessMode||''
         if(this.screen==='rooms')this.renderScreen('rooms')
@@ -557,10 +641,14 @@ export class GameBootstrap extends Component {
         ? `服务端已加密保存玩家贡献 · ${view.phase} · ${view.revealed?'本人已提交':'等待本人提交'}${cutoff}`
         : `洗牌阶段 ${view.phase} · 座位${view.seat} · 版本${view.version} · ${view.committed?'承诺已确认':'待承诺'} / ${view.revealed?'贡献已确认':'待提交贡献'}${cutoff}`)
       if(view.phase==='BIDDING'||view.phase==='PLAYING')await online.shell.syncHand(this.handID)
-    }catch(error){this.notice('公平阶段查询失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentAccount(owner,epoch) && originalHand===this.handID)
+        this.notice('公平阶段查询失败：'+this.message(error))
+    }
   }
   private async submitOwnContribution():Promise<void>{
     const online=this.online
+    const epoch=this.requestGeneration
     const handID=this.handID
     const roomID=this.roomID
     const generation=this.roomGeneration
@@ -574,12 +662,12 @@ export class GameBootstrap extends Component {
         !handID || !online?.session.authenticated || !fairness)
         throw new Error('当前牌局尚未进入个人贡献阶段')
       await fairness.submitCustodied(handID,phrase)
-      if(generation!==this.roomGeneration || handID!==this.handID ||
-        roomID!==this.roomID || online!==this.online || fairness!==online.fairness)return
+      if(!this.currentRoom(online,epoch,roomID,generation) ||
+        handID!==this.handID || fairness!==online.fairness)return
       this.notice('个人随机贡献已由服务器加密保存，可正常退出或换设备恢复牌局。请记住自己的字符串用于终局核验')
       await this.refreshFairness()
     }catch(error){
-      if(generation===this.roomGeneration && handID===this.handID && online===this.online)
+      if(this.currentRoom(online,epoch,roomID,generation) && handID===this.handID)
         this.notice(fairness?.needsReconciliation
           ? '提交结果未知，请核对原请求或重新登录查询服务端，不要盲目重复提交：'+this.message(error)
           : '提交贡献失败：'+this.message(error))
@@ -588,6 +676,7 @@ export class GameBootstrap extends Component {
 
   private async verifyMyPhrase():Promise<void>{
     const online=this.online
+    const epoch=this.requestGeneration
     const roomID=this.roomID
     const handID=this.handID
     const generation=this.roomGeneration
@@ -601,21 +690,21 @@ export class GameBootstrap extends Component {
       // independent cryptographic proof still depends on a verifiable transcript.
       const evidence=await online.api.finalEvidence(handID)
       const own=await online.api.ownContribution(handID)
-      if(online!==this.online || handID!==this.handID ||
-        roomID!==this.roomID || generation!==this.roomGeneration)return
+      if(!this.currentRoom(online,epoch,roomID,generation) || handID!==this.handID)return
       if(evidence.fairnessMode!==own.fairnessMode ||
         !verifyOwnContribution(handID,own.seat,own.secureRandom,phrase,own.commitment))
         throw new Error('个人字符串与本局已归档的承诺不一致')
       this.notice('个人字符串与服务器归档承诺匹配，终局记录校验摘要：'+
         evidence.verification.recordDigest.slice(0,24)+'…（可另行核验公开信标和牌序）')
     }catch(error){
-      if(generation===this.roomGeneration && handID===this.handID && online===this.online)
+      if(this.currentRoom(online,epoch,roomID,generation) && handID===this.handID)
         this.notice('个人字符串校验失败：'+this.message(error))
     }
   }
 
   private async prepareFairness():Promise<void>{
     const online=this.online
+    const epoch=this.requestGeneration
     const roomID=this.roomID
     const handID=this.handID
     const generation=this.roomGeneration
@@ -631,8 +720,8 @@ export class GameBootstrap extends Component {
       // session replacement or UI destruction. Never re-display old secrets.
       if(generation!==this.roomGeneration || roomID!==this.roomID ||
         handID!==this.handID || screen!==this.screen || this.screen!=='rooms' ||
-        online!==this.online || fairness!==online.fairness ||
-        input!==this.roomInput || !this.content?.isValid)return
+        !this.currentAccount(online,epoch) || fairness!==online.fairness ||
+        input!==this.roomInput)return
       if(!input)throw new Error('恢复凭证输入框不可用')
       this.verifiedBackupHand=''
       this.verifiedBackupController=null
@@ -641,7 +730,7 @@ export class GameBootstrap extends Component {
       this.notice('请先将恢复凭证私密保存到游戏外，再点“已保存备份，清空输入并校验”，从备份重新粘贴验证。不要发给其他玩家')
     }catch(error){
       if(generation===this.roomGeneration && handID===this.handID &&
-        online===this.online && fairness===online?.fairness && this.content?.isValid)
+        this.currentAccount(online,epoch) && fairness===online?.fairness)
         this.notice('准备恢复凭证失败：'+this.message(error))
     }
   }
@@ -663,6 +752,8 @@ export class GameBootstrap extends Component {
     }catch(error){this.notice('备份校验无法开始：'+this.message(error))}
   }
   private async importFairness():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    const originalRoom=this.roomID,originalHand=this.handID
     try{
       if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
       if(!this.handID)throw new Error('尚未开始牌局')
@@ -677,37 +768,60 @@ export class GameBootstrap extends Component {
       const kit=this.roomInput?.string?.trim()
       if(!kit)throw new Error('请从游戏外备份粘贴原先保存的恢复凭证')
       const fairness=online.fairness
+      const input=this.roomInput
       await fairness.importRecoveryKit(kit,handID)
-      if(generation!==this.roomGeneration || handID!==this.handID ||
-        online!==this.online || fairness!==online.fairness)return
-      if(this.roomInput)this.roomInput.string=''
+      if(!this.currentRoom(owner,epoch,originalRoom,generation) || handID!==this.handID ||
+        fairness!==online.fairness || input!==this.roomInput)return
+      if(input)input.string=''
       this.backupVerificationPendingHand=''
       this.verifiedBackupHand=handID
       this.verifiedBackupController=online
       this.notice('恢复凭证已与当前账号、座位及服务端承诺匹配。请继续在游戏外妥善保存备份；现在可提交承诺或揭示')
-    }catch(error){this.notice('恢复贡献失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentAccount(owner,epoch) && originalRoom===this.roomID &&
+         originalHand===this.handID)this.notice('恢复贡献失败：'+this.message(error))
+    }
   }
   private async commitFairness():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    const roomID=this.roomID,handID=this.handID,generation=this.roomGeneration
     try{
       if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
-      if(!this.handID)throw new Error('尚未开始牌局')
+      if(!handID)throw new Error('尚未开始牌局')
       const online=this.requireOnline()
-      if(!online.fairness.recoveryKitPrepared || this.verifiedBackupHand!==this.handID ||
+      const fairness=online.fairness
+      if(!fairness.recoveryKitPrepared || this.verifiedBackupHand!==handID ||
         this.verifiedBackupController!==online)
         throw new Error('请先在游戏外保存恢复凭证，清空输入框并从备份重新粘贴验证；未经验证不能提交承诺')
-      await online.fairness.commit(this.handID)
+      await fairness.commit(handID)
+      if(!this.currentRoom(owner,epoch,roomID,generation) ||
+        handID!==this.handID || fairness!==online.fairness)return
       await this.refreshFairness()
-    }catch(error){this.notice('公平承诺失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentRoom(owner,epoch,roomID,generation) && handID===this.handID)
+        this.notice('公平承诺失败：'+this.message(error))
+    }
   }
   private async revealFairness():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    const roomID=this.roomID,handID=this.handID,generation=this.roomGeneration
     try{
       if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
-      if(!this.handID)throw new Error('尚未开始牌局')
-      await this.requireOnline().fairness.reveal(this.handID)
+      if(!handID)throw new Error('尚未开始牌局')
+      const online=this.requireOnline()
+      const fairness=online.fairness
+      await fairness.reveal(handID)
+      if(!this.currentRoom(owner,epoch,roomID,generation) ||
+        handID!==this.handID || fairness!==online.fairness)return
       await this.refreshFairness()
-    }catch(error){this.notice('加密随机贡献失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentRoom(owner,epoch,roomID,generation) && handID===this.handID)
+        this.notice('加密随机贡献失败：'+this.message(error))
+    }
   }
   private async showEvidence():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    const originalHand=this.handID,originalRoom=this.roomID
     try{
       if(!this.handID)throw new Error('尚未创建牌局')
       const online=this.requireOnline()
@@ -718,7 +832,7 @@ export class GameBootstrap extends Component {
       // A valid, previously authorized HTTP response is nevertheless stale
       // after Leave, a subsequent StartHand, or a session/controller switch.
       if(generation!==this.roomGeneration || handID!==this.handID ||
-          roomID!==this.roomID || online!==this.online)return
+          roomID!==this.roomID || !this.currentAccount(owner,epoch))return
       online.shell.acceptVerifiedFinalEvidence(data)
       this.selectedCards.clear()
       if(this.screen==='table')this.renderScreen('table')
@@ -729,26 +843,42 @@ export class GameBootstrap extends Component {
       const verified=data.verification
       const winner=verified.winnerSeat?('获胜座位'+verified.winnerSeat):'已终止'
       this.notice(`已核验归档 · ${winner} · 积分${verified.seatPoints.join('/') } · 版本${data.finalVersion}\n校验摘要：${verified.recordDigest.slice(0,24)}…`)
-    }catch(error){this.notice('结算证据暂不可用：'+this.message(error))}
+    }catch(error){
+      if(this.currentAccount(owner,epoch) && originalHand===this.handID &&
+         originalRoom===this.roomID)this.notice('结算证据暂不可用：'+this.message(error))
+    }
   }
   private async refreshHand():Promise<void> {
+    const owner=this.online,epoch=this.requestGeneration
+    const roomID=this.roomID,generation=this.roomGeneration
     try {
-      const snapshot=this.requireOnline().shell.hand.snapshot
+      const online=this.requireOnline()
+      const snapshot=online.shell.hand.snapshot
       if(!snapshot)throw new Error('尚无当前牌局 ID，请先刷新房间')
       if(snapshot.phase==='COMPLETED' || snapshot.phase==='ABORTED'){
         await this.showEvidence()
       }else{
-        await this.requireOnline().shell.syncHand(snapshot.handId,snapshot.version)
+        await online.shell.syncHand(snapshot.handId,snapshot.version)
       }
-    }catch(error){this.notice('牌局同步失败：'+this.message(error))}
+    }catch(error){
+      if(this.currentRoom(owner,epoch,roomID,generation))
+        this.notice('牌局同步失败：'+this.message(error))
+    }
   }
   private async retryUnknownHand():Promise<void>{
+    const owner=this.online,epoch=this.requestGeneration
+    const roomID=this.roomID,handID=this.handID,generation=this.roomGeneration
     try {
       const online=this.requireOnline()
       await online.actions.retryUnknown()
-      await online.shell.syncHand(this.handID)
-      this.notice('原请求已确认，正在同步权威牌局状态')
-    } catch(error) { this.notice('原请求重试失败：'+this.message(error)) }
+      if(!this.currentRoom(owner,epoch,roomID,generation) || handID!==this.handID)return
+      await online.shell.syncHand(handID)
+      if(this.currentRoom(owner,epoch,roomID,generation) && handID===this.handID)
+        this.notice('原请求已确认，正在同步权威牌局状态')
+    } catch(error) {
+      if(this.currentRoom(owner,epoch,roomID,generation) && handID===this.handID)
+        this.notice('原请求重试失败：'+this.message(error))
+    }
   }
   private discardUnknownHand():void{
     try {
@@ -758,22 +888,45 @@ export class GameBootstrap extends Component {
     } catch(error) { this.notice('不能放弃未确认操作：'+this.message(error)) }
   }
   private async bid(score:number):Promise<void> {
-    try {await this.requireOnline().actions.bid(score);this.selectedCards.clear();await this.refreshHand()}
-    catch(error){this.notice('叫地主失败：'+this.message(error))}
+    const owner=this.online,epoch=this.requestGeneration
+    const roomID=this.roomID,handID=this.handID,generation=this.roomGeneration
+    try{
+      await this.requireOnline().actions.bid(score)
+      if(!this.currentRoom(owner,epoch,roomID,generation) || handID!==this.handID)return
+      this.selectedCards.clear()
+      await this.refreshHand()
+    }catch(error){
+      if(this.currentRoom(owner,epoch,roomID,generation) && handID===this.handID)
+        this.notice('叫地主失败：'+this.message(error))
+    }
   }
   private async play():Promise<void> {
+    const owner=this.online,epoch=this.requestGeneration
+    const roomID=this.roomID,handID=this.handID,generation=this.roomGeneration
     try {
       // Set spread is not supported by Creator 3.8's mini-game downlevel output.
       const selectedCards: string[] = []
       this.selectedCards.forEach(card => selectedCards.push(card))
       await this.requireOnline().actions.play(selectedCards)
-      this.selectedCards.clear();await this.refreshHand()
+      if(!this.currentRoom(owner,epoch,roomID,generation) || handID!==this.handID)return
+      this.selectedCards.clear()
+      await this.refreshHand()
+    }catch(error){
+      if(this.currentRoom(owner,epoch,roomID,generation) && handID===this.handID)
+        this.notice('出牌失败：'+this.message(error))
     }
-    catch(error){this.notice('出牌失败：'+this.message(error))}
   }
   private async pass():Promise<void> {
-    try {await this.requireOnline().actions.pass();await this.refreshHand()}
-    catch(error){this.notice('过牌失败：'+this.message(error))}
+    const owner=this.online,epoch=this.requestGeneration
+    const roomID=this.roomID,handID=this.handID,generation=this.roomGeneration
+    try{
+      await this.requireOnline().actions.pass()
+      if(!this.currentRoom(owner,epoch,roomID,generation) || handID!==this.handID)return
+      await this.refreshHand()
+    }catch(error){
+      if(this.currentRoom(owner,epoch,roomID,generation) && handID===this.handID)
+        this.notice('过牌失败：'+this.message(error))
+    }
   }
   private requireOnline():GameOnlineController {
     if(!this.online?.session.authenticated)throw new Error('请先完成微信登录')
