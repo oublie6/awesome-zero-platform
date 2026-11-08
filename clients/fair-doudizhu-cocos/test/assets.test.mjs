@@ -208,7 +208,7 @@ test('G51-N01: stale account reconciliation callbacks cannot replace another acc
  assert.match(reconnect,/const owner=this\.online,epoch=this\.requestGeneration/)
  assert.ok(reconnect.indexOf('if(!this.currentAccount(owner,epoch)') <
    reconnect.indexOf("this.notice('原房间操作已明确拒绝"))
- assert.match(reconnect,/if\(this\.currentAccount\(owner,epoch\)\)\s*this\.notice\('重连失败:/)
+ assert.match(reconnect,/if\(this\.currentAccount\(owner,epoch\)\)\s*this\.notice\('重连失败：/)
  const login=ui.split('private async login():Promise<void> {')[1].split('private async discoverMyRoomsSafely():')[0]
  assert.match(login,/text=>\{if\(this\.currentAccount\(online,generation\)\)this\.notice\(text\)\}/)
  assert.match(login,/if\(this\.currentAccount\(online,generation\) && this\.screen==='table'\)/)
