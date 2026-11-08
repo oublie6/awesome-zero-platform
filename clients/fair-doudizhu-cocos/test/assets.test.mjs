@@ -141,7 +141,10 @@ test('Round19 latest recovery choice and final membership verification are manda
  assert.match(part,/this\.revokeInvalidRecoveredRoom\(online,roomID\)/)
  assert.ok(part.indexOf('await online.roomInfo(roomID)')<part.indexOf("this.notice('已通过服务器恢复本人房间和牌局')"))
  assert.match(controller,/private recoveryGeneration = 0/)
- assert.match(controller,/this\.pendingRecovery\?\.key === key/)
+ assert.match(controller,/const pending = this\.pendingRecovery/)
+ assert.match(controller,/pending\?\.key === key/)
+ assert.match(controller,/pending\.token === this\.recoveryGeneration/)
+ assert.match(controller,/pending\.membership === membership && pending\.commands === commands/)
  assert.match(controller,/token===this\.recoveryGeneration/)
  assert.match(controller,/const fresh=await this\.api\.room\(initial\.roomId\)/)
  assert.ok(controller.indexOf('const fresh=await this.api.room(initial.roomId)') <
