@@ -249,7 +249,9 @@ export class GameBootstrap extends Component {
     return this.currentAccount(online,epoch) && roomID===this.roomID && generation===this.roomGeneration
   }
   private async login():Promise<void> {
-    const generation=++this.requestGeneration
+    // Failed preflight/login construction must not invalidate notifications
+    // from the still-active prior authenticated controller.
+    let generation=this.requestGeneration
     try {
       const cfg=publicConfig()
       if(!cfg)throw new Error('缺少 HTTPS/WSS 公网服务端配置')
@@ -259,6 +261,7 @@ export class GameBootstrap extends Component {
       let online:GameOnlineController
       online=new GameOnlineController(platform,createWeChatIdentityExchange(platform),cfg.socketEndpoint,
         text=>{if(this.currentAccount(online,generation))this.notice(text)},cfg.revealManifestRoots)
+      generation=++this.requestGeneration
       this.platform=platform
       ++this.recoveryAttempt
       this.sceneRecovery=null

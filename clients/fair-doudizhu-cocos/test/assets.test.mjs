@@ -249,3 +249,13 @@ test('G51 audit: repeat create/leave taps and menu recovery errors are controlle
  assert.match(ui,/action:\(\)=>void this\.discoverMyRoomsSafely\(\)/)
  assert.match(ui,/action:\(\)=>void this\.resumeSelectedRoom\(room\.roomId\)/)
 })
+
+test('G51 audit: failed login preflight leaves the previous account event epoch active',async()=>{
+ const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const login=ui.split('private async login():Promise<void> {')[1].split('private async discoverMyRoomsSafely():')[0]
+ assert.match(login,/let generation=this\.requestGeneration/)
+ assert.ok(login.indexOf('if(!cfg)throw')<login.indexOf('generation=++this.requestGeneration'))
+ assert.ok(login.indexOf('if(!globals.wx)throw')<login.indexOf('generation=++this.requestGeneration'))
+ assert.ok(login.indexOf('online=new GameOnlineController')<login.indexOf('generation=++this.requestGeneration'))
+ assert.ok(login.indexOf('generation=++this.requestGeneration')<login.indexOf('this.online=online'))
+})
