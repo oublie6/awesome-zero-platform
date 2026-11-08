@@ -20,33 +20,44 @@ Cocos Creator **3.8.8** foundation with an entry status screen, not a playable t
 Business state and transports are in small engine-independent packages; HPKE remains
 in the existing `@awesome-zero-platform/secure-envelope` package.
 
-## Fairness contribution backup and restoration (current candidate)
+## Current gameplay and server-custodied contribution (2026-11-08)
 
-The current room UI provides an explicit user-held recovery step before the
-first irreversible fairness commitment:
+The current interactive `GameBootstrap` has real login/room/table
+controls, and the Go server remains the only game, hand and journal recovery
+authority. These are **source and real-Go integration capabilities**; the
+current Cocos 4 Linux-native exported game, complete WeChat SDK session and
+physical-device gameplay have not been independently qualified.
 
-1. Select **生成并备份恢复凭证**. A per-hand, per-seat recovery kit is shown
-   in the room input field; copy it privately **outside the game**. Do not
-   send it to other players, publish it or rely only on a screenshot/log.
-2. Select **已保存备份，清空输入并校验**. The displayed kit is cleared.
-3. Paste the saved kit from the external copy, then select **从备份粘贴并验证恢复凭证**.
-   The client reimports it and checks it against the authenticated seat and
-   server commitment; this action is required before **提交洗牌承诺**.
-4. After a process restart, log in with the same account, restore the same
-   room/hand from the server, then paste and import the saved kit before
-   **加密提交随机贡献**. A different hand/seat/commitment is rejected.
+For **new** `client-contributed-server-custodied-v1` hands:
 
-No kit is automatically placed into plaintext platform local storage.
-Re-entry demonstrates possession of a usable copy at verification time;
-it **cannot prove that the user saved it durably** or that a physical
-device's clipboard/backups are secure. The kit is secret: losing it before
-reveal can prevent that player's fairness contribution, and leaking it
-compromises the contribution's secrecy. Use an access-controlled backup.
+1. The player types a personal phrase. The client obtains 32 secure random
+   bytes and sends both in a single HPKE-protected authenticated submission.
+2. The server encrypts and durably retains both original contributions.
+   It can rebuild the authoritative hand after a restart; no player backup
+   is required to resume an active game.
+3. After a completed hand, the original authenticated seat may retrieve
+   their own stored random and re-enter their remembered phrase to verify the
+   original commitment locally. This does **not** establish that the server
+   was ignorant of the contributed entropy.
+4. The client persists **no game-specific hand, secret, phrase or recovery
+   kit** to local storage. Avoid including these in logs, URLs or analytics.
 
-This is a development candidate for E03, **not yet a completed independent
-native-device UX acceptance**. The actual device copy/paste, process-restart
-and secret-handling tests remain to be verified; no external release
-qualification is implied.
+For **historical two-stage hands only**, the menu still exposes an explicit
+external recovery-kit workflow: generate the kit, save outside the game,
+clear the field, paste and verify it, then commit/reveal using the original
+hand/seat/commitment. This is a legacy compatibility path, **not the
+mandatory flow for new server-custodied hands**. Losing the legacy kit can
+prevent completing that historical hand.
+
+## Current room and table controls
+
+The Scene supports server-authorized create/join/ready/leave, room discovery,
+original-ID UNKNOWN reconciliation, live bid/play/pass, and final evidence.
+When menu actions exceed the safe area, the current Cocos UI paginates
+controls (including selectable cards) instead of shrinking touch targets.
+Paging does not replace the server view, start new network commands, clear
+input fields or persist a local game state. Source/geometry tests are not a
+substitute for a pinned CLI4 native export, SDK interaction or device checks.
 
 ## Reproducible source checks
 
