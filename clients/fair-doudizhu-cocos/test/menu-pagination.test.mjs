@@ -47,3 +47,14 @@ test('visible-page clamping supports resize without losing action access',()=>{
  assert.ok(big.page<=big.pages-1)
  assert.equal(menuWindow(0,760,390,false,'rooms',0).end,0)
 })
+
+test('portrait room captions use a full-width target rather than 9px shrink-to-fit',()=>{
+ const narrow=menuWindow(20,358,750,true,'rooms',0)
+ assert.equal(narrow.columns,1)
+ assert.ok(narrow.pages>1)
+ assert.ok(narrow.buttonHeight>=34)
+ const wide=menuWindow(20,760,750,true,'rooms',0)
+ assert.equal(wide.columns,2)
+ const smallLandscape=menuWindow(15,600,320,false,'rooms',0)
+ assert.equal(smallLandscape.columns,2)
+})

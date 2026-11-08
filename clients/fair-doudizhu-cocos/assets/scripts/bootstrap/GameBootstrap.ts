@@ -1008,7 +1008,8 @@ export class GameBootstrap extends Component {
     // the text input, selected cards, account, room or in-flight commands.
     for(const button of this.buttons)if(button.isValid)button.destroy()
     this.buttons=[]
-    for(const [index,item] of visible.entries()){
+    for(let index=0;index<visible.length;index++){
+      const item=visible[index]
       const label=this.createLabel(item.name,item.caption,24,new Color(245,221,165,255))
       const button=label.node
       button.on(Node.EventType.TOUCH_END,(_event:EventTouch)=>{

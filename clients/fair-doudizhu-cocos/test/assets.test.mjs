@@ -326,3 +326,10 @@ test('G52: changed selection stops delayed Hand/Fairness commands from writing U
   assert.ok(body.includes('generation,selection)'),start)
  }
 })
+
+test('paged Cocos UI does not depend on downlevel Array.entries iterator',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(source,/for\(let index=0;index<visible\.length;index\+\+\)/)
+ assert.doesNotMatch(source,/visible\.entries\(\)/)
+ assert.match(source,/this\.menuActions\.push\(\.\.\.actions\)/)
+})

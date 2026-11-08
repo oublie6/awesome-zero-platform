@@ -2,7 +2,7 @@
 
 审计日期：2026-11-08。执行者：ChatGPT（开发者自审，**非 Codex 独立验收**）。
 
-审计代码基线：`2c39db7fc94e476441787b62fbd4f42b2e54f3e2`。
+初版审计代码基线：`2c39db7fc94e476441787b62fbd4f42b2e54f3e2`；后续同批次二次自审补充窄屏列数和迭代器兼容性修复，最终受验 SHA 以最后代码提交及 CI 为准。
 上个已独立验收的**专项产品 SHA**：`fcca57d6f29b724cb193c3d652a1bd2a7cd230ca`（[Goal0054 PASS](../goals/0054-independent-acceptance.md)，只代表该专项通过）。
 
 依据：`AGENTS.md`、`docs/principles/01–04`、`docs/goals/current.md`、`docs/goals/0046-integrated-fair-doudizhu-delivery.md`、Goal0051–0054 及既有 Round 18/19 业务证据。旧报告中的 FAIL/BLOCKED 是**历史固定候选结论**，不会被重写成当前版本 PASS。
@@ -38,9 +38,9 @@ GOAL8 的微信优先原则不意味着必须同时完成抖音真机；但不�
 当前已提交 `GameBootstrap.ts`、纯 TS `MenuPagination.ts` 和对应 Cocos meta、`tsconfig.shell.json`、`menu-pagination.test.mjs`：
 
 - 将房间大厅和牌桌的全量操作缓存为仅内存中的 UI 动作列表；安全区可见按钮分页，提供上一页/下一页或极矮窗口循环翻页。
-- 横/竖屏按目标宽高选择可读列数，保持有限按钮高度与间距，防止原实现随行数增加无限挤压触控区域。
+- 横/竖屏按目标宽高选择可读列数；窄竖屏房间菜单使用全宽操作项，保留有限按钮高度与间距，防止原实现随行数增加无限挤压触控区域。
 - 翻页/缩放只更新呈现控件；不清除房间码输入、本人字符串、选牌、不发出网络命令，不重置 room/hand/controller。
-- 编译的纯 helper 测试覆盖紧凑横屏、17 张牌加其他动作、单页、分页范围、缩放越界页码。
+- 编译的纯 helper 测试覆盖紧凑横屏、17 张牌加其他动作、窄竖屏全宽长中文操作项、单页、分页范围、缩放越界页码；Cocos 渲染使用数字下标循环，不依赖降级编译下的 Array.entries 迭代器。
 
 这是**源码/单元验证**，不是 Creator4 实物画面或手机验收。本次未修改后端、协议、MySQL、凭证持久化和随机贡献方案。
 
