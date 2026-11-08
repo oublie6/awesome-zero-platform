@@ -335,9 +335,9 @@ test('paged Cocos UI does not depend on downlevel Array.entries iterator',async(
 })
 
 test('G55-N01/N02: exported Mini Game syntax target and preview settings preserve native BigInt',async()=>{
- const hooks=await readFile(new URL('../../../../scripts/cocos-linux-wechat/hooks.cjs',import.meta.url),'utf8')
- const audit=await readFile(new URL('../../../../scripts/cocos-linux-wechat/audit.cjs',import.meta.url),'utf8')
- const build=await readFile(new URL('../../../../scripts/cocos-linux-wechat/build.cjs',import.meta.url),'utf8')
+ const hooks=await readFile(new URL('../../../scripts/cocos-linux-wechat/hooks.cjs',import.meta.url),'utf8')
+ const audit=await readFile(new URL('../../../scripts/cocos-linux-wechat/audit.cjs',import.meta.url),'utf8')
+ const build=await readFile(new URL('../../../scripts/cocos-linux-wechat/build.cjs',import.meta.url),'utf8')
  assert.match(hooks,/options\.buildScriptParam\.targets = \{ chrome: '79' \}/)
  assert.match(hooks,/setting: \{ urlCheck: true, enhance: false, es6: false, minified: true \}/)
  assert.match(audit,/expr\.node\.operator === '\?\?'/)
