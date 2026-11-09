@@ -382,7 +382,11 @@ test('embedded Vue game bridge validates origin/source and never trusts a suppli
  assert.match(bridge,/data\.type==='SESSION_REVOKED'/)
  assert.match(bridge,/this\.online\?\.dispose\(\)/)
  assert.match(bridge,/data\.type==='OPEN_ROOMS'/)
- assert.doesNotMatch(bridge,/data\.(token|accountId|password|hand|room)/)
+ assert.doesNotMatch(bridge,/data\.(token|accountId|password|hand)/)
+ assert.match(bridge,/data\.type==='JOIN_ROOM'/)
+ assert.match(bridge,/data\.type==='CREATE_ROOM'/)
+ assert.match(bridge,/roomId\?\:unknown/)
+ assert.match(bridge,/this\.roomInput\.string=roomId/)
  assert.match(src,/window\.removeEventListener\('message',this\.webHostListener\)/)
 })
 

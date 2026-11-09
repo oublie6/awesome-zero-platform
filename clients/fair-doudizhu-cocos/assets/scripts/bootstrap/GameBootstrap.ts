@@ -134,6 +134,20 @@ export class GameBootstrap extends Component {
         this.notice('已退出网页账号')
       }else if(data.type==='OPEN_ROOMS'){
         if(this.online?.session.authenticated)this.renderScreen('rooms')
+      }else if(data.type==='CREATE_ROOM'){
+        // UI intention only. The existing RoomCoordinator allocates the
+        // request ID, checks authority and handles exact UNKNOWN retries.
+        if(!this.online?.session.authenticated)return
+        this.renderScreen('rooms')
+        void this.createRoom()
+      }else if(data.type==='JOIN_ROOM'){
+        const roomId=(event.data as {roomId?:unknown}).roomId
+        if(!this.online?.session.authenticated || typeof roomId!=='string' ||
+           !/^[A-Za-z0-9_-]{1,128}$/.test(roomId))return
+        this.renderScreen('rooms')
+        if(!this.roomInput)return
+        this.roomInput.string=roomId
+        void this.joinRoom()
       }
     }
     window.addEventListener('message',this.webHostListener)

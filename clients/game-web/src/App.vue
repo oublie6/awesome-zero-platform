@@ -16,14 +16,19 @@ const error=ref('')
 const gameStatus=ref('等待加载游戏资源')
 const gameFrame=ref<HTMLIFrameElement|null>(null)
 const gameInstance=ref(0)
+const roomCode=ref('')
+type RoomIntent={type:'CREATE_ROOM'|'JOIN_ROOM';roomId?:string}
+let pendingRoomIntent:RoomIntent|null=null
 const loggedIn=computed(()=>!!account.value)
 const isReady=computed(()=>gameStatus.value==='游戏就绪')
 const protocol='azp-doudizhu-frame-v1'
 
-function communicate(type:'SESSION_AVAILABLE'|'SESSION_REVOKED'|'OPEN_ROOMS'){
+function communicate(type:'SESSION_AVAILABLE'|'SESSION_REVOKED'|'OPEN_ROOMS'|'CREATE_ROOM'|'JOIN_ROOM',
+  roomId?:string){
   const frame=gameFrame.value?.contentWindow
   if(!frame)return
-  frame.postMessage({protocol,type},window.location.origin)
+  // Room IDs are non-secret user intentions, never client-authoritative state.
+  frame.postMessage({protocol,type,...roomId?{roomId}:{}},window.location.origin)
 }
 function onGameMessage(event:MessageEvent){
   if(page.value!=='game' || event.source!==gameFrame.value?.contentWindow ||
@@ -42,6 +47,9 @@ function onGameMessage(event:MessageEvent){
   }else if(message.type==='SESSION_ACTIVE'){
     gameStatus.value='游戏就绪'
     communicate('OPEN_ROOMS')
+    const action=pendingRoomIntent
+    pendingRoomIntent=null // Never duplicate a state-changing intent on re-ready.
+    if(action)communicate(action.type,action.roomId)
   }else if(message.type==='SESSION_FAILED'){
     gameStatus.value='游戏连接失败，请检查服务端 HTTPS/WSS 配置或重新进入'
   }
@@ -76,6 +84,7 @@ async function logout(){
   busy.value=true
   error.value=''
   communicate('SESSION_REVOKED')
+  pendingRoomIntent=null
   // Drop the game frame immediately: a previous account must not continue
   // submitting commands while logout's server revocation is in flight.
   page.value='home'
@@ -85,9 +94,17 @@ async function logout(){
   catch{error.value='已清理浏览器会话，但服务端注销状态需要确认'}
   finally{busy.value=false}
 }
-function openGame(){
+function openGame(action:'OPEN_ROOMS'|'CREATE_ROOM'|'JOIN_ROOM'='OPEN_ROOMS'){
   if(!account.value)return
   error.value=''
+  if(action==='JOIN_ROOM'){
+    const code=roomCode.value.trim()
+    if(!/^[A-Za-z0-9_-]{1,128}$/.test(code)){
+      error.value='请填写有效的好友房间号（字母、数字、下划线或短横线）'
+      return
+    }
+    pendingRoomIntent={type:'JOIN_ROOM',roomId:code}
+  }else pendingRoomIntent=action==='CREATE_ROOM'?{type:'CREATE_ROOM'}:null
   gameStatus.value='等待 Cocos4 Web 产物启动'
   gameInstance.value++
   page.value='game'
@@ -108,7 +125,7 @@ onUnmounted(()=>window.removeEventListener('message',onGameMessage))
       </button>
       <nav class="top-nav" aria-label="网站导航">
         <button type="button" :class="{selected:page==='home'||page==='lobby'}" @click="page=account?'lobby':'home'">首页</button>
-        <button type="button" :disabled="!account" :class="{selected:page==='game'}" @click="openGame">进入牌桌</button>
+        <button type="button" :disabled="!account" :class="{selected:page==='game'}" @click="openGame()">进入牌桌</button>
         <button v-if="!loggedIn" type="button" class="nav-action" @click="page='login'">账号登录</button>
         <button v-else type="button" class="nav-action" :disabled="busy" @click="logout">退出登录</button>
       </nav>
@@ -160,13 +177,27 @@ onUnmounted(()=>window.removeEventListener('message',onGameMessage))
           </div>
           <div class="lobby-grid">
             <article class="lobby-panel featured">
-              <div class="panel-icon">♠</div><h3>进入牌桌</h3><p>使用真实 Cocos 游戏场景，创建或加入好友房间、准备、叫地主和出牌。</p>
-              <button type="button" class="primary-button" :disabled="!account" @click="openGame">打开游戏 <span>→</span></button>
+              <div class="panel-icon">♠</div><h3>创建好友房间</h3>
+              <p>创建一个真实三人房间，并邀请朋友加入。同一套 Cocos 房间命令与服务端版本控制会执行实际操作。</p>
+              <button type="button" class="primary-button" :disabled="!account" @click="openGame('CREATE_ROOM')">创建房间 <span>→</span></button>
               <button v-if="!account" type="button" class="inline-link" @click="page='login'">先去登录</button>
             </article>
-            <article class="lobby-panel"><div class="panel-icon amber">◇</div><h3>公平贡献</h3><p>每位玩家输入自己的字符串并提供安全随机数，服务器加密托管，终局可核验。</p><div class="panel-tail">同一局 · 三人贡献</div></article>
-            <article class="lobby-panel"><div class="panel-icon blue">↺</div><h3>断线继续</h3><p>重新登录后从服务器找回未完成的房间和牌局，不依赖浏览器缓存手牌。</p><div class="panel-tail">服务端权威恢复</div></article>
+            <article class="lobby-panel">
+              <div class="panel-icon amber">◇</div><h3>加入好友房间</h3>
+              <p>输入朋友提供的房间号。加入结果必须由游戏服务器确认。</p>
+              <label class="room-label" for="friend-room">好友房间号</label>
+              <input id="friend-room" v-model="roomCode" class="room-code" autocomplete="off" maxlength="128"
+                placeholder="输入房间号" />
+              <button type="button" class="ghost-button join-button" :disabled="!account" @click="openGame('JOIN_ROOM')">加入房间 →</button>
+            </article>
+            <article class="lobby-panel">
+              <div class="panel-icon blue">↺</div><h3>继续已有牌局</h3>
+              <p>重新进入游戏，由服务端查询并恢复本人有权访问的未完成房间与牌局。</p>
+              <button type="button" class="ghost-button join-button" :disabled="!account" @click="openGame()">恢复房间 →</button>
+              <div class="panel-tail">不依赖浏览器手牌缓存</div>
+            </article>
           </div>
+          <div class="lobby-footnote">✦ 公平贡献由服务器加密托管　·　✦ 出牌及结算规则全部由 Go 后端执行</div>
         </section>
 
         <section v-else-if="page==='game'" class="game-layout">
