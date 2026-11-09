@@ -49,6 +49,8 @@ jobs:
       - name: Check Cocos4 Web builder and public config gates
         run: |
           node --check scripts/cocos-linux-web/build.cjs
+          node --check scripts/cocos-linux-web/build-options.cjs
+          node --check scripts/cocos-linux-web/verify-native-types.cjs
           node --check scripts/cocos-linux-web/configure.cjs
           node --test scripts/cocos-linux-web/test.cjs
       - name: Typecheck and test portable client and scene modules

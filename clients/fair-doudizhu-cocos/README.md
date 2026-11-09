@@ -204,3 +204,31 @@ Douyin Mini Game entropy support has not been established by a mini-game SDK
 runtime; the similarly named **mini-app** API is not proof. Missing/incompatible
 entropy fails closed. Platform login codes are ephemeral authorization material,
 not game identities; server login/session integration remains Goal 0046.
+
+## G57-N01 — Linux Cocos4 Web BigInt build repair (2026-11-09)
+
+Goal0057 independent K8s/Chromium acceptance found that the previous
+unqualified CLI4 `web-desktop` export changed `2n ** 256n` into the invalid
+`Math.pow(2n,256n)` before Cocos Entry could initialize. This blocked
+GAME_READY and all subsequent real-room/browser game checks, despite Vue
+login, K8s routing, three real-account auth and identity recovery passing.
+
+The **owned Web build** now passes the CLI4 public `buildScriptTargets`
+option `chrome 79` in `web-build-options.json` (independent of any
+WeChat tool setting). The CLI source at the pinned commit propagates this
+option into ModLo's `buildScriptParam.targets`. Its configured engine
+continues to use the official web-desktop runtime. No binary or compiled
+crypto bundle is patched post hoc.
+
+The Web exporter refuses generated scripts with BigInt passed into
+`Math.pow`, and additionally requires at least one actual native BigInt
+exponent in the exported JavaScript. It now also corrects the genuine
+generated Cocos declaration type paths and runs the strict Cocos4 TypeScript
+check, rather than accepting a CLI success while TS2688 is logged.
+
+Re-run the **real** native Linux export for the new fixed SHA, verify final
+`src/chunks/bundle.js`, run an actual Chromium scene/HPKE smoke, and then
+resume the isolated Goal0057 K8s E2E. Hosted CI is only a source gate;
+do not mark G57-N01 PASS or full game PASS until the real Web build and
+browser have passed. Preserve WeChat device G55-N02 and Goal0045/0046
+statuses independently.

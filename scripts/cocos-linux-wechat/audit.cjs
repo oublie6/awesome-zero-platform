@@ -5,13 +5,15 @@ const { createRequire } = require('node:module');
 
 // Parse generated code rather than grep across minified expressions: a numeric
 // Math.pow followed by an unrelated BigInt call is valid and must not fail.
-function audit(root, { stripInlineMaps = false, previewCompatible = true } = {}) {
+function audit(root, { stripInlineMaps = false, previewCompatible = true,
+  requireNativeBigIntExponent = false } = {}) {
   const dependency = createRequire(path.join(process.env.COCOS_CLI_ROOT || __dirname, 'package.json'));
   const { parse } = dependency('@babel/parser');
   const traverse = dependency('@babel/traverse').default;
   const named = (node, name) => node?.type === 'Identifier' && node.name === name ||
     node?.type === 'StringLiteral' && node.value === name;
   let checked = 0;
+  let nativeBigIntExponents = 0;
   function walk(dir) {
     for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
       const file = path.join(dir, item.name);
@@ -31,6 +33,10 @@ function audit(root, { stripInlineMaps = false, previewCompatible = true } = {})
           return node.type === 'MemberExpression' && named(node.property, 'ORDER') && named(node.object?.property, 'Fn');
         }
         traverse(ast, {
+          BinaryExpression(expr) {
+            if (expr.node.operator === '**' && bigint(expr.node.left, expr.scope) &&
+                bigint(expr.node.right, expr.scope)) nativeBigIntExponents++;
+          },
           LogicalExpression(expr) {
             if (previewCompatible && expr.node.operator === '??')
               throw new Error('Generated preview-incompatible ?? in ' + path.relative(root, file));
@@ -65,6 +71,11 @@ function audit(root, { stripInlineMaps = false, previewCompatible = true } = {})
     }
   }
   walk(root);
+  // The Web build must not simply omit the offending Math.pow call:
+  // G57-N01 originated from the required HPKE/BLS crypto dependency.
+  // Native BigInt exponentiation must still be represented in real output.
+  if (requireNativeBigIntExponent && nativeBigIntExponents === 0)
+    throw new Error('Generated Web JS contains no native BigInt exponentiation');
   return checked;
 }
 module.exports = { audit };

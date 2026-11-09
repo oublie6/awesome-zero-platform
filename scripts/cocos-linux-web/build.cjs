@@ -5,6 +5,8 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {spawnSync}=require('node:child_process');
+const {webBuildOptions}=require('./build-options.cjs');
+const {verifyNativeTypes}=require('./verify-native-types.cjs');
 if(process.platform!=='linux')throw Error('Linux-only Cocos web export');
 const root=path.resolve(__dirname,'../..');
 const cli=process.env.COCOS_CLI_ROOT;
@@ -36,15 +38,17 @@ try{
   const scene=JSON.parse(fs.readFileSync(path.join(project,'assets/scenes/Entry.scene.meta'),'utf8'));
   assert.match(scene.uuid,/^[a-f0-9-]{36}$/i);
   const config=path.join(work,'web-build-options.json');
-  fs.writeFileSync(config,JSON.stringify({
-    platform:'web-desktop',debug:false,outputName:'fair-doudizhu-web',
+  fs.writeFileSync(config,JSON.stringify(webBuildOptions({
     buildPath:output,startScene:scene.uuid
-  },null,2));
+  }),null,2));
   fs.mkdirSync(output,{recursive:true});
   const env={...process.env,NODE_OPTIONS:'--max-old-space-size=2048',
     PATH:path.join(cli,'node_modules/.bin')+path.delimiter+process.env.PATH};
   command('xvfb-run',['-a',process.execPath,path.join(cli,'dist/cli.js'),
     '--no-interactive','build','--project',project,'--platform','web-desktop','--build-config',config],env);
+  // CLI4 reports success even when its internal tsc logs TS2688; check
+  // the actual generated Cocos4 declaration set with the project strict gate.
+  verifyNativeTypes(project);
   const pages=[];
   function scan(dir,depth=0){
     if(depth>5)return;
@@ -67,7 +71,10 @@ try{
   }
   collect(location);
   if(!jsFiles.length)throw Error('no emitted web JS');
-  require('../cocos-linux-wechat/audit.cjs').audit(location,{previewCompatible:false});
+  const checked=require('../cocos-linux-wechat/audit.cjs').audit(location,{
+    previewCompatible:false,requireNativeBigIntExponent:true
+  });
+  console.log('AST verified '+checked+' real Web JS files, including native BigInt exponentiation');
   const roots=process.env.WEB_REVEAL_MANIFEST_ROOTS?
     JSON.parse(process.env.WEB_REVEAL_MANIFEST_ROOTS):{};
   require('./configure.cjs').configure(location,{

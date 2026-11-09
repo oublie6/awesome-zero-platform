@@ -5,6 +5,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 const os=require('node:os');
 const {configure,publicConfig}=require('./configure.cjs');
+const {webBuildOptions}=require('./build-options.cjs');
+const {repairGeneratedTypes}=require('./verify-native-types.cjs');
 test('Web endpoints require HTTPS/WSS without credentials or fragments',()=>{
  const ok=publicConfig({apiBase:'https://api.example.test',socketEndpoint:'wss://api.example.test/ws'});
  assert.equal(ok.apiBase,'https://api.example.test');
@@ -53,4 +55,52 @@ test('browser smoke exercises rendered Cocos scene and Web login inputs',()=>{
  assert.match(src,/page\.mouse\.click/);
  assert.match(src,/password must use secret EditBox mode/);
  assert.match(src,/CancelWebLogin/);
+});
+
+test('G57-N01: Web uses official CLI4 buildScriptTargets at a BigInt-safe target',()=>{
+ const options=webBuildOptions({buildPath:'/private/native-web',startScene:'entry-uuid'});
+ assert.equal(options.platform,'web-desktop');
+ assert.equal(options.buildScriptTargets,'chrome 79');
+ assert.equal(options.debug,false);
+ // This must flow into the actual CLI --build-config JSON, not just a
+ // comment or source check detached from the native builder.
+ const builder=fs.readFileSync(path.join(__dirname,'build.cjs'),'utf8');
+ assert.match(builder,/JSON\.stringify\(webBuildOptions\(/);
+ assert.match(builder,/--build-config',config/);
+ assert.match(builder,/requireNativeBigIntExponent:true/);
+ assert.throws(()=>webBuildOptions({buildPath:'',startScene:'entry-uuid'}));
+});
+test('G57-N01: AST rejects lowered BigInt pow and requires native exponent',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'azp-web-bigint-'));
+ t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const file=path.join(root,'bundle.js');
+ // For a local fixture, the existing audit requires @babel from pinned CLI.
+ // Exercise the real parser only when that toolchain is already installed.
+ const cli=process.env.COCOS_CLI_ROOT;
+ if(!cli)return t.skip('AST parser needs the approved native Cocos CLI; source contract is still checked');
+ const {audit}=require('../cocos-linux-wechat/audit.cjs');
+ fs.writeFileSync(file,'const B256=2n ** 256n; globalThis.B256=B256;');
+ assert.equal(audit(root,{previewCompatible:false,requireNativeBigIntExponent:true}),1);
+ fs.writeFileSync(file,'const B256=Math.pow(2n,256n);');
+ assert.throws(()=>audit(root,{previewCompatible:false,requireNativeBigIntExponent:true}),/BigInt/);
+ fs.writeFileSync(file,'const a=Math.pow(2,10);');
+ assert.throws(()=>audit(root,{previewCompatible:false,requireNativeBigIntExponent:true}),/no native BigInt exponentiation/);
+});
+test('Cocos generated declaration paths are resolved for real strict TS gate',t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'azp-web-types-'));
+ t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ fs.mkdirSync(path.join(dir,'temp/declarations'),{recursive:true});
+ fs.writeFileSync(path.join(dir,'tsconfig.json'),JSON.stringify({compilerOptions:{strict:true,skipLibCheck:true}}));
+ fs.writeFileSync(path.join(dir,'temp/tsconfig.cocos.json'),JSON.stringify({
+   compilerOptions:{types:['./declarations/cc','./declarations/cc.env','./declarations/jsb','third-party']}
+ }));
+ for(const name of ['cc','cc.env','jsb'])
+   fs.writeFileSync(path.join(dir,'temp/declarations',name+'.d.ts'),'declare const test: number;');
+ const repaired=repairGeneratedTypes(dir);
+ const opts=JSON.parse(fs.readFileSync(repaired,'utf8')).compilerOptions;
+ assert.deepEqual(opts.types.slice(0,3),['cc','cc.env','jsb'].map(name=>path.join(dir,'temp/declarations',name)));
+ assert.equal(opts.types[3],'third-party');
+ assert.equal(opts.noImplicitAny,true);
+ assert.equal(opts.strictNullChecks,true);
+ assert.equal(opts.strictPropertyInitialization,true);
 });
