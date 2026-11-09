@@ -370,3 +370,18 @@ test('web session revalidation and logout do not bypass current command reconcil
  assert.match(src,/owner\.actions\.needsReconciliation/)
  assert.match(src,/await owner\.logout\(\)/)
 })
+
+test('embedded Vue game bridge validates origin/source and never trusts a supplied token or account',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const bridge=src.split('private bindWebHost():void {')[1].split('private createLabel(')[0]
+ assert.match(bridge,/event\.source!==window\.parent/)
+ assert.match(bridge,/event\.origin!==origin/)
+ assert.match(bridge,/data\.protocol!=='azp-doudizhu-frame-v1'/)
+ assert.match(bridge,/data\.type==='SESSION_AVAILABLE'/)
+ assert.match(bridge,/void this\.login\(true\)/)
+ assert.match(bridge,/data\.type==='SESSION_REVOKED'/)
+ assert.match(bridge,/this\.online\?\.dispose\(\)/)
+ assert.match(bridge,/data\.type==='OPEN_ROOMS'/)
+ assert.doesNotMatch(bridge,/data\.(token|accountId|password|hand|room)/)
+ assert.match(src,/window\.removeEventListener\('message',this\.webHostListener\)/)
+})

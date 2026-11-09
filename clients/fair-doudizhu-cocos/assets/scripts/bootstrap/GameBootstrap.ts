@@ -79,6 +79,10 @@ export class GameBootstrap extends Component {
   // Coalesce duplicate create/leave taps so an already-accepted receipt
   // cannot lose its scene adoption to a later local conflict.
   private roomMutation:{owner:GameOnlineController|null;kind:'create'|'leave'}|null=null
+  // Only an authenticated same-origin Vue parent may request session restore.
+  // Never accept AccountID, tokens, passwords or game state from frame messages.
+  private webHostListener:((event:MessageEvent)=>void)|null=null
+  private hostRestoring=false
 
   override start(): void {
     this.content = new Node('SafeContent')
@@ -94,7 +98,51 @@ export class GameBootstrap extends Component {
     view.on('canvas-resize', this.layout, this)
     view.on('design-resolution-changed', this.layout, this)
     this.renderScreen('home')
+    this.bindWebHost()
     void this.shell.initialize()
+  }
+  private bindWebHost():void {
+    if(detectRuntimeTarget()!=='web' || typeof window==='undefined' || window.parent===window)return
+    const origin=window.location.origin
+    this.webHostListener=(event:MessageEvent)=>{
+      if(event.source!==window.parent || event.origin!==origin || !this.content?.isValid)return
+      const data=event.data as {protocol?:unknown;type?:unknown}|null
+      if(!data || typeof data!=='object' ||
+         data.protocol!=='azp-doudizhu-frame-v1')return
+      if(data.type==='SESSION_AVAILABLE'){
+        if(this.hostRestoring || this.online?.session.authenticated)return
+        this.hostRestoring=true
+        void this.login(true).then(()=>{
+          if(!this.content?.isValid)return
+          this.notifyWebHost(this.online?.session.authenticated?'SESSION_ACTIVE':'SESSION_FAILED')
+          if(this.online?.session.authenticated)this.renderScreen('rooms')
+        }).finally(()=>{this.hostRestoring=false})
+      }else if(data.type==='SESSION_REVOKED'){
+        ++this.requestGeneration
+        ++this.recoveryAttempt
+        this.sceneRecovery=null
+        this.online?.dispose()
+        this.online=null
+        this.platform=null
+        ++this.roomGeneration
+        this.roomID=''
+        this.handID=''
+        this.fairnessMode=null
+        this.recoverableRooms=[]
+        this.selectedCards.clear()
+        this.renderScreen('home')
+        this.notice('已退出网页账号')
+      }else if(data.type==='OPEN_ROOMS'){
+        if(this.online?.session.authenticated)this.renderScreen('rooms')
+      }
+    }
+    window.addEventListener('message',this.webHostListener)
+    // A ready handshake avoids losing SESSION_AVAILABLE while the engine boots.
+    this.notifyWebHost('GAME_READY')
+  }
+  private notifyWebHost(type:'GAME_READY'|'SESSION_ACTIVE'|'SESSION_FAILED'):void {
+    if(this.webHostListener && typeof window!=='undefined' && window.parent!==window)
+      window.parent.postMessage({protocol:'azp-doudizhu-frame-v1',type},window.location.origin)
   }
   private createLabel(name: string, text: string, fontSize: number, color: Color): Label {
     const node = new Node(name)
@@ -1126,6 +1174,9 @@ export class GameBootstrap extends Component {
   }
   override onDestroy(): void {
     this.requestGeneration++
+    if(this.webHostListener && typeof window!=='undefined')
+      window.removeEventListener('message',this.webHostListener)
+    this.webHostListener=null
     view.off('canvas-resize',this.layout,this)
     view.off('design-resolution-changed',this.layout,this)
     for(const button of this.buttons)if(button.isValid)button.off(Node.EventType.TOUCH_END)
