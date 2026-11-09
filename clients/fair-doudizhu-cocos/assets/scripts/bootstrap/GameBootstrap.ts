@@ -196,7 +196,13 @@ export class GameBootstrap extends Component {
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
         {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.discoverMyRoomsSafely()}
       ]
-      if(detectRuntimeTarget()==='web'){
+      if(this.webHostListener){
+        // When embedded, Vue owns all account UI. The scene only renders
+        // game actions and revalidates the shared token with Go.
+        const loginIndex=actions.findIndex(item=>item.name==='LoginEntry')
+        if(loginIndex>=0)actions.splice(loginIndex,1)
+      }else if(detectRuntimeTarget()==='web'){
+        // Standalone Web exports still provide their own login fallback.
         actions.splice(1,0,{name:'RestoreWebSession',caption:'恢复已登录网页会话',
           action:()=>void this.login(true)})
         actions.push({name:'LogoutWebSession',caption:'退出网页账号',action:()=>void this.logoutWeb()})

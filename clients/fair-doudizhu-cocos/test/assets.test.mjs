@@ -385,3 +385,11 @@ test('embedded Vue game bridge validates origin/source and never trusts a suppli
  assert.doesNotMatch(bridge,/data\.(token|accountId|password|hand|room)/)
  assert.match(src,/window\.removeEventListener\('message',this\.webHostListener\)/)
 })
+
+test('Vue-embedded Cocos does not duplicate account login or logout controls',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(src,/if\(this\.webHostListener\)\{/)
+ assert.match(src,/findIndex\(item=>item\.name==='LoginEntry'\)/)
+ assert.match(src,/else if\(detectRuntimeTarget\(\)==='web'\)/)
+ assert.match(src,/StandAlone|Standalone Web exports/)
+})
