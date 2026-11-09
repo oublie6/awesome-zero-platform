@@ -12,7 +12,7 @@ test('Cocos+Vue staging is same-origin and public config is identical',t=>{
  const web=path.join(root,'vue'),cocos=path.join(root,'cocos')
  fs.mkdirSync(web);fs.mkdirSync(cocos)
  fs.writeFileSync(path.join(web,'index.html'),'<html>Vue website</html>')
- fs.writeFileSync(path.join(cocos,'index.html'),'<html><canvas id="GameCanvas"></canvas></html>')
+ fs.writeFileSync(path.join(cocos,'index.html'),'<html><head></head><body><canvas id="GameCanvas"></canvas></body></html>')
  fs.writeFileSync(path.join(cocos,'game.js'),'System.import("cc")')
  const manifest=stage(cocos,web,{apiBase:'https://play.example.org',
    socketEndpoint:'wss://play.example.org/ws'})
