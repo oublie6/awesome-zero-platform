@@ -1022,3 +1022,16 @@ test('invalid or rejected web login cannot connect any WSS transport',async()=>{
  assert.equal(online.rooms.state,null)
  online.dispose()
 })
+
+test('web login rejects header-injection newlines without rejecting ordinary letters r and n',async()=>{
+ const f=fixture()
+ f.platform.target='web'
+ let actual='normal-returned-token'
+ f.platform.http.request=async()=>({code:'OK',data:{accessToken:actual,tokenType:'Bearer'}})
+ const online=new GameOnlineController(f.platform,{exchange:async()=>{throw Error('no code exchange')}},'wss://example.org/ws',()=>{})
+ await online.loginWithPassword('alice','password')
+ assert.equal(online.session.token,'normal-returned-token')
+ actual='bad\r\nInjected:yes'
+ await assert.rejects(online.loginWithPassword('alice','password'),/invalid web authentication token/)
+ online.dispose()
+})

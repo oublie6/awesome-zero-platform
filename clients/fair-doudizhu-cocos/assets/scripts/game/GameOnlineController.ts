@@ -64,7 +64,7 @@ export class GameOnlineController {
         throw new Error('web identity exchange rejected by Go')
       const data=envelope.data as {accessToken?:unknown;tokenType?:unknown}
       if (data.tokenType !== 'Bearer' || typeof data.accessToken !== 'string' ||
-          !data.accessToken.trim() || /[\\r\\n]/.test(data.accessToken))
+          !data.accessToken.trim() || /[\r\n]/.test(data.accessToken))
         throw new Error('invalid web authentication token')
       return {accessToken:data.accessToken}
     })
