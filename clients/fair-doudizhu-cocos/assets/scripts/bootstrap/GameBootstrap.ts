@@ -148,6 +148,11 @@ export class GameBootstrap extends Component {
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
         {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.discoverMyRoomsSafely()}
       ]
+      if(detectRuntimeTarget()==='web'){
+        actions.splice(1,0,{name:'RestoreWebSession',caption:'恢复已登录网页会话',
+          action:()=>void this.login(true)})
+        actions.push({name:'LogoutWebSession',caption:'退出网页账号',action:()=>void this.logoutWeb()})
+      }
       if(this.online?.rooms.needsReconciliation)
         actions.push({name:'RetryUnknownRoom',caption:'核对未确认房间命令',action:()=>void this.reconnect()})
       for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
@@ -294,7 +299,7 @@ export class GameBootstrap extends Component {
       generation===this.roomGeneration &&
       (selection===undefined || selection===this.recoveryAttempt)
   }
-  private async login():Promise<void> {
+  private async login(restoreOnly=false):Promise<void> {
     // Failed preflight/login construction must not invalidate notifications
     // from the still-active prior authenticated controller.
     let generation=this.requestGeneration
@@ -305,9 +310,9 @@ export class GameBootstrap extends Component {
       if(target!=='web' && target!=='wechat')throw new Error('当前平台尚不支持登录')
       const globals=globalThis as typeof globalThis & {wx?:MiniPlatformSDK}
       if(target==='wechat' && !globals.wx)throw new Error('缺少微信小游戏 SDK')
-      const identifier=target==='web'?this.loginIdentifier?.string.trim()||'':''
-      const password=target==='web'?this.loginPassword?.string||'':''
-      if(target==='web' && (!identifier || !password))throw new Error('请输入账号和密码')
+      const identifier=target==='web' && !restoreOnly?this.loginIdentifier?.string.trim()||'':''
+      const password=target==='web' && !restoreOnly?this.loginPassword?.string||'':''
+      if(target==='web' && !restoreOnly && (!identifier || !password))throw new Error('请输入账号和密码')
       const platform=createPlatform({apiBase:cfg.apiBase,sdk:target==='wechat'?globals.wx:undefined})
       let online:GameOnlineController
       const exchange=target==='web'?createWebIdentityExchange(platform):createWeChatIdentityExchange(platform)
@@ -329,7 +334,10 @@ export class GameBootstrap extends Component {
         // Discard the form password before awaiting any network call; only
         // the server-issued access token is saved in browser sessionStorage.
         if(this.loginPassword)this.loginPassword.string=''
-        await online.loginWithPassword(identifier,password)
+        if(restoreOnly){
+          const valid=await online.restoreAndConnect(token=>validateWebAccess(platform,token))
+          if(!valid)throw new Error('网页会话已过期，请重新登录')
+        }else await online.loginWithPassword(identifier,password)
       }else{
         const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
         if(!restored)await online.loginAndConnect()
@@ -350,6 +358,39 @@ export class GameBootstrap extends Component {
         this.notice('已登录，自动发现暂不可用：'+this.message(error))}
     } catch(error) {if(generation===this.requestGeneration && this.content?.isValid)
       this.notice('登录失败：'+this.message(error))}
+  }
+  /** Browser sign-out revokes the server session and fences all callbacks.
+   * Do not discard an unknown durable command without exact reconciliation. */
+  private async logoutWeb():Promise<void>{
+    const owner=this.online
+    if(detectRuntimeTarget()!=='web' || !owner?.session.authenticated){
+      this.notice('当前没有已登录的网页账号')
+      return
+    }
+    if(owner.rooms.needsReconciliation || owner.fairness.needsReconciliation ||
+       owner.actions.needsReconciliation){
+      this.notice('存在未确认操作，请先核对原请求再退出')
+      return
+    }
+    const generation=++this.requestGeneration
+    ++this.recoveryAttempt
+    this.sceneRecovery=null
+    this.online=null
+    this.platform=null
+    this.roomGeneration++
+    this.roomID=''
+    this.handID=''
+    this.fairnessMode=null
+    this.recoverableRooms=[]
+    this.selectedCards.clear()
+    this.renderScreen('rooms')
+    try{
+      await owner.logout()
+      if(generation===this.requestGeneration && this.content?.isValid)this.notice('已退出网页账号')
+    }catch(error){
+      if(generation===this.requestGeneration && this.content?.isValid)
+        this.notice('本地已退出，服务端注销状态待确认：'+this.message(error))
+    }
   }
   private async discoverMyRoomsSafely():Promise<void>{
     const owner=this.online,epoch=this.requestGeneration

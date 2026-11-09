@@ -360,3 +360,13 @@ test('web login form uses explicit password input and server credential exchange
  assert.match(src,/target==='web'/)
  assert.doesNotMatch(src,/当前尚未配置网页账号登录/)
 })
+
+test('web session revalidation and logout do not bypass current command reconciliation',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(src,/name:'RestoreWebSession'/)
+ assert.match(src,/name:'LogoutWebSession'/)
+ assert.match(src,/await online\.restoreAndConnect\(token=>validateWebAccess\(platform,token\)\)/)
+ assert.match(src,/owner\.rooms\.needsReconciliation \|\| owner\.fairness\.needsReconciliation/)
+ assert.match(src,/owner\.actions\.needsReconciliation/)
+ assert.match(src,/await owner\.logout\(\)/)
+})
