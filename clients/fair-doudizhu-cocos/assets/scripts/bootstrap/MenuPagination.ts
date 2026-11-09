@@ -1,5 +1,5 @@
 /** Pure safe-area menu paging. No platform SDK or Cocos dependencies. */
-export type MenuScreen = 'home'|'rooms'|'rules'|'table'
+export type MenuScreen = 'home'|'rooms'|'rules'|'table'|'login'
 export interface MenuWindow {
   columns:number
   rows:number
@@ -14,7 +14,7 @@ export interface MenuWindow {
 export function menuWindow(count:number,width:number,height:number,portrait:boolean,
   screen:MenuScreen,requestedPage:number):MenuWindow{
   if(!Number.isSafeInteger(count) || count<0)throw new Error('invalid action count')
-  const columns=screen==='home'||screen==='rules'?1:
+  const columns=screen==='home'||screen==='rules'||screen==='login'?1:
     screen==='table'?(portrait?Math.max(2,Math.min(4,Math.floor(width/90))):Math.max(3,Math.min(6,Math.floor(width/120)))):
     portrait?(width<600?1:2):(width<640?2:3)
   const safeHeight=Math.max(1,height)
