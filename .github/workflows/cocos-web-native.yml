@@ -1,0 +1,40 @@
+name: Cocos4 Linux Web Native Export
+
+on:
+  workflow_dispatch:
+    inputs:
+      native_web_export:
+        description: 'Run an actual Cocos4 web-desktop export on a pinned self-hosted Linux builder'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  linux_web_native:
+    if: ${{ inputs.native_web_export }}
+    runs-on: [self-hosted, linux, x64, cocos-cli4]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+      - name: Pinned Cocos4 Linux web-desktop build
+        env:
+          COCOS_CLI_ROOT: ${{ vars.COCOS_CLI_ROOT }}
+          COCOS_ENGINE_ROOT: ${{ vars.COCOS_ENGINE_ROOT }}
+        run: |
+          set -euo pipefail
+          test -n "$COCOS_CLI_ROOT"
+          node scripts/cocos-linux-wechat/verify-toolchain.cjs
+          node --test scripts/cocos-linux-web/test.cjs
+          bash scripts/verify-client-foundation.sh
+          node scripts/cocos-linux-web/build.cjs "$RUNNER_TEMP/doudizhu-web"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cocos4-linux-web-native
+          path: ${{ runner.temp }}/doudizhu-web/
+          if-no-files-found: error
+          retention-days: 7

@@ -12,6 +12,7 @@ on:
     paths:
       - '.github/workflows/cocos-client-smoke.yml'
       - 'scripts/cocos-linux-wechat/**'
+      - 'scripts/cocos-linux-web/**'
       - 'scripts/verify-client-foundation.sh'
       - 'clients/fair-doudizhu-cocos/**'
       - 'clients/packages/game-client-core/src/**'
@@ -45,6 +46,11 @@ jobs:
           node --check scripts/cocos-linux-wechat/build.cjs
           node --check scripts/cocos-linux-wechat/hooks.cjs
           node --check scripts/cocos-linux-wechat/audit.cjs
+      - name: Check Cocos4 Web builder and public config gates
+        run: |
+          node --check scripts/cocos-linux-web/build.cjs
+          node --check scripts/cocos-linux-web/configure.cjs
+          node --test scripts/cocos-linux-web/test.cjs
       - name: Typecheck and test portable client and scene modules
         run: bash scripts/verify-client-foundation.sh
 

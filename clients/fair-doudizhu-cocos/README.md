@@ -1,5 +1,44 @@
 # Fair Doudizhu Cocos Client
 
+## Current Cocos4 Linux Web browser client (development)
+
+The **same** Cocos scene, Room/Hand/Fairness controllers, authoritative Go API,
+and HPKE protocol are used on Web and WeChat. Web uses the existing
+`POST /auth/login` (username/email/phone + password) and
+`GET /auth/session` identity services; the browser password is never stored
+by the game. Only the short-lived server-issued access token is cached in
+sessionStorage (closing a browser tab discards it). The server may issue a
+refresh token, but the game does not persist it: users must sign in again
+after access expiry. CORS and WSS bearer-subprotocol behavior must be
+qualified against the deployment host.
+
+The current Linux-native Web build command is:
+
+```sh
+export COCOS_CLI_ROOT=/data/awesome-zero-platform-tools/round7-cocos-cli
+export COCOS_ENGINE_ROOT="$COCOS_CLI_ROOT/packages/engine"
+# Public endpoints only; no AppSecret, passwords or credentials.
+export WEB_API_BASE=https://game-api.example.org
+export WEB_SOCKET_ENDPOINT=wss://game-api.example.org/ws
+node --test scripts/cocos-linux-web/test.cjs
+bash scripts/verify-client-foundation.sh
+node scripts/cocos-linux-web/build.cjs /private/verified-web-output
+```
+
+The CLI uses the pinned official Cocos4 Linux binary and built-in
+`web-desktop` target, not a renamed WeChat/browser shim.
+It injects a separate `game-config.js` before the engine loader.
+If the two public endpoints are not configured, the UI fails closed with
+a configuration error; no fake server or local authoritative hand is used.
+
+The output is static Web assets. Host over HTTPS with a strict CSP and
+suitable reverse-proxy/CORS configuration, and configure WSS with the same
+Go credentials. Do not put tokens in WebSocket URL query strings.
+The browser runtime and 3-browser-participant complete gameplay
+must still be independently demonstrated on the fixed exported artifact;
+source/hosted CI alone is not a Web runtime PASS.
+
+
 **Current development build baseline (2026-11-05):** Official Linux-native
 `cocos-cli` pinned to `f506fa3de403b48b4833334fa48dddd27bb26364`,
 with the pinned Cocos engine package `4.0.0-beta.0`. The source declaration,
