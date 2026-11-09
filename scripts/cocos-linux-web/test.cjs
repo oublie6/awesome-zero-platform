@@ -104,3 +104,12 @@ test('Cocos generated declaration paths are resolved for real strict TS gate',t=
  assert.equal(opts.strictNullChecks,true);
  assert.equal(opts.strictPropertyInitialization,true);
 });
+
+test('native Web builder rebuilds each isolated TS package, never trusts copied stale dist',()=>{
+ const s=fs.readFileSync(path.join(__dirname,'build.cjs'),'utf8');
+ assert.match(s,/\['game-client-core','doudizhu-client','secure-envelope'\]/);
+ assert.match(s,/fs\.rmSync\(path\.join\(pkg,'dist'\)/);
+ assert.match(s,/command\('npm',\['run','build','--prefix',pkg\]\)/);
+ assert.ok(s.indexOf("command('npm',['run','build','--prefix',pkg])") <
+   s.indexOf("command('npm',['ci','--no-audit','--no-fund','--prefix',project])"));
+});

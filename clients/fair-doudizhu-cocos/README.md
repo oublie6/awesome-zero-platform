@@ -232,3 +232,9 @@ resume the isolated Goal0057 K8s E2E. Hosted CI is only a source gate;
 do not mark G57-N01 PASS or full game PASS until the real Web build and
 browser have passed. Preserve WeChat device G55-N02 and Goal0045/0046
 statuses independently.
+
+The Web CLI build now cleans and recompiles **all three** isolated
+`clients/packages/*/dist` runtime modules before Cocos consumes file-linked
+dependencies. This prevents a source-bound export from silently using stale
+`GameSession`, room or HPKE JS left from another commit; the original source
+workspace and global CLI installation remain untouched.

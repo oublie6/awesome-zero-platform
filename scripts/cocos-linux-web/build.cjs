@@ -34,6 +34,16 @@ try{
     command('npm',['ci','--no-audit','--no-fund','--prefix',path.join(copy,'packages',packageName)]);
   command('npm',['install','--package-lock=false','--ignore-scripts','--no-audit','--no-fund',
     '--prefix',path.join(copy,'packages','secure-envelope')]);
+  // A copied dist directory may contain JS from an *older* source SHA.
+  // Rebuild all three file-linked runtime packages in the isolated tree.
+  // This must happen before Cocos/npm resolves package exports to dist/.
+  for(const packageName of ['game-client-core','doudizhu-client','secure-envelope']){
+    const pkg=path.join(copy,'packages',packageName);
+    fs.rmSync(path.join(pkg,'dist'),{recursive:true,force:true});
+    command('npm',['run','build','--prefix',pkg]);
+    assert.ok(fs.statSync(path.join(pkg,'dist/index.js')).size>0,
+      'Native package dist missing after build: '+packageName);
+  }
   command('npm',['ci','--no-audit','--no-fund','--prefix',project]);
   const scene=JSON.parse(fs.readFileSync(path.join(project,'assets/scenes/Entry.scene.meta'),'utf8'));
   assert.match(scene.uuid,/^[a-f0-9-]{36}$/i);
