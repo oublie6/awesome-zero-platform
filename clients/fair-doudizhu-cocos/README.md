@@ -34,6 +34,19 @@ a configuration error; no fake server or local authoritative hand is used.
 The output is static Web assets. Host over HTTPS with a strict CSP and
 suitable reverse-proxy/CORS configuration, and configure WSS with the same
 Go credentials. Do not put tokens in WebSocket URL query strings.
+For an actual exported artifact, run a browser UI smoke with Playwright
+already installed in the admin-web workspace (or set
+`COCOS_SMOKE_PLAYWRIGHT_MODULE` to an existing compatible copy):
+
+```sh
+node scripts/cocos-linux-web/smoke.cjs /private/verified-web-output/fair-doudizhu-web /private/web-evidence
+```
+
+It serves only the built output on 127.0.0.1, enters room lobby, opens
+the real Web password form, checks its secret EditBox mode, and returns.
+It does not issue fake credentials, game state or WSS commands. Use the
+actual Cocos generated output directory if the CLI nests it differently.
+
 The browser runtime and 3-browser-participant complete gameplay
 must still be independently demonstrated on the fixed exported artifact;
 source/hosted CI alone is not a Web runtime PASS.

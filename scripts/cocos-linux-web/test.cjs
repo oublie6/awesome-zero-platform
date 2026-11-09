@@ -46,3 +46,11 @@ test('Web build invokes real pinned Cocos CLI web-desktop export',()=>{
  assert.match(source,/audit.cjs/);
  assert.doesNotMatch(source,/mock|fakeWebOutput/);
 });
+
+test('browser smoke exercises rendered Cocos scene and Web login inputs',()=>{
+ const src=fs.readFileSync(path.join(__dirname,'smoke.cjs'),'utf8');
+ assert.match(src,/System\.import\('cc'\)/);
+ assert.match(src,/page\.mouse\.click/);
+ assert.match(src,/password must use secret EditBox mode/);
+ assert.match(src,/CancelWebLogin/);
+});
