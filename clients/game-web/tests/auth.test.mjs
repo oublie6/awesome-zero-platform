@@ -42,7 +42,7 @@ test('real Go credential exchange and server validation store only server token,
  assert.deepEqual(JSON.parse(calls[0].body),{identifier:'alice',password:'test-password'})
  assert.equal(calls[1].headers.Authorization,'Bearer real-server-access-token')
  assert.deepEqual(s.contents(),[[SESSION_KEY,'real-server-access-token']])
- assert.equal(await web.restore(),actor)
+ assert.deepEqual(await web.restore(),actor)
  await web.logout()
  assert.equal(s.getItem(SESSION_KEY),null)
  assert.equal(calls.at(-1).headers.Authorization,'Bearer real-server-access-token')
