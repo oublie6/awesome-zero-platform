@@ -348,3 +348,15 @@ test('G55-N01/N02: exported Mini Game syntax target and preview settings preserv
  assert.match(build,/preview\.setting\.minified,true/)
  assert.match(build,/require\('\.\/audit\.cjs'\)\.audit\(pkg\)/)
 })
+
+test('web login form uses explicit password input and server credential exchange',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(src,/screen === 'login'/)
+ assert.match(src,/name:'SubmitWebLogin'/)
+ assert.match(src,/EditBox\.InputFlag\.PASSWORD/)
+ assert.match(src,/this\.loginPassword\.string=''/)
+ assert.match(src,/await online\.loginWithPassword\(identifier,password\)/)
+ assert.match(src,/createWebIdentityExchange\(platform\)/)
+ assert.match(src,/target==='web'/)
+ assert.doesNotMatch(src,/当前尚未配置网页账号登录/)
+})

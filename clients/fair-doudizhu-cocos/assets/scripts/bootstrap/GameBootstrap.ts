@@ -3,6 +3,8 @@ import { GameClientShell } from '../game/GameClientShell.ts'
 import { GameOnlineController } from '../game/GameOnlineController.ts'
 import { verifyOwnContribution } from '../game/GameFairnessActions.ts'
 import { createWeChatIdentityExchange, validateWeChatAccess } from '../game/WeChatIdentityExchange.ts'
+import { createWebIdentityExchange, validateWebAccess } from '../game/GameWebAuth.ts'
+import { detectRuntimeTarget } from '../platform/platform-target.ts'
 import { createPlatform } from '../platform/createPlatform.ts'
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
@@ -12,7 +14,7 @@ import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-clie
 import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
 const { ccclass } = _decorator
-type Screen = 'home' | 'rooms' | 'rules' | 'table'
+type Screen = 'home' | 'rooms' | 'rules' | 'table' | 'login'
 interface MenuAction { name: string; caption: string; action: () => void }
 
 type PublicConfig = { apiBase: string; socketEndpoint: string; revealManifestRoots: Record<string,string> }
@@ -52,6 +54,9 @@ export class GameBootstrap extends Component {
   private menuPage = 0
   private inputNode: Node | null = null
   private roomInput: EditBox | null = null
+  private loginIdentifier: EditBox | null = null
+  private loginPassword: EditBox | null = null
+  private loginNodes: Node[] = []
   private screen: Screen = 'home'
   private selectedCards = new Set<string>()
   private roomID = ''
@@ -114,6 +119,11 @@ export class GameBootstrap extends Component {
     this.inputNode?.destroy()
     this.inputNode = null
     this.roomInput = null
+    if(this.loginPassword)this.loginPassword.string=''
+    for(const node of this.loginNodes)if(node.isValid)node.destroy()
+    this.loginNodes=[]
+    this.loginIdentifier=null
+    this.loginPassword=null
     if (screen === 'home') {
       this.title!.string = '公平斗地主'
       this.status!.string = '三人好友房 · 公平洗牌 · 跨平台联机'
@@ -127,7 +137,8 @@ export class GameBootstrap extends Component {
         ? '连接服务端，可创建或加入真实好友房间' : '登录后才能创建或加入真实房间'
       this.roomInput=this.createRoomInput()
       const actions:MenuAction[]=[
-        {name:'LoginEntry',caption:'微信登录',action:()=>void this.login()},
+        {name:'LoginEntry',caption:detectRuntimeTarget()==='web'?'账号登录':'微信登录',
+          action:()=>{if(detectRuntimeTarget()==='web')this.renderScreen('login');else void this.login()}},
         {name:'ReconnectRoom',caption:'重连并同步',action:()=>void this.reconnect()},
         {name:'CreateRoom',caption:'创建房间',action:()=>void this.createRoom()},
         {name:'JoinRoom',caption:'加入房间',action:()=>void this.joinRoom()},
@@ -162,6 +173,15 @@ export class GameBootstrap extends Component {
         {name:'OpenTable',caption:'查看牌桌',action:()=>this.renderScreen('table')},
         {name:'BackHome',caption:'返回首页',action:()=>this.renderScreen('home')})
       this.addMenu(actions)
+    } else if (screen === 'login') {
+      this.title!.string='网页账号登录'
+      this.status!.string='使用现有平台账号登录。账号和密码不会保存到游戏本地。'
+      this.loginIdentifier=this.createLoginInput('WebLoginIdentifier','用户名 / 邮箱 / 手机号',false)
+      this.loginPassword=this.createLoginInput('WebLoginPassword','密码',true)
+      this.addMenu([
+        {name:'SubmitWebLogin',caption:'登录并进入房间',action:()=>void this.login()},
+        {name:'CancelWebLogin',caption:'返回房间大厅',action:()=>this.renderScreen('rooms')}
+      ])
     } else if (screen === 'table') {
       const snapshot=this.online?.shell.hand.snapshot
       const pub=(snapshot?.view as PrivateHandProjection | undefined)?.public
@@ -236,6 +256,26 @@ export class GameBootstrap extends Component {
     this.inputNode=node
     return input
   }
+  private createLoginInput(name:string,hint:string,secret:boolean):EditBox {
+    const node=new Node(name)
+    node.layer=Layers.Enum.UI_2D
+    node.addComponent(UITransform)
+    this.content!.addChild(node)
+    const input=node.addComponent(EditBox)
+    input.maxLength=secret?128:256
+    if(secret)input.inputFlag=EditBox.InputFlag.PASSWORD
+    const placeholderNode=new Node(name+'Placeholder')
+    placeholderNode.layer=Layers.Enum.UI_2D
+    placeholderNode.addComponent(UITransform)
+    node.addChild(placeholderNode)
+    const placeholder=placeholderNode.addComponent(Label)
+    placeholder.fontSize=24
+    placeholder.color=new Color(220,235,245,255)
+    placeholder.string=hint
+    input.placeholderLabel=placeholder
+    this.loginNodes.push(node)
+    return input
+  }
   private addMenu(actions: MenuAction[]): void {
     // Collect first; layout() materializes only the current viewport. Large
     // room menus and 17-card hands must remain reachable, not shrink to 9px.
@@ -261,11 +301,17 @@ export class GameBootstrap extends Component {
     try {
       const cfg=publicConfig()
       if(!cfg)throw new Error('缺少 HTTPS/WSS 公网服务端配置')
+      const target=detectRuntimeTarget()
+      if(target!=='web' && target!=='wechat')throw new Error('当前平台尚不支持登录')
       const globals=globalThis as typeof globalThis & {wx?:MiniPlatformSDK}
-      if(!globals.wx)throw new Error('当前尚未配置网页账号登录，请使用微信小游戏')
-      const platform=createPlatform({apiBase:cfg.apiBase,sdk:globals.wx})
+      if(target==='wechat' && !globals.wx)throw new Error('缺少微信小游戏 SDK')
+      const identifier=target==='web'?this.loginIdentifier?.string.trim()||'':''
+      const password=target==='web'?this.loginPassword?.string||'':''
+      if(target==='web' && (!identifier || !password))throw new Error('请输入账号和密码')
+      const platform=createPlatform({apiBase:cfg.apiBase,sdk:target==='wechat'?globals.wx:undefined})
       let online:GameOnlineController
-      online=new GameOnlineController(platform,createWeChatIdentityExchange(platform),cfg.socketEndpoint,
+      const exchange=target==='web'?createWebIdentityExchange(platform):createWeChatIdentityExchange(platform)
+      online=new GameOnlineController(platform,exchange,cfg.socketEndpoint,
         text=>{if(this.currentAccount(online,generation))this.notice(text)},cfg.revealManifestRoots)
       generation=++this.requestGeneration
       this.platform=platform
@@ -279,8 +325,15 @@ export class GameBootstrap extends Component {
       this.fairnessMode=null
       this.recoverableRooms=[]
       this.selectedCards.clear()
-      const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
-      if(!restored)await online.loginAndConnect()
+      if(target==='web'){
+        // Discard the form password before awaiting any network call; only
+        // the server-issued access token is saved in browser sessionStorage.
+        if(this.loginPassword)this.loginPassword.string=''
+        await online.loginWithPassword(identifier,password)
+      }else{
+        const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
+        if(!restored)await online.loginAndConnect()
+      }
       if(!this.currentAccount(online,generation))return
       online.shell.events.on('doudizhu.hand.snapshot',()=>{
         if(this.currentAccount(online,generation) && this.screen==='table')this.renderScreen('table')
@@ -289,7 +342,8 @@ export class GameBootstrap extends Component {
         const id=(payload as {handId?: string})?.handId
         if(this.currentAccount(online,generation) && id && id===this.handID)void this.showEvidence()
       })
-      this.notice('已验证微信账号并连接游戏服务')
+      if(target==='web' && this.screen==='login')this.renderScreen('rooms')
+      this.notice(target==='web'?'已验证网页账号并连接游戏服务':'已验证微信账号并连接游戏服务')
       let selection=this.recoveryAttempt
       try{await this.recoverMyRooms(token=>{selection=token})}
       catch(error){if(this.currentAccount(online,generation) && selection===this.recoveryAttempt)
@@ -989,6 +1043,11 @@ export class GameBootstrap extends Component {
       this.inputNode.getComponent(UITransform)!.setContentSize(Math.min(width,460),Math.max(48,height*0.075))
       this.inputNode.setPosition(0,height*0.015,0)
     }
+    this.loginNodes.forEach((node,index)=>{
+      if(!node.isValid)return
+      node.getComponent(UITransform)!.setContentSize(Math.min(width,460),Math.max(48,height*0.075))
+      node.setPosition(0,height*(index===0?0.055:-0.035),0)
+    })
     const window=menuWindow(this.menuActions.length,width,height,portrait,this.screen,this.menuPage)
     this.menuPage=window.page
     const visible=this.menuActions.slice(window.start,window.end)
@@ -1031,6 +1090,11 @@ export class GameBootstrap extends Component {
     for(const button of this.buttons)if(button.isValid)button.off(Node.EventType.TOUCH_END)
     this.buttons=[]
     this.menuActions=[]
+    if(this.loginPassword)this.loginPassword.string=''
+    for(const node of this.loginNodes)if(node.isValid)node.destroy()
+    this.loginNodes=[]
+    this.loginIdentifier=null
+    this.loginPassword=null
     this.online?.dispose()
     this.online=null
     this.platform=null

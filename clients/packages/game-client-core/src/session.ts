@@ -33,8 +33,11 @@ export class GameSession {
     return true
   }
   async login(): Promise<void> {
+    const expected = this.generation + 1
     return this.loginWith(async () => {
       const code = await this.platform.auth.acquireCode()
+      // Do not exchange a platform code after logout or account replacement.
+      if (this.disposed || this.generation !== expected) return {accessToken: ''}
       return this.identity.exchange(this.platform.target, code)
     })
   }
