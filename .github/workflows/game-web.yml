@@ -1,0 +1,46 @@
+name: Fair Doudizhu Vue3 Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'clients/game-web/**'
+      - 'scripts/game-web/**'
+      - 'clients/fair-doudizhu-cocos/assets/scripts/bootstrap/**'
+      - '.github/workflows/game-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: game-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vue_build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+          cache: npm
+          cache-dependency-path: clients/game-web/package-lock.json
+      - name: Install pinned Vue3 dependencies
+        run: npm ci --prefix clients/game-web --no-audit --no-fund
+      - name: Run browser-auth and deployment-contract regressions
+        run: |
+          npm run test --prefix clients/game-web
+          node --test scripts/game-web/stage.test.cjs
+          node --test scripts/cocos-linux-web/test.cjs
+      - name: Typecheck and build Vue3 website
+        run: npm run build --prefix clients/game-web
+      - name: Preserve Vue-only build; not a Cocos Web export
+        uses: actions/upload-artifact@v4
+        with:
+          name: fair-doudizhu-vue-shell-only
+          path: clients/game-web/dist/
+          if-no-files-found: error
+          retention-days: 7
