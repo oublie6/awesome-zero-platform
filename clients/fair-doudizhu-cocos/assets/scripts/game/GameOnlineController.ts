@@ -47,6 +47,30 @@ export class GameOnlineController {
       secureRoomCommandIdentity(platform.random)
     )
   }
+  /** Web password login uses the existing Go /auth/login identity service.
+   * Only the server-issued accessToken can become a game session token. */
+  async loginWithPassword(identifier: string, password: string): Promise<void> {
+    if (this.disposed || this.platform.target !== 'web') throw new Error('Web login requires an active web controller')
+    if (!identifier || identifier.trim() !== identifier || identifier.length > 256 ||
+        !password || password.length > 1024) throw new Error('valid web credentials required')
+    await this.shell.initialize()
+    await this.session.loginWith(async () => {
+      const raw = await this.platform.http.request<unknown>('/auth/login', {
+        method:'POST',body:{identifier,password},timeoutMs:12000
+      })
+      const envelope=raw as {code?:unknown;data?:unknown}|null
+      if (!envelope || envelope.code !== 'OK' || !envelope.data ||
+          typeof envelope.data !== 'object' || Array.isArray(envelope.data))
+        throw new Error('web identity exchange rejected by Go')
+      const data=envelope.data as {accessToken?:unknown;tokenType?:unknown}
+      if (data.tokenType !== 'Bearer' || typeof data.accessToken !== 'string' ||
+          !data.accessToken.trim() || /[\\r\\n]/.test(data.accessToken))
+        throw new Error('invalid web authentication token')
+      return {accessToken:data.accessToken}
+    })
+    if (this.disposed) return
+    await this.shell.connect(this.platform.socket,this.socketEndpoint,this.session.token)
+  }
   async loginAndConnect(): Promise<void> {
     if (this.disposed) throw new Error('online controller disposed')
     await this.shell.initialize()

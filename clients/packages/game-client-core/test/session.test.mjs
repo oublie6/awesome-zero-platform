@@ -45,3 +45,32 @@ test('logout during pending exchange cannot resurrect an authenticated session',
   assert.equal(session.authenticated,false)
   assert.equal(await p.vault.load(),null)
 })
+
+test('web credential login only persists server access token, not user/password',async()=>{
+ const p=platform()
+ p.target='web'
+ const calls=[]
+ const s=new GameSession(p,{exchange:async()=>{throw Error('platform login should not be called')}})
+ await s.loginWith(async()=>{
+  calls.push('server credential exchange')
+  return {accessToken:'verified-server-access-token'}
+ })
+ assert.deepEqual(calls,['server credential exchange'])
+ assert.equal(await p.vault.load(),'verified-server-access-token')
+ assert.equal(s.token,'verified-server-access-token')
+ await s.logout()
+ assert.equal(await p.vault.load(),null)
+})
+test('web login response arriving after logout cannot revive session',async()=>{
+ const p=platform()
+ p.target='web'
+ const s=new GameSession(p,{exchange:async()=>{throw Error('not used')}})
+ let release
+ const pending=new Promise(resolve=>{release=resolve})
+ const attempt=s.loginWith(()=>pending)
+ await s.logout()
+ release({accessToken:'old-web-token'})
+ await attempt
+ assert.equal(s.authenticated,false)
+ assert.equal(await p.vault.load(),null)
+})

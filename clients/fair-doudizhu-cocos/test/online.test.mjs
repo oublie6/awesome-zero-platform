@@ -987,3 +987,38 @@ test('audit: superseded startHand after waiting for old fairness reconciliation 
  assert.equal(f.commands.length,0,'no room.hand.start can be sent to the newer room')
  online.dispose()
 })
+
+test('web login exchanges identifier/password at existing Go route and connects only after verified access token',async()=>{
+ const f=fixture()
+ f.platform.target='web'
+ const requests=[]
+ f.platform.http.request=async(path,options)=>{
+  requests.push({path,options})
+  return {code:'OK',data:{accessToken:'verified-web-token',tokenType:'Bearer'}}
+ }
+ const online=new GameOnlineController(f.platform,{
+  exchange:async()=>{throw Error('wechat exchange must not run for web')},
+  revoke:async()=>{}
+ },'wss://example.org/ws',()=>{})
+ await online.loginWithPassword('web-user','confidential-pass')
+ assert.deepEqual(requests.map(x=>x.path),['/auth/login'])
+ assert.deepEqual(requests[0].options.body,{identifier:'web-user',password:'confidential-pass'})
+ assert.deepEqual(f.auth,[{url:'wss://example.org/ws',token:'verified-web-token'}])
+ assert.equal(online.session.token,'verified-web-token')
+ online.dispose()
+})
+test('invalid or rejected web login cannot connect any WSS transport',async()=>{
+ const f=fixture()
+ f.platform.target='web'
+ let called=0
+ f.platform.http.request=async()=>{called++;return {code:'OK',data:{tokenType:'Bearer',accessToken:''}}}
+ const online=new GameOnlineController(f.platform,{
+  exchange:async()=>{throw Error('not called')}
+ },'wss://example.org/ws',()=>{})
+ await assert.rejects(online.loginWithPassword('alice','test'),/invalid web authentication token/)
+ await assert.rejects(online.loginWithPassword('','test'),/valid web credentials required/)
+ assert.equal(called,1)
+ assert.equal(f.auth.length,0)
+ assert.equal(online.rooms.state,null)
+ online.dispose()
+})

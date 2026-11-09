@@ -33,11 +33,17 @@ export class GameSession {
     return true
   }
   async login(): Promise<void> {
+    return this.loginWith(async () => {
+      const code = await this.platform.auth.acquireCode()
+      return this.identity.exchange(this.platform.target, code)
+    })
+  }
+  /** Credential and platform-code login share the same epoch, token and
+   * logout semantics. Credential material is never passed to the vault. */
+  async loginWith(exchange: () => Promise<{accessToken: string}>): Promise<void> {
     this.assertActive()
     const generation = ++this.generation
-    const code = await this.platform.auth.acquireCode()
-    if (this.disposed || generation !== this.generation) return
-    const result = await this.identity.exchange(this.platform.target, code)
+    const result = await exchange()
     if (this.disposed || generation !== this.generation) return
     if (!result || typeof result.accessToken !== 'string' || !result.accessToken.trim()) {
       throw new Error('identity exchange returned no access token')
