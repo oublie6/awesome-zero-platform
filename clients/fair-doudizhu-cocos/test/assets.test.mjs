@@ -212,7 +212,7 @@ test('G51-N01: stale account reconciliation callbacks cannot replace another acc
  assert.ok(reconnect.indexOf('if(!this.currentAccount(owner,epoch)') <
    reconnect.indexOf("this.notice('原房间操作已明确拒绝"))
  assert.match(reconnect,/if\(this\.currentAccount\(owner,epoch\) && ownedSelection===this\.recoveryAttempt\)\s*this\.notice\('重连失败：/)
- const login=ui.split('private async login():Promise<void> {')[1].split('private async discoverMyRoomsSafely():')[0]
+ const login=ui.split('private async login(restoreOnly=false):Promise<void> {')[1].split('private async logoutWeb():Promise<void>{')[0]
  assert.match(login,/text=>\{if\(this\.currentAccount\(online,generation\)\)this\.notice\(text\)\}/)
  assert.match(login,/if\(this\.currentAccount\(online,generation\) && this\.screen==='table'\)/)
 })
@@ -255,10 +255,10 @@ test('G51 audit: repeat create/leave taps and menu recovery errors are controlle
 
 test('G51 audit: failed login preflight leaves the previous account event epoch active',async()=>{
  const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
- const login=ui.split('private async login():Promise<void> {')[1].split('private async discoverMyRoomsSafely():')[0]
+ const login=ui.split('private async login(restoreOnly=false):Promise<void> {')[1].split('private async logoutWeb():Promise<void>{')[0]
  assert.match(login,/let generation=this\.requestGeneration/)
  assert.ok(login.indexOf('if(!cfg)throw')<login.indexOf('generation=++this.requestGeneration'))
- assert.ok(login.indexOf('if(!globals.wx)throw')<login.indexOf('generation=++this.requestGeneration'))
+ assert.ok(login.indexOf("if(target==='wechat' && !globals.wx)throw")<login.indexOf('generation=++this.requestGeneration'))
  assert.ok(login.indexOf('online=new GameOnlineController')<login.indexOf('generation=++this.requestGeneration'))
  assert.ok(login.indexOf('generation=++this.requestGeneration')<login.indexOf('this.online=online'))
 })
