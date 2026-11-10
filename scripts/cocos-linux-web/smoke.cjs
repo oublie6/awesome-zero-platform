@@ -99,20 +99,87 @@ async function main(){
      assert.equal(observed.placeholderActive,true);
      checks.push('unique-input-labels:'+field);
    }
+   // Detect G59-N01 using the actual engine geometry and a real pointer
+   // on the visible hint, rather than clicking the invisible field center.
+   async function checkVisibleHintHit(field,viewport){
+     const geometry=await page.evaluate(field=>{
+       const cc=globalThis.__smokeCC;
+       const canvas=cc.director.getScene().getChildByName('Canvas');
+       const input=canvas.getComponent('GameBootstrap')[field];
+       const camera=canvas.getChildByName('Camera').getComponent(cc.Camera);
+       const element=document.getElementById('GameCanvas');
+       const viewport=element.getBoundingClientRect();
+       const project=ui=>{
+         const left=-ui.anchorX*ui.width, bottom=-ui.anchorY*ui.height;
+         const start=ui.convertToWorldSpaceAR(new cc.Vec3(left,bottom,0));
+         const end=ui.convertToWorldSpaceAR(new cc.Vec3(left+ui.width,bottom+ui.height,0));
+         const a=camera.worldToScreen(start),b=camera.worldToScreen(end);
+         const x1=viewport.x+a.x/element.width*viewport.width;
+         const x2=viewport.x+b.x/element.width*viewport.width;
+         const y1=viewport.y+(1-a.y/element.height)*viewport.height;
+         const y2=viewport.y+(1-b.y/element.height)*viewport.height;
+         return {left:Math.min(x1,x2),right:Math.max(x1,x2),
+           top:Math.min(y1,y2),bottom:Math.max(y1,y2)};
+       };
+       const fieldRect=project(input.node.getComponent(cc.UITransform));
+       const label=input.placeholderLabel;
+       const labelUI=label.node.getComponent(cc.UITransform);
+       const labelRect=project(labelUI);
+       const fontCSS=label.fontSize*(labelRect.bottom-labelRect.top)/labelUI.height;
+       return {fieldRect,labelRect,fontCSS,active:label.node.active,
+         anchorX:labelUI.anchorX,anchorY:labelUI.anchorY};
+     },field);
+     assert.equal(geometry.anchorX,0,'hint left must be top-left anchored');
+     assert.equal(geometry.anchorY,1,'hint top must be top-left anchored');
+     assert.equal(geometry.active,true,'placeholder must be visible');
+     const {fieldRect:box,labelRect:hint,fontCSS}=geometry;
+     assert.ok(hint.left>=box.left-2 && hint.right<=box.right+3,
+       'hint horizontal geometry must stay inside the real input hitbox: '+JSON.stringify(geometry));
+     assert.ok(hint.top>=box.top-2 && hint.bottom<=box.bottom+2,
+       'hint vertical geometry must stay inside the real input hitbox: '+JSON.stringify(geometry));
+     assert.ok(fontCSS>=12,
+       'hint must be legible at '+viewport.width+'x'+viewport.height+': '+fontCSS);
+     const click={x:hint.left+Math.max(6,Math.min(fontCSS*1.2,(hint.right-hint.left)/4)),
+       y:(hint.top+hint.bottom)/2};
+     assert.ok(click.x>box.left && click.x<box.right &&
+       click.y>box.top && click.y<box.bottom,'visible-hint click must hit EditBox');
+     await page.mouse.click(click.x,click.y);
+     await page.waitForFunction(()=>['INPUT','TEXTAREA'].includes(document.activeElement?.tagName),
+       undefined,{timeout:5000});
+     checks.push('visible-hint-click:'+field+':'+viewport.width+'x'+viewport.height);
+     // The native DOM editor must release focus before game navigation.
+     await page.mouse.click(5,5);
+     await page.waitForFunction(()=>!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName),
+       undefined,{timeout:5000});
+   }
    assert.equal((await state()).title,'公平斗地主');
-   await tap('RoomEntry',()=>globalThis.__smokeCC.director.getScene()
-     .getChildByName('Canvas').getComponent('GameBootstrap').screen==='rooms');
-   await assertInputLabels('roomInput','输入好友房间号');
-   await tap('LoginEntry',()=>globalThis.__smokeCC.director.getScene()
-     .getChildByName('Canvas').getComponent('GameBootstrap').screen==='login');
-   await assertInputLabels('loginIdentifier','用户名 / 邮箱 / 手机号');
-   await assertInputLabels('loginPassword','密码');
-   const form=await state();
-   assert.equal(form.passwordMode,form.passwordFlag,'password must use secret EditBox mode');
-   assert.ok(form.buttons.includes('SubmitWebLogin'));
-   await page.screenshot({path:path.join(evidence,'web-login.png')});
-   await tap('CancelWebLogin',()=>globalThis.__smokeCC.director.getScene()
-     .getChildByName('Canvas').getComponent('GameBootstrap').screen==='rooms');
+   for(const viewport of [
+     {width:1280,height:720},
+     {width:390,height:844},
+     {width:844,height:390}
+   ]){
+     await page.setViewportSize(viewport);
+     await page.waitForTimeout(180); // allow Cocos SafeArea/canvas-resize update
+     if((await state()).screen!=='rooms'){
+       await tap('RoomEntry',()=>globalThis.__smokeCC.director.getScene()
+         .getChildByName('Canvas').getComponent('GameBootstrap').screen==='rooms');
+     }
+     await assertInputLabels('roomInput','输入好友房间号');
+     await checkVisibleHintHit('roomInput',viewport);
+     await tap('LoginEntry',()=>globalThis.__smokeCC.director.getScene()
+       .getChildByName('Canvas').getComponent('GameBootstrap').screen==='login');
+     await assertInputLabels('loginIdentifier','用户名 / 邮箱 / 手机号');
+     await assertInputLabels('loginPassword','密码');
+     await checkVisibleHintHit('loginIdentifier',viewport);
+     await checkVisibleHintHit('loginPassword',viewport);
+     const form=await state();
+     assert.equal(form.passwordMode,form.passwordFlag,'password must use secret EditBox mode');
+     assert.ok(form.buttons.includes('SubmitWebLogin'));
+     await page.screenshot({path:path.join(evidence,
+       'web-login-'+viewport.width+'x'+viewport.height+'.png')});
+     await tap('CancelWebLogin',()=>globalThis.__smokeCC.director.getScene()
+       .getChildByName('Canvas').getComponent('GameBootstrap').screen==='rooms');
+   }
    assert.deepEqual(errors,[]);
    assert.deepEqual(failures,[]);
    report.result='passed';

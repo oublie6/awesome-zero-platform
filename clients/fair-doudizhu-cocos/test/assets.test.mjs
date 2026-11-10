@@ -443,5 +443,5 @@ test('G59-N01: Cocos EditBox label origin and responsive hit region are aligned'
  assert.match(layout,/label\.lineHeight=inputFontSize\+4/)
  const login=src.split('private createLoginInput(')[1].split('private addMenu(')[0]
  assert.match(login,/input\.inputMode=EditBox\.InputMode\.SINGLE_LINE/)
- assert.match(src,/throw new Error\('请先登录平台账号'\)/)
+ assert.match(src,/\? '请先完成微信登录' : '请先登录平台账号'/)
 })

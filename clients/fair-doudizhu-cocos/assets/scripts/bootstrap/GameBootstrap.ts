@@ -1142,7 +1142,8 @@ export class GameBootstrap extends Component {
     }
   }
   private requireOnline():GameOnlineController {
-    if(!this.online?.session.authenticated)throw new Error('请先登录平台账号')
+    if(!this.online?.session.authenticated)throw new Error(detectRuntimeTarget()==='wechat'
+      ? '请先完成微信登录' : '请先登录平台账号')
     return this.online
   }
   private message(error:unknown):string{return error instanceof Error ? error.message : '未知错误'}

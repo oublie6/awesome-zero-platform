@@ -124,3 +124,19 @@ test('G58-N01: real-browser smoke checks no duplicate Cocos EditBox labels',()=>
  assert.match(src,/assertInputLabels\('loginIdentifier'/);
  assert.match(src,/assertInputLabels\('loginPassword'/);
 });
+
+test('G59-N01: native browser smoke clicks actual visible hints in all three viewports',()=>{
+ const src=fs.readFileSync(path.join(__dirname,'smoke.cjs'),'utf8');
+ assert.match(src,/async function checkVisibleHintHit\(field,viewport\)/);
+ assert.match(src,/ui\.convertToWorldSpaceAR\(/);
+ assert.match(src,/labelRect=project\(labelUI\)/);
+ assert.match(src,/hint\.left>=box\.left-2 && hint\.right<=box\.right\+3/);
+ assert.match(src,/hint\.top>=box\.top-2 && hint\.bottom<=box\.bottom\+2/);
+ assert.match(src,/fontCSS>=12/);
+ assert.match(src,/page\.mouse\.click\(click\.x,click\.y\)/);
+ assert.match(src,/document\.activeElement\?\.tagName/);
+ for(const size of ['1280,height:720','390,height:844','844,height:390'])
+   assert.ok(src.includes(size),'missing viewport '+size);
+ for(const field of ['roomInput','loginIdentifier','loginPassword'])
+   assert.ok(src.includes("checkVisibleHintHit('"+field+"'"),'missing '+field);
+});
