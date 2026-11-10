@@ -424,3 +424,24 @@ test('G58-N01: dynamically created EditBoxes reuse one engine text/placeholder p
  assert.match(login,/this\.createInput\(name,hint,secret\?128:256,'',secret\)/)
  assert.match(factory,/if\(secret\)input\.inputFlag=EditBox\.InputFlag\.PASSWORD/)
 })
+
+test('G59-N01: Cocos EditBox label origin and responsive hit region are aligned',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const factory=src.split('private createInput(name:string,hint:string,maxLength:number,')[1]
+   .split('private createRoomInput(): EditBox')[0]
+ const layout=src.split('private layout(): void {')[1].split('override onDestroy(): void')[0]
+ // The pinned engine treats the label node position as its top-left and
+ // never compensates for the default centered anchor.
+ assert.match(factory,/labelTransform\.setAnchorPoint\(0,1\)/)
+ assert.ok(factory.indexOf('labelTransform.setAnchorPoint(0,1)')<
+   factory.indexOf('node.addComponent(EditBox)'))
+ assert.match(factory,/label\.overflow=Label\.Overflow\.SHRINK/)
+ assert.match(layout,/const inputWidth=Math\.min\(width,portrait\?1080:660\)/)
+ assert.match(layout,/const inputFontSize=portrait\?46:28/)
+ assert.match(layout,/sizeInput\(this\.inputNode\)/)
+ assert.match(layout,/sizeInput\(node\)/)
+ assert.match(layout,/label\.lineHeight=inputFontSize\+4/)
+ const login=src.split('private createLoginInput(')[1].split('private addMenu(')[0]
+ assert.match(login,/input\.inputMode=EditBox\.InputMode\.SINGLE_LINE/)
+ assert.match(src,/throw new Error\('请先登录平台账号'\)/)
+})

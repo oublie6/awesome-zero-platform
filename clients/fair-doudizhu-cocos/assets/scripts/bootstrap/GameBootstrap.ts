@@ -319,10 +319,15 @@ export class GameBootstrap extends Component {
     const makeLabel=(name:string,color:Color,text:string):Label=>{
       const child=new Node(name)
       child.layer=Layers.Enum.UI_2D
-      child.addComponent(UITransform)
+      const labelTransform=child.addComponent(UITransform)
+      // EditBox positions label nodes at the input's TOP-LEFT corner.
+      // A centered (0.5,0.5) anchor puts half of the visible text outside
+      // the field, so clicks on its hint miss the native EditBox hitbox.
+      labelTransform.setAnchorPoint(0,1)
       node.addChild(child)
       const label=child.addComponent(Label)
-      label.fontSize=24
+      label.fontSize=28
+      label.overflow=Label.Overflow.SHRINK
       label.color=color
       label.string=text
       return label
@@ -351,6 +356,9 @@ export class GameBootstrap extends Component {
   }
   private createLoginInput(name:string,hint:string,secret:boolean):EditBox {
     const input=this.createInput(name,hint,secret?128:256,'',secret)
+    // Username and password are single-line credentials; unlike the
+    // legacy kit / personal phrase field, they must reject newlines.
+    input.inputMode=EditBox.InputMode.SINGLE_LINE
     this.loginNodes.push(input.node)
     return input
   }
@@ -1134,7 +1142,7 @@ export class GameBootstrap extends Component {
     }
   }
   private requireOnline():GameOnlineController {
-    if(!this.online?.session.authenticated)throw new Error('请先完成微信登录')
+    if(!this.online?.session.authenticated)throw new Error('请先登录平台账号')
     return this.online
   }
   private message(error:unknown):string{return error instanceof Error ? error.message : '未知错误'}
@@ -1153,13 +1161,28 @@ export class GameBootstrap extends Component {
     this.title.node.setPosition(0,height*0.32,0)
     this.status.node.getComponent(UITransform)!.setContentSize(width,Math.min(portrait?180:100,height*0.23))
     this.status.node.setPosition(0,height*0.15,0)
+    // The original 460-unit field became only 140 CSS px on 390px phones.
+    // Use the safe content width and increase the UI font proportionately;
+    // never rely on a default-sized label outside the actual input hitbox.
+    const inputWidth=Math.min(width,portrait?1080:660)
+    const inputHeight=Math.max(48,height*0.075)
+    const inputFontSize=portrait?46:28
+    const sizeInput=(node:Node):void=>{
+      node.getComponent(UITransform)!.setContentSize(inputWidth,inputHeight)
+      const edit=node.getComponent(EditBox)
+      for(const label of [edit?.textLabel,edit?.placeholderLabel]){
+        if(!label?.isValid)continue
+        label.fontSize=inputFontSize
+        label.lineHeight=inputFontSize+4
+      }
+    }
     if(this.inputNode) {
-      this.inputNode.getComponent(UITransform)!.setContentSize(Math.min(width,460),Math.max(48,height*0.075))
+      sizeInput(this.inputNode)
       this.inputNode.setPosition(0,height*0.015,0)
     }
     this.loginNodes.forEach((node,index)=>{
       if(!node.isValid)return
-      node.getComponent(UITransform)!.setContentSize(Math.min(width,460),Math.max(48,height*0.075))
+      sizeInput(node)
       node.setPosition(0,height*(index===0?0.055:-0.035),0)
     })
     const window=menuWindow(this.menuActions.length,width,height,portrait,this.screen,this.menuPage)
