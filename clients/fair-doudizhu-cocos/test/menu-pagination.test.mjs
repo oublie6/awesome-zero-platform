@@ -58,3 +58,20 @@ test('portrait room captions use a full-width target rather than 9px shrink-to-f
  const smallLandscape=menuWindow(15,600,320,false,'rooms',0)
  assert.equal(smallLandscape.columns,2)
 })
+
+test('G59 follow-up: login actions do not overlap the password input hitbox',()=>{
+ // The password editor is centered at -height*0.035 and is at least 48
+ // design units tall. Its bottom must clear the first menu button's top.
+ for(const [width,height,portrait] of [
+   [760,720,false],[760,592,false],[1216,2770,true]
+ ]){
+   const menu=menuWindow(2,width,height,portrait,'login',0)
+   const passwordBottom=-height*0.035-Math.max(48,height*0.075)/2
+   const buttonTop=menu.firstY+menu.buttonHeight/2
+   assert.ok(buttonTop<passwordBottom-8,
+     'login menu and password field overlap at '+width+'x'+height)
+   assert.equal(menu.pages,1)
+ }
+ const room=menuWindow(9,760,592,false,'rooms',0)
+ assert.equal(room.firstY,-592*0.103,'other screens keep their layouts')
+})

@@ -20,7 +20,9 @@ export function menuWindow(count:number,width:number,height:number,portrait:bool
   const safeHeight=Math.max(1,height)
   const rowPitch=Math.max(38,Math.min(56,safeHeight*0.106))
   const buttonHeight=Math.max(34,Math.min(52,rowPitch-4))
-  const firstY=-safeHeight*0.103
+  // Login has two EditBoxes above its action buttons. The default menu
+  // origin intersects the password input on short landscape screens.
+  const firstY=-safeHeight*(screen==='login'?0.15:0.103)
   const bottomCenter=-safeHeight/2+11+buttonHeight/2
   const rows=Math.max(1,Math.floor((firstY-bottomCenter)/rowPitch)+1)
   // Reserve a dedicated navigation row when there are multiple pages.
