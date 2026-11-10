@@ -113,3 +113,14 @@ test('native Web builder rebuilds each isolated TS package, never trusts copied 
  assert.ok(s.indexOf("command('npm',['run','build','--prefix',pkg])") <
    s.indexOf("command('npm',['ci','--no-audit','--no-fund','--prefix',project])"));
 });
+
+test('G58-N01: real-browser smoke checks no duplicate Cocos EditBox labels',()=>{
+ const src=fs.readFileSync(path.join(__dirname,'smoke.cjs'),'utf8');
+ assert.match(src,/async function assertInputLabels\(field,hint\)/);
+ assert.match(src,/input\.node\.children\.filter/);
+ assert.match(src,/\['PLACEHOLDER_LABEL','TEXT_LABEL'\]/);
+ assert.match(src,/assert\.equal\(observed\.placeholderActive,true\)/);
+ assert.match(src,/assertInputLabels\('roomInput'/);
+ assert.match(src,/assertInputLabels\('loginIdentifier'/);
+ assert.match(src,/assertInputLabels\('loginPassword'/);
+});

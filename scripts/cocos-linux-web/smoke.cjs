@@ -71,11 +71,42 @@ async function main(){
      await page.waitForFunction(expected,undefined,{timeout:15000});
      checks.push(name);
    }
+   // Read *actual rendered Cocos nodes*, not a mocked editor prefab.
+   // Each EditBox must have exactly one engine-owned label per role.
+   async function assertInputLabels(field,hint){
+     const observed=await page.evaluate(field=>{
+       const cc=globalThis.__smokeCC;
+       const b=cc.director.getScene().getChildByName('Canvas').getComponent('GameBootstrap');
+       const input=b[field];
+       if(!input)throw Error('Missing live EditBox: '+field);
+       return {
+         children:input.node.children.filter(n=>!!n.getComponent(cc.Label))
+           .map(n=>n.name).sort(),
+         textName:input.textLabel?.node.name,
+         placeholderName:input.placeholderLabel?.node.name,
+         hint:input.placeholder,
+         textActive:input.textLabel?.node.active,
+         placeholderActive:input.placeholderLabel?.node.active,
+         initial:input.string
+       };
+     },field);
+     assert.deepEqual(observed.children,['PLACEHOLDER_LABEL','TEXT_LABEL']);
+     assert.equal(observed.textName,'TEXT_LABEL');
+     assert.equal(observed.placeholderName,'PLACEHOLDER_LABEL');
+     assert.equal(observed.hint,hint);
+     assert.equal(observed.initial,'');
+     assert.equal(observed.textActive,false);
+     assert.equal(observed.placeholderActive,true);
+     checks.push('unique-input-labels:'+field);
+   }
    assert.equal((await state()).title,'公平斗地主');
    await tap('RoomEntry',()=>globalThis.__smokeCC.director.getScene()
      .getChildByName('Canvas').getComponent('GameBootstrap').screen==='rooms');
+   await assertInputLabels('roomInput','输入好友房间号');
    await tap('LoginEntry',()=>globalThis.__smokeCC.director.getScene()
      .getChildByName('Canvas').getComponent('GameBootstrap').screen==='login');
+   await assertInputLabels('loginIdentifier','用户名 / 邮箱 / 手机号');
+   await assertInputLabels('loginPassword','密码');
    const form=await state();
    assert.equal(form.passwordMode,form.passwordFlag,'password must use secret EditBox mode');
    assert.ok(form.buttons.includes('SubmitWebLogin'));

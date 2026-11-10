@@ -305,48 +305,53 @@ export class GameBootstrap extends Component {
     }
     this.layout()
   }
-  private createRoomInput(): EditBox {
-    const node=new Node('RoomCodeInput')
-    node.layer=Layers.Enum.UI_2D
-    node.addComponent(UITransform)
-    this.content!.addChild(node)
-    const input=node.addComponent(EditBox)
-    // The active new hand accepts only an ephemeral personal phrase. The
-    // field is never saved to a platform vault or restored from storage.
-    input.maxLength=this.fairnessMode==='client-contributed-server-custodied-v1'?256:2048
-    input.string=this.fairnessMode==='client-contributed-server-custodied-v1'?'':this.roomID
-    const labelNode=new Node('RoomCodeText')
-    labelNode.layer=Layers.Enum.UI_2D
-    labelNode.addComponent(UITransform)
-    node.addChild(labelNode)
-    const label=labelNode.addComponent(Label)
-    label.fontSize=24
-    label.color=new Color(220,235,245,255)
-    label.string=this.fairnessMode==='client-contributed-server-custodied-v1'
-      ? '输入本人字符串（只用于参与及终局核验）'
-      : (this.roomID || '输入好友房间号')
-    input.textLabel=label
-    this.inputNode=node
-    return input
-  }
-  private createLoginInput(name:string,hint:string,secret:boolean):EditBox {
+  /**
+   * Cocos EditBox.__preload creates TEXT_LABEL and PLACEHOLDER_LABEL when
+   * absent. Prepare the exact engine-owned children BEFORE adding EditBox,
+   * so its initialization reuses them rather than leaving duplicate labels.
+   * EditBox alone owns their visibility as input.string changes.
+   */
+  private createInput(name:string,hint:string,maxLength:number,
+    initial='',secret=false):EditBox {
     const node=new Node(name)
     node.layer=Layers.Enum.UI_2D
     node.addComponent(UITransform)
+    const makeLabel=(name:string,color:Color,text:string):Label=>{
+      const child=new Node(name)
+      child.layer=Layers.Enum.UI_2D
+      child.addComponent(UITransform)
+      node.addChild(child)
+      const label=child.addComponent(Label)
+      label.fontSize=24
+      label.color=color
+      label.string=text
+      return label
+    }
+    const textLabel=makeLabel('TEXT_LABEL',new Color(220,235,245,255),'')
+    const placeholderLabel=makeLabel('PLACEHOLDER_LABEL',new Color(150,172,163,255),hint)
     this.content!.addChild(node)
     const input=node.addComponent(EditBox)
-    input.maxLength=secret?128:256
+    input.textLabel=textLabel
+    input.placeholderLabel=placeholderLabel
+    input.placeholder=hint
+    input.maxLength=maxLength
     if(secret)input.inputFlag=EditBox.InputFlag.PASSWORD
-    const placeholderNode=new Node(name+'Placeholder')
-    placeholderNode.layer=Layers.Enum.UI_2D
-    placeholderNode.addComponent(UITransform)
-    node.addChild(placeholderNode)
-    const placeholder=placeholderNode.addComponent(Label)
-    placeholder.fontSize=24
-    placeholder.color=new Color(220,235,245,255)
-    placeholder.string=hint
-    input.placeholderLabel=placeholder
-    this.loginNodes.push(node)
+    input.string=initial
+    return input
+  }
+  private createRoomInput(): EditBox {
+    const custodied=this.fairnessMode==='client-contributed-server-custodied-v1'
+    // The active new hand accepts only an ephemeral personal phrase. The
+    // field is never saved to a platform vault or restored from storage.
+    const input=this.createInput('RoomCodeInput',
+      custodied?'输入本人字符串（只用于参与及终局核验）':'输入好友房间号',
+      custodied?256:2048,custodied?'':this.roomID)
+    this.inputNode=input.node
+    return input
+  }
+  private createLoginInput(name:string,hint:string,secret:boolean):EditBox {
+    const input=this.createInput(name,hint,secret?128:256,'',secret)
+    this.loginNodes.push(input.node)
     return input
   }
   private addMenu(actions: MenuAction[]): void {

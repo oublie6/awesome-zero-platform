@@ -397,3 +397,30 @@ test('Vue-embedded Cocos does not duplicate account login or logout controls',as
  assert.match(src,/else if\(detectRuntimeTarget\(\)==='web'\)/)
  assert.match(src,/StandAlone|Standalone Web exports/)
 })
+
+test('G58-N01: dynamically created EditBoxes reuse one engine text/placeholder pair',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const factory=src.split('private createInput(name:string,hint:string,maxLength:number,')[1]
+  .split('private createRoomInput(): EditBox')[0]
+ // The engine reads these children in EditBox.__preload. They must exist
+ // before the component is added; no extra custom label may remain.
+ assert.match(factory,/makeLabel\('TEXT_LABEL'/)
+ assert.match(factory,/makeLabel\('PLACEHOLDER_LABEL'/)
+ assert.ok(factory.indexOf("makeLabel('PLACEHOLDER_LABEL'")<
+   factory.indexOf('node.addComponent(EditBox)'))
+ assert.ok(factory.indexOf("makeLabel('TEXT_LABEL'")<
+   factory.indexOf('node.addComponent(EditBox)'))
+ assert.match(factory,/input\.textLabel=textLabel/)
+ assert.match(factory,/input\.placeholderLabel=placeholderLabel/)
+ assert.match(factory,/input\.placeholder=hint/)
+ assert.match(factory,/input\.string=initial/)
+ assert.doesNotMatch(src,/new Node\('RoomCodeText'\)/)
+ assert.doesNotMatch(src,/new Node\(name\+'Placeholder'\)/)
+ const room=src.split('private createRoomInput(): EditBox {')[1]
+  .split('private createLoginInput(')[0]
+ assert.match(room,/custodied\?'输入本人字符串/)
+ assert.match(room,/custodied\?'':this\.roomID/)
+ const login=src.split('private createLoginInput(')[1].split('private addMenu(')[0]
+ assert.match(login,/this\.createInput\(name,hint,secret\?128:256,'',secret\)/)
+ assert.match(factory,/if\(secret\)input\.inputFlag=EditBox\.InputFlag\.PASSWORD/)
+})
