@@ -421,7 +421,7 @@ test('G58-N01: dynamically created EditBoxes reuse one engine text/placeholder p
  assert.match(room,/custodied\?'输入本人字符串/)
  assert.match(room,/custodied\?'':this\.roomID/)
  const login=src.split('private createLoginInput(')[1].split('private addMenu(')[0]
- assert.match(login,/this\.createInput\(name,hint,secret\?128:256,'',secret\)/)
+ assert.match(login,/this\.createInput\(name,hint,secret\?128:256,'',secret,true\)/)
  assert.match(factory,/if\(secret\)input\.inputFlag=EditBox\.InputFlag\.PASSWORD/)
 })
 
@@ -442,6 +442,7 @@ test('G59-N01: Cocos EditBox label origin and responsive hit region are aligned'
  assert.match(layout,/sizeInput\(node\)/)
  assert.match(layout,/label\.lineHeight=inputFontSize\+4/)
  const login=src.split('private createLoginInput(')[1].split('private addMenu(')[0]
- assert.match(login,/input\.inputMode=EditBox\.InputMode\.SINGLE_LINE/)
+ assert.match(factory,/input\.inputMode=singleLine\?EditBox\.InputMode\.SINGLE_LINE:EditBox\.InputMode\.ANY/)
+ assert.ok(factory.indexOf('input.inputMode=singleLine?')<factory.indexOf('this.content!.addChild(node)'))
  assert.match(src,/\? '请先完成微信登录' : '请先登录平台账号'/)
 })
