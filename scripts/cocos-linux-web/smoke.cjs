@@ -146,6 +146,17 @@ async function main(){
      await page.mouse.click(click.x,click.y);
      await page.waitForFunction(()=>['INPUT','TEXTAREA'].includes(document.activeElement?.tagName),
        undefined,{timeout:5000});
+     if(field==='loginIdentifier' || field==='loginPassword'){
+       // Check the focused native editor, not only the Cocos Label after blur.
+       const native=await page.evaluate(()=>{
+         const editor=document.activeElement;
+         return {tag:editor.tagName,type:editor.type};
+       });
+       assert.equal(native.tag,'INPUT','credentials must be native single-line inputs');
+       assert.equal(native.type,field==='loginPassword'?'password':'text',
+         'focused credential editor must use native password masking');
+       checks.push('native-credential-editor:'+field+':'+viewport.width+'x'+viewport.height);
+     }
      checks.push('visible-hint-click:'+field+':'+viewport.width+'x'+viewport.height);
      // The native DOM editor must release focus before game navigation.
      await page.mouse.click(5,5);
@@ -159,7 +170,19 @@ async function main(){
      {width:844,height:390}
    ]){
      await page.setViewportSize(viewport);
-     await page.waitForTimeout(180); // allow Cocos SafeArea/canvas-resize update
+     // Wait for canvas geometry and two paint frames after resize before
+     // asserting the first visible-hint click. Never retry a missed click.
+     await page.waitForFunction(()=>{
+       const canvas=document.getElementById('GameCanvas');
+       if(!canvas)return false;
+       const box=canvas.getBoundingClientRect();
+       return box.width>0 && box.height>0 &&
+         Math.abs(box.width-window.innerWidth)<2 &&
+         Math.abs(box.height-window.innerHeight)<2;
+     },undefined,{timeout:10000});
+     await page.evaluate(()=>new Promise(resolve=>
+       requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+     await page.waitForTimeout(180);
      if((await state()).screen!=='rooms'){
        await tap('RoomEntry',()=>globalThis.__smokeCC.director.getScene()
          .getChildByName('Canvas').getComponent('GameBootstrap').screen==='rooms');

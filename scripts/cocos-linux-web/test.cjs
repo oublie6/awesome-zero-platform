@@ -140,3 +140,21 @@ test('G59-N01: native browser smoke clicks actual visible hints in all three vie
  for(const field of ['roomInput','loginIdentifier','loginPassword'])
    assert.ok(src.includes("checkVisibleHintHit('"+field+"'"),'missing '+field);
 });
+
+test('G60-N01: credential input mode is set before native scene activation',()=>{
+ const src=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
+ const factory=src.split('private createInput(')[1].split('private createRoomInput(')[0];
+ assert.ok(factory.indexOf('node.addComponent(EditBox)')<
+   factory.indexOf('this.content!.addChild(node)'));
+ assert.ok(factory.indexOf('input.inputMode=singleLine?')<
+   factory.indexOf('this.content!.addChild(node)'));
+ assert.ok(factory.indexOf('input.inputFlag=EditBox.InputFlag.PASSWORD')<
+   factory.indexOf('this.content!.addChild(node)'));
+ const login=src.split('private createLoginInput(')[1].split('private addMenu(')[0];
+ assert.match(login,/secret,true/);
+ const smoke=fs.readFileSync(path.join(__dirname,'smoke.cjs'),'utf8');
+ assert.match(smoke,/native\.type,field==='loginPassword'\?'password':'text'/);
+ assert.match(smoke,/native\.tag,'INPUT'/);
+ assert.match(smoke,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(resolve\)\)/);
+});

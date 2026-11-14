@@ -312,7 +312,7 @@ export class GameBootstrap extends Component {
    * EditBox alone owns their visibility as input.string changes.
    */
   private createInput(name:string,hint:string,maxLength:number,
-    initial='',secret=false):EditBox {
+    initial='',secret=false,singleLine=false):EditBox {
     const node=new Node(name)
     node.layer=Layers.Enum.UI_2D
     node.addComponent(UITransform)
@@ -334,14 +334,17 @@ export class GameBootstrap extends Component {
     }
     const textLabel=makeLabel('TEXT_LABEL',new Color(220,235,245,255),'')
     const placeholderLabel=makeLabel('PLACEHOLDER_LABEL',new Color(150,172,163,255),hint)
-    this.content!.addChild(node)
+    // Configure while detached: active-scene __preload creates the native
+    // editor immediately and a later SINGLE_LINE setter cannot replace textarea.
     const input=node.addComponent(EditBox)
     input.textLabel=textLabel
     input.placeholderLabel=placeholderLabel
     input.placeholder=hint
     input.maxLength=maxLength
     if(secret)input.inputFlag=EditBox.InputFlag.PASSWORD
+    input.inputMode=singleLine?EditBox.InputMode.SINGLE_LINE:EditBox.InputMode.ANY
     input.string=initial
+    this.content!.addChild(node)
     return input
   }
   private createRoomInput(): EditBox {
@@ -355,10 +358,8 @@ export class GameBootstrap extends Component {
     return input
   }
   private createLoginInput(name:string,hint:string,secret:boolean):EditBox {
-    const input=this.createInput(name,hint,secret?128:256,'',secret)
-    // Username and password are single-line credentials; unlike the
-    // legacy kit / personal phrase field, they must reject newlines.
-    input.inputMode=EditBox.InputMode.SINGLE_LINE
+    // Configure native single-line editing before attaching the EditBox.
+    const input=this.createInput(name,hint,secret?128:256,'',secret,true)
     this.loginNodes.push(input.node)
     return input
   }
