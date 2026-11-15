@@ -37,3 +37,5 @@ The server now has pending-token based WeChat linking and new-account registrati
 **Schema migration prerequisite:** new databases use the unique (provider, account_id) constraint and the identity_external_pending table. Existing deployed MySQL instances need a reviewed, non-destructive additive migration after checking for duplicate provider/account pairs. Existing historic WeChat-only accounts with random inaccessible passwords require a separately verified recovery route; never bypass password authentication for them.
 
 **Email/domain TODO remains unchanged:** unverified email is never an ownership proof and public open registration remains gated to isolated testing.
+
+WeChat binding registration is disabled unless APP_PUBLIC_REGISTRATION_ENABLED=true in the isolated test environment. Password reauthentication is required for unlink and relink, and relink also requires a live source-AccountID authenticated session. Do not open the provisional account endpoints to unauthenticated public traffic before real email verification and distributed abuse controls are in place.

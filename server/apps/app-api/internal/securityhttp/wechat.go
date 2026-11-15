@@ -7,6 +7,7 @@ import (
     "errors"
     "io"
     "net/http"
+    "net"
     "os"
     "strings"
 
@@ -39,10 +40,11 @@ type wechatHandlers struct {
     identities *identity.Service
     auth *authn.Service
     sessionAdmin authn.SessionAdministrator
+    quota *registrationQuota
 }
 
 func registerWeChatCodeLogin(server *rest.Server,ctx *svc.ServiceContext){
-    h:=&wechatHandlers{}
+    h:=&wechatHandlers{quota:&registrationQuota{}}
     if ctx!=nil && ctx.Identity!=nil && ctx.MySQL!=nil && ctx.MySQL.DB()!=nil && ctx.Authn!=nil{
         key,err:=hex.DecodeString(os.Getenv("APP_WECHAT_SUBJECT_HMAC_KEY_HEX"))
         if err==nil && len(key)>=32{
@@ -59,10 +61,11 @@ func registerWeChatCodeLogin(server *rest.Server,ctx *svc.ServiceContext){
         {Method:http.MethodPost,Path:"/auth/wechat/prepare",Handler:h.prepare},
         {Method:http.MethodPost,Path:"/auth/wechat/bind",Handler:h.bind},
         {Method:http.MethodPost,Path:"/auth/wechat/register",Handler:h.register},
-        {Method:http.MethodPost,Path:"/auth/wechat/relink",Handler:h.relink},
+
     })
     server.AddRoutes(rest.WithMiddleware(RequireAuthenticationMiddleware(h.auth),
         rest.Route{Method:http.MethodPost,Path:"/auth/wechat/unlink",Handler:h.unlink},
+        rest.Route{Method:http.MethodPost,Path:"/auth/wechat/relink",Handler:h.relink},
     ))
 }
 func decodeWeChat(w http.ResponseWriter,r *http.Request,target any)error{
@@ -71,6 +74,13 @@ func decodeWeChat(w http.ResponseWriter,r *http.Request,target any)error{
     if err:=decoder.Decode(target);err!=nil{return err}
     if err:=decoder.Decode(&struct{}{});err!=io.EOF{return errors.New("unexpected trailing body")}
     return nil
+}
+func (h *wechatHandlers) allowUnauthenticated(r *http.Request) bool {
+    if h==nil || h.quota==nil{return false}
+    host,_,err:=net.SplitHostPort(r.RemoteAddr)
+    if err!=nil||net.ParseIP(host)==nil{host="unknown"}
+    // These limits intentionally do not trust attacker-controlled X-Forwarded-For.
+    return h.quota.allow(host)
 }
 func (h *wechatHandlers) configured()bool{
     return h!=nil && h.verifier!=nil && h.binder!=nil && h.issuer!=nil && h.identities!=nil
@@ -127,6 +137,7 @@ func (h *wechatHandlers) existing(ctx context.Context,identifier,password string
 }
 func (h *wechatHandlers) bind(w http.ResponseWriter,r *http.Request){
     if !h.configured(){platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("WeChat provider unavailable")));return}
+    if !h.allowUnauthenticated(r){platformresponse.WriteError(r.Context(),w,apperrors.Forbidden("binding temporarily limited"));return}
     var req struct{PendingToken string `json:"pendingToken"`;Identifier string `json:"identifier"`;Password string `json:"password"`}
     if decodeWeChat(w,r,&req)!=nil{platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid binding request"));return}
     account,err:=h.existing(r.Context(),strings.TrimSpace(req.Identifier),req.Password)
@@ -137,6 +148,10 @@ func (h *wechatHandlers) bind(w http.ResponseWriter,r *http.Request){
 }
 func (h *wechatHandlers) register(w http.ResponseWriter,r *http.Request){
     if !h.configured(){platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("WeChat provider unavailable")));return}
+    if os.Getenv("APP_PUBLIC_REGISTRATION_ENABLED")!="true" {
+        platformresponse.WriteError(r.Context(),w,apperrors.Forbidden("test account registration disabled"));return
+    }
+    if !h.allowUnauthenticated(r){platformresponse.WriteError(r.Context(),w,apperrors.Forbidden("registration temporarily limited"));return}
     var req struct{
         PendingToken string `json:"pendingToken"`
         Username string `json:"username"`
@@ -173,6 +188,9 @@ func (h *wechatHandlers) unlink(w http.ResponseWriter,r *http.Request){
 }
 func (h *wechatHandlers) relink(w http.ResponseWriter,r *http.Request){
     if !h.configured(){platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("WeChat provider unavailable")));return}
+    authenticated,ok:=AuthenticationFromContext(r.Context())
+    if !ok{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("authentication required"));return}
+    if !h.allowUnauthenticated(r){platformresponse.WriteError(r.Context(),w,apperrors.Forbidden("relink temporarily limited"));return}
     var req struct{
         PendingToken string `json:"pendingToken"`
         SourceIdentifier string `json:"sourceIdentifier"`
@@ -183,6 +201,9 @@ func (h *wechatHandlers) relink(w http.ResponseWriter,r *http.Request){
     if decodeWeChat(w,r,&req)!=nil{platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid relink request"));return}
     source,err:=h.existing(r.Context(),strings.TrimSpace(req.SourceIdentifier),req.SourcePassword)
     if err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("source account verification failed"));return}
+    if authenticated.Principal.AccountID!=source.ID {
+        platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("source account session required"));return
+    }
     target,err:=h.existing(r.Context(),strings.TrimSpace(req.TargetIdentifier),req.TargetPassword)
     if err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("target account verification failed"));return}
     if err=h.binder.Relink(r.Context(),req.PendingToken,source.ID,target.ID);err!=nil{writeBindingError(r.Context(),w,err);return}

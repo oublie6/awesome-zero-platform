@@ -539,7 +539,7 @@ export class GameBootstrap extends Component {
       const proof=prep?.code==='OK'?prep.data?.pendingToken:null
       if(typeof proof!=='string'||proof.length<32)throw new Error('微信验证未通过')
       const raw=await platform.http.request<unknown>('/auth/wechat/relink',{
-        method:'POST',timeoutMs:12000,body:{pendingToken:proof,
+        method:'POST',accessToken:online.session.token,timeoutMs:12000,body:{pendingToken:proof,
           sourceIdentifier,sourcePassword,targetIdentifier,targetPassword}
       }) as {code?:unknown}
       if(raw?.code!=='OK')throw new Error('换绑失败')
