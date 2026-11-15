@@ -38,6 +38,7 @@ type wechatHandlers struct {
     issuer wechatSessionIssuer
     identities *identity.Service
     auth *authn.Service
+    sessionAdmin authn.SessionAdministrator
 }
 
 func registerWeChatCodeLogin(server *rest.Server,ctx *svc.ServiceContext){
@@ -48,13 +49,14 @@ func registerWeChatCodeLogin(server *rest.Server,ctx *svc.ServiceContext){
             h.verifier,err=wechatcode.New(os.Getenv("APP_WECHAT_APP_ID"),os.Getenv("APP_WECHAT_APP_SECRET"))
             if err==nil{
                 h.binder,err=identity.NewExternalBinding(ctx.MySQL.DB(),ctx.Identity,key)
-                if err==nil{h.issuer=ctx.Authn;h.identities=ctx.Identity;h.auth=ctx.Authn}
+                if err==nil{h.issuer=ctx.Authn;h.identities=ctx.Identity;h.auth=ctx.Authn;h.sessionAdmin=ctx.SessionAdmin}
             }
         }
         clear(key)
     }
     server.AddRoutes([]rest.Route{
         {Method:http.MethodPost,Path:"/auth/wechat/code",Handler:h.code},
+        {Method:http.MethodPost,Path:"/auth/wechat/prepare",Handler:h.prepare},
         {Method:http.MethodPost,Path:"/auth/wechat/bind",Handler:h.bind},
         {Method:http.MethodPost,Path:"/auth/wechat/register",Handler:h.register},
         {Method:http.MethodPost,Path:"/auth/wechat/relink",Handler:h.relink},
@@ -63,8 +65,8 @@ func registerWeChatCodeLogin(server *rest.Server,ctx *svc.ServiceContext){
         rest.Route{Method:http.MethodPost,Path:"/auth/wechat/unlink",Handler:h.unlink},
     ))
 }
-func decodeWeChat(r *http.Request,target any)error{
-    decoder:=json.NewDecoder(http.MaxBytesReader(nil,r.Body,4096))
+func decodeWeChat(w http.ResponseWriter,r *http.Request,target any)error{
+    decoder:=json.NewDecoder(http.MaxBytesReader(w,r.Body,4096))
     decoder.DisallowUnknownFields()
     if err:=decoder.Decode(target);err!=nil{return err}
     if err:=decoder.Decode(&struct{}{});err!=io.EOF{return errors.New("unexpected trailing body")}
@@ -76,7 +78,7 @@ func (h *wechatHandlers) configured()bool{
 func (h *wechatHandlers) code(w http.ResponseWriter,r *http.Request){
     if !h.configured(){platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("WeChat provider unavailable")));return}
     var req struct{Code string `json:"code"`}
-    if decodeWeChat(r,&req)!=nil || len(req.Code)<4 || len(req.Code)>128 || strings.TrimSpace(req.Code)!=req.Code{
+    if decodeWeChat(w,r,&req)!=nil || len(req.Code)<4 || len(req.Code)>128 || strings.TrimSpace(req.Code)!=req.Code{
         platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid WeChat code"));return
     }
     subject,err:=h.verifier.Exchange(r.Context(),req.Code)
@@ -97,28 +99,41 @@ func (h *wechatHandlers) code(w http.ResponseWriter,r *http.Request){
         "status":"binding_required","pendingToken":proof,"expiresInSeconds":300,
     }))
 }
-func (h *wechatHandlers) existing(identifier,password string)(identity.Account,error){
+// A verified code can also produce a one-purpose proof for an already
+// linked identity, required for re-link to another authenticated AccountID.
+func (h *wechatHandlers) prepare(w http.ResponseWriter,r *http.Request){
+    if !h.configured(){platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("WeChat provider unavailable")));return}
+    var req struct{Code string `json:"code"`}
+    if decodeWeChat(w,r,&req)!=nil || len(req.Code)<4 || len(req.Code)>128 || strings.TrimSpace(req.Code)!=req.Code{
+        platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid WeChat code"));return
+    }
+    subject,err:=h.verifier.Exchange(r.Context(),req.Code)
+    if err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("WeChat identity verification failed"));return}
+    proof,err:=h.binder.BeginVerified(r.Context(),"wechat",subject)
+    if err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Internal(err));return}
+    platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),map[string]any{"pendingToken":proof,"expiresInSeconds":300}))
+}
+func (h *wechatHandlers) existing(ctx context.Context,identifier,password string)(identity.Account,error){
     if h==nil || h.identities==nil{return identity.Account{},identity.ErrInvalidCredentials}
     var (account identity.Account;err error)
     switch{
-    case strings.HasPrefix(identifier,"+"):account,err=h.identities.FindAccountByPhoneFresh(context.Background(),identifier)
-    case strings.Contains(identifier,"@"):account,err=h.identities.FindAccountByEmailFresh(context.Background(),identifier)
-    default:account,err=h.identities.FindAccountByUsernameFresh(context.Background(),identifier)
+    case strings.HasPrefix(identifier,"+"):account,err=h.identities.FindAccountByPhoneFresh(ctx,identifier)
+    case strings.Contains(identifier,"@"):account,err=h.identities.FindAccountByEmailFresh(ctx,identifier)
+    default:account,err=h.identities.FindAccountByUsernameFresh(ctx,identifier)
     }
     if err!=nil || account.Status!=identity.StatusActive{return identity.Account{},identity.ErrInvalidCredentials}
-    if err=h.identities.VerifyPassword(context.Background(),account.ID,password);err!=nil{return identity.Account{},identity.ErrInvalidCredentials}
+    if err=h.identities.VerifyPassword(ctx,account.ID,password);err!=nil{return identity.Account{},identity.ErrInvalidCredentials}
     return account,nil
 }
 func (h *wechatHandlers) bind(w http.ResponseWriter,r *http.Request){
     if !h.configured(){platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("WeChat provider unavailable")));return}
     var req struct{PendingToken string `json:"pendingToken"`;Identifier string `json:"identifier"`;Password string `json:"password"`}
-    if decodeWeChat(r,&req)!=nil{platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid binding request"));return}
-    account,err:=h.existing(strings.TrimSpace(req.Identifier),req.Password)
+    if decodeWeChat(w,r,&req)!=nil{platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid binding request"));return}
+    account,err:=h.existing(r.Context(),strings.TrimSpace(req.Identifier),req.Password)
     if err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("invalid account credentials"));return}
     if err=h.binder.BindPending(r.Context(),req.PendingToken,account.ID);err!=nil{writeBindingError(r.Context(),w,err);return}
-    auth,tokens,err:=h.issuer.IssueVerifiedAccount(r.Context(),account.ID)
-    if err!=nil{platformresponse.WriteError(r.Context(),w,mapAuthenticationError(err,false));return}
-    writeTokens(r.Context(),w,auth,tokens)
+    // The client now obtains its own session through a fresh wx.login code.
+    platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),map[string]any{"bound":true,"account":accountResponse{ID:account.ID,DisplayName:account.DisplayName}}))
 }
 func (h *wechatHandlers) register(w http.ResponseWriter,r *http.Request){
     if !h.configured(){platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("WeChat provider unavailable")));return}
@@ -129,7 +144,7 @@ func (h *wechatHandlers) register(w http.ResponseWriter,r *http.Request){
         DisplayName string `json:"displayName"`
         Password string `json:"password"`
     }
-    if decodeWeChat(r,&req)!=nil || strings.TrimSpace(req.Email)=="" || strings.TrimSpace(req.Username)==""{
+    if decodeWeChat(w,r,&req)!=nil || strings.TrimSpace(req.Email)=="" || strings.TrimSpace(req.Username)==""{
         platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("username and email required"));return
     }
     account,err:=h.binder.CreateFromPending(r.Context(),req.PendingToken,identity.CreateAccountInput{
@@ -137,20 +152,23 @@ func (h *wechatHandlers) register(w http.ResponseWriter,r *http.Request){
         Status:identity.StatusActive,
     })
     if err!=nil{writeBindingError(r.Context(),w,err);return}
-    auth,tokens,err:=h.issuer.IssueVerifiedAccount(r.Context(),account.ID)
-    if err!=nil{platformresponse.WriteError(r.Context(),w,mapAuthenticationError(err,false));return}
-    writeTokens(r.Context(),w,auth,tokens)
+    platformresponse.WriteJSON(r.Context(),w,http.StatusCreated,platformresponse.Success(r.Context(),map[string]any{"bound":true,"emailVerified":false,"account":accountResponse{ID:account.ID,DisplayName:account.DisplayName}}))
 }
 func (h *wechatHandlers) unlink(w http.ResponseWriter,r *http.Request){
     if !h.configured(){platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("WeChat provider unavailable")));return}
     principal,ok:=AuthenticationFromContext(r.Context())
     if !ok{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("authentication required"));return}
     var req struct{Password string `json:"password"`}
-    if decodeWeChat(r,&req)!=nil || req.Password==""{platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("password required"));return}
+    if decodeWeChat(w,r,&req)!=nil || req.Password==""{platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("password required"));return}
     if err:=h.identities.VerifyPassword(r.Context(),principal.Principal.AccountID,req.Password);err!=nil{
         platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("reauthentication required"));return
     }
     if err:=h.binder.Unlink(r.Context(),"wechat",principal.Principal.AccountID);err!=nil{writeBindingError(r.Context(),w,err);return}
+    if h.sessionAdmin!=nil {
+        if _,err:=h.sessionAdmin.RevokeByAccount(r.Context(),principal.Principal.AccountID);err!=nil{
+            platformresponse.WriteError(r.Context(),w,apperrors.Internal(err));return
+        }
+    }
     platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),map[string]any{"unlinked":true}))
 }
 func (h *wechatHandlers) relink(w http.ResponseWriter,r *http.Request){
@@ -162,12 +180,16 @@ func (h *wechatHandlers) relink(w http.ResponseWriter,r *http.Request){
         TargetIdentifier string `json:"targetIdentifier"`
         TargetPassword string `json:"targetPassword"`
     }
-    if decodeWeChat(r,&req)!=nil{platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid relink request"));return}
-    source,err:=h.existing(strings.TrimSpace(req.SourceIdentifier),req.SourcePassword)
+    if decodeWeChat(w,r,&req)!=nil{platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid relink request"));return}
+    source,err:=h.existing(r.Context(),strings.TrimSpace(req.SourceIdentifier),req.SourcePassword)
     if err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("source account verification failed"));return}
-    target,err:=h.existing(strings.TrimSpace(req.TargetIdentifier),req.TargetPassword)
+    target,err:=h.existing(r.Context(),strings.TrimSpace(req.TargetIdentifier),req.TargetPassword)
     if err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("target account verification failed"));return}
     if err=h.binder.Relink(r.Context(),req.PendingToken,source.ID,target.ID);err!=nil{writeBindingError(r.Context(),w,err);return}
+    if h.sessionAdmin!=nil{
+        if _,err:=h.sessionAdmin.RevokeByAccount(r.Context(),source.ID);err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Internal(err));return}
+        if _,err:=h.sessionAdmin.RevokeByAccount(r.Context(),target.ID);err!=nil{platformresponse.WriteError(r.Context(),w,apperrors.Internal(err));return}
+    }
     platformresponse.WriteJSON(r.Context(),w,http.StatusOK,platformresponse.Success(r.Context(),map[string]any{"relinked":true}))
 }
 func writeBindingError(ctx context.Context,w http.ResponseWriter,err error){
