@@ -167,6 +167,22 @@ service main-api {
     @handler route_post_auth_logout
     post /auth/logout
 
+    @doc "POST /auth/wechat/bind"
+    @handler route_post_auth_wechat_bind
+    post /auth/wechat/bind
+
+    @doc "POST /auth/wechat/register"
+    @handler route_post_auth_wechat_register
+    post /auth/wechat/register
+
+    @doc "POST /auth/wechat/unlink"
+    @handler route_post_auth_wechat_unlink
+    post /auth/wechat/unlink
+
+    @doc "POST /auth/wechat/relink"
+    @handler route_post_auth_wechat_relink
+    post /auth/wechat/relink
+
     @doc "POST /auth/wechat/code"
     @handler route_post_auth_wechat_code
     post /auth/wechat/code
