@@ -1,0 +1,30 @@
+name: One-time account test Go formatting
+on:
+  push:
+    paths:
+      - .github/workflows/format-accounts-once.yml
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Format only account HTTP regression test
+        run: |
+          gofmt -w server/apps/app-api/internal/securityhttp/wechat_test.go
+          git diff --check
+          if git diff --quiet -- server/apps/app-api/internal/securityhttp/wechat_test.go; then
+            echo "No formatting change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/apps/app-api/internal/securityhttp/wechat_test.go
+          git commit -m "style(identity): gofmt WeChat HTTP tests"
+          git push origin HEAD:main
