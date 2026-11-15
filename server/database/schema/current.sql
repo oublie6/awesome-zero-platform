@@ -170,9 +170,22 @@ CREATE TABLE IF NOT EXISTS identity_external_subjects (
     account_id CHAR(36) NOT NULL,
     created_at DATETIME(6) NOT NULL,
     PRIMARY KEY (provider, subject_hmac),
+    UNIQUE KEY uq_identity_external_provider_account (provider, account_id),
     KEY idx_identity_external_account (account_id),
     CONSTRAINT fk_identity_external_account FOREIGN KEY (account_id)
         REFERENCES identity_accounts(account_id)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Unbound verified-provider proof, stored only as SHA-256 digest.
+-- This is not an authenticated platform session.
+CREATE TABLE IF NOT EXISTS identity_external_pending (
+    token_digest BINARY(32) NOT NULL,
+    provider VARCHAR(32) NOT NULL,
+    subject_hmac BINARY(32) NOT NULL,
+    expires_at DATETIME(6) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (token_digest),
+    KEY idx_identity_external_pending_expiry (expires_at)
 ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS doudizhu_protected_server_seeds (
