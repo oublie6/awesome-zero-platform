@@ -396,11 +396,11 @@ func newIntegrationService(t *testing.T) (*Service, *sql.DB) {
 func cleanupIdentityTables(t *testing.T, db *sql.DB) {
 	t.Helper()
 
-    for _, table := range []string{"identity_external_pending", "identity_external_subjects"} {
-        if _, err := db.Exec("DELETE FROM " + table); err != nil {
-            t.Fatalf("cleanup %s: %v", table, err)
-        }
-    }
+	for _, table := range []string{"identity_external_pending", "identity_external_subjects"} {
+		if _, err := db.Exec("DELETE FROM " + table); err != nil {
+			t.Fatalf("cleanup %s: %v", table, err)
+		}
+	}
 
 	if _, err := db.Exec(`
 		DELETE FROM identity_password_credentials
