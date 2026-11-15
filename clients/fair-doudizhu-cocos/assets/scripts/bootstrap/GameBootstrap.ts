@@ -2,7 +2,7 @@ import { _decorator, Color, Component, Label, Layers, Node, SafeArea, UITransfor
 import { GameClientShell } from '../game/GameClientShell.ts'
 import { GameOnlineController } from '../game/GameOnlineController.ts'
 import { verifyOwnContribution } from '../game/GameFairnessActions.ts'
-import { createWeChatIdentityExchange, validateWeChatAccess } from '../game/WeChatIdentityExchange.ts'
+import { WeChatBindingRequiredError, createWeChatIdentityExchange, validateWeChatAccess } from '../game/WeChatIdentityExchange.ts'
 import { createWebIdentityExchange, validateWebAccess } from '../game/GameWebAuth.ts'
 import { detectRuntimeTarget } from '../platform/platform-target.ts'
 import { createPlatform } from '../platform/createPlatform.ts'
@@ -14,7 +14,7 @@ import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-clie
 import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
 const { ccclass } = _decorator
-type Screen = 'home' | 'rooms' | 'rules' | 'table' | 'login'
+type Screen = 'home' | 'rooms' | 'rules' | 'table' | 'login' | 'wechat-bind' | 'wechat-unlink'
 interface MenuAction { name: string; caption: string; action: () => void }
 
 type PublicConfig = { apiBase: string; socketEndpoint: string; revealManifestRoots: Record<string,string> }
@@ -56,6 +56,9 @@ export class GameBootstrap extends Component {
   private roomInput: EditBox | null = null
   private loginIdentifier: EditBox | null = null
   private loginPassword: EditBox | null = null
+  private wechatEmail: EditBox | null = null
+  private wechatDisplay: EditBox | null = null
+  private wechatPending = ''
   private loginNodes: Node[] = []
   private screen: Screen = 'home'
   private selectedCards = new Set<string>()
@@ -186,6 +189,8 @@ export class GameBootstrap extends Component {
     this.loginNodes=[]
     this.loginIdentifier=null
     this.loginPassword=null
+    this.wechatEmail=null
+    this.wechatDisplay=null
     if (screen === 'home') {
       this.title!.string = '公平斗地主'
       this.status!.string = '三人好友房 · 公平洗牌 · 跨平台联机'
@@ -210,6 +215,8 @@ export class GameBootstrap extends Component {
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
         {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.discoverMyRoomsSafely()}
       ]
+      if(detectRuntimeTarget()==='wechat' && this.online?.session.authenticated)
+        actions.push({name:'UnlinkWeChat',caption:'解绑当前微信身份',action:()=>this.renderScreen('wechat-unlink')})
       if(this.webHostListener){
         // When embedded, Vue owns all account UI. The scene only renders
         // game actions and revalidates the shared token with Go.
@@ -254,6 +261,26 @@ export class GameBootstrap extends Component {
       this.addMenu([
         {name:'SubmitWebLogin',caption:'登录并进入房间',action:()=>void this.login()},
         {name:'CancelWebLogin',caption:'返回房间大厅',action:()=>this.renderScreen('rooms')}
+      ])
+    } else if (screen === 'wechat-bind') {
+      this.title!.string='关联平台账号'
+      this.status!.string='微信身份尚未绑定。选择已有账号或注册新账号；邮箱暂不验证。'
+      this.loginIdentifier=this.createLoginInput('WechatAccountName','用户名 / 账号',false)
+      this.loginPassword=this.createLoginInput('WechatAccountPassword','平台账号密码',true)
+      this.wechatEmail=this.createLoginInput('WechatAccountEmail','新账号邮箱',false)
+      this.wechatDisplay=this.createLoginInput('WechatDisplayName','新账号昵称',false)
+      this.addMenu([
+        {name:'WechatBindExisting',caption:'绑定已有平台账号',action:()=>void this.completeWeChatBinding(false)},
+        {name:'WechatRegisterNew',caption:'创建新账号并绑定',action:()=>void this.completeWeChatBinding(true)},
+        {name:'WechatCancelBind',caption:'取消并返回',action:()=>{this.wechatPending='';this.renderScreen('rooms')}}
+      ])
+    } else if (screen === 'wechat-unlink') {
+      this.title!.string='解绑微信身份'
+      this.status!.string='解绑不转移游戏数据。请输入当前平台账号密码重新验证。'
+      this.loginPassword=this.createLoginInput('WechatUnlinkPassword','平台账号密码',true)
+      this.addMenu([
+        {name:'WechatConfirmUnlink',caption:'确认解绑微信',action:()=>void this.unlinkWeChat()},
+        {name:'WechatCancelUnlink',caption:'返回房间大厅',action:()=>this.renderScreen('rooms')}
       ])
     } else if (screen === 'table') {
       const snapshot=this.online?.shell.hand.snapshot
@@ -438,8 +465,68 @@ export class GameBootstrap extends Component {
       try{await this.recoverMyRooms(token=>{selection=token})}
       catch(error){if(this.currentAccount(online,generation) && selection===this.recoveryAttempt)
         this.notice('已登录，自动发现暂不可用：'+this.message(error))}
-    } catch(error) {if(generation===this.requestGeneration && this.content?.isValid)
-      this.notice('登录失败：'+this.message(error))}
+    } catch(error) {
+      if(error instanceof WeChatBindingRequiredError && generation===this.requestGeneration &&
+         this.content?.isValid){
+        this.wechatPending=error.pendingToken
+        this.renderScreen('wechat-bind')
+      }else if(generation===this.requestGeneration && this.content?.isValid){
+        this.notice('登录失败：'+this.message(error))
+      }
+    }
+  }
+  private async completeWeChatBinding(create:boolean):Promise<void>{
+    const proof=this.wechatPending
+    const platform=this.platform
+    if(detectRuntimeTarget()!=='wechat' || !proof || !platform || this.screen!=='wechat-bind'){
+      this.notice('请重新进行微信身份验证');return
+    }
+    const username=this.loginIdentifier?.string.trim()||''
+    const password=this.loginPassword?.string||''
+    const email=this.wechatEmail?.string.trim()||''
+    const displayName=this.wechatDisplay?.string.trim()||''
+    if(this.loginPassword)this.loginPassword.string=''
+    if(!username || !password || (create && (!email || !displayName))){
+      this.notice('请填写所需账号资料');return
+    }
+    const epoch=this.requestGeneration
+    try{
+      const raw=await platform.http.request<unknown>(create?'/auth/wechat/register':'/auth/wechat/bind',{
+        method:'POST',timeoutMs:12000,
+        body:create?{pendingToken:proof,username,email,displayName,password}:{pendingToken:proof,identifier:username,password}
+      })
+      const envelope=raw as {code?:unknown;data?:unknown}|null
+      if(!envelope || envelope.code!=='OK')throw new Error('关联账号失败')
+      if(epoch!==this.requestGeneration || this.wechatPending!==proof || !this.content?.isValid)return
+      this.wechatPending=''
+      this.renderScreen('rooms')
+      await this.login()
+    }catch(error){
+      if(epoch===this.requestGeneration && this.content?.isValid)
+        this.notice('账号关联失败：'+this.message(error))
+    }
+  }
+  private async unlinkWeChat():Promise<void>{
+    if(this.screen!=='wechat-unlink'||!this.platform||!this.online?.session.authenticated)return
+    const password=this.loginPassword?.string||''
+    if(this.loginPassword)this.loginPassword.string=''
+    if(!password){this.notice('请输入当前账号密码');return}
+    const platform=this.platform,online=this.online,epoch=this.requestGeneration
+    try{
+      const raw=await platform.http.request<unknown>('/auth/wechat/unlink',{
+        method:'POST',accessToken:online.session.token,body:{password},timeoutMs:12000
+      })
+      const response=raw as {code?:unknown}|null
+      if(response?.code!=='OK')throw new Error('解绑失败')
+      if(!this.currentAccount(online,epoch))return
+      await online.logout()
+      this.online=null
+      this.platform=null
+      this.renderScreen('rooms')
+      this.notice('微信解绑成功；原账号游戏数据仍保留')
+    }catch(error){
+      if(this.currentAccount(online,epoch))this.notice('微信解绑失败：'+this.message(error))
+    }
   }
   /** Browser sign-out revokes the server session and fences all callbacks.
    * Do not discard an unknown durable command without exact reconciliation. */

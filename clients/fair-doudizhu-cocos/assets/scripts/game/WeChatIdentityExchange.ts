@@ -8,6 +8,12 @@ function unwrap(value: unknown): Record<string, unknown> {
   if (!record(value) || value.code !== 'OK' || !record(value.data)) throw new Error('identity exchange rejected by Go')
   return value.data
 }
+export class WeChatBindingRequiredError extends Error {
+  constructor(readonly pendingToken:string) {
+    super('微信身份未绑定平台账号；请选择已有账号或创建新账号')
+    this.name='WeChatBindingRequiredError'
+  }
+}
 /** The temporary wx.login code is never treated as a token or account ID. */
 export function createWeChatIdentityExchange(platform: GamePlatform): IdentityExchange {
   return {
@@ -18,6 +24,10 @@ export function createWeChatIdentityExchange(platform: GamePlatform): IdentityEx
         method:'POST',body:{code},timeoutMs:12000
       })
       const data=unwrap(raw)
+      if (data.status==='binding_required' && typeof data.pendingToken==='string' &&
+          data.pendingToken.length>=32 && data.pendingToken.length<=256) {
+        throw new WeChatBindingRequiredError(data.pendingToken)
+      }
       if (typeof data.accessToken !== 'string' || !data.accessToken.trim() ||
           data.tokenType !== 'Bearer' || data.accessToken.includes('\n')) throw new Error('invalid authenticated token')
       return {accessToken:data.accessToken}

@@ -29,3 +29,11 @@
 
 ## Acceptance
 Source CI is not proof of deployed functionality. In particular, emailed OTP, public signup hardening, third-party bind/unbind and DNS/provider qualification must remain clearly pending until real evidence exists.
+
+## Implementation checkpoint (2026-11-15)
+
+The server now has pending-token based WeChat linking and new-account registration with transactional uniqueness, plus password-reauthenticated unlink/relink APIs. The WeChat mini game renders the unbound bind-or-create choice and a password-verified unlink screen. Existing AccountID game records are not migrated by a link change. Relink is available through the authenticated HTTP account-management contract; the source and target accounts must both authenticate and the WeChat code must be independently verified. This checkpoint has not yet passed independent acceptance.
+
+**Schema migration prerequisite:** new databases use the unique (provider, account_id) constraint and the identity_external_pending table. Existing deployed MySQL instances need a reviewed, non-destructive additive migration after checking for duplicate provider/account pairs. Existing historic WeChat-only accounts with random inaccessible passwords require a separately verified recovery route; never bypass password authentication for them.
+
+**Email/domain TODO remains unchanged:** unverified email is never an ownership proof and public open registration remains gated to isolated testing.
