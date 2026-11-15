@@ -2,23 +2,23 @@ package securityhttp
 
 import (
 	"context"
-	"errors"
-	"net/http"
 	"encoding/json"
+	"errors"
 	"io"
 	"net"
+	"net/http"
 	"os"
-	"sync"
-	"unicode/utf8"
-	"github.com/oublie6/awesome-zero-platform/server/platform/identity"
 	"strings"
+	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/svc"
 	"github.com/oublie6/awesome-zero-platform/server/foundation/apperrors"
 	platformresponse "github.com/oublie6/awesome-zero-platform/server/foundation/response"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authn"
 	"github.com/oublie6/awesome-zero-platform/server/platform/authz"
+	"github.com/oublie6/awesome-zero-platform/server/platform/identity"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
@@ -238,80 +238,101 @@ func mapAuthenticationError(err error, login bool) error {
 // registration requires a distributed, abuse-resistant limiter and email
 // ownership verification; see docs/architecture/unified-account-registration.md.
 type registrationQuota struct {
- mu sync.Mutex
- counts map[string]registrationCounter
+	mu     sync.Mutex
+	counts map[string]registrationCounter
 }
-type registrationCounter struct { count int; since time.Time }
+
+type registrationCounter struct {
+	count int
+	since time.Time
+}
+
 func (q *registrationQuota) allow(address string) bool {
- q.mu.Lock()
- defer q.mu.Unlock()
- if q.counts == nil { q.counts=make(map[string]registrationCounter) }
- now:=time.Now()
- if len(q.counts)>=4096 {
-   for key,value:=range q.counts { if now.Sub(value.since)>=time.Hour {delete(q.counts,key)} }
-   if len(q.counts)>=4096 {return false}
- }
- value:=q.counts[address]
- if value.since.IsZero() || now.Sub(value.since)>=time.Hour {value=registrationCounter{since:now}}
- if value.count>=5 {return false}
- value.count++
- q.counts[address]=value
- return true
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.counts == nil {
+		q.counts = make(map[string]registrationCounter)
+	}
+	now := time.Now()
+	if len(q.counts) >= 4096 {
+		for key, value := range q.counts {
+			if now.Sub(value.since) >= time.Hour {
+				delete(q.counts, key)
+			}
+		}
+		if len(q.counts) >= 4096 {
+			return false
+		}
+	}
+	value := q.counts[address]
+	if value.since.IsZero() || now.Sub(value.since) >= time.Hour {
+		value = registrationCounter{since: now}
+	}
+	if value.count >= 5 {
+		return false
+	}
+	value.count++
+	q.counts[address] = value
+	return true
 }
 
 func registrationHandler(ctx *svc.ServiceContext) http.HandlerFunc {
- quota:=&registrationQuota{}
- return func(w http.ResponseWriter,r *http.Request){
-  w.Header().Set("Cache-Control","no-store")
-  if os.Getenv("APP_PUBLIC_REGISTRATION_ENABLED")!="true" {
-   platformresponse.WriteError(r.Context(),w,apperrors.Forbidden("registration is disabled"))
-   return
-  }
-  if ctx==nil || ctx.Identity==nil {
-   platformresponse.WriteError(r.Context(),w,apperrors.Internal(errors.New("identity service is unavailable")))
-   return
-  }
-  host,_,err:=net.SplitHostPort(r.RemoteAddr)
-  if err!=nil || net.ParseIP(host)==nil {host="unknown"}
-  // Never trust forwarded IP headers provided by unauthenticated clients.
-  if !quota.allow(host){
-   platformresponse.WriteError(r.Context(),w,apperrors.Forbidden("registration temporarily limited"))
-   return
-  }
-  var req struct{
-   Username string `json:"username"`
-   Email string `json:"email"`
-   DisplayName string `json:"displayName"`
-   Password string `json:"password"`
-  }
-  decoder:=json.NewDecoder(http.MaxBytesReader(w,r.Body,4096))
-  decoder.DisallowUnknownFields()
-  if err:=decoder.Decode(&req);err!=nil || decoder.Decode(&struct{}{})!=io.EOF ||
-   req.Username=="" || req.Email=="" || req.DisplayName=="" ||
-   len(req.Password)<identity.PasswordMinBytes || len(req.Password)>identity.PasswordMaxBytes ||
-   !utf8.ValidString(req.DisplayName) {
-   platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid registration fields"))
-   return
-  }
-  created,err:=ctx.Identity.CreateAccount(r.Context(),identity.CreateAccountInput{
-   Identity:identity.Identity{Username:req.Username,Email:req.Email},
-   DisplayName:req.DisplayName,Password:req.Password,Status:identity.StatusActive,
-  })
-  if err!=nil {
-   if errors.Is(err,identity.ErrIdentityConflict) {
-    platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("username or email already in use"))
-   } else if errors.Is(err,identity.ErrPersistence) {
-    platformresponse.WriteError(r.Context(),w,apperrors.Internal(err))
-   } else {
-    platformresponse.WriteError(r.Context(),w,apperrors.InvalidParameter("invalid registration fields"))
-   }
-   return
-  }
-  // Email is required but NOT verified in v1. Never treat it as a recovery
-  // factor until a verified-email lifecycle is implemented.
-  platformresponse.WriteJSON(r.Context(),w,http.StatusCreated,platformresponse.Success(r.Context(),map[string]any{
-   "account":accountResponse{ID:created.ID,DisplayName:created.DisplayName},
-   "emailVerified":false,
-  }))
- }
+	quota := &registrationQuota{}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		if os.Getenv("APP_PUBLIC_REGISTRATION_ENABLED") != "true" {
+			platformresponse.WriteError(r.Context(), w, apperrors.Forbidden("registration is disabled"))
+			return
+		}
+		if ctx == nil || ctx.Identity == nil {
+			platformresponse.WriteError(r.Context(), w, apperrors.Internal(errors.New("identity service is unavailable")))
+			return
+		}
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil || net.ParseIP(host) == nil {
+			host = "unknown"
+		}
+		// Never trust forwarded IP headers provided by unauthenticated clients.
+		if !quota.allow(host) {
+			platformresponse.WriteError(r.Context(), w, apperrors.Forbidden("registration temporarily limited"))
+			return
+		}
+		var req struct {
+			Username    string `json:"username"`
+			Email       string `json:"email"`
+			DisplayName string `json:"displayName"`
+			Password    string `json:"password"`
+		}
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&req); err != nil || decoder.Decode(&struct{}{}) != io.EOF ||
+			req.Username == "" || req.Email == "" || req.DisplayName == "" ||
+			len(req.Password) < identity.PasswordMinBytes || len(req.Password) > identity.PasswordMaxBytes ||
+			!utf8.ValidString(req.DisplayName) {
+			platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("invalid registration fields"))
+			return
+		}
+		created, err := ctx.Identity.CreateAccount(r.Context(), identity.CreateAccountInput{
+			Identity:    identity.Identity{Username: req.Username, Email: req.Email},
+			DisplayName: req.DisplayName,
+			Password:    req.Password,
+			Status:      identity.StatusActive,
+		})
+		if err != nil {
+			if errors.Is(err, identity.ErrIdentityConflict) {
+				platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("username or email already in use"))
+			} else if errors.Is(err, identity.ErrPersistence) {
+				platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
+			} else {
+				platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("invalid registration fields"))
+			}
+			return
+		}
+		// Email is required but NOT verified in v1. Never treat it as a recovery
+		// factor until a verified-email lifecycle is implemented.
+		platformresponse.WriteJSON(r.Context(), w, http.StatusCreated, platformresponse.Success(r.Context(), map[string]any{
+			"account":       accountResponse{ID: created.ID, DisplayName: created.DisplayName},
+			"emailVerified": false,
+		}))
+	}
 }
