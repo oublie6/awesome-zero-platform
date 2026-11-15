@@ -24,3 +24,5 @@ All executable development Goals follow **ChatGPT development and self-testing â
 ## Change protocol
 
 Propose architectural changes in a dedicated decision section with rationale, alternatives, migration effects, failure modes and verification plan. Keep these principle documents concise and normative; put endpoint/schema details in versioned API docs and measured results in performance/operations reports. Never overwrite historical verification evidence to make it match a new target.
+
+5. [Unified account registration and third-party binding design](../architecture/unified-account-registration.md): accepted AccountID invariants, phased implementation and explicit mail/domain TODOs.

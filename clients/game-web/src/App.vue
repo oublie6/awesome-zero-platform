@@ -2,7 +2,7 @@
 import {computed,onMounted,onUnmounted,ref} from 'vue'
 import {createWebAuth,runtimeConfig,type UserAccount} from './auth.ts'
 
-type Page='home'|'login'|'lobby'|'game'
+type Page='home'|'login'|'register'|'lobby'|'game'
 type PublicRuntime=typeof globalThis & {__FAIR_DOUDIZHU_CONFIG__?:unknown}
 const config=runtimeConfig(window.location.origin,(globalThis as PublicRuntime).__FAIR_DOUDIZHU_CONFIG__)
 const client=config?createWebAuth(config,fetch.bind(globalThis),sessionStorage):null
@@ -12,6 +12,12 @@ const busy=ref(false)
 const account=ref<UserAccount|null>(null)
 const identifier=ref('')
 const password=ref('')
+const registerName=ref('')
+const registerEmail=ref('')
+const registerDisplay=ref('')
+const registerPassword=ref('')
+const registerConfirm=ref('')
+const notice=ref('')
 const error=ref('')
 const gameStatus=ref('等待加载游戏资源')
 const gameFrame=ref<HTMLIFrameElement|null>(null)
@@ -79,6 +85,23 @@ async function submitLogin(){
   }catch(e){error.value=e instanceof Error?e.message:'登录失败'}
   finally{busy.value=false}
 }
+async function submitRegister(){
+  if(!client){error.value='网站尚未配置同源 HTTPS/WSS 服务';return}
+  if(busy.value)return
+  error.value=''
+  if(registerPassword.value!==registerConfirm.value){error.value='两次密码不一致';return}
+  busy.value=true
+  const secret=registerPassword.value
+  registerPassword.value=''
+  registerConfirm.value=''
+  try{
+    await client.register(registerName.value.trim(),registerEmail.value.trim(),registerDisplay.value.trim(),secret)
+    notice.value='账号已创建。当前测试版尚未验证邮箱，请使用用户名和密码登录。'
+    identifier.value=registerName.value.trim()
+    page.value='login'
+  }catch(e){error.value=e instanceof Error?e.message:'注册失败'}
+  finally{busy.value=false}
+}
 async function logout(){
   if(busy.value)return
   busy.value=true
@@ -135,6 +158,7 @@ onUnmounted(()=>window.removeEventListener('message',onGameMessage))
       <div v-if="checking" class="center-card"><div class="loading-suit">♣</div><p>正在验证平台账号会话…</p></div>
       <template v-else>
         <div v-if="error" class="error-strip" role="alert">{{ error }}</div>
+        <div v-if="notice" class="form-hint" role="status">{{notice}}</div>
         <section v-if="page==='home'" class="hero">
           <div class="hero-copy">
             <div class="eyebrow"><span class="status-dot"></span> 三人好友房 · 服务端公平洗牌</div>
@@ -165,10 +189,23 @@ onUnmounted(()=>window.removeEventListener('message',onGameMessage))
             <input id="password" v-model="password" type="password" autocomplete="current-password" maxlength="128" placeholder="输入账号密码" required />
             <button class="primary-button full" type="submit" :disabled="busy || !config">{{ busy?'验证中…':'登录并继续 →' }}</button>
             <p v-if="!config" class="form-hint warning">当前部署缺少同源 HTTPS/WSS 配置，登录暂不可用。</p>
-            <p class="form-hint">目前仅支持已有账号登录。账号开通由平台统一管理。</p>
+            <p class="form-hint">没有账号？ <button class="inline-link" type="button" @click="page='register'">创建平台账号</button></p>
           </form>
         </section>
 
+        <section v-else-if="page==='register'" class="login-layout">
+          <div class="login-intro"><div class="eyebrow">PLATFORM ACCOUNT</div><h2>创建统一账号</h2><p>网页、微信和未来的游戏客户端共享同一个 AccountID，牌局数据只归属于该账户。</p><p class="small-note">测试版邮箱必填，但暂不发送验证码，也不能用于密码找回。</p></div>
+          <form class="login-card" @submit.prevent="submitRegister">
+            <div class="card-eyebrow">CREATE ACCOUNT</div><h3>注册平台账号</h3>
+            <label for="register-name">用户名</label><input id="register-name" v-model="registerName" autocomplete="username" minlength="3" maxlength="32" required placeholder="3–32 位字母、数字、._-" />
+            <label for="register-email">邮箱（暂不验证）</label><input id="register-email" v-model="registerEmail" type="email" autocomplete="email" maxlength="320" required placeholder="name@example.com" />
+            <label for="register-display">昵称</label><input id="register-display" v-model="registerDisplay" maxlength="120" required placeholder="显示名称" />
+            <label for="register-password">密码</label><input id="register-password" v-model="registerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required />
+            <label for="register-confirm">确认密码</label><input id="register-confirm" v-model="registerConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" required />
+            <button class="primary-button full" type="submit" :disabled="busy || !config">{{busy?'正在创建…':'创建账号'}}</button>
+            <p class="form-hint">本阶段仅供受控测试使用。<button class="inline-link" type="button" @click="page='login'">已有账号？返回登录</button></p>
+          </form>
+        </section>
         <section v-else-if="page==='lobby'" class="lobby">
           <div class="lobby-title">
             <div class="eyebrow">FAIR DOUDIZHU · GAME LOBBY</div>

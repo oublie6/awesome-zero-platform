@@ -63,3 +63,7 @@ identity with real Go/MySQL/WSS. HTTP localhost/self-signed TLS and fake
 identities cannot substitute for production-style browser authorization.
 WeChat device G55-N02 is a separate unresolved gate, not magically fixed
 by Web integration. Goal0045/0046 and E03 stay in_progress; C09/C10 DEFERRED.
+
+## Registration v1
+
+A gated test-only `POST /auth/register` accepts username, email, display name and password and creates the same platform AccountID as the administrator path; it does not create a separate Web identity or a login session. Set `APP_PUBLIC_REGISTRATION_ENABLED=true` explicitly in the **isolated test API** to enable it. The default is disabled; existing deployed API images have not been rebuilt. Email is mandatory but **unverified** and must not be used as a recovery/ownership proof. Before public exposure, implement distributed abuse controls and verified-email registration; see `docs/architecture/unified-account-registration.md`.

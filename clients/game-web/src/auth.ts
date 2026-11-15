@@ -91,6 +91,15 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
       return null
     }
   }
+  async function register(username:string,email:string,displayName:string,password:string):Promise<UserAccount>{
+    if(!/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/.test(username) ||
+       !email.trim() || email.length>320 || !displayName.trim() ||
+       new TextEncoder().encode(password).length<8 || new TextEncoder().encode(password).length>128)
+      throw Error('请填写有效用户名、邮箱、昵称和至少 8 字节密码')
+    // Registration never persists credentials or grants a session.
+    const data=validatedData(await request('/auth/register','POST',{username,email:email.trim(),displayName:displayName.trim(),password}))
+    return account(data)
+  }
   async function login(identifier:string,password:string):Promise<UserAccount|null>{
     const mine=++generation
     const username=identifier.trim()
@@ -113,5 +122,5 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     storage.removeItem(SESSION_KEY)
     if(old)await request('/auth/logout','POST',{},old)
   }
-  return {login,restore,logout,get account(){return active},get authenticated(){return !!token && !!active}}
+  return {register,login,restore,logout,get account(){return active},get authenticated(){return !!token && !!active}}
 }

@@ -151,6 +151,10 @@ service main-api {
     @handler route_get_admin_system_configuration
     get /admin/system/configuration
 
+    @doc "POST /auth/register (test-gated; email unverified)"
+    @handler route_post_auth_register
+    post /auth/register
+
     @doc "POST /auth/login"
     @handler route_post_auth_login
     post /auth/login

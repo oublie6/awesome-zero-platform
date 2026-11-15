@@ -22,3 +22,11 @@ Cocos: sprite atlases, reuse/pooled card nodes when profiling supports it, dirty
 WeChat qualification path: Creator real build → package-size/subpackage validation → simulator SDK/login/socket tests → user-authorized preview/upload → mobile interaction and lifecycle verification. Record artifact SHA/source commit binding. Simulated gesture tests are not real-user behavior, preview upload is not publishing, and an editor build is not a playable game.
 
 Commercialization, coins, rankings, payments, matchmaking and AI are deferred. Do not introduce their assumptions into the game rules or platform interfaces.
+
+## Unified platform account decision (2026-11-15)
+
+- One server-issued immutable UUID `AccountID` owns all business data across Web, WeChat and future clients; login names, emails, third-party subjects and devices never become parallel account IDs or direct authorization authority.
+- Public self-registration and administrator account creation share the Identity owner and database. Username and email are required and unique for self-registration; email ownership verification, real mail delivery and a public domain are deferred with explicit TODOs. Unverified emails cannot authorize recovery, email changes, unlinking or takeover-sensitive actions.
+- An unbound verified third-party identity must choose **bind an existing authenticated account** or **create a new platform account** before receiving an ordinary session. No silent account auto-creation or automatic merging. The present WeChat auto-provision path is legacy behavior requiring replacement before this principle is considered implemented.
+- External identity links are unique by `(provider, verified subject)` and `(provider, AccountID)` in the provider's application scope. Linking/relinking requires fresh proofs for both existing account ownership and provider identity; target AccountID must not already have that provider. Unlink/relink affects only mapping; past hands, achievements and all business data remain attached to original AccountID. No unauthenticated request may self-declare an OpenID or AccountID.
+- Unlink needs a remaining usable login method and a recent strong authentication; email-based recovery or verification must not be pretended while email remains unverified. Guard binding changes atomically under concurrency and preserve existing history.

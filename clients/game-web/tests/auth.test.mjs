@@ -88,3 +88,18 @@ test('malformed server token or missing principal fails closed',async()=>{
  await assert.rejects(web.login('alice','p'),/有效访问令牌/)
  assert.deepEqual(s.contents(),[])
 })
+
+
+test('registration reuses server identity, requires email and never creates session',async()=>{
+ const s=storage(), calls=[]
+ const web=createWebAuth(config,async(url,options)=>{
+  calls.push({path:new URL(url).pathname,body:JSON.parse(options.body)})
+  return new Response(JSON.stringify({code:'OK',data:{account:{id:'uuid-1',displayName:'玩家'},emailVerified:false}}),{status:201})
+ },s)
+ await assert.rejects(web.register('alice','','玩家','password123'),/有效用户名/)
+ assert.deepEqual(await web.register('alice','alice@example.com','玩家','password123'),{id:'uuid-1',displayName:'玩家'})
+ assert.equal(calls.length,1)
+ assert.equal(calls[0].path,'/auth/register')
+ assert.deepEqual(s.contents(),[])
+ assert.equal(web.authenticated,false)
+})
