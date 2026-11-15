@@ -31,6 +31,20 @@ func NewExternalBinding(db *sql.DB, service *Service, subjectHMACKey []byte) (*E
 	if db == nil || service == nil || len(subjectHMACKey) < 32 {
 		return nil, fmt.Errorf("verified binding needs db, identity and 256-bit key")
 	}
+	// Fail closed when an existing database has not installed the mandatory
+	// provider/account uniqueness constraint. A plain SELECT-before-INSERT
+	// cannot prevent concurrent binding races across API replicas.
+	var uniqueColumns int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM information_schema.statistics
+		WHERE table_schema = DATABASE() AND table_name = 'identity_external_subjects'
+		AND index_name = 'uq_identity_external_provider_account' AND non_unique = 0`).Scan(&uniqueColumns); err != nil || uniqueColumns != 2 {
+		return nil, fmt.Errorf("external binding schema requires unique provider/account index")
+	}
+	var pendingTable int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM information_schema.tables
+		WHERE table_schema = DATABASE() AND table_name = 'identity_external_pending'`).Scan(&pendingTable); err != nil || pendingTable != 1 {
+		return nil, fmt.Errorf("external binding pending-proof table is unavailable")
+	}
 	return &ExternalBinding{db: db, identity: service, key: append([]byte(nil), subjectHMACKey...)}, nil
 }
 func (b *ExternalBinding) digest(provider, subject string) ([]byte, error) {
@@ -76,6 +90,9 @@ func (b *ExternalBinding) BeginVerified(ctx context.Context, provider, subject s
 	}
 	sum := sha256.Sum256(token)
 	now := time.Now().UTC()
+	// Bounded opportunistic cleanup prevents forgotten pending proofs from
+	// growing indefinitely on an otherwise low-traffic test deployment.
+	_, _ = b.db.ExecContext(ctx, "DELETE FROM identity_external_pending WHERE expires_at < UTC_TIMESTAMP(6) LIMIT 256")
 	_, err = b.db.ExecContext(ctx, "INSERT INTO identity_external_pending(token_digest,provider,subject_hmac,expires_at,created_at) VALUES(?,?,?,?,?)",
 		sum[:], provider, digest, now.Add(5*time.Minute), now)
 	if err != nil {

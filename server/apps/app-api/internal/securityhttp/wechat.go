@@ -275,15 +275,19 @@ func (h *wechatHandlers) unlink(w http.ResponseWriter, r *http.Request) {
 		platformresponse.WriteError(r.Context(), w, apperrors.Unauthorized("reauthentication required"))
 		return
 	}
+	// Revoke existing sessions before changing the provider mapping. If
+	// the session store is unavailable the binding must remain unchanged.
+	if h.sessionAdmin == nil {
+		platformresponse.WriteError(r.Context(), w, apperrors.Internal(errors.New("session administrator unavailable")))
+		return
+	}
+	if _, err := h.sessionAdmin.RevokeByAccount(r.Context(), principal.Principal.AccountID); err != nil {
+		platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
+		return
+	}
 	if err := h.binder.Unlink(r.Context(), "wechat", principal.Principal.AccountID); err != nil {
 		writeBindingError(r.Context(), w, err)
 		return
-	}
-	if h.sessionAdmin != nil {
-		if _, err := h.sessionAdmin.RevokeByAccount(r.Context(), principal.Principal.AccountID); err != nil {
-			platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
-			return
-		}
 	}
 	platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), map[string]any{"unlinked": true}))
 }
@@ -326,19 +330,23 @@ func (h *wechatHandlers) relink(w http.ResponseWriter, r *http.Request) {
 		platformresponse.WriteError(r.Context(), w, apperrors.Unauthorized("target account verification failed"))
 		return
 	}
+	if h.sessionAdmin == nil {
+		platformresponse.WriteError(r.Context(), w, apperrors.Internal(errors.New("session administrator unavailable")))
+		return
+	}
+	// Revoke the two old principals first, avoiding a successful relink
+	// with still-live sessions if Redis is temporarily unavailable.
+	if _, err := h.sessionAdmin.RevokeByAccount(r.Context(), source.ID); err != nil {
+		platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
+		return
+	}
+	if _, err := h.sessionAdmin.RevokeByAccount(r.Context(), target.ID); err != nil {
+		platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
+		return
+	}
 	if err = h.binder.Relink(r.Context(), req.PendingToken, source.ID, target.ID); err != nil {
 		writeBindingError(r.Context(), w, err)
 		return
-	}
-	if h.sessionAdmin != nil {
-		if _, err := h.sessionAdmin.RevokeByAccount(r.Context(), source.ID); err != nil {
-			platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
-			return
-		}
-		if _, err := h.sessionAdmin.RevokeByAccount(r.Context(), target.ID); err != nil {
-			platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
-			return
-		}
 	}
 	platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), map[string]any{"relinked": true}))
 }
