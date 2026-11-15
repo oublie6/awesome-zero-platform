@@ -1318,8 +1318,10 @@ export class GameBootstrap extends Component {
     // Use the safe content width and increase the UI font proportionately;
     // never rely on a default-sized label outside the actual input hitbox.
     const inputWidth=Math.min(width,portrait?1080:660)
-    const inputHeight=Math.max(48,height*0.075)
-    const inputFontSize=portrait?46:28
+    // The four-field WeChat bind/relink form must also fit short landscape
+    // safe areas; keep the old two-field login sizing unchanged.
+    const inputHeight=linking?Math.max(28,Math.min(48,height*0.075)):Math.max(48,height*0.075)
+    const inputFontSize=linking?Math.max(18,Math.min(portrait?42:28,height*0.06)):(portrait?46:28)
     const sizeInput=(node:Node):void=>{
       node.getComponent(UITransform)!.setContentSize(inputWidth,inputHeight)
       const edit=node.getComponent(EditBox)
