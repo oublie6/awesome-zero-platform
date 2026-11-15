@@ -14,7 +14,7 @@ import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-clie
 import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
 const { ccclass } = _decorator
-type Screen = 'home' | 'rooms' | 'rules' | 'table' | 'login' | 'wechat-bind' | 'wechat-unlink'
+type Screen = 'home' | 'rooms' | 'rules' | 'table' | 'login' | 'wechat-bind' | 'wechat-unlink' | 'wechat-relink'
 interface MenuAction { name: string; caption: string; action: () => void }
 
 type PublicConfig = { apiBase: string; socketEndpoint: string; revealManifestRoots: Record<string,string> }
@@ -215,8 +215,10 @@ export class GameBootstrap extends Component {
         {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
         {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.discoverMyRoomsSafely()}
       ]
-      if(detectRuntimeTarget()==='wechat' && this.online?.session.authenticated)
+      if(detectRuntimeTarget()==='wechat' && this.online?.session.authenticated) {
         actions.push({name:'UnlinkWeChat',caption:'解绑当前微信身份',action:()=>this.renderScreen('wechat-unlink')})
+        actions.push({name:'RelinkWeChat',caption:'换绑微信至其他账号',action:()=>this.renderScreen('wechat-relink')})
+      }
       if(this.webHostListener){
         // When embedded, Vue owns all account UI. The scene only renders
         // game actions and revalidates the shared token with Go.
@@ -273,6 +275,17 @@ export class GameBootstrap extends Component {
         {name:'WechatBindExisting',caption:'绑定已有平台账号',action:()=>void this.completeWeChatBinding(false)},
         {name:'WechatRegisterNew',caption:'创建新账号并绑定',action:()=>void this.completeWeChatBinding(true)},
         {name:'WechatCancelBind',caption:'取消并返回',action:()=>{this.wechatPending='';this.renderScreen('rooms')}}
+      ])
+    } else if (screen === 'wechat-relink') {
+      this.title!.string='换绑微信账号'
+      this.status!.string='需验证原账号及目标账号密码。换绑不迁移任何牌局或积分。'
+      this.loginIdentifier=this.createLoginInput('WechatSourceAccount','原账号用户名',false)
+      this.loginPassword=this.createLoginInput('WechatSourcePassword','原账号密码',true)
+      this.wechatEmail=this.createLoginInput('WechatTargetAccount','目标账号用户名',false)
+      this.wechatDisplay=this.createLoginInput('WechatTargetPassword','目标账号密码',true)
+      this.addMenu([
+        {name:'WechatConfirmRelink',caption:'确认微信换绑',action:()=>void this.relinkWeChat()},
+        {name:'WechatCancelRelink',caption:'取消换绑',action:()=>this.renderScreen('rooms')}
       ])
     } else if (screen === 'wechat-unlink') {
       this.title!.string='解绑微信身份'
@@ -506,6 +519,54 @@ export class GameBootstrap extends Component {
         this.notice('账号关联失败：'+this.message(error))
     }
   }
+  private async relinkWeChat():Promise<void>{
+    if(this.screen!=='wechat-relink'||!this.platform||!this.online?.session.authenticated)return
+    const sourceIdentifier=this.loginIdentifier?.string.trim()||''
+    const sourcePassword=this.loginPassword?.string||''
+    const targetIdentifier=this.wechatEmail?.string.trim()||''
+    const targetPassword=this.wechatDisplay?.string||''
+    if(this.loginPassword)this.loginPassword.string=''
+    if(this.wechatDisplay)this.wechatDisplay.string=''
+    if(!sourceIdentifier||!sourcePassword||!targetIdentifier||!targetPassword){
+      this.notice('请填写原账号和目标账号的账号密码');return
+    }
+    const platform=this.platform,online=this.online,epoch=this.requestGeneration
+    try{
+      const code=await platform.auth.acquireCode()
+      const prep=await platform.http.request<unknown>('/auth/wechat/prepare',{
+        method:'POST',body:{code},timeoutMs:12000
+      }) as {code?:unknown;data?:{pendingToken?:unknown}}
+      const proof=prep?.code==='OK'?prep.data?.pendingToken:null
+      if(typeof proof!=='string'||proof.length<32)throw new Error('微信验证未通过')
+      const raw=await platform.http.request<unknown>('/auth/wechat/relink',{
+        method:'POST',timeoutMs:12000,body:{pendingToken:proof,
+          sourceIdentifier,sourcePassword,targetIdentifier,targetPassword}
+      }) as {code?:unknown}
+      if(raw?.code!=='OK')throw new Error('换绑失败')
+      if(!this.currentAccount(online,epoch))return
+      await this.detachWeChatSession(platform,online)
+      this.notice('微信换绑成功。所有历史游戏数据仍留在原账号。')
+    }catch(error){
+      if(this.currentAccount(online,epoch))this.notice('微信换绑失败：'+this.message(error))
+    }
+  }
+  private async detachWeChatSession(platform:GamePlatform,online:GameOnlineController):Promise<void>{
+    // The provider mapping changed and server sessions were revoked. Discard
+    // the local token without trying an already-revoked remote logout.
+    ++this.requestGeneration
+    ++this.recoveryAttempt
+    this.sceneRecovery=null
+    this.online=null
+    this.platform=null
+    this.roomGeneration++
+    this.roomID=''
+    this.handID=''
+    this.fairnessMode=null
+    this.recoverableRooms=[]
+    this.selectedCards.clear()
+    online.dispose()
+    try{await platform.vault.clear()}finally{this.renderScreen('rooms')}
+  }
   private async unlinkWeChat():Promise<void>{
     if(this.screen!=='wechat-unlink'||!this.platform||!this.online?.session.authenticated)return
     const password=this.loginPassword?.string||''
@@ -519,10 +580,7 @@ export class GameBootstrap extends Component {
       const response=raw as {code?:unknown}|null
       if(response?.code!=='OK')throw new Error('解绑失败')
       if(!this.currentAccount(online,epoch))return
-      await online.logout()
-      this.online=null
-      this.platform=null
-      this.renderScreen('rooms')
+      await this.detachWeChatSession(platform,online)
       this.notice('微信解绑成功；原账号游戏数据仍保留')
     }catch(error){
       if(this.currentAccount(online,epoch))this.notice('微信解绑失败：'+this.message(error))
@@ -1249,7 +1307,13 @@ export class GameBootstrap extends Component {
     this.title.node.getComponent(UITransform)!.setContentSize(width,Math.min(portrait?100:70,height*0.2))
     this.title.node.setPosition(0,height*0.32,0)
     this.status.node.getComponent(UITransform)!.setContentSize(width,Math.min(portrait?180:100,height*0.23))
-    this.status.node.setPosition(0,height*0.15,0)
+    const linking=this.screen==='wechat-bind'||this.screen==='wechat-relink'
+    if(linking){
+      this.title.node.setPosition(0,height*0.43,0)
+      this.title.fontSize=portrait?58:36
+      this.status.node.getComponent(UITransform)!.setContentSize(width,Math.min(85,height*0.095))
+      this.status.node.setPosition(0,height*0.315,0)
+    }else this.status.node.setPosition(0,height*0.15,0)
     // The original 460-unit field became only 140 CSS px on 390px phones.
     // Use the safe content width and increase the UI font proportionately;
     // never rely on a default-sized label outside the actual input hitbox.
@@ -1272,7 +1336,7 @@ export class GameBootstrap extends Component {
     this.loginNodes.forEach((node,index)=>{
       if(!node.isValid)return
       sizeInput(node)
-      node.setPosition(0,height*(index===0?0.055:-0.035),0)
+      node.setPosition(0,height*(linking?[0.17,0.075,-0.02,-0.115][index]??-0.115:(index===0?0.055:-0.035)),0)
     })
     const window=menuWindow(this.menuActions.length,width,height,portrait,this.screen,this.menuPage)
     this.menuPage=window.page
