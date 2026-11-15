@@ -19,7 +19,7 @@ export function createWeChatIdentityExchange(platform: GamePlatform): IdentityEx
   return {
     async exchange(target, code): Promise<{accessToken:string}> {
       if (target !== 'wechat' || platform.target !== 'wechat' || typeof code !== 'string' ||
-          code.length < 4 || code.length > 128 || code.trim() !== code) throw new Error('verified WeChat code required')
+          code.length < 4 || code.length > 128 || (code.trim() !== code || /[\r\n]/.test(code))) throw new Error('verified WeChat code required')
       const raw=await platform.http.request<unknown>('/auth/wechat/code',{
         method:'POST',body:{code},timeoutMs:12000
       })

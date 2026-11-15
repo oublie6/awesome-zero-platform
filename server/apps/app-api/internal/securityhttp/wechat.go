@@ -107,7 +107,7 @@ func (h *wechatHandlers) code(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Code string `json:"code"`
 	}
-	if decodeWeChat(w, r, &req) != nil || len(req.Code) < 4 || len(req.Code) > 128 || strings.TrimSpace(req.Code) != req.Code {
+	if decodeWeChat(w, r, &req) != nil || len(req.Code) < 4 || len(req.Code) > 128 || strings.TrimSpace(req.Code) != req.Code || strings.ContainsAny(req.Code, "\r\n") {
 		platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("invalid WeChat code"))
 		return
 	}
@@ -150,7 +150,7 @@ func (h *wechatHandlers) prepare(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Code string `json:"code"`
 	}
-	if decodeWeChat(w, r, &req) != nil || len(req.Code) < 4 || len(req.Code) > 128 || strings.TrimSpace(req.Code) != req.Code {
+	if decodeWeChat(w, r, &req) != nil || len(req.Code) < 4 || len(req.Code) > 128 || strings.TrimSpace(req.Code) != req.Code || strings.ContainsAny(req.Code, "\r\n") {
 		platformresponse.WriteError(r.Context(), w, apperrors.InvalidParameter("invalid WeChat code"))
 		return
 	}

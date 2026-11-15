@@ -99,3 +99,13 @@ func TestWechatNewAccountRegistrationDisabledByDefault(t *testing.T) {
 		t.Fatalf("public unverified registration should fail: %d", w.Code)
 	}
 }
+
+func TestWechatCodeRejectsEmbeddedNewline(t *testing.T) {
+	binder := &stubWeChatBinder{err: identity.ErrExternalUnbound}
+	issuer := &stubWeChatIssuer{}
+	h := &wechatHandlers{verifier: stubWeChatVerifier{subject: "verified-openid"}, binder: binder, issuer: issuer, identities: &identity.Service{}}
+	w := postWeChat(h.code, "/auth/wechat/code", `{"code":"bad\ncode"}`)
+	if w.Code != http.StatusBadRequest || issuer.issued != 0 || binder.started != 0 {
+		t.Fatalf("embedded newline code was accepted: status=%d", w.Code)
+	}
+}
