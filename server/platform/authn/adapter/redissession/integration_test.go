@@ -94,6 +94,8 @@ func TestGoZeroClientSessionRoundTrip(t *testing.T) {
 	if err != nil || got.RefreshDigest != "digest-after" {
 		t.Fatalf("go-zero get after native WATCH=%+v error=%v", got, err)
 	}
+    staleBytes,err:=resource.Client().Get(ctx,prefix+session.ID).Bytes()
+    if err!=nil{t.Fatal(err)}
 	revoked, err := store.RevokeByAccount(ctx, session.AccountID)
 	if err != nil || revoked != 1 {
 		t.Fatalf("go-zero revoke by account=%d error=%v", revoked, err)
@@ -101,6 +103,15 @@ func TestGoZeroClientSessionRoundTrip(t *testing.T) {
 	if _, err := store.Get(ctx, session.ID); !errors.Is(err, authn.ErrSessionNotFound) {
 		t.Fatalf("get revoked session error=%v, want ErrSessionNotFound", err)
 	}
+    // Simulate the Redis SCAN missing a stale session key.
+    if err:=resource.Client().Set(ctx,prefix+session.ID,staleBytes,time.Minute).Err();err!=nil{t.Fatal(err)}
+    if _,err:=store.Get(ctx,session.ID);!errors.Is(err,authn.ErrSessionNotFound){
+        t.Fatalf("stale session revived after account-wide revoke: %v",err)
+    }
+    if _,err:=store.Rotate(ctx,session.ID,"digest-after","digest-raced",time.Now().Add(time.Minute));!errors.Is(err,authn.ErrInvalidRefresh){
+        t.Fatalf("refresh revived after account-wide revoke: %v",err)
+    }
+    _=resource.Client().Del(ctx,prefix+session.ID).Err()
 	if err := store.Revoke(ctx, session.ID); !errors.Is(err, authn.ErrSessionNotFound) {
 		t.Fatalf("revoke missing session error=%v, want ErrSessionNotFound", err)
 	}

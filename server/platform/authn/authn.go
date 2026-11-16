@@ -43,6 +43,7 @@ type Session struct {
     // sessions intentionally leave both fields empty.
     ExternalProvider string `json:"externalProvider,omitempty"`
     ExternalSubjectDigest string `json:"externalSubjectDigest,omitempty"`
+    RevocationEpoch int64 `json:"revocationEpoch,omitempty"`
 	ID            string    `json:"id"`
 	AccountID     string    `json:"accountId"`
 	RefreshDigest string    `json:"refreshDigest"`

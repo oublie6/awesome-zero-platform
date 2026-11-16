@@ -244,6 +244,9 @@ func (s *Service) SetAccountEnabled(ctx context.Context, accountID string, enabl
 		err     error
 	)
 	if enabled {
+        // A previous disable may have committed while Redis was down.
+        // Never restore access until existing sessions are invalidated.
+        if _,err=s.sessions.RevokeByAccount(ctx,accountID);err!=nil{return identity.Account{},err}
 		account, err = s.identity.EnableAccount(ctx, accountID)
 	} else {
 		err = s.withSuperAdminLock(ctx, func(lockCtx context.Context) error {
@@ -254,8 +257,10 @@ func (s *Service) SetAccountEnabled(ctx context.Context, accountID string, enabl
 			if err != nil {
 				return err
 			}
-			_, _ = s.sessions.RevokeByAccount(lockCtx, accountID)
-			return nil
+            // A failed session fence leaves the database safely disabled,
+            // and MUST NOT be reported as a successful disable.
+            _,err=s.sessions.RevokeByAccount(lockCtx,accountID)
+            return err
 		})
 	}
 	if err == nil {
