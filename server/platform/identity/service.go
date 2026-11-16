@@ -317,6 +317,29 @@ func (s *Service) VerifyPassword(ctx context.Context, accountID, password string
 
 // CredentialFingerprint is queried afresh when authorizing a password
 // session. Redis sessions contain only this irreversible fingerprint.
+// CheckRealtimeAuthority deliberately bypasses account model caching.
+// The MySQL store validates the active account and all presented session
+// provenance in one committed-read statement. Any missing store support is
+// treated as unavailable, not as permission to reuse stale identity data.
+func (s *Service) CheckRealtimeAuthority(ctx context.Context,accountID,provider,subjectDigest,passwordFingerprint string)(bool,error){
+    if s==nil{return false,ErrPersistence}
+    normalized,err:=normalizeAccountID(accountID)
+    if err!=nil{return false,err}
+    if (provider=="")!=(subjectDigest==""){return false,nil}
+    if provider!="" && provider!="wechat"{return false,nil}
+    for _,value:=range []string{subjectDigest,passwordFingerprint}{
+        if value==""{continue}
+        if len(value)!=64{return false,nil}
+        decoded,err:=hex.DecodeString(value)
+        if err!=nil || hex.EncodeToString(decoded)!=value{return false,nil}
+    }
+    checker,ok:=s.accounts.(interface{
+        CheckRealtimeAuthority(context.Context,string,string,string,string)(bool,error)
+    })
+    if !ok{return false,ErrPersistence}
+    return checker.CheckRealtimeAuthority(ctx,normalized,provider,subjectDigest,passwordFingerprint)
+}
+
 func (s *Service) CredentialFingerprint(ctx context.Context, accountID string) (string, error) {
 	normalized, err := normalizeAccountID(accountID)
 	if err != nil {
