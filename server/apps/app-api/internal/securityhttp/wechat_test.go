@@ -28,10 +28,14 @@ type stubWeChatBinder struct {
 	started int
 }
 
-func (s *stubWeChatBinder) VerifyExternalSession(context.Context,string,string,string)(bool,error){return true,nil}
-func (s *stubWeChatBinder) VerifiedSubjectDigest(provider,subject string)(string,error){
-   if provider!="wechat"{return "",identity.ErrPendingInvalid}
-   return strings.Repeat("a",64),nil
+func (s *stubWeChatBinder) VerifyExternalSession(context.Context, string, string, string) (bool, error) {
+	return true, nil
+}
+func (s *stubWeChatBinder) VerifiedSubjectDigest(provider, subject string) (string, error) {
+	if provider != "wechat" {
+		return "", identity.ErrPendingInvalid
+	}
+	return strings.Repeat("a", 64), nil
 }
 func (s *stubWeChatBinder) ResolveVerified(context.Context, string, string) (identity.Account, error) {
 	return s.account, s.err
@@ -49,8 +53,10 @@ func (s *stubWeChatBinder) Relink(context.Context, string, string, string) error
 
 type stubWeChatIssuer struct{ issued int }
 
-func (s *stubWeChatIssuer) IssueVerifiedExternalAccount(_ context.Context, id,provider,digest string) (authn.Authentication, authn.TokenPair, error) {
-    if provider!="wechat"||len(digest)!=64{return authn.Authentication{},authn.TokenPair{},errors.New("missing bound provider provenance")}
+func (s *stubWeChatIssuer) IssueVerifiedExternalAccount(_ context.Context, id, provider, digest string) (authn.Authentication, authn.TokenPair, error) {
+	if provider != "wechat" || len(digest) != 64 {
+		return authn.Authentication{}, authn.TokenPair{}, errors.New("missing bound provider provenance")
+	}
 	s.issued++
 	return authn.Authentication{Principal: authn.Principal{AccountID: id, DisplayName: "Player"}},
 		authn.TokenPair{AccessToken: "server-token", RefreshToken: "refresh-token"}, nil

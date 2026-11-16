@@ -39,14 +39,14 @@ func NewExternalBinding(db *sql.DB, service *Service, subjectHMACKey []byte) (*E
 	if err := db.QueryRow(`SELECT COALESCE(GROUP_CONCAT(column_name ORDER BY seq_in_index), '') FROM information_schema.statistics
         WHERE table_schema = DATABASE() AND table_name = 'identity_external_subjects'
         AND index_name = 'uq_identity_external_provider_account' AND non_unique = 0`).Scan(&uniqueColumns); err != nil || uniqueColumns != "provider,account_id" {
-        return nil, fmt.Errorf("external binding schema requires exact unique provider/account index")
-    }
-    var primaryColumns string
-    if err := db.QueryRow(`SELECT COALESCE(GROUP_CONCAT(column_name ORDER BY seq_in_index), '') FROM information_schema.statistics
+		return nil, fmt.Errorf("external binding schema requires exact unique provider/account index")
+	}
+	var primaryColumns string
+	if err := db.QueryRow(`SELECT COALESCE(GROUP_CONCAT(column_name ORDER BY seq_in_index), '') FROM information_schema.statistics
         WHERE table_schema = DATABASE() AND table_name = 'identity_external_subjects'
-        AND index_name = 'PRIMARY' AND non_unique = 0`).Scan(&primaryColumns); err!=nil || primaryColumns!="provider,subject_hmac" {
-        return nil,fmt.Errorf("external binding schema requires exact provider/subject primary key")
-    }
+        AND index_name = 'PRIMARY' AND non_unique = 0`).Scan(&primaryColumns); err != nil || primaryColumns != "provider,subject_hmac" {
+		return nil, fmt.Errorf("external binding schema requires exact provider/subject primary key")
+	}
 	var pendingTable int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM information_schema.tables
 		WHERE table_schema = DATABASE() AND table_name = 'identity_external_pending'`).Scan(&pendingTable); err != nil || pendingTable != 1 {
@@ -64,27 +64,35 @@ func (b *ExternalBinding) digest(provider, subject string) ([]byte, error) {
 	mac.Write([]byte(subject))
 	return mac.Sum(nil), nil
 }
+
 // VerifiedSubjectDigest returns only the keyed digest, never the raw OpenID.
 // Callers may use it only after the provider's code has been verified.
-func (b *ExternalBinding) VerifiedSubjectDigest(provider, subject string) (string,error) {
-    digest,err:=b.digest(provider,subject)
-    if err!=nil{return "",err}
-    return hex.EncodeToString(digest),nil
+func (b *ExternalBinding) VerifiedSubjectDigest(provider, subject string) (string, error) {
+	digest, err := b.digest(provider, subject)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(digest), nil
 }
+
 // VerifyExternalSession is called on EVERY use/refresh of a third-party session.
 // It never relies on an AccountID alone or on cached account metadata.
-func (b *ExternalBinding) VerifyExternalSession(ctx context.Context, accountID, provider, subjectDigest string) (bool,error) {
-    if b==nil || b.db==nil || provider!="wechat" || len(subjectDigest)!=64 ||
-        strings.TrimSpace(accountID)==""{
-        return false,ErrPendingInvalid
-    }
-    digest,err:=hex.DecodeString(subjectDigest)
-    if err!=nil || len(digest)!=32 || hex.EncodeToString(digest)!=subjectDigest{return false,ErrPendingInvalid}
-    var found int
-    err=b.db.QueryRowContext(ctx,"SELECT EXISTS(SELECT 1 FROM identity_external_subjects WHERE provider=? AND subject_hmac=? AND account_id=?)",
-       provider,digest,accountID).Scan(&found)
-    if err!=nil{return false,err}
-    return found==1,nil
+func (b *ExternalBinding) VerifyExternalSession(ctx context.Context, accountID, provider, subjectDigest string) (bool, error) {
+	if b == nil || b.db == nil || provider != "wechat" || len(subjectDigest) != 64 ||
+		strings.TrimSpace(accountID) == "" {
+		return false, ErrPendingInvalid
+	}
+	digest, err := hex.DecodeString(subjectDigest)
+	if err != nil || len(digest) != 32 || hex.EncodeToString(digest) != subjectDigest {
+		return false, ErrPendingInvalid
+	}
+	var found int
+	err = b.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM identity_external_subjects WHERE provider=? AND subject_hmac=? AND account_id=?)",
+		provider, digest, accountID).Scan(&found)
+	if err != nil {
+		return false, err
+	}
+	return found == 1, nil
 }
 func (b *ExternalBinding) ResolveVerified(ctx context.Context, provider, subject string) (Account, error) {
 	digest, err := b.digest(provider, subject)

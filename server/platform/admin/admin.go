@@ -244,9 +244,11 @@ func (s *Service) SetAccountEnabled(ctx context.Context, accountID string, enabl
 		err     error
 	)
 	if enabled {
-        // A previous disable may have committed while Redis was down.
-        // Never restore access until existing sessions are invalidated.
-        if _,err=s.sessions.RevokeByAccount(ctx,accountID);err!=nil{return identity.Account{},err}
+		// A previous disable may have committed while Redis was down.
+		// Never restore access until existing sessions are invalidated.
+		if _, err = s.sessions.RevokeByAccount(ctx, accountID); err != nil {
+			return identity.Account{}, err
+		}
 		account, err = s.identity.EnableAccount(ctx, accountID)
 	} else {
 		err = s.withSuperAdminLock(ctx, func(lockCtx context.Context) error {
@@ -257,10 +259,10 @@ func (s *Service) SetAccountEnabled(ctx context.Context, accountID string, enabl
 			if err != nil {
 				return err
 			}
-            // A failed session fence leaves the database safely disabled,
-            // and MUST NOT be reported as a successful disable.
-            _,err=s.sessions.RevokeByAccount(lockCtx,accountID)
-            return err
+			// A failed session fence leaves the database safely disabled,
+			// and MUST NOT be reported as a successful disable.
+			_, err = s.sessions.RevokeByAccount(lockCtx, accountID)
+			return err
 		})
 	}
 	if err == nil {
@@ -270,15 +272,17 @@ func (s *Service) SetAccountEnabled(ctx context.Context, accountID string, enabl
 }
 
 func (s *Service) ResetPassword(ctx context.Context, accountID, password string, actor Actor) error {
-    // If Redis is unavailable, do not rotate a credential while its
-    // previously-issued third-party sessions cannot be fenced.
-    if _,err:=s.sessions.RevokeByAccount(ctx,accountID);err!=nil{return err}
+	// If Redis is unavailable, do not rotate a credential while its
+	// previously-issued third-party sessions cannot be fenced.
+	if _, err := s.sessions.RevokeByAccount(ctx, accountID); err != nil {
+		return err
+	}
 	if err := s.identity.ResetPassword(ctx, accountID, password); err != nil {
 		return err
 	}
-    // Cover a login that raced the credential mutation while the old
-    // password remained valid. Password sessions also carry a credential
-    // fingerprint checked on each access.
+	// Cover a login that raced the credential mutation while the old
+	// password remained valid. Password sessions also carry a credential
+	// fingerprint checked on each access.
 	revoked, err := s.sessions.RevokeByAccount(ctx, accountID)
 	if err != nil {
 		return err

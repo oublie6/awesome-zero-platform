@@ -25,8 +25,8 @@ type wechatIdentityVerifier interface {
 }
 type wechatAccountBinder interface {
 	ResolveVerified(context.Context, string, string) (identity.Account, error)
-    VerifiedSubjectDigest(string,string)(string,error)
-    VerifyExternalSession(context.Context,string,string,string)(bool,error)
+	VerifiedSubjectDigest(string, string) (string, error)
+	VerifyExternalSession(context.Context, string, string, string) (bool, error)
 	BeginVerified(context.Context, string, string) (string, error)
 	BindPending(context.Context, string, string) error
 	CreateFromPending(context.Context, string, identity.CreateAccountInput) (identity.Account, error)
@@ -56,9 +56,9 @@ func registerWeChatCodeLogin(server *rest.Server, ctx *svc.ServiceContext) {
 			if err == nil {
 				h.binder, err = identity.NewExternalBinding(ctx.MySQL.DB(), ctx.Identity, key)
 				if err == nil {
-                    err = ctx.Authn.ConfigureExternalBindingVerifier(h.binder)
-                }
-                if err == nil {
+					err = ctx.Authn.ConfigureExternalBindingVerifier(h.binder)
+				}
+				if err == nil {
 					h.issuer = ctx.Authn
 					h.identities = ctx.Identity
 					h.auth = ctx.Authn
@@ -123,12 +123,12 @@ func (h *wechatHandlers) code(w http.ResponseWriter, r *http.Request) {
 	}
 	account, err := h.binder.ResolveVerified(r.Context(), "wechat", subject)
 	if err == nil {
-        digest,digestErr:=h.binder.VerifiedSubjectDigest("wechat",subject)
-        if digestErr!=nil{
-            platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("invalid verified WeChat subject"))
-            return
-        }
-		authentication, tokens, err := h.issuer.IssueVerifiedExternalAccount(r.Context(), account.ID,"wechat",digest)
+		digest, digestErr := h.binder.VerifiedSubjectDigest("wechat", subject)
+		if digestErr != nil {
+			platformresponse.WriteError(r.Context(), w, apperrors.Unauthorized("invalid verified WeChat subject"))
+			return
+		}
+		authentication, tokens, err := h.issuer.IssueVerifiedExternalAccount(r.Context(), account.ID, "wechat", digest)
 		if err != nil {
 			platformresponse.WriteError(r.Context(), w, mapAuthenticationError(err, false))
 			return
@@ -299,13 +299,13 @@ func (h *wechatHandlers) unlink(w http.ResponseWriter, r *http.Request) {
 		writeBindingError(r.Context(), w, err)
 		return
 	}
-    // A provider login may have read the committed binding before deletion
-    // but created its Redis session after the initial revoke scan. A second
-    // epoch bump after the DB cutover permanently fences that narrow window.
-    if _,err:=h.sessionAdmin.RevokeByAccount(r.Context(),principal.Principal.AccountID);err!=nil{
-        platformresponse.WriteError(r.Context(),w,apperrors.Internal(err))
-        return
-    }
+	// A provider login may have read the committed binding before deletion
+	// but created its Redis session after the initial revoke scan. A second
+	// epoch bump after the DB cutover permanently fences that narrow window.
+	if _, err := h.sessionAdmin.RevokeByAccount(r.Context(), principal.Principal.AccountID); err != nil {
+		platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
+		return
+	}
 	platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), map[string]any{"unlinked": true}))
 }
 func (h *wechatHandlers) relink(w http.ResponseWriter, r *http.Request) {
@@ -365,14 +365,14 @@ func (h *wechatHandlers) relink(w http.ResponseWriter, r *http.Request) {
 		writeBindingError(r.Context(), w, err)
 		return
 	}
-    // Post-commit epoch fences cover sessions minted during the old
-    // provider mapping's precommit visibility window.
-    for _,id:=range []string{source.ID,target.ID}{
-        if _,err:=h.sessionAdmin.RevokeByAccount(r.Context(),id);err!=nil{
-            platformresponse.WriteError(r.Context(),w,apperrors.Internal(err))
-            return
-        }
-    }
+	// Post-commit epoch fences cover sessions minted during the old
+	// provider mapping's precommit visibility window.
+	for _, id := range []string{source.ID, target.ID} {
+		if _, err := h.sessionAdmin.RevokeByAccount(r.Context(), id); err != nil {
+			platformresponse.WriteError(r.Context(), w, apperrors.Internal(err))
+			return
+		}
+	}
 	platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), map[string]any{"relinked": true}))
 }
 func writeBindingError(ctx context.Context, w http.ResponseWriter, err error) {

@@ -41,11 +41,13 @@ func New(client *redis.Client, prefix string, goZero ...*zeroredis.Redis) (*Stor
 }
 
 func (s *Store) Create(ctx context.Context, session authn.Session) error {
-    // Any concurrent account-wide revoke makes a session carrying the
-    // previous epoch fail closed on its next read/refresh.
-    epoch,err:=s.getAccountEpoch(ctx,session.AccountID)
-    if err!=nil{return err}
-    session.RevocationEpoch=epoch
+	// Any concurrent account-wide revoke makes a session carrying the
+	// previous epoch fail closed on its next read/refresh.
+	epoch, err := s.getAccountEpoch(ctx, session.AccountID)
+	if err != nil {
+		return err
+	}
+	session.RevocationEpoch = epoch
 	payload, ttl, err := s.encode(session)
 	if err != nil {
 		return err
@@ -103,9 +105,13 @@ func (s *Store) Get(ctx context.Context, sessionID string) (authn.Session, error
 		}
 		return authn.Session{}, authn.ErrSessionNotFound
 	}
-    epoch,err:=s.getAccountEpoch(ctx,session.AccountID)
-    if err!=nil{return authn.Session{},err}
-    if session.RevocationEpoch!=epoch{return authn.Session{},authn.ErrSessionNotFound}
+	epoch, err := s.getAccountEpoch(ctx, session.AccountID)
+	if err != nil {
+		return authn.Session{}, err
+	}
+	if session.RevocationEpoch != epoch {
+		return authn.Session{}, authn.ErrSessionNotFound
+	}
 	return session, nil
 }
 
@@ -133,9 +139,13 @@ func (s *Store) Rotate(ctx context.Context, sessionID, currentDigest, nextDigest
 		if session.ID != sessionID || session.RefreshDigest != currentDigest || !session.ExpiresAt.After(s.now().UTC()) {
 			return authn.ErrInvalidRefresh
 		}
-        epoch,err:=s.getAccountEpoch(ctx,session.AccountID)
-        if err!=nil{return err}
-        if session.RevocationEpoch!=epoch{return authn.ErrInvalidRefresh}
+		epoch, err := s.getAccountEpoch(ctx, session.AccountID)
+		if err != nil {
+			return err
+		}
+		if session.RevocationEpoch != epoch {
+			return authn.ErrInvalidRefresh
+		}
 
 		session.RefreshDigest = nextDigest
 		session.ExpiresAt = nextExpiresAt.UTC()
@@ -203,15 +213,23 @@ func (s *Store) encode(session authn.Session) ([]byte, time.Duration, error) {
 
 // The epoch persists while old tokens can exist, independently of SCAN.
 func (s *Store) accountEpochKey(accountID string) string {
-    return s.prefix+"account-epoch:"+accountID
+	return s.prefix + "account-epoch:" + accountID
 }
-func (s *Store) getAccountEpoch(ctx context.Context,accountID string)(int64,error){
-    if strings.TrimSpace(accountID)==""{return 0,fmt.Errorf("account ID required for session epoch")}
-    epoch,err:=s.client.Get(ctx,s.accountEpochKey(accountID)).Int64()
-    if errors.Is(err,redis.Nil){return 0,nil}
-    if err!=nil{return 0,err}
-    if epoch<0{return 0,fmt.Errorf("invalid account session epoch")}
-    return epoch,nil
+func (s *Store) getAccountEpoch(ctx context.Context, accountID string) (int64, error) {
+	if strings.TrimSpace(accountID) == "" {
+		return 0, fmt.Errorf("account ID required for session epoch")
+	}
+	epoch, err := s.client.Get(ctx, s.accountEpochKey(accountID)).Int64()
+	if errors.Is(err, redis.Nil) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	if epoch < 0 {
+		return 0, fmt.Errorf("invalid account session epoch")
+	}
+	return epoch, nil
 }
 func (s *Store) key(sessionID string) string {
 	return s.prefix + strings.TrimSpace(sessionID)

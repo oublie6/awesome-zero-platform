@@ -62,13 +62,15 @@ func (s *Store) ListByAccount(ctx context.Context, accountID string) ([]authn.Se
 }
 
 func (s *Store) RevokeByAccount(ctx context.Context, accountID string) (int64, error) {
-    accountID=strings.TrimSpace(accountID)
-    if accountID==""{return 0,nil}
-    // SCAN is not linearizable across concurrent session writes.
-    // Invalidate the entire prior epoch before best-effort key deletion.
-    if _,err:=s.client.Incr(ctx,s.accountEpochKey(accountID)).Result();err!=nil{
-        return 0,err
-    }
+	accountID = strings.TrimSpace(accountID)
+	if accountID == "" {
+		return 0, nil
+	}
+	// SCAN is not linearizable across concurrent session writes.
+	// Invalidate the entire prior epoch before best-effort key deletion.
+	if _, err := s.client.Incr(ctx, s.accountEpochKey(accountID)).Result(); err != nil {
+		return 0, err
+	}
 	views, err := s.ListByAccount(ctx, accountID)
 	if err != nil {
 		return 0, err
