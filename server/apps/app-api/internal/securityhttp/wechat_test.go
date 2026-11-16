@@ -28,6 +28,7 @@ type stubWeChatBinder struct {
 	started int
 }
 
+func (s *stubWeChatBinder) VerifyExternalSession(context.Context,string,string,string)(bool,error){return true,nil}
 func (s *stubWeChatBinder) VerifiedSubjectDigest(provider,subject string)(string,error){
    if provider!="wechat"{return "",identity.ErrPendingInvalid}
    return strings.Repeat("a",64),nil

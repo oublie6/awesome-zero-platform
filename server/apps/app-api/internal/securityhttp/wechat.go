@@ -26,6 +26,7 @@ type wechatIdentityVerifier interface {
 type wechatAccountBinder interface {
 	ResolveVerified(context.Context, string, string) (identity.Account, error)
     VerifiedSubjectDigest(string,string)(string,error)
+    VerifyExternalSession(context.Context,string,string,string)(bool,error)
 	BeginVerified(context.Context, string, string) (string, error)
 	BindPending(context.Context, string, string) error
 	CreateFromPending(context.Context, string, identity.CreateAccountInput) (identity.Account, error)

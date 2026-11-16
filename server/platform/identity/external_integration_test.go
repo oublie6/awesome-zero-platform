@@ -46,6 +46,11 @@ func TestExternalIdentityBindingIntegration(t *testing.T) {
 	if err = b.BindPending(ctx, proof, a.ID); err != nil {
 		t.Fatal(err)
 	}
+    digest,err:=b.VerifiedSubjectDigest("wechat","unique-openid-A")
+    if err!=nil{t.Fatal(err)}
+    if ok,err:=b.VerifyExternalSession(ctx,a.ID,"wechat",digest);err!=nil||!ok{
+        t.Fatalf("live session mapping not present %v %v",ok,err)
+    }
 	if err = b.BindPending(ctx, proof, c.ID); !errors.Is(err, ErrPendingInvalid) {
 		t.Fatalf("replay accepted: %v", err)
 	}
@@ -67,6 +72,12 @@ func TestExternalIdentityBindingIntegration(t *testing.T) {
 	if err = b.Relink(ctx, relink, a.ID, c.ID); err != nil {
 		t.Fatal(err)
 	}
+    if ok,err:=b.VerifyExternalSession(ctx,a.ID,"wechat",digest);err!=nil||ok{
+        t.Fatalf("relink left source provider session authorized: %v %v",ok,err)
+    }
+    if ok,err:=b.VerifyExternalSession(ctx,c.ID,"wechat",digest);err!=nil||!ok{
+        t.Fatalf("relink did not authorize target mapping: %v %v",ok,err)
+    }
 	found, err = b.ResolveVerified(ctx, "wechat", "unique-openid-A")
 	if err != nil || found.ID != c.ID {
 		t.Fatalf("relink %v %v", found, err)
@@ -74,6 +85,9 @@ func TestExternalIdentityBindingIntegration(t *testing.T) {
 	if err = b.Unlink(ctx, "wechat", c.ID); err != nil {
 		t.Fatal(err)
 	}
+    if ok,err:=b.VerifyExternalSession(ctx,c.ID,"wechat",digest);err!=nil||ok{
+        t.Fatalf("unlink left old provider session authorized: %v %v",ok,err)
+    }
 	if _, err = b.ResolveVerified(ctx, "wechat", "unique-openid-A"); !errors.Is(err, ErrExternalUnbound) {
 		t.Fatalf("unlink resolve: %v", err)
 	}
