@@ -28,6 +28,7 @@ var (
 type Principal struct {
 	AccountID   string
 	DisplayName string
+    PasswordFingerprint string
 }
 
 type AccessClaims struct {
@@ -44,6 +45,7 @@ type Session struct {
     ExternalProvider string `json:"externalProvider,omitempty"`
     ExternalSubjectDigest string `json:"externalSubjectDigest,omitempty"`
     RevocationEpoch int64 `json:"revocationEpoch,omitempty"`
+    PasswordFingerprint string `json:"passwordFingerprint,omitempty"`
 	ID            string    `json:"id"`
 	AccountID     string    `json:"accountId"`
 	RefreshDigest string    `json:"refreshDigest"`
@@ -77,6 +79,11 @@ type AccessTokenCodec interface {
 // ExternalBindingVerifier is a fresh, authoritative identity lookup.
  // A network/database error MUST fail closed; old provider sessions must not
  // become ordinary password sessions when the validator is unavailable.
+// PasswordFingerprintReader avoids a race in which an old password is verified
+// before reset but its session is issued after an account-wide Redis fence.
+type PasswordFingerprintReader interface {
+    CredentialFingerprint(context.Context,string)(string,error)
+}
 type ExternalBindingVerifier interface {
     VerifyExternalSession(context.Context, string, string, string) (bool, error)
 }
@@ -167,6 +174,17 @@ func (s *Service) checkExternalSession(ctx context.Context, session Session) err
     if !ok{return ErrInvalidToken}
     return nil
 }
+func (s *Service) checkPasswordSession(ctx context.Context,session Session)error{
+    if session.PasswordFingerprint=="" {return nil}
+    reader,ok:=s.identity.(PasswordFingerprintReader)
+    if !ok{return ErrInvalidToken}
+    current,err:=reader.CredentialFingerprint(ctx,session.AccountID)
+    if err!=nil{return fmt.Errorf("verify password session version: %w",err)}
+    if current=="" || subtle.ConstantTimeCompare([]byte(current),[]byte(session.PasswordFingerprint))!=1{
+        return ErrInvalidToken
+    }
+    return nil
+}
 func (s *Service) Login(ctx context.Context, identifier, password string) (Authentication, TokenPair, error) {
 	principal, err := s.identity.Authenticate(ctx, strings.TrimSpace(identifier), password)
 	if err != nil {
@@ -237,6 +255,7 @@ func (s *Service) issueVerifiedPrincipalWithExternal(ctx context.Context, princi
 	session := Session{
         ExternalProvider:provider,
         ExternalSubjectDigest:subjectDigest,
+        PasswordFingerprint:principal.PasswordFingerprint,
 		ID:            sessionID,
 		AccountID:     principal.AccountID,
 		RefreshDigest: refreshDigest,
@@ -302,6 +321,11 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Authenticat
 		return Authentication{}, TokenPair{}, err
 	}
     if err:=s.checkExternalSession(ctx,session);err!=nil{
+        _=s.sessions.Revoke(ctx,sessionID)
+        if errors.Is(err,ErrInvalidToken){return Authentication{},TokenPair{},ErrInvalidRefresh}
+        return Authentication{},TokenPair{},err
+    }
+    if err:=s.checkPasswordSession(ctx,session);err!=nil{
         _=s.sessions.Revoke(ctx,sessionID)
         if errors.Is(err,ErrInvalidToken){return Authentication{},TokenPair{},ErrInvalidRefresh}
         return Authentication{},TokenPair{},err
@@ -378,6 +402,12 @@ func (s *Service) AuthenticateAccess(ctx context.Context, rawToken string) (Auth
 		return Authentication{}, err
 	}
     if err:=s.checkExternalSession(ctx,session);err!=nil{
+        if errors.Is(err,ErrInvalidToken){
+            _=s.sessions.Revoke(ctx,claims.SessionID)
+        }
+        return Authentication{},err
+    }
+    if err:=s.checkPasswordSession(ctx,session);err!=nil{
         if errors.Is(err,ErrInvalidToken){
             _=s.sessions.Revoke(ctx,claims.SessionID)
         }

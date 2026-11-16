@@ -90,7 +90,12 @@ func (f *fakeAccountService) GetAccountByIDFresh(context.Context, string) (ident
 	return f.account, f.findErr
 }
 
-func (f *fakeAccountService) VerifyPassword(context.Context, string, string) error {
-	f.verifyCalls++
-	return f.verifyErr
+func (f *fakeAccountService) VerifyPasswordWithFingerprint(context.Context, string, string) (string,error) {
+    f.verifyCalls++
+    if f.verifyErr!=nil{return "",f.verifyErr}
+    return "verified-password-fingerprint",nil
+}
+func (f *fakeAccountService) CredentialFingerprint(context.Context,string)(string,error){
+    if f.verifyErr!=nil{return "",f.verifyErr}
+    return "verified-password-fingerprint",nil
 }

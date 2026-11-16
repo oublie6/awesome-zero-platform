@@ -15,7 +15,8 @@ type accountService interface {
 	FindAccountByEmailFresh(context.Context, string) (identity.Account, error)
 	FindAccountByPhoneFresh(context.Context, string) (identity.Account, error)
 	GetAccountByIDFresh(context.Context, string) (identity.Account, error)
-	VerifyPassword(context.Context, string, string) error
+	VerifyPasswordWithFingerprint(context.Context, string, string) (string,error)
+	CredentialFingerprint(context.Context,string)(string,error)
 }
 
 type Provider struct {
@@ -53,16 +54,22 @@ func (p *Provider) Authenticate(ctx context.Context, identifier, password string
 	if account.Status != identity.StatusActive {
 		return authn.Principal{}, authn.ErrInvalidCredentials
 	}
-	if err := p.identity.VerifyPassword(ctx, account.ID, password); err != nil {
+	fingerprint,err:=p.identity.VerifyPasswordWithFingerprint(ctx,account.ID,password)
+    if err != nil {
 		if isInvalidCredentialError(err) {
 			return authn.Principal{}, authn.ErrInvalidCredentials
 		}
 		return authn.Principal{}, fmt.Errorf("verify identity password: %w", err)
 	}
 
-	return principal(account), nil
+	result:=principal(account)
+    result.PasswordFingerprint=fingerprint
+    return result,nil
 }
-
+func (p *Provider) CredentialFingerprint(ctx context.Context,id string)(string,error) {
+    if p==nil || p.identity==nil{return "",authn.ErrAccountUnavailable}
+    return p.identity.CredentialFingerprint(ctx,id)
+}
 func (p *Provider) ResolveActive(ctx context.Context, accountID string) (authn.Principal, error) {
 	if p == nil || p.identity == nil {
 		return authn.Principal{}, authn.ErrAccountUnavailable

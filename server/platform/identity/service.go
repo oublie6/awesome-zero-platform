@@ -3,6 +3,8 @@ package identity
 import (
 	"context"
 	"database/sql"
+	"crypto/sha256"
+	"encoding/hex"
 	"strings"
 	"time"
 
@@ -276,37 +278,40 @@ func (s *Service) DisableAccount(ctx context.Context, accountID string) (Account
 	return s.updateAccountStatus(ctx, accountID, StatusDisabled)
 }
 
-func (s *Service) VerifyPassword(ctx context.Context, accountID string, password string) error {
-	normalizedID, err := normalizeAccountID(accountID)
-	if err != nil {
-		return err
-	}
-	if err := validatePasswordInput(password); err != nil {
-		return err
-	}
-
-	account, err := s.GetAccountByIDFresh(ctx, normalizedID)
-	if err != nil {
-		return err
-	}
-	if account.Status != StatusActive {
-		return ErrInvalidAccountState
-	}
-
-	credential, err := s.credentials.GetPasswordCredentialByAccountID(ctx, normalizedID)
-	if err != nil {
-		return err
-	}
-
-	ok, err := s.hasher.Verify(credential.Hash, password)
-	if err != nil {
-		return wrapIdentityError(ErrPersistence, err)
-	}
-	if !ok {
-		return ErrInvalidCredentials
-	}
-
-	return nil
+// VerifyPasswordWithFingerprint returns a fingerprint of the exact credential
+// that authenticated the supplied password, without exposing the Argon2 hash.
+ // If password reset races with session issuance, that old fingerprint will
+ // no longer match the live credential at token-use time.
+func (s *Service) VerifyPasswordWithFingerprint(ctx context.Context, accountID, password string) (string,error) {
+    normalizedID,err:=normalizeAccountID(accountID)
+    if err!=nil{return "",err}
+    if err=validatePasswordInput(password);err!=nil{return "",err}
+    account,err:=s.GetAccountByIDFresh(ctx,normalizedID)
+    if err!=nil{return "",err}
+    if account.Status!=StatusActive{return "",ErrInvalidAccountState}
+    credential,err:=s.credentials.GetPasswordCredentialByAccountID(ctx,normalizedID)
+    if err!=nil{return "",err}
+    ok,err:=s.hasher.Verify(credential.Hash,password)
+    if err!=nil{return "",wrapIdentityError(ErrPersistence,err)}
+    if !ok{return "",ErrInvalidCredentials}
+    return fingerprintCredential(credential.Hash),nil
+}
+func (s *Service) VerifyPassword(ctx context.Context, accountID, password string) error {
+    _,err:=s.VerifyPasswordWithFingerprint(ctx,accountID,password)
+    return err
+}
+// CredentialFingerprint is queried afresh when authorizing a password
+// session. Redis sessions contain only this irreversible fingerprint.
+func (s *Service) CredentialFingerprint(ctx context.Context,accountID string)(string,error){
+    normalized,err:=normalizeAccountID(accountID)
+    if err!=nil{return "",err}
+    credential,err:=s.credentials.GetPasswordCredentialByAccountID(ctx,normalized)
+    if err!=nil{return "",err}
+    return fingerprintCredential(credential.Hash),nil
+}
+func fingerprintCredential(passwordHash string)string{
+    sum:=sha256.Sum256([]byte(passwordHash))
+    return hex.EncodeToString(sum[:])
 }
 
 func (s *Service) ChangePassword(ctx context.Context, accountID, currentPassword, newPassword string) error {
