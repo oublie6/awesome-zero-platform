@@ -78,6 +78,16 @@ func TestGoZeroClientSessionRoundTrip(t *testing.T) {
 	if err != nil || got.RefreshDigest != session.RefreshDigest {
 		t.Fatalf("go-zero session get=%+v error=%v", got, err)
 	}
+    // Optimized realtime path reads the session and epoch in a single
+    // pipeline and must enforce the exact trusted AccountID.
+    optimized,err:=store.GetForAccount(ctx,session.ID,session.AccountID)
+    if err!=nil || optimized.ID!=session.ID || optimized.RevocationEpoch!=0{
+        t.Fatalf("optimized realtime get=%+v error=%v",optimized,err)
+    }
+    if _,err:=store.GetForAccount(ctx,session.ID,"other-account");!errors.Is(err,authn.ErrSessionNotFound){
+        t.Fatalf("another account used this session: %v",err)
+    }
+
 	views, err := store.ListByAccount(ctx, session.AccountID)
 	if err != nil || len(views) != 1 || views[0].ID != session.ID {
 		t.Fatalf("go-zero session list=%+v error=%v", views, err)
@@ -112,6 +122,10 @@ func TestGoZeroClientSessionRoundTrip(t *testing.T) {
 	if _, err := store.Get(ctx, session.ID); !errors.Is(err, authn.ErrSessionNotFound) {
 		t.Fatalf("stale session revived after account-wide revoke: %v", err)
 	}
+    if _,err:=store.GetForAccount(ctx,session.ID,session.AccountID);!errors.Is(err,authn.ErrSessionNotFound){
+        t.Fatalf("pipelined realtime read revived stale epoch: %v",err)
+    }
+
 	if _, err := store.Rotate(ctx, session.ID, "digest-after", "digest-raced", time.Now().Add(time.Minute)); !errors.Is(err, authn.ErrInvalidRefresh) {
 		t.Fatalf("refresh revived after account-wide revoke: %v", err)
 	}
