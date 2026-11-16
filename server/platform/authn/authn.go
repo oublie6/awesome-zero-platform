@@ -197,7 +197,19 @@ func (s *Service) Login(ctx context.Context, identifier, password string) (Authe
 		return Authentication{}, TokenPair{}, err
 	}
 
-	return s.issueVerifiedPrincipal(ctx, principal)
+    auth,tokens,err:=s.issueVerifiedPrincipal(ctx,principal)
+    if err!=nil{return Authentication{},TokenPair{},err}
+    if principal.PasswordFingerprint!=""{
+        // A password reset can commit after the original Argon2 validation
+        // but before the Redis session exists. Do not return that stale proof.
+        checked:=Session{AccountID:principal.AccountID,PasswordFingerprint:principal.PasswordFingerprint}
+        if err:=s.checkPasswordSession(ctx,checked);err!=nil{
+            _=s.sessions.Revoke(ctx,auth.SessionID)
+            return Authentication{},TokenPair{},err
+        }
+    }
+    auth.Principal.PasswordFingerprint=""
+    return auth,tokens,nil
 }
 
 // IssueVerifiedAccount is reserved for server-side verified non-provider

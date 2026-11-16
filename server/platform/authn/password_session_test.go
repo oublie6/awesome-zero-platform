@@ -53,9 +53,10 @@ func TestPasswordSessionIssuedAfterResetStillCarriesOldProof(t *testing.T){
     store:=&resetDuringIssueStore{memoryStore:newMemoryStore(),creds:creds}
     service,err:=NewService(creds,&fakeCodec{},store,Config{})
     if err!=nil{t.Fatal(err)}
-    _,tokens,err:=service.Login(ctx,"alice","original-password")
-    if err!=nil{t.Fatal(err)}
-    if _,err=service.AuthenticateAccess(ctx,tokens.AccessToken);!errors.Is(err,ErrInvalidToken){
-        t.Fatalf("password reset race authorized old password: %v",err)
+    auth,tokens,err:=service.Login(ctx,"alice","original-password")
+    if !errors.Is(err,ErrInvalidToken) || auth.SessionID!="" || tokens.AccessToken!=""{
+        t.Fatalf("password reset during issuance returned credentials: %v",err)
     }
+    store.mu.Lock();n:=len(store.sessions);store.mu.Unlock()
+    if n!=0{t.Fatalf("password reset race left %d live sessions",n)}
 }
