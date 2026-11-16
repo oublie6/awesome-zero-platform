@@ -35,12 +35,18 @@ func NewExternalBinding(db *sql.DB, service *Service, subjectHMACKey []byte) (*E
 	// Fail closed when an existing database has not installed the mandatory
 	// provider/account uniqueness constraint. A plain SELECT-before-INSERT
 	// cannot prevent concurrent binding races across API replicas.
-	var uniqueColumns int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM information_schema.statistics
-		WHERE table_schema = DATABASE() AND table_name = 'identity_external_subjects'
-		AND index_name = 'uq_identity_external_provider_account' AND non_unique = 0`).Scan(&uniqueColumns); err != nil || uniqueColumns != 2 {
-		return nil, fmt.Errorf("external binding schema requires unique provider/account index")
-	}
+	var uniqueColumns string
+	if err := db.QueryRow(`SELECT COALESCE(GROUP_CONCAT(column_name ORDER BY seq_in_index), '') FROM information_schema.statistics
+        WHERE table_schema = DATABASE() AND table_name = 'identity_external_subjects'
+        AND index_name = 'uq_identity_external_provider_account' AND non_unique = 0`).Scan(&uniqueColumns); err != nil || uniqueColumns != "provider,account_id" {
+        return nil, fmt.Errorf("external binding schema requires exact unique provider/account index")
+    }
+    var primaryColumns string
+    if err := db.QueryRow(`SELECT COALESCE(GROUP_CONCAT(column_name ORDER BY seq_in_index), '') FROM information_schema.statistics
+        WHERE table_schema = DATABASE() AND table_name = 'identity_external_subjects'
+        AND index_name = 'PRIMARY' AND non_unique = 0`).Scan(&primaryColumns); err!=nil || primaryColumns!="provider,subject_hmac" {
+        return nil,fmt.Errorf("external binding schema requires exact provider/subject primary key")
+    }
 	var pendingTable int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM information_schema.tables
 		WHERE table_schema = DATABASE() AND table_name = 'identity_external_pending'`).Scan(&pendingTable); err != nil || pendingTable != 1 {
