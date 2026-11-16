@@ -356,6 +356,20 @@ func (a realtimeAuthenticator) Authenticate(ctx context.Context, rawToken string
 	}, nil
 }
 
+// ValidateSession is invoked for each inbound application envelope and
+// immediately before every outbound frame. It checks current Redis session,
+// current account status, and any binding/password credential revision.
+// No raw bearer is retained on WebSocket connections.
+func (a realtimeAuthenticator) ValidateSession(ctx context.Context, id realtime.Identity) error {
+    if a.service==nil || id.SessionID=="" || id.AccountID=="" {
+        return realtime.ErrAuthenticationFailed
+    }
+    if err:=a.service.ValidateRealtimeSession(ctx,id.SessionID,id.AccountID);err!=nil{
+        return fmt.Errorf("%w: session no longer active",realtime.ErrAuthenticationFailed)
+    }
+    return nil
+}
+
 type namedProbe struct {
 	name   string
 	handle interface{ Ping(context.Context) error }

@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+
+    "github.com/gorilla/websocket"
 	"time"
 )
 
@@ -273,6 +275,30 @@ func (h *Hub) unsubscribe(connection *client, topic string) error {
 		}
 	}
 	return nil
+}
+
+// validateConnection is the authorization boundary for established sockets.
+// The authoritative authenticator is called without holding hub locks. No
+// positive validation cache is used: a just-unlinked session must fail even
+// when the connection has been idle since its original handshake.
+func (h *Hub) validateConnection(ctx context.Context, connection *client) bool {
+    select {
+    case <-connection.done:
+        return false
+    default:
+    }
+    checked, cancel := context.WithTimeout(ctx,h.config.HandshakeTimeout)
+    defer cancel()
+    if err:=h.authenticator.ValidateSession(checked,connection.identity);err!=nil{
+        connection.terminate(websocket.ClosePolicyViolation,"session no longer active")
+        return false
+    }
+    select {
+    case <-connection.done:
+        return false
+    default:
+        return true
+    }
 }
 
 func (h *Hub) handle(ctx context.Context, connection *client, envelope Envelope) {

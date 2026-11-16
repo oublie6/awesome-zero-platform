@@ -124,8 +124,12 @@ type Identity struct {
 	DisplayName string
 }
 
+// Authenticator owns both the initial bearer handshake and subsequent
+// session liveness checks. A connected socket must not retain authorization
+// solely from its original handshake.
 type Authenticator interface {
-	Authenticate(context.Context, string) (Identity, error)
+    Authenticate(context.Context, string) (Identity, error)
+    ValidateSession(context.Context, Identity) error
 }
 
 type Envelope struct {

@@ -22,6 +22,12 @@ func (testAuthenticator) Authenticate(_ context.Context, token string) (Identity
 	}
 	return Identity{AccountID: "account-1", SessionID: "session-1", DisplayName: "Player One"}, nil
 }
+func (testAuthenticator) ValidateSession(_ context.Context, identity Identity) error {
+    if identity.AccountID!="account-1" || identity.SessionID!="session-1" {
+        return ErrAuthenticationFailed
+    }
+    return nil
+}
 
 type testMetrics struct {
 	mu            sync.Mutex

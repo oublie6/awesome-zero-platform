@@ -131,6 +131,12 @@ func (c *client) readPump() {
 			c.terminate(websocket.CloseUnsupportedData, "text messages required")
 			return
 		}
+        // The peer may remain connected after logout, provider unlink,
+        // password reset or account disable. Check on *every* incoming
+        // frame, including pings/subscriptions, before any app dispatch.
+        if !c.hub.validateConnection(c.ctx,c) {
+            return
+        }
 
 		var envelope Envelope
 		if err := json.Unmarshal(payload, &envelope); err != nil {
@@ -165,6 +171,11 @@ func (c *client) writePump() {
 			)
 			return
 		case payload := <-c.send:
+            // Queued broadcasts and account-specific messages must also
+            // respect revocation, including when no new client frame arrives.
+            if !c.hub.validateConnection(c.ctx,c) {
+                return
+            }
 			if err := c.conn.SetWriteDeadline(time.Now().Add(c.hub.config.WriteTimeout)); err != nil {
 				c.terminate(websocket.CloseInternalServerErr, "write deadline failed")
 				return
@@ -174,6 +185,11 @@ func (c *client) writePump() {
 				return
 			}
 		case <-ticker.C:
+            // Periodically close idle connections whose sessions have gone
+            // away. The heartbeat is already bounded by the ping interval.
+            if !c.hub.validateConnection(c.ctx,c) {
+                return
+            }
 			deadline := time.Now().Add(c.hub.config.WriteTimeout)
 			if err := c.conn.WriteControl(websocket.PingMessage, nil, deadline); err != nil {
 				c.terminate(websocket.CloseAbnormalClosure, "heartbeat failed")

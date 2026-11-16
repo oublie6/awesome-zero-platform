@@ -466,6 +466,45 @@ func (s *Service) AuthenticateAccess(ctx context.Context, rawToken string) (Auth
 	}, nil
 }
 
+// ValidateRealtimeSession checks the still-active server-owned session for an
+// already-authenticated WebSocket. The SessionID is never accepted from the
+// WebSocket peer: it was captured from a validated bearer at handshake.
+// Unlike access-token validation this checks the refresh-session lifetime, so
+// a long-lived connection does not require a new handshake every access TTL.
+func (s *Service) ValidateRealtimeSession(ctx context.Context, sessionID, accountID string) error {
+    if s == nil || strings.TrimSpace(sessionID) == "" || strings.TrimSpace(accountID) == "" {
+        return ErrInvalidToken
+    }
+    session, err := s.sessions.Get(ctx, sessionID)
+    if err != nil {
+        if errors.Is(err, ErrSessionNotFound) {
+            return ErrInvalidToken
+        }
+        return fmt.Errorf("load realtime session: %w", err)
+    }
+    if session.ID != sessionID || session.AccountID != accountID ||
+       !session.ExpiresAt.After(s.now().UTC()) {
+        return ErrInvalidToken
+    }
+    principal, err := s.identity.ResolveActive(ctx, accountID)
+    if err != nil {
+        if errors.Is(err, ErrAccountUnavailable) {
+            return ErrAccountUnavailable
+        }
+        return fmt.Errorf("resolve realtime account: %w", err)
+    }
+    if err = validatePrincipal(principal); err != nil {
+        return err
+    }
+    if principal.AccountID != accountID {
+        return ErrInvalidToken
+    }
+    if err = s.checkExternalSession(ctx, session); err != nil {
+        return err
+    }
+    return s.checkPasswordSession(ctx, session)
+}
+
 func (s *Service) Logout(ctx context.Context, rawToken string) error {
 	authentication, err := s.AuthenticateAccess(ctx, rawToken)
 	if err != nil {
