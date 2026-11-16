@@ -299,6 +299,13 @@ func (h *wechatHandlers) unlink(w http.ResponseWriter, r *http.Request) {
 		writeBindingError(r.Context(), w, err)
 		return
 	}
+    // A provider login may have read the committed binding before deletion
+    // but created its Redis session after the initial revoke scan. A second
+    // epoch bump after the DB cutover permanently fences that narrow window.
+    if _,err:=h.sessionAdmin.RevokeByAccount(r.Context(),principal.Principal.AccountID);err!=nil{
+        platformresponse.WriteError(r.Context(),w,apperrors.Internal(err))
+        return
+    }
 	platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), map[string]any{"unlinked": true}))
 }
 func (h *wechatHandlers) relink(w http.ResponseWriter, r *http.Request) {
@@ -358,6 +365,14 @@ func (h *wechatHandlers) relink(w http.ResponseWriter, r *http.Request) {
 		writeBindingError(r.Context(), w, err)
 		return
 	}
+    // Post-commit epoch fences cover sessions minted during the old
+    // provider mapping's precommit visibility window.
+    for _,id:=range []string{source.ID,target.ID}{
+        if _,err:=h.sessionAdmin.RevokeByAccount(r.Context(),id);err!=nil{
+            platformresponse.WriteError(r.Context(),w,apperrors.Internal(err))
+            return
+        }
+    }
 	platformresponse.WriteJSON(r.Context(), w, http.StatusOK, platformresponse.Success(r.Context(), map[string]any{"relinked": true}))
 }
 func writeBindingError(ctx context.Context, w http.ResponseWriter, err error) {
