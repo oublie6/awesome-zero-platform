@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -56,6 +57,28 @@ func (b *ExternalBinding) digest(provider, subject string) ([]byte, error) {
 	mac.Write([]byte{0})
 	mac.Write([]byte(subject))
 	return mac.Sum(nil), nil
+}
+// VerifiedSubjectDigest returns only the keyed digest, never the raw OpenID.
+// Callers may use it only after the provider's code has been verified.
+func (b *ExternalBinding) VerifiedSubjectDigest(provider, subject string) (string,error) {
+    digest,err:=b.digest(provider,subject)
+    if err!=nil{return "",err}
+    return hex.EncodeToString(digest),nil
+}
+// VerifyExternalSession is called on EVERY use/refresh of a third-party session.
+// It never relies on an AccountID alone or on cached account metadata.
+func (b *ExternalBinding) VerifyExternalSession(ctx context.Context, accountID, provider, subjectDigest string) (bool,error) {
+    if b==nil || b.db==nil || provider!="wechat" || len(subjectDigest)!=64 ||
+        strings.TrimSpace(accountID)==""{
+        return false,ErrPendingInvalid
+    }
+    digest,err:=hex.DecodeString(subjectDigest)
+    if err!=nil || len(digest)!=32 || hex.EncodeToString(digest)!=subjectDigest{return false,ErrPendingInvalid}
+    var found int
+    err=b.db.QueryRowContext(ctx,"SELECT EXISTS(SELECT 1 FROM identity_external_subjects WHERE provider=? AND subject_hmac=? AND account_id=?)",
+       provider,digest,accountID).Scan(&found)
+    if err!=nil{return false,err}
+    return found==1,nil
 }
 func (b *ExternalBinding) ResolveVerified(ctx context.Context, provider, subject string) (Account, error) {
 	digest, err := b.digest(provider, subject)

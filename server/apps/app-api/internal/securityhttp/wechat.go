@@ -25,6 +25,7 @@ type wechatIdentityVerifier interface {
 }
 type wechatAccountBinder interface {
 	ResolveVerified(context.Context, string, string) (identity.Account, error)
+    VerifiedSubjectDigest(string,string)(string,error)
 	BeginVerified(context.Context, string, string) (string, error)
 	BindPending(context.Context, string, string) error
 	CreateFromPending(context.Context, string, identity.CreateAccountInput) (identity.Account, error)
@@ -32,7 +33,7 @@ type wechatAccountBinder interface {
 	Relink(context.Context, string, string, string) error
 }
 type wechatSessionIssuer interface {
-	IssueVerifiedAccount(context.Context, string) (authn.Authentication, authn.TokenPair, error)
+	IssueVerifiedExternalAccount(context.Context, string, string, string) (authn.Authentication, authn.TokenPair, error)
 }
 
 type wechatHandlers struct {
@@ -54,6 +55,9 @@ func registerWeChatCodeLogin(server *rest.Server, ctx *svc.ServiceContext) {
 			if err == nil {
 				h.binder, err = identity.NewExternalBinding(ctx.MySQL.DB(), ctx.Identity, key)
 				if err == nil {
+                    err = ctx.Authn.ConfigureExternalBindingVerifier(h.binder)
+                }
+                if err == nil {
 					h.issuer = ctx.Authn
 					h.identities = ctx.Identity
 					h.auth = ctx.Authn
@@ -118,7 +122,12 @@ func (h *wechatHandlers) code(w http.ResponseWriter, r *http.Request) {
 	}
 	account, err := h.binder.ResolveVerified(r.Context(), "wechat", subject)
 	if err == nil {
-		authentication, tokens, err := h.issuer.IssueVerifiedAccount(r.Context(), account.ID)
+        digest,digestErr:=h.binder.VerifiedSubjectDigest("wechat",subject)
+        if digestErr!=nil{
+            platformresponse.WriteError(r.Context(),w,apperrors.Unauthorized("invalid verified WeChat subject"))
+            return
+        }
+		authentication, tokens, err := h.issuer.IssueVerifiedExternalAccount(r.Context(), account.ID,"wechat",digest)
 		if err != nil {
 			platformresponse.WriteError(r.Context(), w, mapAuthenticationError(err, false))
 			return

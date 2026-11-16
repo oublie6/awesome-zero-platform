@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,6 +38,11 @@ type AccessClaims struct {
 }
 
 type Session struct {
+    // An external login remains valid only while its specific verified
+    // provider subject is still bound to the same AccountID. Password
+    // sessions intentionally leave both fields empty.
+    ExternalProvider string `json:"externalProvider,omitempty"`
+    ExternalSubjectDigest string `json:"externalSubjectDigest,omitempty"`
 	ID            string    `json:"id"`
 	AccountID     string    `json:"accountId"`
 	RefreshDigest string    `json:"refreshDigest"`
@@ -67,6 +73,12 @@ type AccessTokenCodec interface {
 	Parse(string) (AccessClaims, error)
 }
 
+// ExternalBindingVerifier is a fresh, authoritative identity lookup.
+ // A network/database error MUST fail closed; old provider sessions must not
+ // become ordinary password sessions when the validator is unavailable.
+type ExternalBindingVerifier interface {
+    VerifyExternalSession(context.Context, string, string, string) (bool, error)
+}
 type SessionStore interface {
 	Create(context.Context, Session) error
 	Get(context.Context, string) (Session, error)
@@ -104,6 +116,8 @@ type Service struct {
 	sessions SessionStore
 	config   Config
 	now      func() time.Time
+    externalMu sync.RWMutex
+    externalVerifier ExternalBindingVerifier
 }
 
 func NewService(identity IdentityProvider, codec AccessTokenCodec, sessions SessionStore, cfg Config) (*Service, error) {
@@ -130,6 +144,28 @@ func NewService(identity IdentityProvider, codec AccessTokenCodec, sessions Sess
 	}, nil
 }
 
+// ConfigureExternalBindingVerifier is called once during API route bootstrap,
+// before serving requests. The mutex also keeps tests and reloads race-safe.
+func (s *Service) ConfigureExternalBindingVerifier(v ExternalBindingVerifier) error {
+    if s==nil || v==nil {return fmt.Errorf("external binding verifier is required")}
+    s.externalMu.Lock()
+    defer s.externalMu.Unlock()
+    if s.externalVerifier!=nil{return fmt.Errorf("external binding verifier already configured")}
+    s.externalVerifier=v
+    return nil
+}
+func (s *Service) checkExternalSession(ctx context.Context, session Session) error {
+    if session.ExternalProvider=="" && session.ExternalSubjectDigest=="" {return nil}
+    if session.ExternalProvider=="" || session.ExternalSubjectDigest=="" {return ErrInvalidToken}
+    s.externalMu.RLock()
+    verifier:=s.externalVerifier
+    s.externalMu.RUnlock()
+    if verifier==nil{return ErrInvalidToken}
+    ok,err:=verifier.VerifyExternalSession(ctx,session.AccountID,session.ExternalProvider,session.ExternalSubjectDigest)
+    if err!=nil{return fmt.Errorf("verify external binding: %w",err)}
+    if !ok{return ErrInvalidToken}
+    return nil
+}
 func (s *Service) Login(ctx context.Context, identifier, password string) (Authentication, TokenPair, error) {
 	principal, err := s.identity.Authenticate(ctx, strings.TrimSpace(identifier), password)
 	if err != nil {
@@ -145,8 +181,9 @@ func (s *Service) Login(ctx context.Context, identifier, password string) (Authe
 	return s.issueVerifiedPrincipal(ctx, principal)
 }
 
-// IssueVerifiedAccount is for a server-side identity that has already been
-// bound to a trusted external identity. Never pass a client-supplied account ID.
+// IssueVerifiedAccount is reserved for server-side verified non-provider
+// identities. Third-party login MUST use IssueVerifiedExternalAccount and a
+// binding-aware session. Never pass client-supplied account IDs.
 func (s *Service) IssueVerifiedAccount(ctx context.Context, accountID string) (Authentication, TokenPair, error) {
 	principal, err := s.identity.ResolveActive(ctx, accountID)
 	if err != nil {
@@ -157,7 +194,34 @@ func (s *Service) IssueVerifiedAccount(ctx context.Context, accountID string) (A
 	}
 	return s.issueVerifiedPrincipal(ctx, principal)
 }
+// IssueVerifiedExternalAccount verifies the specific provider/account
+// association both before and after session issuance. The session is tagged so
+// any future AuthenticateAccess or Refresh rejects it immediately when that
+// mapping is removed or moved, even if issuance raced with the mutation.
+func (s *Service) IssueVerifiedExternalAccount(ctx context.Context, accountID, provider, subjectDigest string) (Authentication, TokenPair, error) {
+    if provider!="wechat" || len(subjectDigest)!=64 || strings.TrimSpace(accountID)=="" {
+        return Authentication{},TokenPair{},ErrInvalidToken
+    }
+    checked:=Session{AccountID:accountID,ExternalProvider:provider,ExternalSubjectDigest:subjectDigest}
+    if err:=s.checkExternalSession(ctx,checked);err!=nil{
+        return Authentication{},TokenPair{},err
+    }
+    principal,err:=s.identity.ResolveActive(ctx,accountID)
+    if err!=nil{return Authentication{},TokenPair{},err}
+    if err=validatePrincipal(principal);err!=nil{return Authentication{},TokenPair{},err}
+    auth,tokens,err:=s.issueVerifiedPrincipalWithExternal(ctx,principal,provider,subjectDigest)
+    if err!=nil{return Authentication{},TokenPair{},err}
+    // Failure after Redis Create still must not return a live bearer token.
+    if err=s.checkExternalSession(ctx,checked);err!=nil{
+        _=s.sessions.Revoke(ctx,auth.SessionID)
+        return Authentication{},TokenPair{},err
+    }
+    return auth,tokens,nil
+}
 func (s *Service) issueVerifiedPrincipal(ctx context.Context, principal Principal) (Authentication, TokenPair, error) {
+    return s.issueVerifiedPrincipalWithExternal(ctx,principal,"","")
+}
+func (s *Service) issueVerifiedPrincipalWithExternal(ctx context.Context, principal Principal, provider, subjectDigest string) (Authentication, TokenPair, error) {
 	sessionID, err := newSessionID()
 	if err != nil {
 		return Authentication{}, TokenPair{}, fmt.Errorf("generate session id: %w", err)
@@ -170,6 +234,8 @@ func (s *Service) issueVerifiedPrincipal(ctx context.Context, principal Principa
 	}
 
 	session := Session{
+        ExternalProvider:provider,
+        ExternalSubjectDigest:subjectDigest,
 		ID:            sessionID,
 		AccountID:     principal.AccountID,
 		RefreshDigest: refreshDigest,
@@ -234,6 +300,11 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Authenticat
 	if err := validatePrincipal(principal); err != nil {
 		return Authentication{}, TokenPair{}, err
 	}
+    if err:=s.checkExternalSession(ctx,session);err!=nil{
+        _=s.sessions.Revoke(ctx,sessionID)
+        if errors.Is(err,ErrInvalidToken){return Authentication{},TokenPair{},ErrInvalidRefresh}
+        return Authentication{},TokenPair{},err
+    }
 
 	now := s.now().UTC()
 	nextRefreshToken, nextDigest, err := newRefreshToken(sessionID)
@@ -305,6 +376,12 @@ func (s *Service) AuthenticateAccess(ctx context.Context, rawToken string) (Auth
 	if err := validatePrincipal(principal); err != nil {
 		return Authentication{}, err
 	}
+    if err:=s.checkExternalSession(ctx,session);err!=nil{
+        if errors.Is(err,ErrInvalidToken){
+            _=s.sessions.Revoke(ctx,claims.SessionID)
+        }
+        return Authentication{},err
+    }
 
 	return Authentication{
 		Principal: principal,
