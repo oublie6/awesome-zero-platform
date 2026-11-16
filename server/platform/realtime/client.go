@@ -155,21 +155,25 @@ func (c *client) readPump() {
 func (c *client) writePump() {
 	ticker := time.NewTicker(c.hub.config.PingInterval)
 	defer func() {
-		ticker.Stop()
-		_ = c.conn.Close()
-		close(c.finished)
-	}()
+        ticker.Stop()
+        // The writer may terminate directly when it notices an invalid
+        // session while draining a queued event. Send the same bounded close
+        // frame in all shutdown paths, not only when select chooses c.done.
+        select {
+        case <-c.done:
+            deadline:=time.Now().Add(c.hub.config.WriteTimeout)
+            _=c.conn.WriteControl(websocket.CloseMessage,
+                websocket.FormatCloseMessage(c.closeCode,c.closeText),deadline)
+        default:
+        }
+        _=c.conn.Close()
+        close(c.finished)
+    }()
 
 	for {
 		select {
 		case <-c.done:
-			_ = c.conn.SetWriteDeadline(time.Now().Add(c.hub.config.WriteTimeout))
-			_ = c.conn.WriteControl(
-				websocket.CloseMessage,
-				websocket.FormatCloseMessage(c.closeCode, c.closeText),
-				time.Now().Add(c.hub.config.WriteTimeout),
-			)
-			return
+            return
 		case payload := <-c.send:
             // Queued broadcasts and account-specific messages must also
             // respect revocation, including when no new client frame arrives.
