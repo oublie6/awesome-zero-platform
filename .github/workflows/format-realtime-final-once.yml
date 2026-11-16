@@ -1,0 +1,30 @@
+name: One-time final realtime Go formatting
+on:
+  push:
+    paths:
+      - .github/workflows/format-realtime-final-once.yml
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Format final changed Go sources
+        run: |
+          gofmt -w server/platform/realtime/client.go server/platform/authn/realtime_session_test.go
+          git diff --check
+          if git diff --quiet -- server/platform/realtime/client.go server/platform/authn/realtime_session_test.go; then
+            echo "No format changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/platform/realtime/client.go server/platform/authn/realtime_session_test.go
+          git commit -m "style(realtime): gofmt follow-up session regressions"
+          git push origin HEAD:main
