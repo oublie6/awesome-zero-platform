@@ -131,12 +131,12 @@ func (c *client) readPump() {
 			c.terminate(websocket.CloseUnsupportedData, "text messages required")
 			return
 		}
-        // The peer may remain connected after logout, provider unlink,
-        // password reset or account disable. Check on *every* incoming
-        // frame, including pings/subscriptions, before any app dispatch.
-        if !c.hub.validateConnection(c.ctx,c) {
-            return
-        }
+		// The peer may remain connected after logout, provider unlink,
+		// password reset or account disable. Check on *every* incoming
+		// frame, including pings/subscriptions, before any app dispatch.
+		if !c.hub.validateConnection(c.ctx, c) {
+			return
+		}
 
 		var envelope Envelope
 		if err := json.Unmarshal(payload, &envelope); err != nil {
@@ -155,31 +155,31 @@ func (c *client) readPump() {
 func (c *client) writePump() {
 	ticker := time.NewTicker(c.hub.config.PingInterval)
 	defer func() {
-        ticker.Stop()
-        // The writer may terminate directly when it notices an invalid
-        // session while draining a queued event. Send the same bounded close
-        // frame in all shutdown paths, not only when select chooses c.done.
-        select {
-        case <-c.done:
-            deadline:=time.Now().Add(c.hub.config.WriteTimeout)
-            _=c.conn.WriteControl(websocket.CloseMessage,
-                websocket.FormatCloseMessage(c.closeCode,c.closeText),deadline)
-        default:
-        }
-        _=c.conn.Close()
-        close(c.finished)
-    }()
+		ticker.Stop()
+		// The writer may terminate directly when it notices an invalid
+		// session while draining a queued event. Send the same bounded close
+		// frame in all shutdown paths, not only when select chooses c.done.
+		select {
+		case <-c.done:
+			deadline := time.Now().Add(c.hub.config.WriteTimeout)
+			_ = c.conn.WriteControl(websocket.CloseMessage,
+				websocket.FormatCloseMessage(c.closeCode, c.closeText), deadline)
+		default:
+		}
+		_ = c.conn.Close()
+		close(c.finished)
+	}()
 
 	for {
 		select {
 		case <-c.done:
-            return
+			return
 		case payload := <-c.send:
-            // Queued broadcasts and account-specific messages must also
-            // respect revocation, including when no new client frame arrives.
-            if !c.hub.validateConnection(c.ctx,c) {
-                return
-            }
+			// Queued broadcasts and account-specific messages must also
+			// respect revocation, including when no new client frame arrives.
+			if !c.hub.validateConnection(c.ctx, c) {
+				return
+			}
 			if err := c.conn.SetWriteDeadline(time.Now().Add(c.hub.config.WriteTimeout)); err != nil {
 				c.terminate(websocket.CloseInternalServerErr, "write deadline failed")
 				return
@@ -189,11 +189,11 @@ func (c *client) writePump() {
 				return
 			}
 		case <-ticker.C:
-            // Periodically close idle connections whose sessions have gone
-            // away. The heartbeat is already bounded by the ping interval.
-            if !c.hub.validateConnection(c.ctx,c) {
-                return
-            }
+			// Periodically close idle connections whose sessions have gone
+			// away. The heartbeat is already bounded by the ping interval.
+			if !c.hub.validateConnection(c.ctx, c) {
+				return
+			}
 			deadline := time.Now().Add(c.hub.config.WriteTimeout)
 			if err := c.conn.WriteControl(websocket.PingMessage, nil, deadline); err != nil {
 				c.terminate(websocket.CloseAbnormalClosure, "heartbeat failed")

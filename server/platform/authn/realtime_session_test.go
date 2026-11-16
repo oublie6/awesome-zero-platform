@@ -1,72 +1,96 @@
 package authn
 
 import (
-    "context"
-    "errors"
-    "strings"
-    "testing"
-    "time"
+	"context"
+	"errors"
+	"strings"
+	"testing"
+	"time"
 )
 
-func TestValidateRealtimeSessionTracksActiveSessionLifetime(t *testing.T){
-    ctx:=context.Background()
-    accountID:="01984f63-ec7f-7a4a-b908-33e8ff14d465"
-    store:=newMemoryStore()
-    svc,err:=NewService(fakeIdentity{principal:Principal{AccountID:accountID}},&fakeCodec{},store,Config{
-        AccessTTL:5*time.Minute,RefreshTTL:time.Hour,
-    })
-    if err!=nil{t.Fatal(err)}
-    auth,tokens,err:=svc.Login(ctx,"alice","password")
-    if err!=nil{t.Fatal(err)}
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,accountID);err!=nil{t.Fatal(err)}
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,"different");!errors.Is(err,ErrInvalidToken){
-        t.Fatalf("another account accepted this session: %v",err)
-    }
-    if err=svc.ValidateRealtimeSession(ctx,"unknown",accountID);!errors.Is(err,ErrInvalidToken){
-        t.Fatalf("unknown session: %v",err)
-    }
-    // Access JWT expiry does not disconnect an otherwise valid realtime
-    // session; it is still bounded by the current server-side session TTL.
-    svc.now=func()time.Time{return auth.ExpiresAt.Add(time.Second)}
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,accountID);err!=nil{
-        t.Fatalf("realtime session improperly tied to access JWT TTL: %v",err)
-    }
-    svc.now=time.Now
-    if err=svc.Logout(ctx,tokens.AccessToken);err!=nil{t.Fatal(err)}
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,accountID);!errors.Is(err,ErrInvalidToken){
-        t.Fatalf("logged out session remained valid: %v",err)
-    }
+func TestValidateRealtimeSessionTracksActiveSessionLifetime(t *testing.T) {
+	ctx := context.Background()
+	accountID := "01984f63-ec7f-7a4a-b908-33e8ff14d465"
+	store := newMemoryStore()
+	svc, err := NewService(fakeIdentity{principal: Principal{AccountID: accountID}}, &fakeCodec{}, store, Config{
+		AccessTTL: 5 * time.Minute, RefreshTTL: time.Hour,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	auth, tokens, err := svc.Login(ctx, "alice", "password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, accountID); err != nil {
+		t.Fatal(err)
+	}
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, "different"); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("another account accepted this session: %v", err)
+	}
+	if err = svc.ValidateRealtimeSession(ctx, "unknown", accountID); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("unknown session: %v", err)
+	}
+	// Access JWT expiry does not disconnect an otherwise valid realtime
+	// session; it is still bounded by the current server-side session TTL.
+	svc.now = func() time.Time { return auth.ExpiresAt.Add(time.Second) }
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, accountID); err != nil {
+		t.Fatalf("realtime session improperly tied to access JWT TTL: %v", err)
+	}
+	svc.now = time.Now
+	if err = svc.Logout(ctx, tokens.AccessToken); err != nil {
+		t.Fatal(err)
+	}
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, accountID); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("logged out session remained valid: %v", err)
+	}
 }
 
-func TestValidateRealtimeSessionDetectsProviderCutover(t *testing.T){
-    ctx:=context.Background()
-    accountID:="01984f63-ec7f-7a4a-b908-33e8ff14d465"
-    digest:=strings.Repeat("d",64)
-    verifier:=&toggleExternalVerifier{bound:map[string]string{digest:accountID}}
-    svc,err:=NewService(fakeIdentity{principal:Principal{AccountID:accountID}},&fakeCodec{},newMemoryStore(),Config{})
-    if err!=nil{t.Fatal(err)}
-    if err=svc.ConfigureExternalBindingVerifier(verifier);err!=nil{t.Fatal(err)}
-    auth,_,err:=svc.IssueVerifiedExternalAccount(ctx,accountID,"wechat",digest)
-    if err!=nil{t.Fatal(err)}
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,accountID);err!=nil{t.Fatal(err)}
-    verifier.set(digest,"")
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,accountID);!errors.Is(err,ErrInvalidToken){
-        t.Fatalf("unlinked provider still authorizes websocket: %v",err)
-    }
+func TestValidateRealtimeSessionDetectsProviderCutover(t *testing.T) {
+	ctx := context.Background()
+	accountID := "01984f63-ec7f-7a4a-b908-33e8ff14d465"
+	digest := strings.Repeat("d", 64)
+	verifier := &toggleExternalVerifier{bound: map[string]string{digest: accountID}}
+	svc, err := NewService(fakeIdentity{principal: Principal{AccountID: accountID}}, &fakeCodec{}, newMemoryStore(), Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = svc.ConfigureExternalBindingVerifier(verifier); err != nil {
+		t.Fatal(err)
+	}
+	auth, _, err := svc.IssueVerifiedExternalAccount(ctx, accountID, "wechat", digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, accountID); err != nil {
+		t.Fatal(err)
+	}
+	verifier.set(digest, "")
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, accountID); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("unlinked provider still authorizes websocket: %v", err)
+	}
 }
 
-func TestValidateRealtimeSessionFailsClosedWithoutBindingDatabase(t *testing.T){
-    ctx:=context.Background()
-    accountID:="01984f63-ec7f-7a4a-b908-33e8ff14d465"
-    digest:=strings.Repeat("f",64)
-    verifier:=&toggleExternalVerifier{bound:map[string]string{digest:accountID}}
-    svc,err:=NewService(fakeIdentity{principal:Principal{AccountID:accountID}},&fakeCodec{},newMemoryStore(),Config{})
-    if err!=nil{t.Fatal(err)}
-    if err=svc.ConfigureExternalBindingVerifier(verifier);err!=nil{t.Fatal(err)}
-    auth,_,err:=svc.IssueVerifiedExternalAccount(ctx,accountID,"wechat",digest)
-    if err!=nil{t.Fatal(err)}
-    verifier.mu.Lock();verifier.fail=true;verifier.mu.Unlock()
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,accountID);err==nil{
-        t.Fatal("unavailable provider binding data authorized websocket")
-    }
+func TestValidateRealtimeSessionFailsClosedWithoutBindingDatabase(t *testing.T) {
+	ctx := context.Background()
+	accountID := "01984f63-ec7f-7a4a-b908-33e8ff14d465"
+	digest := strings.Repeat("f", 64)
+	verifier := &toggleExternalVerifier{bound: map[string]string{digest: accountID}}
+	svc, err := NewService(fakeIdentity{principal: Principal{AccountID: accountID}}, &fakeCodec{}, newMemoryStore(), Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = svc.ConfigureExternalBindingVerifier(verifier); err != nil {
+		t.Fatal(err)
+	}
+	auth, _, err := svc.IssueVerifiedExternalAccount(ctx, accountID, "wechat", digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	verifier.mu.Lock()
+	verifier.fail = true
+	verifier.mu.Unlock()
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, accountID); err == nil {
+		t.Fatal("unavailable provider binding data authorized websocket")
+	}
 }

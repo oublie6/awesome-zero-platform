@@ -361,13 +361,13 @@ func (a realtimeAuthenticator) Authenticate(ctx context.Context, rawToken string
 // current account status, and any binding/password credential revision.
 // No raw bearer is retained on WebSocket connections.
 func (a realtimeAuthenticator) ValidateSession(ctx context.Context, id realtime.Identity) error {
-    if a.service==nil || id.SessionID=="" || id.AccountID=="" {
-        return realtime.ErrAuthenticationFailed
-    }
-    if err:=a.service.ValidateRealtimeSession(ctx,id.SessionID,id.AccountID);err!=nil{
-        return fmt.Errorf("%w: session no longer active",realtime.ErrAuthenticationFailed)
-    }
-    return nil
+	if a.service == nil || id.SessionID == "" || id.AccountID == "" {
+		return realtime.ErrAuthenticationFailed
+	}
+	if err := a.service.ValidateRealtimeSession(ctx, id.SessionID, id.AccountID); err != nil {
+		return fmt.Errorf("%w: session no longer active", realtime.ErrAuthenticationFailed)
+	}
+	return nil
 }
 
 type namedProbe struct {
