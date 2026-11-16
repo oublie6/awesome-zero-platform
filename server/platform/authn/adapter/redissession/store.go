@@ -119,40 +119,52 @@ func (s *Store) Get(ctx context.Context, sessionID string) (authn.Session, error
 // authenticated the AccountID/SessionID pair. Batch the session and account
 // epoch lookups into one Redis pipeline without an authorization cache.
 // Reject a mismatched AccountID even when the session key itself exists.
-func (s *Store) GetForAccount(ctx context.Context, sessionID, accountID string)(authn.Session,error){
-    if s==nil || s.client==nil || strings.TrimSpace(sessionID)=="" || strings.TrimSpace(accountID)=="" {
-        return authn.Session{},authn.ErrSessionNotFound
-    }
-    var sessionCommand,epochCommand *redis.StringCmd
-    commands:=func(pipe redis.Pipeliner)error{
-        sessionCommand=pipe.Get(ctx,s.key(sessionID))
-        epochCommand=pipe.Get(ctx,s.accountEpochKey(accountID))
-        return nil
-    }
-    var err error
-    if s.managed!=nil{
-        err=s.managed.PipelinedCtx(ctx,commands)
-    }else{
-        _,err=s.client.Pipelined(ctx,commands)
-    }
-    // A missing epoch is the initial version zero and a missing session
-    // is a normal invalidated socket. Other Redis errors fail closed.
-    if err!=nil && !errors.Is(err,redis.Nil){return authn.Session{},err}
-    raw,err:=sessionCommand.Bytes()
-    if errors.Is(err,redis.Nil){return authn.Session{},authn.ErrSessionNotFound}
-    if err!=nil{return authn.Session{},err}
-    var session authn.Session
-    if err=json.Unmarshal(raw,&session);err!=nil{
-        return authn.Session{},fmt.Errorf("decode realtime session: %w",err)
-    }
-    if session.ID!=sessionID || session.AccountID!=accountID ||
-        !session.ExpiresAt.After(s.now().UTC()){
-        return authn.Session{},authn.ErrSessionNotFound
-    }
-    epoch,err:=epochCommand.Int64()
-    if errors.Is(err,redis.Nil){epoch=0}else if err!=nil{return authn.Session{},err}
-    if epoch<0 || session.RevocationEpoch!=epoch{return authn.Session{},authn.ErrSessionNotFound}
-    return session,nil
+func (s *Store) GetForAccount(ctx context.Context, sessionID, accountID string) (authn.Session, error) {
+	if s == nil || s.client == nil || strings.TrimSpace(sessionID) == "" || strings.TrimSpace(accountID) == "" {
+		return authn.Session{}, authn.ErrSessionNotFound
+	}
+	var sessionCommand, epochCommand *redis.StringCmd
+	commands := func(pipe redis.Pipeliner) error {
+		sessionCommand = pipe.Get(ctx, s.key(sessionID))
+		epochCommand = pipe.Get(ctx, s.accountEpochKey(accountID))
+		return nil
+	}
+	var err error
+	if s.managed != nil {
+		err = s.managed.PipelinedCtx(ctx, commands)
+	} else {
+		_, err = s.client.Pipelined(ctx, commands)
+	}
+	// A missing epoch is the initial version zero and a missing session
+	// is a normal invalidated socket. Other Redis errors fail closed.
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return authn.Session{}, err
+	}
+	raw, err := sessionCommand.Bytes()
+	if errors.Is(err, redis.Nil) {
+		return authn.Session{}, authn.ErrSessionNotFound
+	}
+	if err != nil {
+		return authn.Session{}, err
+	}
+	var session authn.Session
+	if err = json.Unmarshal(raw, &session); err != nil {
+		return authn.Session{}, fmt.Errorf("decode realtime session: %w", err)
+	}
+	if session.ID != sessionID || session.AccountID != accountID ||
+		!session.ExpiresAt.After(s.now().UTC()) {
+		return authn.Session{}, authn.ErrSessionNotFound
+	}
+	epoch, err := epochCommand.Int64()
+	if errors.Is(err, redis.Nil) {
+		epoch = 0
+	} else if err != nil {
+		return authn.Session{}, err
+	}
+	if epoch < 0 || session.RevocationEpoch != epoch {
+		return authn.Session{}, authn.ErrSessionNotFound
+	}
+	return session, nil
 }
 
 func (s *Store) Rotate(ctx context.Context, sessionID, currentDigest, nextDigest string, nextExpiresAt time.Time) (authn.Session, error) {

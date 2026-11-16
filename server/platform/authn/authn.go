@@ -87,16 +87,17 @@ type PasswordFingerprintReader interface {
 type ExternalBindingVerifier interface {
 	VerifyExternalSession(context.Context, string, string, string) (bool, error)
 }
+
 // RealtimeAuthorityVerifier performs a single fresh lookup of account status
 // and any credential/provider proof. It must never return a cached allow.
 type RealtimeAuthorityVerifier interface {
-    CheckRealtimeAuthority(context.Context, string, string, string, string) (bool,error)
+	CheckRealtimeAuthority(context.Context, string, string, string, string) (bool, error)
 }
 
 // RealtimeSessionReader is an optional optimized Redis path: session and
 // account epoch are fetched together for an already trusted account ID.
 type RealtimeSessionReader interface {
-    GetForAccount(context.Context, string, string) (Session,error)
+	GetForAccount(context.Context, string, string) (Session, error)
 }
 
 type SessionStore interface {
@@ -487,12 +488,15 @@ func (s *Service) ValidateRealtimeSession(ctx context.Context, sessionID, accoun
 	if s == nil || strings.TrimSpace(sessionID) == "" || strings.TrimSpace(accountID) == "" {
 		return ErrInvalidToken
 	}
-    var (session Session; err error)
-    if optimized,ok:=s.sessions.(RealtimeSessionReader);ok{
-        session,err=optimized.GetForAccount(ctx,sessionID,accountID)
-    }else{
-        session,err=s.sessions.Get(ctx,sessionID)
-    }
+	var (
+		session Session
+		err     error
+	)
+	if optimized, ok := s.sessions.(RealtimeSessionReader); ok {
+		session, err = optimized.GetForAccount(ctx, sessionID, accountID)
+	} else {
+		session, err = s.sessions.Get(ctx, sessionID)
+	}
 	if err != nil {
 		if errors.Is(err, ErrSessionNotFound) {
 			return ErrInvalidToken
@@ -503,18 +507,22 @@ func (s *Service) ValidateRealtimeSession(ctx context.Context, sessionID, accoun
 		!session.ExpiresAt.After(s.now().UTC()) {
 		return ErrInvalidToken
 	}
-    // Production adapters implement the authoritative combined check. It
-    // reads account status and credential/provider binding in one fresh
-    // MySQL statement, without a positive cache or a stale session shortcut.
-    if verifier,ok:=s.identity.(RealtimeAuthorityVerifier);ok{
-        allowed,err:=verifier.CheckRealtimeAuthority(ctx,accountID,
-            session.ExternalProvider,session.ExternalSubjectDigest,session.PasswordFingerprint)
-        if err!=nil{return fmt.Errorf("check realtime authority: %w",err)}
-        if !allowed{return ErrInvalidToken}
-        return nil
-    }
-    // Small existing in-memory test providers retain the original explicit
-    // checks; real API construction always uses the combined SQL provider.
+	// Production adapters implement the authoritative combined check. It
+	// reads account status and credential/provider binding in one fresh
+	// MySQL statement, without a positive cache or a stale session shortcut.
+	if verifier, ok := s.identity.(RealtimeAuthorityVerifier); ok {
+		allowed, err := verifier.CheckRealtimeAuthority(ctx, accountID,
+			session.ExternalProvider, session.ExternalSubjectDigest, session.PasswordFingerprint)
+		if err != nil {
+			return fmt.Errorf("check realtime authority: %w", err)
+		}
+		if !allowed {
+			return ErrInvalidToken
+		}
+		return nil
+	}
+	// Small existing in-memory test providers retain the original explicit
+	// checks; real API construction always uses the combined SQL provider.
 	principal, err := s.identity.ResolveActive(ctx, accountID)
 	if err != nil {
 		if errors.Is(err, ErrAccountUnavailable) {

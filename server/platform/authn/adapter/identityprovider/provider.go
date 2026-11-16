@@ -72,15 +72,20 @@ func (p *Provider) CredentialFingerprint(ctx context.Context, id string) (string
 	}
 	return p.identity.CredentialFingerprint(ctx, id)
 }
+
 // CheckRealtimeAuthority never reuses the provider's account model cache.
 // Missing support fails closed instead of reverting to separate lookups.
-func (p *Provider) CheckRealtimeAuthority(ctx context.Context, accountID, provider, subjectDigest, passwordFingerprint string)(bool,error){
-    if p==nil || p.identity==nil{return false,authn.ErrAccountUnavailable}
-    checker,ok:=p.identity.(interface{
-        CheckRealtimeAuthority(context.Context,string,string,string,string)(bool,error)
-    })
-    if !ok{return false,fmt.Errorf("identity authority query is unavailable")}
-    return checker.CheckRealtimeAuthority(ctx,accountID,provider,subjectDigest,passwordFingerprint)
+func (p *Provider) CheckRealtimeAuthority(ctx context.Context, accountID, provider, subjectDigest, passwordFingerprint string) (bool, error) {
+	if p == nil || p.identity == nil {
+		return false, authn.ErrAccountUnavailable
+	}
+	checker, ok := p.identity.(interface {
+		CheckRealtimeAuthority(context.Context, string, string, string, string) (bool, error)
+	})
+	if !ok {
+		return false, fmt.Errorf("identity authority query is unavailable")
+	}
+	return checker.CheckRealtimeAuthority(ctx, accountID, provider, subjectDigest, passwordFingerprint)
 }
 
 func (p *Provider) ResolveActive(ctx context.Context, accountID string) (authn.Principal, error) {

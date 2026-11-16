@@ -135,46 +135,63 @@ func TestValidateRealtimeSessionRejectsDisabledAccount(t *testing.T) {
 	}
 }
 
-type fastRealtimeIdentity struct{
-    fakeIdentity
-    calls int
-    allow bool
-    fail error
+type fastRealtimeIdentity struct {
+	fakeIdentity
+	calls int
+	allow bool
+	fail  error
 }
-func (f *fastRealtimeIdentity) CheckRealtimeAuthority(_ context.Context,accountID,provider,digest,credential string)(bool,error){
-    f.calls++
-    if f.fail!=nil{return false,f.fail}
-    return f.allow,nil
+
+func (f *fastRealtimeIdentity) CheckRealtimeAuthority(_ context.Context, accountID, provider, digest, credential string) (bool, error) {
+	f.calls++
+	if f.fail != nil {
+		return false, f.fail
+	}
+	return f.allow, nil
 }
-type fastRealtimeStore struct{
-    *memoryStore
-    optimizedCalls int
+
+type fastRealtimeStore struct {
+	*memoryStore
+	optimizedCalls int
 }
-func(s *fastRealtimeStore) GetForAccount(ctx context.Context,sessionID,accountID string)(Session,error){
-    s.optimizedCalls++
-    session,err:=s.memoryStore.Get(ctx,sessionID)
-    if err!=nil{return Session{},err}
-    if session.AccountID!=accountID{return Session{},ErrSessionNotFound}
-    return session,nil
+
+func (s *fastRealtimeStore) GetForAccount(ctx context.Context, sessionID, accountID string) (Session, error) {
+	s.optimizedCalls++
+	session, err := s.memoryStore.Get(ctx, sessionID)
+	if err != nil {
+		return Session{}, err
+	}
+	if session.AccountID != accountID {
+		return Session{}, ErrSessionNotFound
+	}
+	return session, nil
 }
-func TestRealtimeUsesCombinedAuthorityAndSessionRead(t *testing.T){
-    ctx:=context.Background()
-    id:="01984f63-ec7f-7a4a-b908-33e8ff14d465"
-    identity:=&fastRealtimeIdentity{fakeIdentity:fakeIdentity{principal:Principal{AccountID:id}},allow:true}
-    store:=&fastRealtimeStore{memoryStore:newMemoryStore()}
-    svc,err:=NewService(identity,&fakeCodec{},store,Config{})
-    if err!=nil{t.Fatal(err)}
-    auth,_,err:=svc.Login(ctx,"alice","password")
-    if err!=nil{t.Fatal(err)}
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,id);err!=nil{t.Fatal(err)}
-    if store.optimizedCalls!=1||identity.calls!=1{t.Fatalf("fast paths not used session=%d authority=%d",store.optimizedCalls,identity.calls)}
-    identity.allow=false
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,id);!errors.Is(err,ErrInvalidToken){
-        t.Fatalf("revoked combined authority accepted: %v",err)
-    }
-    identity.allow=true
-    identity.fail=errors.New("mysql unavailable")
-    if err=svc.ValidateRealtimeSession(ctx,auth.SessionID,id);err==nil{
-        t.Fatal("combined authority failure allowed the session")
-    }
+func TestRealtimeUsesCombinedAuthorityAndSessionRead(t *testing.T) {
+	ctx := context.Background()
+	id := "01984f63-ec7f-7a4a-b908-33e8ff14d465"
+	identity := &fastRealtimeIdentity{fakeIdentity: fakeIdentity{principal: Principal{AccountID: id}}, allow: true}
+	store := &fastRealtimeStore{memoryStore: newMemoryStore()}
+	svc, err := NewService(identity, &fakeCodec{}, store, Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	auth, _, err := svc.Login(ctx, "alice", "password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, id); err != nil {
+		t.Fatal(err)
+	}
+	if store.optimizedCalls != 1 || identity.calls != 1 {
+		t.Fatalf("fast paths not used session=%d authority=%d", store.optimizedCalls, identity.calls)
+	}
+	identity.allow = false
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, id); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("revoked combined authority accepted: %v", err)
+	}
+	identity.allow = true
+	identity.fail = errors.New("mysql unavailable")
+	if err = svc.ValidateRealtimeSession(ctx, auth.SessionID, id); err == nil {
+		t.Fatal("combined authority failure allowed the session")
+	}
 }

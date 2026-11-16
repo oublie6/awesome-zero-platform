@@ -261,10 +261,14 @@ func (s *MySQLStore) InvalidateAccountCache(ctx context.Context, record accountR
 // credential-state predicates into one indexed database read. Every
 // condition is checked against the same SQL statement snapshot; no MySQL
 // session setting, schema change or local positive cache is required.
-func(s *MySQLStore) CheckRealtimeAuthority(ctx context.Context, accountID, provider, subjectDigest, passwordFingerprint string)(bool,error){
-    if s==nil || s.conn==nil{return false,ErrPersistence}
-    var result struct {Allowed int64 `db:"allowed"`}
-    err:=s.conn.QueryRowCtx(ctx,&result,`
+func (s *MySQLStore) CheckRealtimeAuthority(ctx context.Context, accountID, provider, subjectDigest, passwordFingerprint string) (bool, error) {
+	if s == nil || s.conn == nil {
+		return false, ErrPersistence
+	}
+	var result struct {
+		Allowed int64 `db:"allowed"`
+	}
+	err := s.conn.QueryRowCtx(ctx, &result, `
         SELECT EXISTS(
             SELECT 1 FROM identity_accounts a
             WHERE a.account_id=? AND a.status='active'
@@ -279,9 +283,11 @@ func(s *MySQLStore) CheckRealtimeAuthority(ctx context.Context, accountID, provi
                     AND SHA2(p.password_hash,256)=?
               ))
         ) AS allowed
-    `,accountID,provider,provider,subjectDigest,passwordFingerprint,passwordFingerprint)
-    if err!=nil{return false,wrapIdentityError(ErrPersistence,err)}
-    return result.Allowed==1,nil
+    `, accountID, provider, provider, subjectDigest, passwordFingerprint, passwordFingerprint)
+	if err != nil {
+		return false, wrapIdentityError(ErrPersistence, err)
+	}
+	return result.Allowed == 1, nil
 }
 
 func (s *MySQLStore) InsertPasswordCredentialTx(ctx context.Context, tx *sql.Tx, credential storedCredential) error {
