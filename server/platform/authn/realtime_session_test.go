@@ -96,31 +96,41 @@ func TestValidateRealtimeSessionFailsClosedWithoutBindingDatabase(t *testing.T) 
 }
 
 func TestValidateRealtimeSessionRejectsOldPasswordCredential(t *testing.T) {
-    ctx:=context.Background()
-    id:=&credentialIdentity{version:"verified-password-version"}
-    svc,err:=NewService(id,&fakeCodec{},newMemoryStore(),Config{})
-    if err!=nil{t.Fatal(err)}
-    auth,_,err:=svc.Login(ctx,"alice","current-password")
-    if err!=nil{t.Fatal(err)}
-    if err:=svc.ValidateRealtimeSession(ctx,auth.SessionID,auth.Principal.AccountID);err!=nil{t.Fatal(err)}
-    id.mu.Lock()
-    id.version="rotated-password-version"
-    id.mu.Unlock()
-    if err:=svc.ValidateRealtimeSession(ctx,auth.SessionID,auth.Principal.AccountID);!errors.Is(err,ErrInvalidToken){
-        t.Fatalf("password rotation left old WebSocket session valid: %v",err)
-    }
+	ctx := context.Background()
+	id := &credentialIdentity{version: "verified-password-version"}
+	svc, err := NewService(id, &fakeCodec{}, newMemoryStore(), Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	auth, _, err := svc.Login(ctx, "alice", "current-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.ValidateRealtimeSession(ctx, auth.SessionID, auth.Principal.AccountID); err != nil {
+		t.Fatal(err)
+	}
+	id.mu.Lock()
+	id.version = "rotated-password-version"
+	id.mu.Unlock()
+	if err := svc.ValidateRealtimeSession(ctx, auth.SessionID, auth.Principal.AccountID); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("password rotation left old WebSocket session valid: %v", err)
+	}
 }
 func TestValidateRealtimeSessionRejectsDisabledAccount(t *testing.T) {
-    ctx:=context.Background()
-    id:="01984f63-ec7f-7a4a-b908-33e8ff14d465"
-    store:=newMemoryStore()
-    svc,err:=NewService(fakeIdentity{principal:Principal{AccountID:id},resolveErr:ErrAccountUnavailable},
-        &fakeCodec{},store,Config{})
-    if err!=nil{t.Fatal(err)}
-    now:=time.Now()
-    session:=Session{ID:"disabled-session",AccountID:id,CreatedAt:now,ExpiresAt:now.Add(time.Hour)}
-    if err:=store.Create(ctx,session);err!=nil{t.Fatal(err)}
-    if err:=svc.ValidateRealtimeSession(ctx,session.ID,id);!errors.Is(err,ErrAccountUnavailable){
-        t.Fatalf("disabled account authorized WebSocket: %v",err)
-    }
+	ctx := context.Background()
+	id := "01984f63-ec7f-7a4a-b908-33e8ff14d465"
+	store := newMemoryStore()
+	svc, err := NewService(fakeIdentity{principal: Principal{AccountID: id}, resolveErr: ErrAccountUnavailable},
+		&fakeCodec{}, store, Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	session := Session{ID: "disabled-session", AccountID: id, CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	if err := store.Create(ctx, session); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.ValidateRealtimeSession(ctx, session.ID, id); !errors.Is(err, ErrAccountUnavailable) {
+		t.Fatalf("disabled account authorized WebSocket: %v", err)
+	}
 }
