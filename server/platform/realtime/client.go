@@ -185,7 +185,7 @@ func (c *client) writePump() {
 				return
 			}
 			if err := c.conn.WriteMessage(websocket.TextMessage, payload); err != nil {
-				c.terminate(websocket.CloseAbnormalClosure, "write failed")
+				c.terminate(websocket.CloseInternalServerErr, "write failed")
 				return
 			}
 		case <-ticker.C:
@@ -196,7 +196,7 @@ func (c *client) writePump() {
 			}
 			deadline := time.Now().Add(c.hub.config.WriteTimeout)
 			if err := c.conn.WriteControl(websocket.PingMessage, nil, deadline); err != nil {
-				c.terminate(websocket.CloseAbnormalClosure, "heartbeat failed")
+				c.terminate(websocket.CloseInternalServerErr, "heartbeat failed")
 				return
 			}
 		}
