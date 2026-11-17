@@ -96,3 +96,9 @@ test('the selected hand stays clear of play and bid buttons',()=>{
       'selected card intercepts action touch target at '+width+'x'+height)
   }
 })
+
+test('the pass action is disabled until a public trick exists',async()=>{
+  const {readFile}=await import('node:fs/promises')
+  const table=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
+  assert.match(table,/myTurn && playing\.cards\.length>0,this\.callbacks\.pass/)
+})

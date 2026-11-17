@@ -237,7 +237,8 @@ export class GameTableView {
         myTurn&&(score===0||score>highest),()=>this.callbacks.bid(score)))
     }else if(data.phase==='PLAYING'){
       const bw=Math.min(150*u,w*.30)
-      this.button('PassTurn','不出',-bw*.58,controlsY,bw,42*u,myTurn,this.callbacks.pass)
+      this.button('PassTurn','不出',-bw*.58,controlsY,bw,42*u,
+        myTurn && playing.cards.length>0,this.callbacks.pass)
       this.button('PlaySelected','出牌'+(selected.size?' ('+selected.size+')':''),
         bw*.58,controlsY,bw,42*u,myTurn&&selected.size>0,this.callbacks.play,true)
     }
