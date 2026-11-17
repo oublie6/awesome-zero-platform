@@ -207,25 +207,38 @@ type dqBatchStoreFixture struct {
 	seen    bool
 	results map[domain.HandID]bool
 }
+
 func (x *dqBatchStoreFixture) GetTurnDeadline(context.Context, domain.HandID) (mysqlstore.TurnDeadline, time.Time, error) {
 	return mysqlstore.TurnDeadline{}, time.Time{}, errors.New("not used by dispatch")
 }
 func (x *dqBatchStoreFixture) PendingTurnDeliveries(_ context.Context, limit int) ([]mysqlstore.TurnDeadline, error) {
-	if limit != 64 { return nil, errors.New("invalid batch limit") }
-	if x.seen { return nil, nil }
+	if limit != 64 {
+		return nil, errors.New("invalid batch limit")
+	}
+	if x.seen {
+		return nil, nil
+	}
 	x.seen = true
 	return append([]mysqlstore.TurnDeadline(nil), x.rows...), nil
 }
 func (x *dqBatchStoreFixture) MarkTurnDelivery(_ context.Context, item mysqlstore.TurnDeadline, ok bool) error {
-	if x.results == nil { x.results = map[domain.HandID]bool{} }
+	if x.results == nil {
+		x.results = map[domain.HandID]bool{}
+	}
 	x.results[item.HandID] = ok
 	return nil
 }
-type dqPartialFailurePublisher struct { delivered []domain.HandID }
+
+type dqPartialFailurePublisher struct{ delivered []domain.HandID }
+
 func (x *dqPartialFailurePublisher) At(_ context.Context, body []byte, deadline time.Time) (string, error) {
 	ticket, err := turntimer.Decode(body)
-	if err != nil || !ticket.Deadline().Equal(deadline) { return "", errors.New("invalid queue ticket") }
-	if ticket.HandID == "broken" { return "", errors.New("one beanstalkd publisher unavailable") }
+	if err != nil || !ticket.Deadline().Equal(deadline) {
+		return "", errors.New("invalid queue ticket")
+	}
+	if ticket.HandID == "broken" {
+		return "", errors.New("one beanstalkd publisher unavailable")
+	}
 	x.delivered = append(x.delivered, domain.HandID(ticket.HandID))
 	return "accepted", nil
 }
@@ -234,16 +247,16 @@ func (*dqPartialFailurePublisher) Close() error { return nil }
 func TestTurnDQDispatchContinuesAfterOnePublisherFailure(t *testing.T) {
 	deadline := time.UnixMilli(2_000_000_000_000).UTC()
 	store := &dqBatchStoreFixture{rows: []mysqlstore.TurnDeadline{
-		{HandID:"broken", Version:1, Phase:livehand.PhaseBidding, Seat:1, Deadline:deadline},
-		{HandID:"healthy", Version:1, Phase:livehand.PhaseBidding, Seat:2, Deadline:deadline},
+		{HandID: "broken", Version: 1, Phase: livehand.PhaseBidding, Seat: 1, Deadline: deadline},
+		{HandID: "healthy", Version: 1, Phase: livehand.PhaseBidding, Seat: 2, Deadline: deadline},
 	}}
 	publisher := &dqPartialFailurePublisher{}
-	worker := &turnDqWorker{store:store, ids:dqIDFixture{}, publisher:publisher}
-	if err := worker.dispatch(context.Background(),64); err == nil {
+	worker := &turnDqWorker{store: store, ids: dqIDFixture{}, publisher: publisher}
+	if err := worker.dispatch(context.Background(), 64); err == nil {
 		t.Fatal("an enqueue failure must be surfaced to repair/observability")
 	}
 	if !store.seen || store.results["broken"] || !store.results["healthy"] ||
-		len(publisher.delivered)!=1 || publisher.delivered[0]!="healthy" {
+		len(publisher.delivered) != 1 || publisher.delivered[0] != "healthy" {
 		t.Fatalf("failed hand starved healthy delivery: results=%v published=%v", store.results, publisher.delivered)
 	}
 }
