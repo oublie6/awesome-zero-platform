@@ -10,6 +10,7 @@ import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
 import { menuWindow } from './MenuPagination.ts'
+import { GameTableView } from './GameTableView.ts'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
 import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
@@ -49,6 +50,7 @@ export class GameBootstrap extends Component {
   private title: Label | null = null
   private status: Label | null = null
   private buttons: Node[] = []
+  private tableView: GameTableView | null = null
   // Keep the full accessible action set even when it does not fit in one view.
   private menuActions: MenuAction[] = []
   private menuPage = 0
@@ -178,6 +180,12 @@ export class GameBootstrap extends Component {
   private renderScreen(screen: Screen): void {
     if(this.screen!==screen)this.menuPage=0
     this.screen = screen
+    if(screen!=='table' && this.tableView){
+      this.tableView.destroy()
+      this.tableView=null
+    }
+    if(this.title?.isValid)this.title.node.active=screen!=='table'
+    if(this.status?.isValid)this.status.node.active=screen!=='table'
     for (const button of this.buttons) if (button.isValid) button.destroy()
     this.buttons = []
     this.menuActions = []
@@ -296,48 +304,47 @@ export class GameBootstrap extends Component {
         {name:'WechatCancelUnlink',caption:'返回房间大厅',action:()=>this.renderScreen('rooms')}
       ])
     } else if (screen === 'table') {
+      // The real table uses a dedicated Cocos layer; cards are no longer
+      // text buttons mixed into the generic paginated menu.
       const snapshot=this.online?.shell.hand.snapshot
-      const pub=(snapshot?.view as PrivateHandProjection | undefined)?.public
-      const me=snapshot?.view.position
-      const final = snapshot?.phase === 'COMPLETED' || snapshot?.phase === 'ABORTED'
-      const terminal = snapshot?.view.terminalEvidence as
-        {winnerSeat:number|null;seatPoints:number[];recordDigest:string}|undefined
-      this.title!.string = final ? (snapshot?.phase === 'COMPLETED' ? '公平斗地主 · 已结算' : '公平斗地主 · 已结束') :
-        pub?.phase==='BIDDING' ? '公平斗地主 · 叫地主' :
-        pub?.phase==='PLAYING' ? '公平斗地主 · 出牌中' : '公平斗地主 · 牌桌'
-      const seatInfo=pub?.seats?.map(seat=>`座位${seat.position}${seat.position===me?'（我）':''} ${seat.remainingCards}张`).join(' / ')
-      this.status!.string = final && terminal
-        ? `牌局 ${snapshot!.handId} · 已核验归档版本${snapshot!.version}\n积分${terminal.seatPoints.join('/')} · ${terminal.winnerSeat ? '胜者座位'+terminal.winnerSeat : '已结束'}\n证据摘要 ${terminal.recordDigest.slice(0,24)}…`
-        : snapshot
-        ? `牌局 ${snapshot.handId} · 版本${snapshot.version}\n${seatInfo??''}\n${pub?.phase==='BIDDING'?'等待当前玩家叫地主':pub?.phase==='PLAYING'?('轮到座位'+String(pub.playingSeat??'?')):'等待服务端状态'}`
-        : '等待服务端权威私有牌局快照，不展示模拟手牌'
-      const cards=final?[]:Array.isArray(snapshot?.view.cards) ? snapshot!.view.cards as string[] : []
-      this.selectedCards.forEach(selected => { if(!cards.includes(selected))this.selectedCards.delete(selected) })
-      for (const card of cards) {
-        this.addMenu([{name:'Card_'+card,caption:(this.selectedCards.has(card)?'✓ ':'')+card,
-          action:()=>{if(this.selectedCards.has(card))this.selectedCards.delete(card);else this.selectedCards.add(card);this.renderScreen('table')}}])
+      const projection=(snapshot?.view as PrivateHandProjection | undefined)??null
+      const final=snapshot?.phase==='COMPLETED'||snapshot?.phase==='ABORTED'
+      const terminal=(snapshot?.view.terminalEvidence as
+        {winnerSeat:number|null;seatPoints:number[];recordDigest:string}|undefined)
+      const cards=final?[]:Array.isArray(projection?.cards)?projection!.cards:[]
+      this.selectedCards.forEach(selected=>{
+        if(!cards.includes(selected))this.selectedCards.delete(selected)
+      })
+      if(!this.tableView){
+        this.tableView=new GameTableView(this.content!,{
+          selectCard:card=>{
+            if(this.selectedCards.has(card))this.selectedCards.delete(card)
+            else this.selectedCards.add(card)
+            this.renderScreen('table')
+          },
+          bid:score=>void this.bid(score),
+          play:()=>void this.play(),
+          pass:()=>void this.pass(),
+          refresh:()=>void this.refreshHand(),
+          evidence:()=>void this.showEvidence(),
+          retryUnknown:()=>void this.retryUnknownHand(),
+          discardUnknown:()=>this.discardUnknownHand(),
+          back:()=>this.renderScreen('rooms'),
+        })
       }
-      const controls:MenuAction[]=[]
-      if(pub?.phase==='BIDDING'){
-        controls.push(
-          {name:'BidZero',caption:'不叫',action:()=>void this.bid(0)},
-          {name:'BidOne',caption:'叫 1 分',action:()=>void this.bid(1)},
-          {name:'BidTwo',caption:'叫 2 分',action:()=>void this.bid(2)},
-          {name:'BidThree',caption:'叫 3 分',action:()=>void this.bid(3)})
-      }else if(pub?.phase==='PLAYING'){
-        controls.push({name:'PlayCards',caption:'出牌',action:()=>void this.play()},
-                      {name:'PassTurn',caption:'不出',action:()=>void this.pass()})
-      }
-      if(this.online?.actions.needsReconciliation){
-        controls.push(
-          {name:'RetryUnknownHand',caption:'重试未确认操作',action:()=>void this.retryUnknownHand()},
-          {name:'DiscardUnknownHand',caption:'按新快照放弃旧操作',action:()=>this.discardUnknownHand()})
-      }
-      controls.push(
-        {name:'RefreshHand',caption:'同步牌局',action:()=>void this.refreshHand()},
-        {name:'FinalEvidence',caption:'核验结算',action:()=>void this.showEvidence()},
-        {name:'BackRooms',caption:'返回房间',action:()=>this.renderScreen('rooms')})
-      this.addMenu(controls)
+      const finalSummary=final && terminal
+        ? '胜者座位'+String(terminal.winnerSeat??'—')+' · 积分'+terminal.seatPoints.join('/')
+        : ''
+      this.content!.getComponent(SafeArea)!.updateArea()
+      const size=this.content!.getComponent(UITransform)!
+      this.tableView.render({
+        roomID:this.roomID,handID:snapshot?.handId??this.handID,
+        version:snapshot?.version??0,phase:snapshot?.phase??'WAITING',
+        view:projection,selected:this.selectedCards,
+        needsReconciliation:!!this.online?.actions.needsReconciliation,
+        finalSummary
+      },size.width,size.height)
+      return
     } else {
       this.title!.string = '玩法介绍'
       this.status!.string = '三人一桌，服务端执行公平洗牌、叫地主、出牌和结算；客户端只显示权威状态。'
@@ -408,7 +415,10 @@ export class GameBootstrap extends Component {
     // room menus and 17-card hands must remain reachable, not shrink to 9px.
     this.menuActions.push(...actions)
   }
-  private notice(message:string):void {if(this.status?.isValid)this.status.string=message}
+  private notice(message:string):void {
+    if(this.status?.isValid)this.status.string=message
+    if(this.screen==='table')this.tableView?.setNotice(message)
+  }
   /** Every async UI callback belongs to one authenticated controller and one
    * Scene login epoch. Disposed/replaced accounts may finish their requests,
    * but must never modify the current account's UI. */
@@ -1299,6 +1309,10 @@ export class GameBootstrap extends Component {
     const size=this.content.getComponent(UITransform)!
     const height=Math.max(1,size.height)
     const portrait=height>size.width
+    if(this.screen==='table'){
+      this.tableView?.layout(size.width,size.height)
+      return
+    }
     const width=Math.max(1,Math.min(size.width-32,portrait?1216:760))
     this.title.fontSize=portrait?72:42
     this.title.lineHeight=this.title.fontSize+8
@@ -1385,6 +1399,8 @@ export class GameBootstrap extends Component {
     for(const button of this.buttons)if(button.isValid)button.off(Node.EventType.TOUCH_END)
     this.buttons=[]
     this.menuActions=[]
+    this.tableView?.destroy()
+    this.tableView=null
     if(this.loginPassword)this.loginPassword.string=''
     for(const node of this.loginNodes)if(node.isValid)node.destroy()
     this.loginNodes=[]
