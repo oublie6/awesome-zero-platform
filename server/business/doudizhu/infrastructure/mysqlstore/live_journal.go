@@ -111,6 +111,9 @@ AND NOT EXISTS (SELECT 1 FROM doudizhu_live_actions WHERE hand_id=?)`, id, id)
 	if affected != 1 {
 		return ErrLiveWatermarkConflict
 	}
+    if j.turnTimeouts!=nil {
+        if _,err=j.db.ExecContext(ctx,`DELETE FROM doudizhu_turn_deadlines WHERE hand_id=?`,id);err!=nil{return err}
+    }
 	return nil
 }
 
@@ -202,6 +205,9 @@ WHERE hand_id=? FOR UPDATE`, id).Scan(&foundEpoch, &committed); err != nil {
 	if committed != command.ExpectedVersion {
 		return ErrLiveWatermarkConflict
 	}
+    if err=j.requireCurrentTurn(ctx,tx,id,commandID,sequence,command.ExpectedVersion,command.ActorPosition);err!=nil{
+        return err
+    }
 	if _, err = tx.ExecContext(ctx, `INSERT INTO doudizhu_live_actions(
 hand_id,state_version,owner_epoch,command_id,actor_account_id,actor_position,expected_version,
 client_sequence,command_payload,result_digest,integrity_version,integrity_tag,committed_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`,

@@ -112,12 +112,42 @@ ORDER BY next_attempt_at,hand_id LIMIT ?`,limit)
 // go-queue/dq deletes jobs before callback and can drop callbacks after outage.
 func(j *LiveJournal) MarkTurnDelivery(ctx context.Context,item TurnDeadline,succeeded bool)error{
     if j==nil||j.turnTimeouts==nil{return errors.New("turn deadlines disabled")}
-    seconds:=2
-    if succeeded{seconds=10}
-    _,err:=j.db.ExecContext(ctx,`UPDATE doudizhu_turn_deadlines SET
-next_attempt_at=GREATEST(DATE_ADD(UTC_TIMESTAMP(3),INTERVAL ? SECOND),
-    DATE_ADD(deadline_at,INTERVAL ? SECOND))
-WHERE hand_id=? AND live_version=? AND seat=? AND deadline_at=?`,
-        seconds,func()int{if succeeded{return 10};return 0}(),string(item.HandID),item.Version,item.Seat,item.Deadline)
+    var query string
+    if succeeded {
+        query=`UPDATE doudizhu_turn_deadlines SET
+next_attempt_at=GREATEST(DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 10 SECOND),
+    DATE_ADD(deadline_at,INTERVAL 10 SECOND))
+WHERE hand_id=? AND live_version=? AND seat=? AND deadline_at=?`
+    } else {
+        query=`UPDATE doudizhu_turn_deadlines SET
+next_attempt_at=DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 2 SECOND)
+WHERE hand_id=? AND live_version=? AND seat=? AND deadline_at=?`
+    }
+    _,err:=j.db.ExecContext(ctx,query,string(item.HandID),item.Version,item.Seat,item.Deadline)
     return err
+}
+
+var ErrTurnExpired=errors.New("doudizhu turn deadline expired")
+
+// requireCurrentTurn runs in the same MySQL tx after locking the writer row.
+// Both human and system calls pass this gate. Only the internal zero-sequence
+// timeout command may run after the deadline; all other late commands reject.
+func(j *LiveJournal) requireCurrentTurn(ctx context.Context,tx *sql.Tx,
+    id domain.HandID,commandID string,sequence,expectedVersion uint64,seat uint8)error{
+    if j.turnTimeouts==nil{return nil}
+    var version uint64
+    var turnSeat uint8
+    var deadline,now time.Time
+    err:=tx.QueryRowContext(ctx,`SELECT live_version,seat,deadline_at,UTC_TIMESTAMP(6)
+FROM doudizhu_turn_deadlines WHERE hand_id=? FOR UPDATE`,string(id)).
+        Scan(&version,&turnSeat,&deadline,&now)
+    if err!=nil{return fmt.Errorf("read committed turn guard: %w",err)}
+    if version!=expectedVersion || turnSeat!=seat{return ErrLiveWatermarkConflict}
+    automated:=sequence==0 && len(commandID)>13 && commandID[:13]=="turn-timeout:"
+    if automated {
+        if now.Before(deadline){return ErrTurnExpired} // early queue task cannot act
+    } else if !now.Before(deadline){
+        return ErrTurnExpired // late user action cannot overtake an expired turn
+    }
+    return nil
 }
