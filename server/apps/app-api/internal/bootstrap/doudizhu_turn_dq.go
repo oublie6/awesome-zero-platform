@@ -52,6 +52,7 @@ type turnDqWorker struct{
     lifecycle turnDqLifecycle
     ids application.IDGenerator
     publisher turnDqPublisher
+    onCommitted func(context.Context,domain.HandID)
 }
 
 func verifyRecoveredTurnDeadlines(ctx context.Context,journal *mysqlstore.LiveJournal,states map[domain.HandID]string)error{
@@ -67,7 +68,8 @@ func verifyRecoveredTurnDeadlines(ctx context.Context,journal *mysqlstore.LiveJo
 }
 func startDoudizhuTurnDQ(ctx context.Context,cfg config.Config,
     reader turnDqReader,journal *mysqlstore.LiveJournal,game turnDqGame,
-    lifecycleService turnDqLifecycle,ids application.IDGenerator)error{
+    lifecycleService turnDqLifecycle,ids application.IDGenerator,
+    notify func(context.Context,domain.HandID))error{
     endpoints:=cfg.Doudizhu.TurnDQ.Endpoints
     queueConfig:=delayqueue.Config{Endpoints:endpoints,Tube:cfg.Doudizhu.TurnDQ.Tube,
         RedisHost:cfg.Redis.Addr,RedisUser:cfg.Redis.Username,RedisPass:cfg.Redis.Password}
@@ -75,7 +77,7 @@ func startDoudizhuTurnDQ(ctx context.Context,cfg config.Config,
     if err!=nil{return err}
     consumer,err:=delayqueue.NewConsumer(queueConfig)
     if err!=nil{_ = producer.Close();return err}
-    worker:=&turnDqWorker{store:journal,reader:reader,game:game,lifecycle:lifecycleService,ids:ids,publisher:producer}
+    worker:=&turnDqWorker{store:journal,reader:reader,game:game,lifecycle:lifecycleService,ids:ids,publisher:producer,onCommitted:notify}
     go func(){
         defer producer.Close()
         ticker:=time.NewTicker(cfg.Doudizhu.SweepInterval)
@@ -164,7 +166,10 @@ func(w *turnDqWorker)process(ctx context.Context,ticket turntimer.Ticket)error{
         if err==nil{err=w.lifecycle.AfterPlay(ctx,actor,handID,result)}
     default:return fmt.Errorf("unsupported persisted turn phase")
     }
-    if err==nil{return nil}
+    if err==nil{
+        if w.onCommitted!=nil{w.onCommitted(ctx,handID)}
+        return nil
+    }
     // If a concurrent action advanced the version, this timeout is obsolete,
     // but any remaining failure must be visible to the durable repair scanner.
     latest,_,lookupErr:=w.store.GetTurnDeadline(ctx,handID)

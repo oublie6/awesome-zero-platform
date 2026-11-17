@@ -48,21 +48,33 @@ func doudizhuModule(
 				return nil, fmt.Errorf("enabled Doudizhu module is incomplete")
 			}
 			doudizhuapi.Register(server, authentication, components.dispatcher)
-			if hub != nil {
-				if _, err := doudizhuapi.RegisterRealtime(hub, components.dispatcher, components.audience); err != nil {
-					components.cancel()
-					return nil, fmt.Errorf("register Doudizhu realtime handlers: %w", err)
-				}
-			}
+			var bridge *doudizhuapi.RealtimeBridge
+            if hub!=nil{
+                var err error
+                bridge,err=doudizhuapi.RegisterRealtime(hub,components.dispatcher,components.audience)
+                if err!=nil{
+                    components.cancel()
+                    return nil,fmt.Errorf("register Doudizhu realtime handlers: %w",err)
+                }
+            }
+            if components.startTurnQueue!=nil{
+                notify:=func(context.Context,domain.HandID){}
+                if bridge!=nil{notify=bridge.NotifyCommitted}
+                if err:=components.startTurnQueue(notify);err!=nil{
+                    components.cancel()
+                    return nil,fmt.Errorf("start Doudizhu timeout queue: %w",err)
+                }
+            }
 			return components.cancel, nil
 		},
 	}
 }
 
 type doudizhuComponents struct {
-	dispatcher *doudizhuapi.Dispatcher
-	audience   doudizhuapi.HandAudience
-	cancel     context.CancelFunc
+    dispatcher *doudizhuapi.Dispatcher
+    audience doudizhuapi.HandAudience
+    cancel context.CancelFunc
+    startTurnQueue func(func(context.Context,domain.HandID))error
 }
 
 func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealkeys.Registry) (doudizhuComponents, error) {
@@ -253,10 +265,10 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 			}
 		}()
 	}
+    var startQueue func(func(context.Context,domain.HandID))error
     if cfg.Doudizhu.TurnDQ.Enabled {
-        if err:=startDoudizhuTurnDQ(ctx,cfg,store,journal,service,supervisor,ids);err!=nil{
-            cancel()
-            return doudizhuComponents{},fmt.Errorf("start Doudizhu DQ: %w",err)
+        startQueue=func(notify func(context.Context,domain.HandID))error{
+            return startDoudizhuTurnDQ(ctx,cfg,store,journal,service,supervisor,ids,notify)
         }
     } else {
 	go func() {
@@ -267,5 +279,5 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 		}
 	}()
     }
-	return doudizhuComponents{dispatcher: dispatcher, audience: store, cancel: cancel}, nil
+	return doudizhuComponents{dispatcher:dispatcher,audience:store,cancel:cancel,startTurnQueue:startQueue},nil
 }
