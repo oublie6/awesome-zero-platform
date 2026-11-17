@@ -225,7 +225,7 @@ export class GameTableView {
     const cards=final?[]:Array.isArray(view?.cards)?sortHandCards(view!.cards):[]
     const selected=data.selected
     const fan=handFan(cards.length,w,h,selected,cards)
-    const controlsY=tableActionCenterY(fan,h,u)
+    const controlsY=tableActionCenterY(fan,w,h,u)
     // Operations are always in their own row; cards never share pagination.
     if(data.phase==='BIDDING'){
       const highest=highestBid(view??null)

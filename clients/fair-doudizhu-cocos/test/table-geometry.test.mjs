@@ -87,7 +87,10 @@ test('the selected hand stays clear of play and bid buttons',()=>{
   for(const [width,height] of [[360,750],[390,844],[760,390],[1280,720]]){
     const u=Math.max(.72,Math.min(1.35,Math.min(width/760,height/480)))
     const selected=handFan(cards.length,width,height,new Set(cards),cards)
-    const actionY=tableActionCenterY(selected,height,u)
+    const actionY=tableActionCenterY(selected,width,height,u)
+    const neutral=handFan(cards.length,width,height,new Set(),cards)
+    assert.equal(actionY,tableActionCenterY(neutral,width,height,u),
+      'selecting a card shifted action hitboxes at '+width+'x'+height)
     const highestCardTop=Math.max(...selected.places.map(pos=>pos.y+selected.cardHeight/2))
     assert.ok(actionY-21*u>=highestCardTop+2*u,
       'selected card intercepts action touch target at '+width+'x'+height)

@@ -102,7 +102,11 @@ export function tableHeaderSlots(width:number,scale:number):{
 }
 
 /** Lifted selected cards stay below the operating controls' touch targets. */
-export function tableActionCenterY(fan:HandFan,height:number,scale:number):number{
+export function tableActionCenterY(fan:HandFan,width:number,height:number,scale:number):number{
   const u=Math.max(.72,Math.min(1.35,scale))
-  return fan.places.length?fan.places[0].y+fan.cardHeight/2+50*u:-height/2+90*u
+  const w=Math.max(240,width),h=Math.max(280,height)
+  // Calculate from a card-independent baseline; selecting the first card must
+  // never move the buttons underneath the player's fingers.
+  const handUnit=Math.max(.72,Math.min(1.35,Math.min(w/760,h/440)))
+  return fan.places.length?-h/2+10*handUnit+fan.cardHeight+50*u:-h/2+90*u
 }
