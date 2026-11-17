@@ -24,7 +24,7 @@ import (
 )
 
 type turnDqPublisher interface {
-    At(context.Context,turntimer.Ticket)(string,error)
+    At(context.Context,[]byte,time.Time)(string,error)
     Close()error
 }
 type turnDqStore interface {
@@ -91,7 +91,9 @@ func startDoudizhuTurnDQ(ctx context.Context,cfg config.Config,
             select{case <-ctx.Done():return;case <-ticker.C:}
         }
     }()
-    go consumer.Consume(func(ticket turntimer.Ticket)error{
+    go consumer.Consume(func(body []byte)error{
+        ticket,err:=turntimer.Decode(body)
+        if err!=nil{return err}
         if ctx.Err()!=nil{return nil}
         handleCtx,cancel:=context.WithTimeout(ctx,10*time.Second)
         defer cancel()
@@ -114,7 +116,9 @@ func(w *turnDqWorker)dispatch(ctx context.Context,limit int)error{
         if err!=nil{return err}
         ticket:=turntimer.Ticket{HandID:string(item.HandID),LiveVersion:item.Version,
             Seat:item.Seat,DeadlineMillis:item.Deadline.UnixMilli(),DeliveryID:deliveryID}
-        _,publishErr:=w.publisher.At(ctx,ticket)
+        body,encodeErr:=turntimer.Encode(ticket)
+        if encodeErr!=nil{return encodeErr}
+        _,publishErr:=w.publisher.At(ctx,body,ticket.Deadline())
         markErr:=w.store.MarkTurnDelivery(ctx,item,publishErr==nil)
         if markErr!=nil{return markErr}
         if publishErr!=nil{return publishErr}

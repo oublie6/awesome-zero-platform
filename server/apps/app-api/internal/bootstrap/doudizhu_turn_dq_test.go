@@ -77,8 +77,10 @@ func(x *dqLifecycleFixture)AfterPlay(_ context.Context,a domain.AccountID,id dom
     x.plays++;return nil
 }
 type dqPublisherFixture struct{enqueued int}
-func(x *dqPublisherFixture)At(_ context.Context,t turntimer.Ticket)(string,error){
-    if err:=t.Validate();err!=nil{return "",err}
+func(x *dqPublisherFixture)At(_ context.Context,body []byte,at time.Time)(string,error){
+    t,err:=turntimer.Decode(body)
+    if err!=nil{return "",err}
+    if t.Deadline()!=at{return "",errors.New("deadline mismatch")}
     x.enqueued++;return "job-1",nil
 }
 func(x *dqPublisherFixture)Close()error{return nil}
