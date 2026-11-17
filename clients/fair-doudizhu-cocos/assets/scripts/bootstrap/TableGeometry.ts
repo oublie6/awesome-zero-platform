@@ -79,9 +79,30 @@ export function handFan(count:number,width:number,height:number,selected:Readonl
     const norm=count<=1?0:(2*i-(count-1))/(count-1)
     return {
       x:-span/2+cardWidth/2+i*step,
-      y:baseY+7*unit*(1-norm*norm)+(selected.has(card)?20*unit:0),
+      y:baseY+7*unit*(1-norm*norm)+(selected.has(card)?15*unit:0),
       angle:-norm*6,
     }
   })
   return {cardWidth,cardHeight,step,places}
+}
+
+/** The three top chrome slots must not overlap at supported viewport widths. */
+export function tableHeaderSlots(width:number,scale:number):{
+  leftX:number;leftWidth:number;clockWidth:number;rightX:number;rightWidth:number
+}{
+  const w=Math.max(240,width)
+  const u=Math.max(.72,Math.min(1.35,scale))
+  const leftWidth=Math.min(w*.30,220*u)
+  const rightWidth=Math.max(58,75*u)
+  return {
+    leftX:-w/2+14*u+leftWidth/2,leftWidth,
+    clockWidth:Math.min(w*.24,205*u),
+    rightX:w/2-rightWidth/2-14*u,rightWidth,
+  }
+}
+
+/** Lifted selected cards stay below the operating controls' touch targets. */
+export function tableActionCenterY(fan:HandFan,height:number,scale:number):number{
+  const u=Math.max(.72,Math.min(1.35,scale))
+  return fan.places.length?fan.places[0].y+fan.cardHeight/2+50*u:-height/2+90*u
 }

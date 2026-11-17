@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan}
+import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY}
  from '../dist/bootstrap/TableGeometry.js'
 
 test('Dou Dizhu sorts ranks descending with deterministic suit ties',()=>{
@@ -65,4 +65,31 @@ test('table view is a distinct authority-preserving scene, not a paged menu',asy
  assert.match(table,/this\.callbacks\.selectCard\(code\)/)
  assert.match(table,/this\.callbacks\.play/)
  assert.match(table,/publicCardCodes\(playing\.leadingCards\)/)
+})
+
+test('header title, clock and room buttons do not overlap on target screens',()=>{
+  for(const [width,height] of [[240,320],[360,750],[390,844],[760,390],[1280,720]]){
+    const u=Math.max(.72,Math.min(1.35,Math.min(width/760,height/480)))
+    const slots=tableHeaderSlots(width,u)
+    const leftEdge=slots.leftX-slots.leftWidth/2
+    const leftEnd=slots.leftX+slots.leftWidth/2
+    const clockLeft=-slots.clockWidth/2, clockRight=slots.clockWidth/2
+    const rightStart=slots.rightX-slots.rightWidth/2
+    const rightEnd=slots.rightX+slots.rightWidth/2
+    assert.ok(leftEdge>=-width/2,'header left overflow '+width)
+    assert.ok(leftEnd+4<=clockLeft,'header collides with clock '+width)
+    assert.ok(clockRight+4<=rightStart,'clock collides with back button '+width)
+    assert.ok(rightEnd<=width/2,'header right overflow '+width)
+  }
+})
+test('the selected hand stays clear of play and bid buttons',()=>{
+  const cards=Array.from({length:20},(_,n)=>publicCardCode(n))
+  for(const [width,height] of [[360,750],[390,844],[760,390],[1280,720]]){
+    const u=Math.max(.72,Math.min(1.35,Math.min(width/760,height/480)))
+    const selected=handFan(cards.length,width,height,new Set(cards),cards)
+    const actionY=tableActionCenterY(selected,height,u)
+    const highestCardTop=Math.max(...selected.places.map(pos=>pos.y+selected.cardHeight/2))
+    assert.ok(actionY-21*u>=highestCardTop+2*u,
+      'selected card intercepts action touch target at '+width+'x'+height)
+  }
 })

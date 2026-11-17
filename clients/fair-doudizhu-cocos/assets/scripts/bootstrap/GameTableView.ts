@@ -1,6 +1,6 @@
 import { Color, EventTouch, Graphics, Label, Layers, Node, UITransform } from 'cc'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
-import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards } from './TableGeometry.ts'
+import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots } from './TableGeometry.ts'
 import { remainingSeconds, type TurnTime } from './TurnClock.ts'
 
 export interface TableDisplay {
@@ -144,18 +144,19 @@ export class GameTableView {
 
     // Separate top chrome: room/hand/version are informational, not game actions.
     const top=h/2-28*u
+    const header=tableHeaderSlots(w,u)
     this.label('TableBrand','斗地主  ·  '+safePhase(data.phase),
-      -w*.33,top,24*u,GOLD,w*.53,38*u)
+      header.leftX,top,22*u,GOLD,header.leftWidth,38*u)
     this.label('RoomVersion','房间 '+smallID(data.roomID||'—')+'  ·  v'+data.version,
-      w*.105,top,14*u,MUTED,w*.33,28*u)
-    const buttonW=Math.max(58,75*u)
-    this.button('BackToRoom','返回',w/2-buttonW/2-14*u,top,buttonW,35*u,true,this.callbacks.back,true)
-    this.button('UpdateHand','同步',w/2-buttonW/2-14*u,top-43*u,buttonW,34*u,
+      header.leftX,top-29*u,14*u,MUTED,header.leftWidth,24*u)
+    const buttonW=header.rightWidth
+    this.button('BackToRoom','返回',header.rightX,top,buttonW,35*u,true,this.callbacks.back,true)
+    this.button('UpdateHand','同步',header.rightX,top-43*u,buttonW,34*u,
       !!data.handID,this.callbacks.refresh,true)
 
     // Countdown is presentation-only and driven by the server's timeline.
     this.countdownLabel=this.label('AuthoritativeTurnClock','等待计时同步',
-      0,top,24*u,GOLD,Math.max(150*u,w*.21),37*u)
+      0,top,24*u,GOLD,header.clockWidth,37*u)
     this.updateCountdown()
     
     // Top central landlord kitty: reveal only exactly the cards that Go marks public.
@@ -224,9 +225,7 @@ export class GameTableView {
     const cards=final?[]:Array.isArray(view?.cards)?sortHandCards(view!.cards):[]
     const selected=data.selected
     const fan=handFan(cards.length,w,h,selected,cards)
-    const controlsY=cards.length?
-      fan.places[0].y+fan.cardHeight/2+37*u:
-      -h/2+90*u
+    const controlsY=tableActionCenterY(fan,h,u)
     // Operations are always in their own row; cards never share pagination.
     if(data.phase==='BIDDING'){
       const highest=highestBid(view??null)
@@ -263,9 +262,9 @@ export class GameTableView {
     }
     if(me>=1 && me<=3){
       const mineRole=landlord===me?'地主':'农民'
-      const ownText='我 · 座位'+me+' · '+mineRole+' · '+cards.length+' 张'
-      this.label('OwnSeatInfo',ownText,0,
-        -h/2+fan.cardHeight+30*u,16*u,MUTED,w*.78,23*u)
+      const ownText='我('+me+') · '+mineRole+' · '+cards.length+'张'
+      this.label('OwnSeatInfo',ownText,header.leftX,top-56*u,
+        15*u,MUTED,header.leftWidth,23*u)
     }
     if(final || data.phase==='COMPLETED'){
       const bw=Math.min(136*u,w*.27)
