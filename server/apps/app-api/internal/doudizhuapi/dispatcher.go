@@ -86,15 +86,15 @@ func DefaultConfig() Config {
 }
 
 type TurnClockReader interface {
-    CurrentTurnClock(context.Context,domain.HandID)(TurnClock,error)
+	CurrentTurnClock(context.Context, domain.HandID) (TurnClock, error)
 }
-type TurnClock struct{
-    LiveVersion uint64
-    DeadlineMillis int64
-    ServerTimeMillis int64
+type TurnClock struct {
+	LiveVersion      uint64
+	DeadlineMillis   int64
+	ServerTimeMillis int64
 }
 type Dispatcher struct {
-    turnClock TurnClockReader
+	turnClock     TurnClockReader
 	backend       Backend
 	evidence      Evidence
 	lifecycle     Lifecycle
@@ -140,37 +140,55 @@ type ViewResult struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
-func (d *Dispatcher) SetTurnClock(reader TurnClockReader){d.turnClock=reader}
-func (d *Dispatcher) decorateTurnClock(ctx context.Context,handID domain.HandID,view ViewResult,private bool)(ViewResult,error){
-    if d.turnClock==nil{return view,nil}
-    clock,err:=d.turnClock.CurrentTurnClock(ctx,handID)
-    if err!=nil{return view,err}
-    // The state can advance between the view read and the clock query.
-    if clock.LiveVersion!=view.Version || clock.DeadlineMillis<=0 ||
-        clock.ServerTimeMillis<=0{return view,nil}
-    var data map[string]json.RawMessage
-    if err:=json.Unmarshal(view.Payload,&data);err!=nil{return view,err}
-    if data==nil{return view,fmt.Errorf("empty live view")}
-    target:=data
-    if private{
-        var pub map[string]json.RawMessage
-        if err:=json.Unmarshal(data["public"],&pub);err!=nil{return view,err}
-        if pub==nil{return view,fmt.Errorf("missing live public view")}
-        target=pub
-    }
-    deadline,_:=json.Marshal(clock.DeadlineMillis)
-    serverTime,_:=json.Marshal(clock.ServerTimeMillis)
-    target["turnDeadlineMillis"]=deadline
-    target["serverTimeMillis"]=serverTime
-    if private{
-        encoded,err:=json.Marshal(target)
-        if err!=nil{return view,err}
-        data["public"]=encoded
-    }
-    encoded,err:=json.Marshal(data)
-    if err!=nil{return view,err}
-    view.Payload=encoded
-    return view,nil
+func (d *Dispatcher) SetTurnClock(reader TurnClockReader) { d.turnClock = reader }
+func (d *Dispatcher) decorateTurnClock(ctx context.Context, handID domain.HandID, view ViewResult, private bool) (ViewResult, error) {
+	if d.turnClock == nil {
+		return view, nil
+	}
+	clock, err := d.turnClock.CurrentTurnClock(ctx, handID)
+	if err != nil {
+		return view, err
+	}
+	// The state can advance between the view read and the clock query.
+	if clock.LiveVersion != view.Version || clock.DeadlineMillis <= 0 ||
+		clock.ServerTimeMillis <= 0 {
+		return view, nil
+	}
+	var data map[string]json.RawMessage
+	if err := json.Unmarshal(view.Payload, &data); err != nil {
+		return view, err
+	}
+	if data == nil {
+		return view, fmt.Errorf("empty live view")
+	}
+	target := data
+	if private {
+		var pub map[string]json.RawMessage
+		if err := json.Unmarshal(data["public"], &pub); err != nil {
+			return view, err
+		}
+		if pub == nil {
+			return view, fmt.Errorf("missing live public view")
+		}
+		target = pub
+	}
+	deadline, _ := json.Marshal(clock.DeadlineMillis)
+	serverTime, _ := json.Marshal(clock.ServerTimeMillis)
+	target["turnDeadlineMillis"] = deadline
+	target["serverTimeMillis"] = serverTime
+	if private {
+		encoded, err := json.Marshal(target)
+		if err != nil {
+			return view, err
+		}
+		data["public"] = encoded
+	}
+	encoded, err := json.Marshal(data)
+	if err != nil {
+		return view, err
+	}
+	view.Payload = encoded
+	return view, nil
 }
 func NewDispatcher(backend Backend, evidence Evidence, lifecycleService Lifecycle, clock Clock, config Config) (*Dispatcher, error) {
 	if backend == nil || evidence == nil || lifecycleService == nil || clock == nil || config.CommandTTL <= 0 || config.ReplayTTL <= 0 || config.ReplayEntries <= 0 {
@@ -231,14 +249,14 @@ func (d *Dispatcher) PublicView(ctx context.Context, actor domain.AccountID, han
 	if err != nil {
 		return ViewResult{}, err
 	}
-	return d.decorateTurnClock(ctx,handID,ViewResult{Version:view.Version,Payload:append(json.RawMessage(nil),view.Payload...)},false)
+	return d.decorateTurnClock(ctx, handID, ViewResult{Version: view.Version, Payload: append(json.RawMessage(nil), view.Payload...)}, false)
 }
 func (d *Dispatcher) PrivateView(ctx context.Context, actor domain.AccountID, handID domain.HandID) (ViewResult, error) {
 	view, err := d.backend.GetHandPrivateView(ctx, actor, handID)
 	if err != nil {
 		return ViewResult{}, err
 	}
-	return d.decorateTurnClock(ctx,handID,ViewResult{Version:view.Version,Payload:append(json.RawMessage(nil),view.Payload...)},true)
+	return d.decorateTurnClock(ctx, handID, ViewResult{Version: view.Version, Payload: append(json.RawMessage(nil), view.Payload...)}, true)
 }
 func (d *Dispatcher) FinalEvidence(ctx context.Context, actor domain.AccountID, handID domain.HandID) (application.FinalEvidenceResult, error) {
 	return d.evidence.Get(ctx, actor, handID)

@@ -2,7 +2,7 @@ package runtime
 
 import (
 	"context"
-    "encoding/json"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -95,12 +95,16 @@ func (c *LiveHandCoordinator) Start(ctx context.Context, snapshot domain.HandSna
 	}
 	if c.journal != nil {
 		// Determine the authoritative opening bidder from the generated live game.
-        // It is used only if the journal's optional durable turn clock is enabled.
-        opening, viewErr := game.View(gamecore.ViewRequest{PublicOnly:true})
-        if viewErr != nil {return viewErr}
-        var public livehand.PublicView
-        if viewErr = json.Unmarshal(opening.Payload,&public);viewErr!=nil{return viewErr}
-        if err := c.journal.Create(ctx, snapshot, public.Bidding.CurrentBidder); err != nil {
+		// It is used only if the journal's optional durable turn clock is enabled.
+		opening, viewErr := game.View(gamecore.ViewRequest{PublicOnly: true})
+		if viewErr != nil {
+			return viewErr
+		}
+		var public livehand.PublicView
+		if viewErr = json.Unmarshal(opening.Payload, &public); viewErr != nil {
+			return viewErr
+		}
+		if err := c.journal.Create(ctx, snapshot, public.Bidding.CurrentBidder); err != nil {
 			return fmt.Errorf("create live genesis journal: %w", err)
 		}
 	}

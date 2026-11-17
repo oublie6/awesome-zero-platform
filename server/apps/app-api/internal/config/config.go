@@ -124,8 +124,8 @@ type DoudizhuConfig struct {
 	ReplayEntries      int           `json:",default=4096"`
 }
 
-type TurnDQConfig struct{
-    Enabled bool
-    Endpoints []string `json:",optional"`
-    Tube string `json:",default=doudizhu-turn"`
+type TurnDQConfig struct {
+	Enabled   bool
+	Endpoints []string `json:",optional"`
+	Tube      string   `json:",default=doudizhu-turn"`
 }
