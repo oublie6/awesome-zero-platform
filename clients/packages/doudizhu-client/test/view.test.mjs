@@ -47,3 +47,23 @@ test('reject duplicate seat, account, malformed optional turn and duplicate or i
   const valid=v(); valid.cards=['XJ','YJ','S10']
   assert.deepEqual(parsePrivateViewResult({version:4,payload:valid}).view.cards,valid.cards)
 })
+
+test('revealed landlord cards are trusted public data and stay read-only',()=>{
+  const hand=structuredClone(view)
+  hand.public.landlordSeat=1
+  hand.public.landlordCards=['S3','HA','YJ']
+  const parsed=parsePrivateViewResult({version:4,payload:hand}).view
+  assert.deepEqual(parsed.public.landlordCards,['S3','HA','YJ'])
+  assert.equal(Object.isFrozen(parsed.public.landlordCards),true)
+  hand.public.landlordCards[0]='D4'
+  assert.deepEqual(parsed.public.landlordCards,['S3','HA','YJ'])
+  for(const cards of [[],['S3'],['S3','S3','HA'],['S3','HA','UNKNOWN']]){
+    const invalid=structuredClone(view)
+    invalid.public.landlordSeat=1
+    invalid.public.landlordCards=cards
+    assert.throws(()=>parsePrivateViewResult({version:4,payload:invalid}),/public hand/)
+  }
+  const missingSeat=structuredClone(view)
+  missingSeat.public.landlordCards=['S3','HA','YJ']
+  assert.throws(()=>parsePrivateViewResult({version:4,payload:missingSeat}),/public hand/)
+})
