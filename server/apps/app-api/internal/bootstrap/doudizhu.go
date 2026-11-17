@@ -222,6 +222,7 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err != nil {
 		return doudizhuComponents{}, err
 	}
+    if cfg.Doudizhu.TurnDQ.Enabled{dispatcher.SetTurnClock(turnClockAdapter{journal})}
 	if err := dispatcher.ConfigureRevealTickets(contributionKey); err != nil {
 		return doudizhuComponents{}, fmt.Errorf("configure bound reveal AAD: %w", err)
 	}
