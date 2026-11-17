@@ -99,10 +99,17 @@ export class GameTableView {
   }
   render(data:TableDisplay,width:number,height:number):void {
     if(this.data?.handID!==data.handID)this.noticeText=''
-    this.data=data
+    // A local card selection rerenders this view without a new server snapshot.
+    // Do NOT restart the countdown unless the authoritative turn changed.
     const pub=data.view?.public
-    this.countdownClock={turnDeadlineMillis:pub?.turnDeadlineMillis,serverTimeMillis:pub?.serverTimeMillis}
-    this.countdownCapture=typeof performance==='undefined'?Date.now():performance.now()
+    if(!this.data || this.data.handID!==data.handID ||
+        this.data.version!==data.version ||
+        this.countdownClock.turnDeadlineMillis!==pub?.turnDeadlineMillis ||
+        this.countdownClock.serverTimeMillis!==pub?.serverTimeMillis){
+      this.countdownClock={turnDeadlineMillis:pub?.turnDeadlineMillis,serverTimeMillis:pub?.serverTimeMillis}
+      this.countdownCapture=typeof performance==='undefined'?Date.now():performance.now()
+    }
+    this.data=data
     this.layout(width,height)
     if(this.tickHandle===null)this.tickHandle=setInterval(()=>this.updateCountdown(),250)
   }
