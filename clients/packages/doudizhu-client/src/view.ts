@@ -11,6 +11,7 @@ export interface PublicHandProjection {
   stateVersion: number
   seats: readonly SeatProjection[]
   landlordSeat?: number
+  landlordCards?: readonly string[]
   playingSeat?: number
   winnerSeat?: number
   bidding: Readonly<Record<string, unknown>>
@@ -51,6 +52,10 @@ export function parsePrivateHandView(raw: unknown): PrivateHandProjection {
       new Set(pub.seats.map(seat => (seat as Record<string, unknown>).position)).size !== 3 ||
       new Set(pub.seats.map(seat => (seat as Record<string, unknown>).accountId)).size !== 3 ||
       !optionalSeat(pub, 'landlordSeat') || !optionalSeat(pub, 'playingSeat') || !optionalSeat(pub, 'winnerSeat') ||
+      (pub.landlordCards !== undefined && (!Array.isArray(pub.landlordCards) ||
+        pub.landlordCards.length !== 3 || !seatNumber(pub.landlordSeat) ||
+        !pub.landlordCards.every(card => typeof card === 'string' && cardCode.test(card)) ||
+        new Set(pub.landlordCards).size !== 3)) ||
       (pub.playing !== undefined && pub.playing !== null && !record(pub.playing))) {
     throw new Error('invalid public hand protocol')
   }
@@ -65,6 +70,7 @@ export function parsePrivateHandView(raw: unknown): PrivateHandProjection {
   const copied = JSON.parse(JSON.stringify(raw)) as PrivateHandProjection
   Object.freeze(copied.cards)
   Object.freeze(copied.public.seats)
+  if (copied.public.landlordCards) Object.freeze(copied.public.landlordCards)
   Object.freeze(copied.public)
   return Object.freeze(copied)
 }
