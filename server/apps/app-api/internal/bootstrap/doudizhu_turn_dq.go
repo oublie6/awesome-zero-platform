@@ -130,35 +130,46 @@ func startDoudizhuTurnDQ(ctx context.Context, cfg config.Config,
 // The cursor is a *repair mechanism*, not a permanent per-hand timer. After
 // dispatching, it reschedules a bounded retry at deadline+10s because dq may
 // delete jobs before callbacks. New committed versions replace the row.
+// dispatch drains a bounded burst of ready deadlines. A failed one does
+// not starve unrelated hands; each failed row has a durable retry cursor.
+// 64 x 64 is a per-cycle *upper bound*, not a throughput guarantee.
 func (w *turnDqWorker) dispatch(ctx context.Context, limit int) error {
-	items, err := w.store.PendingTurnDeliveries(ctx, limit)
-	if err != nil {
-		return err
-	}
-	for _, item := range items {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		deliveryID, err := w.ids.NewID()
+	var firstErr error
+	for batch := 0; batch < 64; batch++ {
+		items, err := w.store.PendingTurnDeliveries(ctx, limit)
 		if err != nil {
 			return err
 		}
-		ticket := turntimer.Ticket{HandID: string(item.HandID), LiveVersion: item.Version,
-			Seat: item.Seat, DeadlineMillis: item.Deadline.UnixMilli(), DeliveryID: deliveryID}
-		body, encodeErr := turntimer.Encode(ticket)
-		if encodeErr != nil {
-			return encodeErr
+		if len(items) == 0 {
+			return firstErr
 		}
-		_, publishErr := w.publisher.At(ctx, body, ticket.Deadline())
-		markErr := w.store.MarkTurnDelivery(ctx, item, publishErr == nil)
-		if markErr != nil {
-			return markErr
+		for _, item := range items {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			deliveryID, err := w.ids.NewID()
+			if err != nil {
+				return err
+			}
+			ticket := turntimer.Ticket{HandID: string(item.HandID), LiveVersion: item.Version,
+				Seat: item.Seat, DeadlineMillis: item.Deadline.UnixMilli(), DeliveryID: deliveryID}
+			body, encodeErr := turntimer.Encode(ticket)
+			if encodeErr != nil {
+				return encodeErr
+			}
+			_, publishErr := w.publisher.At(ctx, body, ticket.Deadline())
+			if err := w.store.MarkTurnDelivery(ctx, item, publishErr == nil); err != nil {
+				return err
+			}
+			if publishErr != nil && firstErr == nil {
+				firstErr = publishErr
+			}
 		}
-		if publishErr != nil {
-			return publishErr
+		if len(items) < limit {
+			break
 		}
 	}
-	return nil
+	return firstErr
 }
 func (w *turnDqWorker) process(ctx context.Context, ticket turntimer.Ticket) error {
 	if err := ticket.Validate(); err != nil {
