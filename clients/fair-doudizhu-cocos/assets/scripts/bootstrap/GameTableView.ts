@@ -74,6 +74,13 @@ function publicPlaying(view:PrivateHandProjection|null):{cards:string[];seat:num
 export class GameTableView {
   private readonly root:Node
   private data:TableDisplay|null=null
+  private width=760
+  private height=440
+  private noticeText=''
+  setNotice(message:string):void{
+    this.noticeText=message.slice(0,140)
+    if(this.data)this.layout(this.width,this.height)
+  }
   constructor(parent:Node,private readonly callbacks:TableCallbacks){
     this.root=new Node('ActualThreeSeatTable')
     this.root.layer=Layers.Enum.UI_2D
@@ -85,12 +92,18 @@ export class GameTableView {
     this.data=null
   }
   render(data:TableDisplay,width:number,height:number):void {
+    if(this.data?.handID!==data.handID)this.noticeText=''
     this.data=data
     this.layout(width,height)
   }
   layout(width:number,height:number):void {
     if(!this.root.isValid || !this.data)return
-    for(const child of [...this.root.children])child.destroy()
+    this.width=width
+    this.height=height
+    for(const child of [...this.root.children]){
+      child.removeFromParent()
+      child.destroy()
+    }
     const data=this.data
     const w=Math.max(240,width), h=Math.max(280,height)
     const u=Math.max(0.72,Math.min(1.35,Math.min(w/760,h/480)))
@@ -221,6 +234,10 @@ export class GameTableView {
       card.angle=pos.angle
       card.on(Node.EventType.TOUCH_END,(_event:EventTouch)=>this.callbacks.selectCard(code))
     })
+    if(this.noticeText){
+      this.label('TableNotice',this.noticeText,0,controlsY+51*u,
+        15*u,new Color(255,216,143,255),w*.74,24*u)
+    }
     if(me>=1 && me<=3){
       const mineRole=landlord===me?'地主':'农民'
       const ownText='我 · 座位'+me+' · '+mineRole+' · '+cards.length+' 张'
@@ -282,12 +299,12 @@ export class GameTableView {
     const node=this.panel(name,x,y,w,h,fill,border,Math.min(13,h*.36))
     const label=this.label(name+'Caption',text,x,y,Math.min(18,w*.19,h*.48),
       enabled?WHITE:MUTED,w-6,h-4)
+    label.node.setParent(node)
+    label.node.setPosition(0,0,0)
     if(enabled){
       node.on(Node.EventType.TOUCH_END,(_event:EventTouch)=>{
         if(this.root.isValid)click()
       })
-      // The Cocos label is visual only: UITransform on the parent owns the hit area.
-      label.node.getComponent(UITransform)!.enabled=false
     }
   }
   private faceCard(name:string,code:string,x:number,y:number,w:number,h:number,
@@ -298,14 +315,20 @@ export class GameTableView {
     const left=x-w/2
     const top=y+h/2
     const rankFont=Math.min(25*scale,w*.39)
-    this.label(name+'Rank',face.rank,
+    const rank=this.label(name+'Rank',face.rank,
       left+w*.23,top-h*.19,rankFont,color,w*.42,h*.28)
-    this.label(name+'Suit',face.suit,
+    rank.node.setParent(node)
+    rank.node.setPosition(-w*.27,h*.31,0)
+    const suit=this.label(name+'Suit',face.suit,
       left+w*.22,top-h*.42,Math.min(23*scale,w*.37),color,w*.42,h*.25)
+    suit.node.setParent(node)
+    suit.node.setPosition(-w*.28,h*.08,0)
     if(w>48*scale) {
-      this.label(name+'Face',face.suit,
+      const mark=this.label(name+'Face',face.suit,
         x+w*.17,y-h*.15,Math.min(39*scale,w*.51),new Color(color.r,color.g,color.b,90),
         w*.55,h*.54)
+      mark.node.setParent(node)
+      mark.node.setPosition(w*.17,-h*.15,0)
     }
     return node
   }
