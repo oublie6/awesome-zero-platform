@@ -133,6 +133,11 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err := journal.ConfigureCheckpointKeyring(cfg.Doudizhu.ContributionKeyID, allRoots); err != nil {
 		return doudizhuComponents{}, fmt.Errorf("configure protected live checkpoints: %w", err)
 	}
+    if cfg.Doudizhu.TurnDQ.Enabled {
+        if err:=journal.EnableTurnDeadlines(context.Background(),mysqlstore.TurnTimeouts{
+            Bidding:cfg.Doudizhu.BiddingTimeout,Playing:cfg.Doudizhu.PlayingTimeout,
+        });err!=nil{return doudizhuComponents{},fmt.Errorf("initialize DQ turn deadlines: %w",err)}
+    }
 	liveHands, err := ddzruntime.NewDurableLiveHandCoordinator(seeds, directory, journal)
 	if err != nil {
 		return doudizhuComponents{}, err
@@ -204,6 +209,11 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err := supervisor.ReconcileRecovered(context.Background(), liveHands.RecoveredPhases()); err != nil {
 		return doudizhuComponents{}, fmt.Errorf("reconcile recovered Doudizhu lifecycle: %w", err)
 	}
+    if cfg.Doudizhu.TurnDQ.Enabled {
+        if err:=verifyRecoveredTurnDeadlines(context.Background(),journal,liveHands.RecoveredPhases());err!=nil{
+            return doudizhuComponents{},fmt.Errorf("validate recovered turn deadline: %w",err)
+        }
+    }
 	apiConfig := doudizhuapi.DefaultConfig()
 	apiConfig.CommandTTL = cfg.Doudizhu.CommandTTL
 	apiConfig.ReplayTTL = cfg.Doudizhu.ReplayTTL
@@ -242,6 +252,12 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 			}
 		}()
 	}
+    if cfg.Doudizhu.TurnDQ.Enabled {
+        if err:=startDoudizhuTurnDQ(ctx,cfg,store,journal,service,supervisor,ids);err!=nil{
+            cancel()
+            return doudizhuComponents{},fmt.Errorf("start Doudizhu DQ: %w",err)
+        }
+    } else {
 	go func() {
 		for ctx.Err() == nil {
 			if err := supervisor.Run(ctx); err != nil && ctx.Err() == nil {
@@ -249,5 +265,6 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 			}
 		}
 	}()
+    }
 	return doudizhuComponents{dispatcher: dispatcher, audience: store, cancel: cancel}, nil
 }

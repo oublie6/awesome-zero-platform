@@ -76,6 +76,7 @@ func (c *Config) Prepare() {
 			c.Authorization.Cluster.ReloadTimeout = 5 * time.Second
 		}
 	}
+    if c.Doudizhu.TurnDQ.Tube==""{c.Doudizhu.TurnDQ.Tube="doudizhu-turn"}
 	if c.Doudizhu.Enabled {
 		if c.Doudizhu.BiddingTimeout == 0 {
 			c.Doudizhu.BiddingTimeout = 45 * time.Second
@@ -214,6 +215,17 @@ func (c Config) Validate() error {
 		if err != nil || len(decoded) != 32 || strings.ToLower(c.Doudizhu.ContributionKeyHex) != c.Doudizhu.ContributionKeyHex {
 			return fmt.Errorf("doudizhu contribution key must be 64 lowercase hex characters")
 		}
+        if c.Doudizhu.TurnDQ.Enabled {
+            if len(c.Doudizhu.TurnDQ.Endpoints)<2 || len(c.Doudizhu.TurnDQ.Endpoints)>3 ||
+                strings.TrimSpace(c.Doudizhu.TurnDQ.Tube)=="" || c.Redis.DB!=0{
+                return fmt.Errorf("turn dq requires 2-3 distinct beanstalkd nodes, tube and Redis DB 0")
+            }
+            endpoints:=make(map[string]bool)
+            for _,ep:=range c.Doudizhu.TurnDQ.Endpoints{
+                if ep=="" || ep!=strings.TrimSpace(ep) || endpoints[ep]{return fmt.Errorf("invalid turn dq endpoint")}
+                endpoints[ep]=true
+            }
+        }
 		if c.Doudizhu.BiddingTimeout <= 0 || c.Doudizhu.PlayingTimeout <= 0 || c.Doudizhu.SweepInterval <= 0 || c.Doudizhu.CommandTTL <= 0 || c.Doudizhu.ReplayTTL <= 0 || c.Doudizhu.ReplayEntries <= 0 {
 			return fmt.Errorf("doudizhu timeout and replay configuration is invalid")
 		}
