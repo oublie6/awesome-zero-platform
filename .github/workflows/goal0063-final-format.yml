@@ -1,0 +1,25 @@
+name: Goal0063 one-time integration test formatting
+on:
+  push:
+    branches: [goal0063-dq-turn-experience]
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.repository == 'oublie6/awesome-zero-platform'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: goal0063-dq-turn-experience
+      - name: Format new MySQL integration check and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -w server/business/doudizhu/infrastructure/mysqlstore/live_turn_deadline_integration_test.go
+          git rm -- .github/workflows/goal0063-final-format.yml
+          git add -u server
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'style(goal0063): format MySQL deadline integration test'
+          git push origin HEAD:goal0063-dq-turn-experience
