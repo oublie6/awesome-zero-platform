@@ -198,6 +198,22 @@ CREATE TABLE IF NOT EXISTS doudizhu_protected_server_seeds (
     CONSTRAINT chk_doudizhu_server_seed_ciphertext CHECK (OCTET_LENGTH(ciphertext) = 48)
 ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Goal0063: one durable turn deadline per active hand. The delay queue is
+-- only a wake-up hint; authoritative live_version/seat/deadline reside here.
+-- The delivery cursor is repairable and never part of game state authority.
+CREATE TABLE IF NOT EXISTS doudizhu_turn_deadlines (
+    hand_id VARCHAR(128) NOT NULL,
+    live_version BIGINT UNSIGNED NOT NULL,
+    phase VARCHAR(16) NOT NULL,
+    seat TINYINT UNSIGNED NOT NULL,
+    deadline_at DATETIME(3) NOT NULL,
+    next_attempt_at DATETIME(3) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (hand_id),
+    KEY idx_turn_deadlines_dispatch (next_attempt_at, hand_id),
+    KEY idx_turn_deadlines_due (deadline_at, hand_id)
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Authoritative per-hand writer fencing and contiguous committed gameplay log.
 -- Seeds are encrypted separately; private hands are reconstructed, not logged.
 CREATE TABLE IF NOT EXISTS doudizhu_live_writers (
