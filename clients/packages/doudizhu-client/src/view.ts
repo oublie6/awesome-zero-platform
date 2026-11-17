@@ -13,6 +13,9 @@ export interface PublicHandProjection {
   landlordSeat?: number
   landlordCards?: readonly string[]
   playingSeat?: number
+  // Server-sourced visual countdown; optional for historic snapshots.
+  turnDeadlineMillis?: number
+  serverTimeMillis?: number
   winnerSeat?: number
   bidding: Readonly<Record<string, unknown>>
   playing?: Readonly<Record<string, unknown>> | null
@@ -52,6 +55,10 @@ export function parsePrivateHandView(raw: unknown): PrivateHandProjection {
       new Set(pub.seats.map(seat => (seat as Record<string, unknown>).position)).size !== 3 ||
       new Set(pub.seats.map(seat => (seat as Record<string, unknown>).accountId)).size !== 3 ||
       !optionalSeat(pub, 'landlordSeat') || !optionalSeat(pub, 'playingSeat') || !optionalSeat(pub, 'winnerSeat') ||
+      ((pub.turnDeadlineMillis !== undefined || pub.serverTimeMillis !== undefined) &&
+       (!Number.isSafeInteger(pub.turnDeadlineMillis) || !Number.isSafeInteger(pub.serverTimeMillis) ||
+        (pub.turnDeadlineMillis as number) <= 0 || (pub.serverTimeMillis as number) <= 0 ||
+        Math.abs((pub.turnDeadlineMillis as number)-(pub.serverTimeMillis as number)) > 86400000)) ||
       (pub.landlordCards !== undefined && (!Array.isArray(pub.landlordCards) ||
         pub.landlordCards.length !== 3 || !seatNumber(pub.landlordSeat) ||
         !pub.landlordCards.every(card => typeof card === 'string' && cardCode.test(card)) ||

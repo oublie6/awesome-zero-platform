@@ -1,6 +1,7 @@
 import { Color, EventTouch, Graphics, Label, Layers, Node, UITransform } from 'cc'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
 import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards } from './TableGeometry.ts'
+import { remainingSeconds, type TurnTime } from './TurnClock.ts'
 
 export interface TableDisplay {
   roomID:string
@@ -77,6 +78,10 @@ export class GameTableView {
   private width=760
   private height=440
   private noticeText=''
+  private countdownLabel:Label|null=null
+  private countdownClock:TurnTime={}
+  private countdownCapture=0
+  private tickHandle:ReturnType<typeof setInterval>|null=null
   setNotice(message:string):void{
     this.noticeText=message.slice(0,140)
     if(this.data)this.layout(this.width,this.height)
@@ -88,18 +93,24 @@ export class GameTableView {
     parent.addChild(this.root)
   }
   destroy():void {
+    if(this.tickHandle!==null){clearInterval(this.tickHandle);this.tickHandle=null}
     if(this.root.isValid)this.root.destroy()
     this.data=null
   }
   render(data:TableDisplay,width:number,height:number):void {
     if(this.data?.handID!==data.handID)this.noticeText=''
     this.data=data
+    const pub=data.view?.public
+    this.countdownClock={turnDeadlineMillis:pub?.turnDeadlineMillis,serverTimeMillis:pub?.serverTimeMillis}
+    this.countdownCapture=typeof performance==='undefined'?Date.now():performance.now()
     this.layout(width,height)
+    if(this.tickHandle===null)this.tickHandle=setInterval(()=>this.updateCountdown(),250)
   }
   layout(width:number,height:number):void {
     if(!this.root.isValid || !this.data)return
     this.width=width
     this.height=height
+    this.countdownLabel=null
     for(const child of [...this.root.children]){
       child.removeFromParent()
       child.destroy()
@@ -135,6 +146,11 @@ export class GameTableView {
     this.button('UpdateHand','同步',w/2-buttonW/2-14*u,top-43*u,buttonW,34*u,
       !!data.handID,this.callbacks.refresh,true)
 
+    // Countdown is presentation-only and driven by the server's timeline.
+    this.countdownLabel=this.label('AuthoritativeTurnClock','等待计时同步',
+      0,top,24*u,GOLD,Math.max(150*u,w*.21),37*u)
+    this.updateCountdown()
+    
     // Top central landlord kitty: reveal only exactly the cards that Go marks public.
     const kitty=Array.isArray(pub?.landlordCards)?pub!.landlordCards:[]
     const safeKitty=kitty.length===3 && kitty.every(c=>typeof c==='string')?kitty:[]
@@ -254,6 +270,18 @@ export class GameTableView {
     }
   }
 
+  private updateCountdown():void{
+    if(!this.countdownLabel?.isValid || !this.data)return
+    const elapsed=(typeof performance==='undefined'?Date.now():performance.now())-this.countdownCapture
+    const seconds=remainingSeconds(this.countdownClock,elapsed)
+    const phase=this.data.phase
+    if(phase!=='BIDDING' && phase!=='PLAYING'){
+      this.countdownLabel.string='—'
+      return
+    }
+    this.countdownLabel.string=seconds===null?'等待计时同步':seconds===0?'00s':String(seconds).padStart(2,'0')+'s'
+    this.countdownLabel.color=seconds!==null && seconds<=5?new Color(255,117,90,255):GOLD
+  }
   private node(name:string,x:number,y:number,w:number,h:number):Node{
     const node=new Node(name)
     node.layer=Layers.Enum.UI_2D
