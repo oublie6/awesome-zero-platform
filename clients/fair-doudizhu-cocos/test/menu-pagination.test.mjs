@@ -22,7 +22,7 @@ test('landscape crowded room menu remains paged with readable, non-overlapping t
  }
  assert.deepEqual(seen,Array.from({length:count},(_,i)=>i))
 })
-test('17 cards and game commands are reachable without compressing full hand into tiny labels',()=>{
+test('historical menu paging stays compatible for legacy layout consumers',()=>{
  for(const portrait of [false,true]){
   const viewport=menuWindow(26,portrait?360:760,portrait?750:390,portrait,'table',0)
   assert.ok(viewport.pages>1)

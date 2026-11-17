@@ -17,6 +17,7 @@
     "assets/scripts/game/**/*.ts",
     "assets/scripts/platform/**/*.ts",
     "assets/scripts/foundation/**/*.ts",
-    "assets/scripts/bootstrap/MenuPagination.ts"
+    "assets/scripts/bootstrap/MenuPagination.ts",
+    "assets/scripts/bootstrap/TableGeometry.ts"
   ]
 }
