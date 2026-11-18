@@ -137,7 +137,7 @@ ORDER BY next_attempt_at,hand_id LIMIT ?`, limit)
 	return result, rows.Err()
 }
 
-// Delivery is advisory. Retry even after success once deadline passes because
+// Delivery is advisory. Retry shortly after the deadline because
 // go-queue/dq deletes jobs before callback and can drop callbacks after outage.
 func (j *LiveJournal) MarkTurnDelivery(ctx context.Context, item TurnDeadline, succeeded bool) error {
 	if j == nil || j.turnTimeouts == nil {
@@ -146,8 +146,8 @@ func (j *LiveJournal) MarkTurnDelivery(ctx context.Context, item TurnDeadline, s
 	var query string
 	if succeeded {
 		query = `UPDATE doudizhu_turn_deadlines SET
-next_attempt_at=GREATEST(DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 10 SECOND),
-    DATE_ADD(deadline_at,INTERVAL 10 SECOND))
+next_attempt_at=GREATEST(DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 2 SECOND),
+    DATE_ADD(deadline_at,INTERVAL 2 SECOND))
 WHERE hand_id=? AND live_version=? AND seat=? AND deadline_at=?`
 	} else {
 		query = `UPDATE doudizhu_turn_deadlines SET
