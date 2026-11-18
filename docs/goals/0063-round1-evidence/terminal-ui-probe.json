@@ -1,0 +1,59 @@
+{
+  "errors": [
+    "Cannot read properties of undefined (reading 'playing')"
+  ],
+  "phase": "COMPLETED",
+  "handId": "g63-full-e2738f0713f4f99386149f78",
+  "beforeButtons": [
+    "TableFelt",
+    "FeltInset",
+    "FeltCentre",
+    "TableWatermark",
+    "TableBrand",
+    "RoomVersion",
+    "BackToRoom",
+    "UpdateHand",
+    "AuthoritativeTurnClock",
+    "LandlordBack0",
+    "LandlordBack0Inner",
+    "LandlordBack0BackMark",
+    "LandlordBack1",
+    "LandlordBack1Inner",
+    "LandlordBack1BackMark",
+    "LandlordBack2",
+    "LandlordBack2Inner",
+    "LandlordBack2BackMark",
+    "KittyLabel",
+    "NoHandSeats"
+  ],
+  "projectionShape": {
+    "keys": [
+      "terminalEvidence"
+    ],
+    "publicPresent": false
+  },
+  "afterButtons": [
+    "TableFelt",
+    "FeltInset",
+    "FeltCentre",
+    "TableWatermark",
+    "TableBrand",
+    "RoomVersion",
+    "BackToRoom",
+    "UpdateHand",
+    "AuthoritativeTurnClock",
+    "LandlordBack0",
+    "LandlordBack0Inner",
+    "LandlordBack0BackMark",
+    "LandlordBack1",
+    "LandlordBack1Inner",
+    "LandlordBack1BackMark",
+    "LandlordBack2",
+    "LandlordBack2Inner",
+    "LandlordBack2BackMark",
+    "KittyLabel",
+    "NoHandSeats"
+  ],
+  "status": "牌局同步失败：Cannot read properties of undefined (reading 'playing')",
+  "result": "FAIL"
+}

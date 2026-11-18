@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "checks": [
+    {
+      "account": 0,
+      "privatePushesPositionChecked": 54,
+      "terminalPublicEvidencePushes": 0,
+      "totalBusinessPushes": 110
+    },
+    {
+      "account": 1,
+      "privatePushesPositionChecked": 54,
+      "terminalPublicEvidencePushes": 0,
+      "totalBusinessPushes": 110
+    },
+    {
+      "account": 2,
+      "privatePushesPositionChecked": 54,
+      "terminalPublicEvidencePushes": 0,
+      "totalBusinessPushes": 110
+    },
+    {
+      "account": 3,
+      "privatePushesPositionChecked": 0,
+      "terminalPublicEvidencePushes": 0,
+      "totalBusinessPushes": 0
+    }
+  ],
+  "scope": "Position-scoped live pushes and disallowed private credential field names; terminal public evidence is intentionally separately classified. Not a complete information-flow proof."
+}

@@ -1,0 +1,26 @@
+{
+  "originalClock": {
+    "version": 1,
+    "seat": 2,
+    "deadline": 1794946344449,
+    "now": 1794946334030,
+    "retry": 1794946354449
+  },
+  "actions": [
+    [
+      "2",
+      "turn-timeout:689552e4bd10a262f794f7df6a166fd9f800ff15caa552ccd3e78e085efe6fc1",
+      "1794946355968"
+    ],
+    [
+      "3",
+      "turn-timeout:e4d99c207a6be8a4b243c96b939b70419a4ee6f5d765d9d4b8111336603a05ac",
+      "1794946388407"
+    ],
+    [
+      "4",
+      "turn-timeout:a39c476d3fce8372ad90285a6711938a11d8ef45295c2b556438ebee2608c225",
+      "1794946420721"
+    ]
+  ]
+}

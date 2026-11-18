@@ -1,0 +1,41 @@
+{
+  "steps": [
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "realTouch": true,
+      "lift": true,
+      "toggle": true,
+      "buttonFixed": true
+    },
+    {
+      "viewport": [
+        760,
+        390
+      ],
+      "realTouch": true,
+      "lift": true,
+      "toggle": true,
+      "buttonFixed": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "realTouch": true,
+      "lift": true,
+      "toggle": true,
+      "buttonFixed": true
+    }
+  ],
+  "resources": {
+    "renders": 12,
+    "beforeNodes": 122,
+    "afterNodes": 122,
+    "tableIntervals": 1
+  },
+  "result": "PASS"
+}

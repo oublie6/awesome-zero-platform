@@ -1,0 +1,106 @@
+{
+  "steps": [
+    {
+      "name": "actual single queue stopped still commits one auto lead",
+      "result": "PASS",
+      "elapsedMs": 44195,
+      "data": {
+        "fromVersion": 4,
+        "toVersion": 5,
+        "deadline": 1794948006296,
+        "observedAt": 1794948020668,
+        "phase": "PLAYING",
+        "history": {
+          "number": 1,
+          "type": "PLAY",
+          "seat": 1,
+          "cards": "AA==",
+          "pattern": {
+            "v": "doudizhu-play-rules-v1",
+            "kind": "SINGLE",
+            "mainRank": 0,
+            "sequenceLength": 1,
+            "cardCount": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "actual both queues stopped preserve overdue version then one retry pass",
+      "result": "PASS",
+      "elapsedMs": 35671,
+      "data": {
+        "fromVersion": 5,
+        "toVersion": 6,
+        "deadline": 1794948049026,
+        "observedAt": 1794948059311,
+        "phase": "PLAYING",
+        "history": {
+          "number": 2,
+          "type": "PASS",
+          "seat": 2
+        }
+      }
+    },
+    {
+      "name": "actual Redis channel failure loses delivery then durable repair passes once",
+      "result": "PASS",
+      "elapsedMs": 53184,
+      "data": {
+        "fromVersion": 6,
+        "toVersion": 7,
+        "deadline": 1794948086565,
+        "observedAt": 1794948112496,
+        "phase": "PLAYING",
+        "history": {
+          "number": 3,
+          "type": "PASS",
+          "seat": 3
+        }
+      }
+    },
+    {
+      "name": "actual MySQL channel outage consumes callback before business then retries once",
+      "result": "PASS",
+      "elapsedMs": 42632,
+      "data": {
+        "fromVersion": 7,
+        "toVersion": 8,
+        "deadline": 1794948139212,
+        "observedAt": 1794948155129,
+        "phase": "PLAYING",
+        "history": {
+          "number": 4,
+          "type": "PLAY",
+          "seat": 1,
+          "cards": "Ag==",
+          "pattern": {
+            "v": "doudizhu-play-rules-v1",
+            "kind": "SINGLE",
+            "mainRank": 0,
+            "sequenceLength": 1,
+            "cardCount": 1
+          }
+        }
+      }
+    }
+  ],
+  "handId": "g63-full-7719e46d4fb6fac12b7b87fc",
+  "playingVersion": 4,
+  "duringBothQueueOutage": {
+    "version": 5,
+    "seat": 2,
+    "deadline": 1794948049026,
+    "now": 1794948051350,
+    "retry": 1794948051185
+  },
+  "result": "PASS",
+  "finalClock": {
+    "version": 8,
+    "seat": 2,
+    "deadline": 1794948181824,
+    "now": 1794948155877,
+    "retry": 1794948191824
+  },
+  "finalPhase": "PLAYING"
+}

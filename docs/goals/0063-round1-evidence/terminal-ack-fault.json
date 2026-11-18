@@ -1,0 +1,52 @@
+{
+  "steps": [],
+  "handId": "g63-full-5c7a204e347e457de0d10250",
+  "before": {
+    "version": 3,
+    "seat": 3,
+    "deadline": 1794947739220,
+    "now": 1794947722591,
+    "retry": 1794947749220
+  },
+  "afterAckLoss": {
+    "phase": "BIDDING",
+    "writer": "4",
+    "deadline": null,
+    "archiveRows": "0",
+    "bids": [
+      [
+        "2",
+        "g63-cmd-f5845d7c96e2fea680d7db5d"
+      ],
+      [
+        "3",
+        "g63-cmd-7d508057275142ad65a4685c"
+      ],
+      [
+        "4",
+        "turn-timeout:58d2680d1af695e9aa53e97ba54c5e18aaf75efff4e321eb36dd80fac0551308"
+      ]
+    ]
+  },
+  "result": "FAIL",
+  "afterColdRestart": {
+    "phase": "ABORTED",
+    "writer": "4",
+    "deadline": null,
+    "archiveRows": "1",
+    "bids": [
+      [
+        "2",
+        "g63-cmd-f5845d7c96e2fea680d7db5d"
+      ],
+      [
+        "3",
+        "g63-cmd-7d508057275142ad65a4685c"
+      ],
+      [
+        "4",
+        "turn-timeout:58d2680d1af695e9aa53e97ba54c5e18aaf75efff4e321eb36dd80fac0551308"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "cards": 17,
+    "viewport": [
+      1280,
+      720
+    ],
+    "fullCardNodeCount": 17,
+    "rankOrderDescending": true,
+    "nodeToCssRatio": 1.0,
+    "buttons": {
+      "PlaySelected": {
+        "cssWidth": 202.5,
+        "cssHeight": 56.7
+      },
+      "PassTurn": {
+        "cssWidth": 202.5,
+        "cssHeight": 56.7
+      },
+      "BackToRoom": {
+        "cssWidth": 101.25,
+        "cssHeight": 47.25
+      }
+    }
+  },
+  {
+    "cards": 17,
+    "viewport": [
+      760,
+      390
+    ],
+    "fullCardNodeCount": 17,
+    "rankOrderDescending": true,
+    "nodeToCssRatio": 0.59375,
+    "buttons": {
+      "PlaySelected": {
+        "cssWidth": 120.23,
+        "cssHeight": 33.67
+      },
+      "PassTurn": {
+        "cssWidth": 120.23,
+        "cssHeight": 33.67
+      },
+      "BackToRoom": {
+        "cssWidth": 60.12,
+        "cssHeight": 28.05
+      }
+    }
+  },
+  {
+    "cards": 17,
+    "viewport": [
+      390,
+      844
+    ],
+    "fullCardNodeCount": 17,
+    "rankOrderDescending": true,
+    "nodeToCssRatio": 0.3046875,
+    "buttons": {
+      "PlaySelected": {
+        "cssWidth": 61.7,
+        "cssHeight": 17.28
+      },
+      "PassTurn": {
+        "cssWidth": 61.7,
+        "cssHeight": 17.28
+      },
+      "BackToRoom": {
+        "cssWidth": 30.85,
+        "cssHeight": 14.4
+      }
+    }
+  },
+  {
+    "cards": 20,
+    "viewport": [
+      1280,
+      720
+    ],
+    "fullCardNodeCount": 20,
+    "rankOrderDescending": true,
+    "nodeToCssRatio": 1.0,
+    "buttons": {
+      "PlaySelected": {
+        "cssWidth": 202.5,
+        "cssHeight": 56.7
+      },
+      "PassTurn": {
+        "cssWidth": 202.5,
+        "cssHeight": 56.7
+      },
+      "BackToRoom": {
+        "cssWidth": 101.25,
+        "cssHeight": 47.25
+      }
+    }
+  },
+  {
+    "cards": 20,
+    "viewport": [
+      760,
+      390
+    ],
+    "fullCardNodeCount": 20,
+    "rankOrderDescending": true,
+    "nodeToCssRatio": 0.59375,
+    "buttons": {
+      "PlaySelected": {
+        "cssWidth": 120.23,
+        "cssHeight": 33.67
+      },
+      "PassTurn": {
+        "cssWidth": 120.23,
+        "cssHeight": 33.67
+      },
+      "BackToRoom": {
+        "cssWidth": 60.12,
+        "cssHeight": 28.05
+      }
+    }
+  },
+  {
+    "cards": 20,
+    "viewport": [
+      390,
+      844
+    ],
+    "fullCardNodeCount": 20,
+    "rankOrderDescending": true,
+    "nodeToCssRatio": 0.3046875,
+    "buttons": {
+      "PlaySelected": {
+        "cssWidth": 61.7,
+        "cssHeight": 17.28
+      },
+      "PassTurn": {
+        "cssWidth": 61.7,
+        "cssHeight": 17.28
+      },
+      "BackToRoom": {
+        "cssWidth": 30.85,
+        "cssHeight": 14.4
+      }
+    }
+  }
+]
