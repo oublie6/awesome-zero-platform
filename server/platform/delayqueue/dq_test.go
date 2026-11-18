@@ -124,3 +124,60 @@ func TestPublisherRoundsBeanstalkDelayUpAndPreservesDQEnvelope(t *testing.T) {
 		}
 	}
 }
+
+func TestPublisherThirdSilentReplicaDoesNotDelayTwoNodeQuorum(t *testing.T) {
+	c := Config{Endpoints: []string{"node-a:11300", "node-b:11300", "node-c:11300"},
+		Tube: "turns", RedisHost: "redis:6379"}
+	p, err := NewPublisher(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	p.dial = func(ctx context.Context, _, endpoint string) (net.Conn, error) {
+		client, server := net.Pipe()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer server.Close()
+			if endpoint == "node-c:11300" {
+				// Consume nothing. An unbounded publisher waits for this socket.
+				_, _ = io.Copy(io.Discard, server)
+				return
+			}
+			reader := bufio.NewReader(server)
+			_, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			parts := strings.Fields(line)
+			if len(parts) != 5 {
+				return
+			}
+			n, err := strconv.Atoi(parts[4])
+			if err != nil {
+				return
+			}
+			_, err = io.CopyN(io.Discard, reader, int64(n+2))
+			if err == nil {
+				_, _ = io.WriteString(server, "USING turns\r\nINSERTED 42\r\n")
+			}
+		}()
+		return client, nil
+	}
+	start := time.Now()
+	id, err := p.At(context.Background(), []byte("ticket"), time.Now().Add(time.Second))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(id, ",") != 1 {
+		t.Fatalf("two replica quorum ID expected, got %s", id)
+	}
+	if elapsed := time.Since(start); elapsed > 800*time.Millisecond {
+		t.Fatalf("optional stalled replica delayed quorum for %v", elapsed)
+	}
+	wg.Wait()
+}

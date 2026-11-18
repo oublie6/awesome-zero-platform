@@ -112,6 +112,12 @@ func (p *Publisher) At(ctx context.Context, body []byte, deadline time.Time) (st
 			failures = append(failures, r.err)
 		} else {
 			ids = append(ids, r.id)
+			if len(ids) >= 2 {
+				// Do not wait for an optional stalled third replica after the
+				// two durable writes required by go-queue have succeeded.
+				// Cancel closes its socket; the buffered result cannot leak.
+				return strings.Join(ids, ","), nil
+			}
 		}
 	}
 	if len(ids) < 2 {
