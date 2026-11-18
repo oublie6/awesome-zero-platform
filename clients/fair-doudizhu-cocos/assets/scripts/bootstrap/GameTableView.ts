@@ -1,7 +1,7 @@
 import { Color, EventTouch, Graphics, Label, Layers, Node, UITransform } from 'cc'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
-import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots } from './TableGeometry.ts'
-import { remainingSeconds, type TurnTime } from './TurnClock.ts'
+import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots, tableUnit } from './TableGeometry.ts'
+import { TurnClockAnchor } from './TurnClock.ts'
 
 export interface TableDisplay {
   roomID:string
@@ -79,14 +79,13 @@ export class GameTableView {
   private height=440
   private noticeText=''
   private countdownLabel:Label|null=null
-  private countdownClock:TurnTime={}
-  private countdownCapture=0
   private tickHandle:ReturnType<typeof setInterval>|null=null
   setNotice(message:string):void{
     this.noticeText=message.slice(0,140)
     if(this.data)this.layout(this.width,this.height)
   }
-  constructor(parent:Node,private readonly callbacks:TableCallbacks){
+  constructor(parent:Node,private readonly callbacks:TableCallbacks,
+    private readonly turnClock:TurnClockAnchor){
     this.root=new Node('ActualThreeSeatTable')
     this.root.layer=Layers.Enum.UI_2D
     this.root.addComponent(UITransform)
@@ -99,16 +98,9 @@ export class GameTableView {
   }
   render(data:TableDisplay,width:number,height:number):void {
     if(this.data?.handID!==data.handID)this.noticeText=''
-    // A local card selection rerenders this view without a new server snapshot.
-    // Do NOT restart the countdown unless the authoritative turn changed.
-    const pub=data.view?.public
-    if(!this.data || this.data.handID!==data.handID ||
-        this.data.version!==data.version ||
-        this.countdownClock.turnDeadlineMillis!==pub?.turnDeadlineMillis ||
-        this.countdownClock.serverTimeMillis!==pub?.serverTimeMillis){
-      this.countdownClock={turnDeadlineMillis:pub?.turnDeadlineMillis,serverTimeMillis:pub?.serverTimeMillis}
-      this.countdownCapture=typeof performance==='undefined'?Date.now():performance.now()
-    }
+    // The anchor is owned by GameBootstrap, not this disposable table view.
+    // Returning to rooms and reopening must not restart a stale snapshot clock.
+    this.turnClock.observe(data.handID,data.version,data.view?.public??{})
     this.data=data
     this.layout(width,height)
     if(this.tickHandle===null)this.tickHandle=setInterval(()=>this.updateCountdown(),250)
@@ -124,7 +116,7 @@ export class GameTableView {
     }
     const data=this.data
     const w=Math.max(240,width), h=Math.max(280,height)
-    const u=Math.max(0.72,Math.min(1.35,Math.min(w/760,h/480)))
+    const u=tableUnit(w,h)
     this.root.getComponent(UITransform)!.setContentSize(w,h)
 
     // Original drawn felt and gold edging. No copied commercial assets.
@@ -193,11 +185,11 @@ export class GameTableView {
           this.cardBack('OppBack'+position+'-'+i,
             x+(i-1)*14*u,seatY-65*u,28*u,38*u,u*.65)
       }
-    } else {
+    } else if(!final){
       this.label('NoHandSeats','等待服务端发牌后展示三家座位',0,h*.2,19*u,MUTED,w*.76,28*u)
     }
 
-    // Central trick uses only Go's public leading cards (numeric deck IDs).
+    // Central trick accepts Go's Base64 []uint8 public wire representation.
     const playing=publicPlaying(view??null)
     const trickY=Math.max(5*u,h*.035)
     const trickCards=playing.cards
@@ -272,15 +264,14 @@ export class GameTableView {
       this.button('VerifyFinalEvidence','核验结算',0,controlsY,2*bw,38*u,
         !!data.handID,this.callbacks.evidence)
     }
-    if(!view && data.handID){
+    if(!view && data.handID && !final){
       this.label('ServerSyncNeeded','请同步服务端私有牌局快照',0,-h*.23,15*u,MUTED,w*.66,25*u)
     }
   }
 
   private updateCountdown():void{
     if(!this.countdownLabel?.isValid || !this.data)return
-    const elapsed=(typeof performance==='undefined'?Date.now():performance.now())-this.countdownCapture
-    const seconds=remainingSeconds(this.countdownClock,elapsed)
+    const seconds=this.turnClock.remainingSeconds()
     const phase=this.data.phase
     if(phase!=='BIDDING' && phase!=='PLAYING'){
       this.countdownLabel.string='—'

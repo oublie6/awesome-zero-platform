@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY}
+import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY,tableUnit}
  from '../dist/bootstrap/TableGeometry.js'
 
 test('Dou Dizhu sorts ranks descending with deterministic suit ties',()=>{
@@ -101,4 +101,48 @@ test('the pass action is disabled until a public trick exists',async()=>{
   const {readFile}=await import('node:fs/promises')
   const table=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
   assert.match(table,/myTurn && playing\.cards\.length>0,this\.callbacks\.pass/)
+})
+
+test('real Go []uint8 Base64 wire tricks preserve legality and card identities',()=>{
+ assert.deepEqual(publicCardCodes('Ag=='),['H3'])
+ assert.deepEqual(publicCardCodes('AAECAw=='),['S3','H3','D3','C3'])
+ assert.deepEqual(publicCardCodes('NDU='),['YJ','XJ'])
+ assert.deepEqual(publicCardCodes(''),[])
+ for(const invalid of ['AA=','A===','Af8=','AP==','____', 'A'.repeat(32)]){
+   assert.deepEqual(publicCardCodes(invalid),[],'invalid wire '+invalid)
+ }
+})
+test('portrait design resolution retains physical touch sizes and playable fan',()=>{
+ for(const [width,height,cssRatio] of [[390,844,1],[1216,2770,390/1216],[1280,2770,390/1280]]){
+   const u=tableUnit(width,height)
+   assert.ok(42*u*cssRatio>=40,'portrait operation height too small: '+width)
+   assert.ok(35*u*cssRatio>=34,'portrait navigation height too small: '+width)
+   const cards=Array.from({length:20},(_,n)=>publicCardCode(n))
+   const fan=handFan(20,width,height,new Set(cards),cards)
+   const y=tableActionCenterY(fan,width,height,u)
+   const top=Math.max(...fan.places.map(p=>p.y+fan.cardHeight/2))
+   assert.ok(y-21*u>top,'portrait selected hand collides with buttons '+width)
+ }
+})
+test('table view consumes terminal evidence without a live public projection',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const scene=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const table=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
+ assert.match(scene,/snapshotView\?\.terminalEvidence/)
+ assert.match(scene,/!final && snapshotView\?\.public/)
+ assert.match(table,/!view && data\.handID && !final/)
+ assert.match(table,/this\.callbacks\.evidence/)
+})
+test('monotonic turn clock survives view recreation and ignores stale timestamps',async()=>{
+ const {TurnClockAnchor}=await import('../dist/bootstrap/TurnClock.js')
+ const c=new TurnClockAnchor()
+ const snapshot={turnDeadlineMillis:130000,serverTimeMillis:100000}
+ c.observe('h',7,snapshot,500)
+ assert.equal(c.remainingSeconds(26500),4)
+ c.observe('h',7,snapshot,26500)
+ assert.equal(c.remainingSeconds(26500),4,'view reopen extended countdown')
+ c.observe('h',7,{turnDeadlineMillis:130000,serverTimeMillis:110000},26500)
+ assert.equal(c.remainingSeconds(27500),3,'stale server clock moved anchor backwards')
+ c.observe('h',8,{turnDeadlineMillis:180000,serverTimeMillis:150000},27500)
+ assert.equal(c.remainingSeconds(27500),30,'new committed turn must reset')
 })

@@ -11,6 +11,7 @@ import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/pl
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
 import { menuWindow } from './MenuPagination.ts'
 import { GameTableView } from './GameTableView.ts'
+import { TurnClockAnchor } from './TurnClock.ts'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
 import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
@@ -51,6 +52,7 @@ export class GameBootstrap extends Component {
   private status: Label | null = null
   private buttons: Node[] = []
   private tableView: GameTableView | null = null
+  private readonly turnClock = new TurnClockAnchor()
   // Keep the full accessible action set even when it does not fit in one view.
   private menuActions: MenuAction[] = []
   private menuPage = 0
@@ -307,10 +309,16 @@ export class GameBootstrap extends Component {
       // The real table uses a dedicated Cocos layer; cards are no longer
       // text buttons mixed into the generic paginated menu.
       const snapshot=this.online?.shell.hand.snapshot
-      const projection=(snapshot?.view as PrivateHandProjection | undefined)??null
       const final=snapshot?.phase==='COMPLETED'||snapshot?.phase==='ABORTED'
-      const terminal=(snapshot?.view.terminalEvidence as
-        {winnerSeat:number|null;seatPoints:number[];recordDigest:string}|undefined)
+      // Terminal projections deliberately omit live public and private cards.
+      // Do not coerce them into a PrivateHandProjection or dereference public.
+      const snapshotView=snapshot?.view as
+        (Partial<PrivateHandProjection> & {terminalEvidence?:{
+          winnerSeat:number|null;seatPoints:number[];recordDigest:string
+        }})|null|undefined
+      const projection=!final && snapshotView?.public
+        ? snapshotView as PrivateHandProjection : null
+      const terminal=snapshotView?.terminalEvidence
       const cards=final?[]:Array.isArray(projection?.cards)?projection!.cards:[]
       this.selectedCards.forEach(selected=>{
         if(!cards.includes(selected))this.selectedCards.delete(selected)
@@ -330,7 +338,7 @@ export class GameBootstrap extends Component {
           retryUnknown:()=>void this.retryUnknownHand(),
           discardUnknown:()=>this.discardUnknownHand(),
           back:()=>this.renderScreen('rooms'),
-        })
+        },this.turnClock)
       }
       const finalSummary=final && terminal
         ? '胜者座位'+String(terminal.winnerSeat??'—')+' · 积分'+terminal.seatPoints.join('/')
