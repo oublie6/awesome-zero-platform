@@ -59,6 +59,7 @@ deadline_at=VALUES(deadline_at),next_attempt_at=UTC_TIMESTAMP(3),updated_at=UTC_
 		string(id), version, phase, seat, timeout.Microseconds())
 	return err
 }
+
 // Keep a durable terminal repair cursor after the final live action commits.
 // The separate domain lifecycle transaction may fail or lose its ACK.
 func (j *LiveJournal) writeTerminalRepair(ctx context.Context, tx *sql.Tx,
