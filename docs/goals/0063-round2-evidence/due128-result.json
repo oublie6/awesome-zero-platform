@@ -1,0 +1,13 @@
+{
+  "dispatchWallMillis": 1523,
+  "distinctDueRows": 128,
+  "firstPublishMaxMillis": 1520.205,
+  "firstPublishP50Millis": 888.702,
+  "firstPublishP95Millis": 1441.025,
+  "firstPublishP99Millis": 1463.695,
+  "goroutinesAfter": 8,
+  "goroutinesBefore": 8,
+  "heapAfterGC": 695136,
+  "replicatedPublicationsIncludingRepairRetries": 128,
+  "scope": "Actual production dispatch, real MySQL and2real queues,128synthetic already-due rows; no game callbacks. Not128complete game or production capacity qualification."
+}

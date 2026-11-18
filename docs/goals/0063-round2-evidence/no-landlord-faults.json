@@ -1,0 +1,190 @@
+{
+  "cases": [
+    {
+      "name": "final-live-auto-COMMIT-ACK-loss",
+      "hand": "g63-full-a1f31c788ab9f61aa08f00ec",
+      "before": {
+        "at": 1795003443563,
+        "phase": "BIDDING",
+        "writer": [
+          "1",
+          "3"
+        ],
+        "marker": [
+          [
+            "BIDDING",
+            "3",
+            "3",
+            "1795003462286"
+          ]
+        ],
+        "archives": [],
+        "actions": [
+          [
+            "2",
+            "g63-cmd-9bbb47abcb9c7c44cc285b92"
+          ],
+          [
+            "3",
+            "g63-cmd-8c00470bbff267112e0d8a43"
+          ]
+        ]
+      },
+      "beforeClock": {
+        "version": 3,
+        "seat": 3,
+        "deadline": 1795003462286,
+        "now": 1795003445650,
+        "retry": 1795003464286
+      },
+      "relayBefore": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 1,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 41,
+        "commitAcksDropped": 1
+      },
+      "relayAfter": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 0,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 42,
+        "commitAcksDropped": 2
+      },
+      "after": {
+        "at": 1795003500802,
+        "phase": "ABORTED",
+        "writer": [
+          "1",
+          "4"
+        ],
+        "marker": [],
+        "archives": [
+          [
+            "4",
+            "A325B5AAEC6B2D4EEC07EB5AA8CDF106B32E7E9464A926EEE688D170C0FB0CCB"
+          ]
+        ],
+        "actions": [
+          [
+            "2",
+            "g63-cmd-9bbb47abcb9c7c44cc285b92"
+          ],
+          [
+            "3",
+            "g63-cmd-8c00470bbff267112e0d8a43"
+          ],
+          [
+            "4",
+            "turn-timeout:a8f7e4f790460b917cd6afe47262b8f7e3a5c3a40c376a17330849d687655177"
+          ]
+        ]
+      },
+      "result": "FAIL",
+      "originalFixtureResult": "PASS"
+    },
+    {
+      "name": "domain-abort-COMMIT-ACK-loss",
+      "hand": "g63-full-a22dcf8f3c64a212dc2274c0",
+      "before": {
+        "at": 1795003589111,
+        "phase": "BIDDING",
+        "writer": [
+          "1",
+          "3"
+        ],
+        "marker": [
+          [
+            "BIDDING",
+            "3",
+            "3",
+            "1795003607994"
+          ]
+        ],
+        "archives": [],
+        "actions": [
+          [
+            "2",
+            "g63-cmd-4d09160d3562b41dffa99960"
+          ],
+          [
+            "3",
+            "g63-cmd-78ac1e141ebddaf36d9af843"
+          ]
+        ]
+      },
+      "beforeClock": {
+        "version": 3,
+        "seat": 3,
+        "deadline": 1795003607994,
+        "now": 1795003591396,
+        "retry": 1795003609994
+      },
+      "relayBefore": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 1,
+        "skipCommitAcks": 1,
+        "commitAcksSeen": 58,
+        "commitAcksDropped": 2
+      },
+      "relayAfter": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 0,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 60,
+        "commitAcksDropped": 3
+      },
+      "after": {
+        "at": 1795003632977,
+        "phase": "ABORTED",
+        "writer": [
+          "1",
+          "4"
+        ],
+        "marker": [],
+        "archives": [
+          [
+            "5",
+            "2026D6C2EADC7A65064D2637FF8DAD227CCD0A63EFCAC66BBEF8AC4DAE608F57"
+          ]
+        ],
+        "actions": [
+          [
+            "2",
+            "g63-cmd-4d09160d3562b41dffa99960"
+          ],
+          [
+            "3",
+            "g63-cmd-78ac1e141ebddaf36d9af843"
+          ],
+          [
+            "4",
+            "g63-cmd-5ded1f1db1b60f52e326a36f"
+          ]
+        ]
+      },
+      "result": "PASS"
+    }
+  ],
+  "semanticAudit": {
+    "result": "FAIL",
+    "case": "final-live-auto-COMMIT-ACK-loss",
+    "actualJournalVersion": 4,
+    "actualArchiveVersion": 4,
+    "expectedArchiveVersion": 5,
+    "normalControlJournalVersion": 4,
+    "normalControlArchiveVersion": 5,
+    "basis": "Game.Abort increments version; three accepted passes reach NO_LANDLORD v4. LiveDirectory.Abort ignores quarantined flag and archives pre-commit memory v3 as aborted v4. Initial fixture PASS asserted only archive presence; explicitly superseded by semantic audit.",
+    "coldRestart": {
+      "result": "FAIL",
+      "ExecMainStatus": 1,
+      "readinessHTTP": 0,
+      "error": "reconcile terminated archive: gamecore final archive failed; game final archive conflicts with existing record"
+    }
+  },
+  "warning": "First raw fixture PASS tested only archive presence and is REVOKED by semantic audit: live4 + abort requires archive5, actual4, cold startup conflicts."
+}

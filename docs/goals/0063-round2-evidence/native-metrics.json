@@ -1,0 +1,263 @@
+{
+  "source": "099af4eaa117628a6337841928cbbbc5f13697c1",
+  "sizes": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "canvas": {
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720
+      },
+      "labels": [
+        {
+          "name": "BackToRoomCaption",
+          "text": "返回",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 18.00000000000002
+        },
+        {
+          "name": "UpdateHandCaption",
+          "text": "同步",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 18.000000000000014
+        },
+        {
+          "name": "AuthoritativeTurnClock",
+          "text": "—",
+          "fontSizeLogical": 32.400000000000006,
+          "fontSizeCSS": 32.400000000000034
+        },
+        {
+          "name": "VerifyFinalEvidenceCaption",
+          "text": "核验结算",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 18
+        }
+      ],
+      "buttons": [
+        {
+          "name": "BackToRoom",
+          "cssWidth": 101.25,
+          "cssHeight": 47.24999999999995
+        },
+        {
+          "name": "UpdateHand",
+          "cssWidth": 101.25,
+          "cssHeight": 45.90000000000015
+        },
+        {
+          "name": "VerifyFinalEvidence",
+          "cssWidth": 367.20000000000016,
+          "cssHeight": 51.30000000000018
+        }
+      ],
+      "evidenceTouchRequests": 1
+    },
+    {
+      "viewport": {
+        "width": 760,
+        "height": 390
+      },
+      "canvas": {
+        "width": 760,
+        "height": 390,
+        "pixelWidth": 760,
+        "pixelHeight": 390
+      },
+      "labels": [
+        {
+          "name": "BackToRoomCaption",
+          "text": "返回",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 10.687500000000007
+        },
+        {
+          "name": "UpdateHandCaption",
+          "text": "同步",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 10.687500000000007
+        },
+        {
+          "name": "AuthoritativeTurnClock",
+          "text": "—",
+          "fontSizeLogical": 32.400000000000006,
+          "fontSizeCSS": 19.23750000000001
+        },
+        {
+          "name": "VerifyFinalEvidenceCaption",
+          "text": "核验结算",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 10.6875
+        }
+      ],
+      "buttons": [
+        {
+          "name": "BackToRoom",
+          "cssWidth": 60.1171875,
+          "cssHeight": 28.05468749999997
+        },
+        {
+          "name": "UpdateHand",
+          "cssWidth": 60.1171875,
+          "cssHeight": 27.253125000000104
+        },
+        {
+          "name": "VerifyFinalEvidence",
+          "cssWidth": 218.0250000000001,
+          "cssHeight": 30.459375000000023
+        }
+      ],
+      "evidenceTouchRequests": 1
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "canvas": {
+        "width": 390,
+        "height": 844,
+        "pixelWidth": 390,
+        "pixelHeight": 844
+      },
+      "labels": [
+        {
+          "name": "BackToRoomCaption",
+          "text": "返回",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 5.4843750000000036
+        },
+        {
+          "name": "UpdateHandCaption",
+          "text": "同步",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 5.484375000000014
+        },
+        {
+          "name": "AuthoritativeTurnClock",
+          "text": "—",
+          "fontSizeLogical": 78.76923076923077,
+          "fontSizeCSS": 24.00000000000006
+        },
+        {
+          "name": "VerifyFinalEvidenceCaption",
+          "text": "核验结算",
+          "fontSizeLogical": 18,
+          "fontSizeCSS": 5.484375
+        }
+      ],
+      "buttons": [
+        {
+          "name": "BackToRoom",
+          "cssWidth": 75.00000000000006,
+          "cssHeight": 34.999999999999964
+        },
+        {
+          "name": "UpdateHand",
+          "cssWidth": 75.00000000000006,
+          "cssHeight": 33.999999999999744
+        },
+        {
+          "name": "VerifyFinalEvidence",
+          "cssWidth": 210.60000000000002,
+          "cssHeight": 37.999999999999886
+        }
+      ],
+      "evidenceTouchRequests": 1
+    }
+  ],
+  "errors": [],
+  "lifecycle": {
+    "cycles": [
+      {
+        "i": 0,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 1,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 2,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 3,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 4,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 5,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 6,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 7,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 8,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 9,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 10,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      },
+      {
+        "i": 11,
+        "roomIntervals": 0,
+        "tableIntervals": 1,
+        "nodes": 25
+      }
+    ],
+    "heapBefore": {
+      "usedSize": 27660500,
+      "totalSize": 29732864,
+      "embedderHeapUsedSize": 6227600,
+      "backingStorageSize": 16870790
+    },
+    "heapAfter": {
+      "usedSize": 27874476,
+      "totalSize": 29470720,
+      "embedderHeapUsedSize": 9238768,
+      "backingStorageSize": 16868102
+    }
+  },
+  "result": "PASS for measured touch and12 terminal-view lifecycle cycles; font/readability evaluated separately"
+}

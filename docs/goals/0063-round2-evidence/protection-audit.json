@@ -1,0 +1,53 @@
+{
+  "result": "PASS",
+  "checks": {
+    "deployments": "same names, UIDs and spec/data",
+    "pvc": "same names, UIDs and spec/data",
+    "services": "same names, UIDs and spec/data",
+    "configmaps": "same names, UIDs and spec/data",
+    "secrets": "same names, UIDs and resourceVersions; values never read",
+    "pods": {
+      "app-api-f94454b76-9g26z": {
+        "uid": "5f59139b-1209-474c-bd8f-2bd8557a12ae",
+        "phase": "Running",
+        "restarts": [
+          [
+            "app-api",
+            2
+          ]
+        ]
+      },
+      "game-web-996b46c84-dbfwq": {
+        "uid": "d2a9327f-8d15-490c-af1c-438743de5539",
+        "phase": "Running",
+        "restarts": [
+          [
+            "game-web",
+            2
+          ]
+        ]
+      },
+      "mysql-5cc48fd9b4-5hz6j": {
+        "uid": "bd7574dd-1fb4-4010-b392-cc5e3f326f9d",
+        "phase": "Running",
+        "restarts": [
+          [
+            "mysql",
+            1
+          ]
+        ]
+      },
+      "redis-67bdd89687-krvb4": {
+        "uid": "c1f0b042-43a9-4ffe-8da1-4031331a200a",
+        "phase": "Running",
+        "restarts": [
+          [
+            "redis",
+            1
+          ]
+        ]
+      }
+    }
+  },
+  "limits": "Read-only API object identity/spec/data/Secret metadata comparison; no inspection or byte-for-byte business database/PVC contents."
+}

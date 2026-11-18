@@ -1,0 +1,14 @@
+{
+  "pid": 71207,
+  "baselineSockets": [
+    "0      0      127.0.0.1:40324 127.0.0.1:36130 users:((\"app-api\",pid=71207,fd=17))"
+  ],
+  "freshSocketWhileNodePaused": [
+    "0      0      127.0.0.1:34076 127.0.0.1:36130 users:((\"app-api\",pid=71207,fd=22))"
+  ],
+  "elapsedMillis": 1044.098,
+  "unitState": "inactive",
+  "unitExit": "0",
+  "socketsAfter": [],
+  "result": "PASS"
+}

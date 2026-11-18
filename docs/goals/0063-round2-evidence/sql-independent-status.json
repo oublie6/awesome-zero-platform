@@ -1,0 +1,1 @@
+{"command": ["/opt/goal0042-toolchain/go/bin/go", "test", "-p", "1", "-parallel", "1", "-count=1", "-tags=integration", "-overlay=/root/goal0063-round2-099af4e/sql-overlay.json", "-run", "TestG63|TestDQTurnDeadlineEnforces", "-v", "./business/doudizhu/infrastructure/mysqlstore"], "exit": 0, "seconds": 33.336824893951416}

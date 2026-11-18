@@ -1,0 +1,111 @@
+{
+  "source": "099af4eaa117628a6337841928cbbbc5f13697c1",
+  "hand": "g63-full-bcf88aeb75b28b691cd55f23",
+  "room": "g63r2-room-c39340a92889d5a626a0",
+  "before": {
+    "at": 1795006365683,
+    "phase": "BIDDING",
+    "deadline": {
+      "version": 1,
+      "seat": 3,
+      "deadline": 1795006381539,
+      "now": 1795006366730,
+      "retry": 1795006383539
+    },
+    "archive": [],
+    "actions": "0"
+  },
+  "afterCancel": {
+    "at": 1795006371924,
+    "phase": "ABORTED",
+    "deadline": {
+      "version": 1,
+      "seat": 3,
+      "deadline": 1795006381539,
+      "now": 1795006372781,
+      "retry": 1795006383539
+    },
+    "archive": [
+      [
+        "2",
+        "03DCF263310949223249FDAE46DD261AFC06B94CAC49F3F8E1D8480F7D81663E"
+      ]
+    ],
+    "actions": "0"
+  },
+  "samples": [
+    {
+      "at": 1795006386546,
+      "phase": "ABORTED",
+      "deadline": {
+        "version": 1,
+        "seat": 3,
+        "deadline": 1795006381539,
+        "now": 1795006387680,
+        "retry": 1795006388967
+      },
+      "archive": [
+        [
+          "2",
+          "03DCF263310949223249FDAE46DD261AFC06B94CAC49F3F8E1D8480F7D81663E"
+        ]
+      ],
+      "actions": "0"
+    },
+    {
+      "at": 1795006390870,
+      "phase": "ABORTED",
+      "deadline": {
+        "version": 1,
+        "seat": 3,
+        "deadline": 1795006381539,
+        "now": 1795006391795,
+        "retry": 1795006391954
+      },
+      "archive": [
+        [
+          "2",
+          "03DCF263310949223249FDAE46DD261AFC06B94CAC49F3F8E1D8480F7D81663E"
+        ]
+      ],
+      "actions": "0"
+    },
+    {
+      "at": 1795006394982,
+      "phase": "ABORTED",
+      "deadline": {
+        "version": 1,
+        "seat": 3,
+        "deadline": 1795006381539,
+        "now": 1795006396145,
+        "retry": 1795006397975
+      },
+      "archive": [
+        [
+          "2",
+          "03DCF263310949223249FDAE46DD261AFC06B94CAC49F3F8E1D8480F7D81663E"
+        ]
+      ],
+      "actions": "0"
+    }
+  ],
+  "after": {
+    "at": 1795006399570,
+    "phase": "ABORTED",
+    "deadline": {
+      "version": 1,
+      "seat": 3,
+      "deadline": 1795006381539,
+      "now": 1795006400458,
+      "retry": 1795006400960
+    },
+    "archive": [
+      [
+        "2",
+        "03DCF263310949223249FDAE46DD261AFC06B94CAC49F3F8E1D8480F7D81663E"
+      ]
+    ],
+    "actions": "0"
+  },
+  "result": "FAIL"
+}

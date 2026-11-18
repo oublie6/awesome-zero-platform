@@ -1,0 +1,34 @@
+=== RUN   TestG63ActualThousandRowDispatchBacklog
+    round2_backlog_test.go:38: {
+          "dispatchCycles": 2,
+          "elapsedMillis": 11116,
+          "goroutinesAfter": 8,
+          "goroutinesBefore": 8,
+          "heapAfterGC": 693056,
+          "heapBefore": 1795960,
+          "result": "PASS",
+          "rows": 1000,
+          "scope": "Real MySQL query/update and real two-replica DQ publishing; synthetic future turns; store filters test-owned prefix after unmodified production scan. No business callbacks, not a full1000-real-game or long-duration leak proof. Direct MySQL bypasses fault relay for this nominal resource measurement."
+        }
+--- PASS: TestG63ActualThousandRowDispatchBacklog (13.52s)
+=== RUN   TestR2RealBadHandUnknownPublishDoesNotStarveHealthyHand
+    round2_dispatch_expanded_test.go:31: real stored-but-unacknowledged bad replicas=2; healthy next hand published after=2.110291894s; batch error=dq publication accepted by 0/2 replicas: put: read tcp 127.0.0.1:35694->127.0.0.1:37129: i/o timeout
+        put: read tcp 127.0.0.1:34290->127.0.0.1:42141: use of closed network connection
+--- PASS: TestR2RealBadHandUnknownPublishDoesNotStarveHealthyHand (2.14s)
+=== RUN   TestR2RealConcentratedDue128DispatchBudget
+    round2_dispatch_expanded_test.go:33: {
+          "dispatchWallMillis": 1523,
+          "distinctDueRows": 128,
+          "firstPublishMaxMillis": 1520.205,
+          "firstPublishP50Millis": 888.702,
+          "firstPublishP95Millis": 1441.025,
+          "firstPublishP99Millis": 1463.695,
+          "goroutinesAfter": 8,
+          "goroutinesBefore": 8,
+          "heapAfterGC": 695136,
+          "replicatedPublicationsIncludingRepairRetries": 128,
+          "scope": "Actual production dispatch, real MySQL and2real queues,128synthetic already-due rows; no game callbacks. Not128complete game or production capacity qualification."
+        }
+--- PASS: TestR2RealConcentratedDue128DispatchBudget (1.83s)
+PASS
+ok  	github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/bootstrap	17.521s

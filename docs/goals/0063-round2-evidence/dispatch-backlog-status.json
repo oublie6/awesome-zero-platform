@@ -1,0 +1,1 @@
+{"command": ["/opt/goal0042-toolchain/go/bin/go", "test", "-p", "1", "-parallel", "1", "-count=1", "-overlay=/root/goal0063-round2-099af4e/backlog-overlay.json", "-run", "TestG63ActualThousand|TestR2RealBadHand|TestR2RealConcentrated", "-v", "./apps/app-api/internal/bootstrap"], "exit": 0, "seconds": 74.80657434463501}

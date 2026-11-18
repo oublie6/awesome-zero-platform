@@ -1,0 +1,21 @@
+=== RUN   TestDQTurnDeadlineEnforcesHumanTimeoutAndAtomicTurnAdvance
+--- PASS: TestDQTurnDeadlineEnforcesHumanTimeoutAndAtomicTurnAdvance (3.29s)
+=== RUN   TestG63EarlyStaleWrongSeatAndRestartClock
+    round2_independent_test.go:107: deadline milliseconds preserved across owner takeover; remaining=519ms
+--- PASS: TestG63EarlyStaleWrongSeatAndRestartClock (2.39s)
+=== RUN   TestG63HumanWaitsPastDeadlineAndTimeoutWinsSameWriterLock
+    round2_independent_test.go:146: late human rejected; exactly one automatic durable transition
+--- PASS: TestG63HumanWaitsPastDeadlineAndTimeoutWinsSameWriterLock (2.72s)
+=== RUN   TestG63HumanWinsBeforeCutoffAndLateTimeoutCannotChangeTurn
+--- PASS: TestG63HumanWinsBeforeCutoffAndLateTimeoutCannotChangeTurn (1.79s)
+=== RUN   TestG63ConcurrentTimeoutCallbacksCommitOnlyOnce
+    round2_independent_test.go:190: 12 concurrent SQL writers: exactly 1 committed transition
+--- PASS: TestG63ConcurrentTimeoutCallbacksCommitOnlyOnce (2.33s)
+=== RUN   TestG63RealMySQLCommitACKLossKeepsJournalAndDeadlineAtomic
+    round2_independent_test.go:242: real MySQL OK packet dropped after COMMIT; one action and next deadline durable
+--- PASS: TestG63RealMySQLCommitACKLossKeepsJournalAndDeadlineAtomic (2.06s)
+=== RUN   TestG63RealMySQLChannelFailureThenSameCommandRecovery
+    round2_independent_test.go:260: actual SQL channel outage: no commit, same identity succeeds after restoration
+--- PASS: TestG63RealMySQLChannelFailureThenSameCommandRecovery (1.93s)
+PASS
+ok  	github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore	16.534s

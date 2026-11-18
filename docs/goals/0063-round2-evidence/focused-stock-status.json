@@ -1,0 +1,1 @@
+{"command": ["/opt/goal0042-toolchain/go/bin/go", "test", "-p", "1", "-parallel", "1", "-count=1", "-v", "./apps/app-api/internal/bootstrap", "./business/doudizhu/application/lifecycle"], "exit": 0, "seconds": 20.921411514282227}

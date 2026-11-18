@@ -1,0 +1,5 @@
+codex0063r2-mysql 258.1MiB / 768MiB 0.19%
+codex0063r2-redis 12.9MiB / 128MiB 0.46%
+codex0063r2-bean-a 1.402MiB / 64MiB 0.00%
+codex0063r2-bean-b 936KiB / 64MiB 0.00%
+codex0063r2-bean-c 384KiB / 64MiB 0.00%

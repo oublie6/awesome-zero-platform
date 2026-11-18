@@ -1,0 +1,200 @@
+{
+  "source": "099af4eaa117628a6337841928cbbbc5f13697c1",
+  "hand": "g63-full-4f0d7bf9ebd7f44f0adc05b0",
+  "room": "g63r2-room-9b22067255ffcdf3a927",
+  "serverFinal": {
+    "fairnessMode": "client-contributed-server-custodied-v1",
+    "v": "doudizhu-final-verification-report-v1",
+    "handId": "g63-full-4f0d7bf9ebd7f44f0adc05b0",
+    "status": "completed",
+    "finalVersion": 61,
+    "recordDigest": "5a303daf60cccaa7d328a7dd9f8d358e78483eb406616e77690bd9509a378886",
+    "setupDigest": "0838fadc758f91b679bcbf4762dcdaa99a6629439587f785502fcc914229593a",
+    "transcriptDigest": "a217ba0f392db2024412425ce2e16bdc95b1a487b56956435f0755664190a844",
+    "completed": true,
+    "landlordSeat": 3,
+    "winnerSeat": 3,
+    "seatPoints": [
+      -3,
+      -3,
+      6
+    ],
+    "remainingCards": [
+      17,
+      16,
+      0
+    ]
+  },
+  "normalAutoTimings": [
+    {
+      "label": "bid",
+      "deadline": 1795004254510,
+      "committedAt": 1795004255741,
+      "latenessMs": 1231,
+      "fromVersion": 1,
+      "toVersion": 2,
+      "command": {
+        "v": "doudizhu-live-bid-command-v1",
+        "score": 0
+      }
+    },
+    {
+      "label": "lead",
+      "deadline": 1795004590002,
+      "committedAt": 1795004591815,
+      "latenessMs": 1813,
+      "version": 13,
+      "command": {
+        "v": "doudizhu-live-play-command-v1",
+        "cards": [
+          "S4"
+        ]
+      }
+    },
+    {
+      "deadline": 1795004822198,
+      "committedAt": 1795004823884,
+      "latenessMs": 1686,
+      "version": 23,
+      "command": {
+        "v": "doudizhu-live-pass-command-v1"
+      }
+    }
+  ],
+  "countdown": [
+    {
+      "name": "actual touch select/cancel and monotonic room reentry",
+      "result": "PASS",
+      "data": {
+        "before": "24s",
+        "after": "22s",
+        "version": 12,
+        "deadline": 1795004590002
+      }
+    },
+    {
+      "name": "actual Go WSS stale frame replay cannot extend countdown",
+      "result": "PASS",
+      "data": {
+        "serverFrames": 3,
+        "replayed": 2,
+        "before": "18s",
+        "after": "16s",
+        "version": 12
+      }
+    }
+  ],
+  "GoWireNativePass": {
+    "serverSeat": 2,
+    "nativeSeat": 2,
+    "serverVersion": 20,
+    "nativeVersion": 20,
+    "leadingCards": "CQ=="
+  },
+  "nativeSuccesses": [
+    {
+      "name": "real authoritative Base64 trick and native legal pass",
+      "result": "PASS",
+      "data": {
+        "serverSeat": 2,
+        "nativeSeat": 2,
+        "serverVersion": 20,
+        "nativeVersion": 20,
+        "leadingCards": "CQ=="
+      }
+    },
+    {
+      "name": "actual normal automatic legal pass with raw SQL time",
+      "result": "PASS",
+      "data": {
+        "deadline": 1795004822198,
+        "committedAt": 1795004823884,
+        "latenessMs": 1686,
+        "version": 23,
+        "command": {
+          "v": "doudizhu-live-pass-command-v1"
+        }
+      }
+    },
+    {
+      "name": "actual native single play from authoritative cards",
+      "result": "PASS",
+      "data": {
+        "position": 2,
+        "from": 23,
+        "to": 24,
+        "card": "D6"
+      }
+    },
+    {
+      "name": "real native reconnect retains current deadline",
+      "result": "PASS",
+      "data": {
+        "before": {
+          "version": 24,
+          "seat": 3,
+          "deadline": 1795004858458,
+          "now": 1795004829777,
+          "retry": 1795004860458
+        },
+        "after": {
+          "version": 24,
+          "seat": 3,
+          "deadline": 1795004858458,
+          "now": 1795004834060,
+          "retry": 1795004860458
+        }
+      }
+    }
+  ],
+  "terminalValidation": [
+    {
+      "name": "actual terminal UI, settlement, verify request and reentry",
+      "result": "PASS",
+      "data": {
+        "calls": 1,
+        "terminalPublicPresent": false
+      }
+    },
+    {
+      "name": "old delayed tasks and recipient isolation",
+      "result": "PASS",
+      "data": {
+        "version": 61,
+        "nonmemberPushes": 0
+      }
+    }
+  ],
+  "terminalHTTPAndFreshPage": {
+    "source": "099af4eaa117628a6337841928cbbbc5f13697c1",
+    "hand": "g63-full-4f0d7bf9ebd7f44f0adc05b0",
+    "room": "g63r2-room-9b22067255ffcdf3a927",
+    "steps": [
+      {
+        "name": "terminal UpdateHand actual HTTP refresh",
+        "result": "PASS",
+        "evidenceHTTP200": 1,
+        "version": 61
+      },
+      {
+        "name": "fresh Cocos page authenticated terminal recovery",
+        "result": "PASS",
+        "version": 61,
+        "publicPresent": false
+      },
+      {
+        "name": "authenticated nonmember /private",
+        "result": "PASS",
+        "status": 403
+      },
+      {
+        "name": "authenticated nonmember /evidence",
+        "result": "PASS",
+        "status": 403
+      }
+    ],
+    "errors": [],
+    "result": "PASS"
+  },
+  "scope": "Three actual authenticated protocol players; actual Cocos bidding/play/pass/reconnect/terminal. Not a complete three-Cocos-only game or physical-device qualification. Raw fixture failures retained separately; see fixture-notes.md."
+}

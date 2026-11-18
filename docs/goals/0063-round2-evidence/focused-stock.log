@@ -1,0 +1,96 @@
+=== RUN   TestNewRejectsInvalidConfig
+--- PASS: TestNewRejectsInvalidConfig (0.00s)
+=== RUN   TestNewRejectsContradictoryCORS
+--- PASS: TestNewRejectsContradictoryCORS (0.00s)
+=== RUN   TestAppHealthHeaders
+Starting server at 127.0.0.1:45451...
+{"@timestamp":"2026-11-18T13:02:13.500Z","caller":"httpmiddleware/accesslog.go:95","clientAddress":"127.0.0.1:60698","content":"http access","durationMs":0,"elapsed":"304.219µs","eventAction":"http.access","level":"info","method":"GET","module":"platform","path":"/health/live","requestId":"RSG4I4424HSIXAZTPFSZIM7SWY","span":"ec1bdfd187c9b938","statusCode":200,"trace":"d6febbe0d092482ce89b8831dc735e68"}
+{"@timestamp":"2026-11-18T13:02:13.500Z","caller":"httpmiddleware/accesslog.go:95","clientAddress":"127.0.0.1:60698","content":"http access","durationMs":0,"elapsed":"93.895µs","eventAction":"http.access","level":"info","method":"GET","module":"platform","path":"/health/live","requestId":"caller-health-id","span":"682f24b820daaa3a","statusCode":200,"trace":"04411e52d43a3d0d8c9d44341872721c"}
+--- PASS: TestAppHealthHeaders (0.06s)
+=== RUN   TestFoundationHTTPBehavior
+Starting server at 127.0.0.1:40453...
+--- PASS: TestFoundationHTTPBehavior (0.17s)
+=== RUN   TestPartialStartupFailureClosesMySQL
+--- PASS: TestPartialStartupFailureClosesMySQL (0.00s)
+=== RUN   TestAppStopIsIdempotent
+--- PASS: TestAppStopIsIdempotent (0.00s)
+=== RUN   TestAutoDealerWaitsForPinnedBeaconThenDealsExactlyOnce
+--- PASS: TestAutoDealerWaitsForPinnedBeaconThenDealsExactlyOnce (0.00s)
+=== RUN   TestAutoDealerNoFallbackToForgedBeacon
+--- PASS: TestAutoDealerNoFallbackToForgedBeacon (0.00s)
+=== RUN   TestAutoDealerAbortsUnfinishedFutureBeaconAfterRoundIsPublished
+--- PASS: TestAutoDealerAbortsUnfinishedFutureBeaconAfterRoundIsPublished (0.00s)
+=== RUN   TestTurnDQTimeoutBiddingUsesExistingCommittedBid
+--- PASS: TestTurnDQTimeoutBiddingUsesExistingCommittedBid (0.00s)
+=== RUN   TestTurnDQTimeoutCanPassOrLeadMinimumSingle
+--- PASS: TestTurnDQTimeoutCanPassOrLeadMinimumSingle (0.00s)
+=== RUN   TestTurnDQIgnoresPrematureAndStaleTickets
+--- PASS: TestTurnDQIgnoresPrematureAndStaleTickets (0.00s)
+=== RUN   TestTurnDQBoundedDispatch
+--- PASS: TestTurnDQBoundedDispatch (0.00s)
+=== RUN   TestDeterministicTimeoutCommandID
+--- PASS: TestDeterministicTimeoutCommandID (0.00s)
+=== RUN   TestTurnDQTerminalMarkerRepairsAfterLostLifecycleAck
+--- PASS: TestTurnDQTerminalMarkerRepairsAfterLostLifecycleAck (0.00s)
+=== RUN   TestTurnDQDispatchContinuesAfterOnePublisherFailure
+--- PASS: TestTurnDQDispatchContinuesAfterOnePublisherFailure (0.00s)
+=== RUN   TestStartModulesOnlyStartsEnabledModules
+--- PASS: TestStartModulesOnlyStartsEnabledModules (0.00s)
+=== RUN   TestStartModulesUnwindsInReverseOrder
+--- PASS: TestStartModulesUnwindsInReverseOrder (0.00s)
+=== RUN   TestStartModulesRejectsDuplicateAndIncompleteModules
+=== RUN   TestStartModulesRejectsDuplicateAndIncompleteModules/duplicate
+=== RUN   TestStartModulesRejectsDuplicateAndIncompleteModules/unnamed
+=== RUN   TestStartModulesRejectsDuplicateAndIncompleteModules/missing_start
+=== RUN   TestStartModulesRejectsDuplicateAndIncompleteModules/missing_stop
+--- PASS: TestStartModulesRejectsDuplicateAndIncompleteModules (0.00s)
+    --- PASS: TestStartModulesRejectsDuplicateAndIncompleteModules/duplicate (0.00s)
+    --- PASS: TestStartModulesRejectsDuplicateAndIncompleteModules/unnamed (0.00s)
+    --- PASS: TestStartModulesRejectsDuplicateAndIncompleteModules/missing_start (0.00s)
+    --- PASS: TestStartModulesRejectsDuplicateAndIncompleteModules/missing_stop (0.00s)
+PASS
+ok  	github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/bootstrap	0.318s
+=== RUN   TestOldBidNeverExtendsSamePhaseBiddingDeadline
+--- PASS: TestOldBidNeverExtendsSamePhaseBiddingDeadline (0.00s)
+=== RUN   TestOldBidCannotDowngradePlayingCountdown
+--- PASS: TestOldBidCannotDowngradePlayingCountdown (0.00s)
+=== RUN   TestOldPlayAndPassNeverExtendPlayingCountdown
+=== RUN   TestOldPlayAndPassNeverExtendPlayingCountdown/play
+=== RUN   TestOldPlayAndPassNeverExtendPlayingCountdown/pass
+--- PASS: TestOldPlayAndPassNeverExtendPlayingCountdown (0.00s)
+    --- PASS: TestOldPlayAndPassNeverExtendPlayingCountdown/play (0.00s)
+    --- PASS: TestOldPlayAndPassNeverExtendPlayingCountdown/pass (0.00s)
+=== RUN   TestOldAcceptedTerminalResultReconcilesOnlyMissingDurableStages
+--- PASS: TestOldAcceptedTerminalResultReconcilesOnlyMissingDurableStages (0.00s)
+=== RUN   TestOldAcceptedWinningBidReconcilesOnlyMissingDurablePhase
+--- PASS: TestOldAcceptedWinningBidReconcilesOnlyMissingDurablePhase (0.00s)
+=== RUN   TestWinningBidDurablyStartsPlayingAndCompletedPlayDurablySettles
+--- PASS: TestWinningBidDurablyStartsPlayingAndCompletedPlayDurablySettles (0.00s)
+=== RUN   TestRestartReconciliationResumesPlayingAndFinishesCommittedFinal
+--- PASS: TestRestartReconciliationResumesPlayingAndFinishesCommittedFinal (0.00s)
+=== RUN   TestRestartFailsClosedOnImpossiblePhase
+--- PASS: TestRestartFailsClosedOnImpossiblePhase (0.00s)
+=== RUN   TestNoLandlordTerminationRetriesTheSameCommand
+--- PASS: TestNoLandlordTerminationRetriesTheSameCommand (0.00s)
+=== RUN   TestBiddingAndPlayingDeadlinesUseUnifiedExpiry
+--- PASS: TestBiddingAndPlayingDeadlinesUseUnifiedExpiry (0.00s)
+=== RUN   TestRepeatedDealtTrackingPreservesOriginalDeadline
+--- PASS: TestRepeatedDealtTrackingPreservesOriginalDeadline (0.00s)
+=== RUN   TestLateDealtTrackingCannotRegressPlayingDeadline
+--- PASS: TestLateDealtTrackingCannotRegressPlayingDeadline (0.00s)
+=== RUN   TestFreshBidCallbacksUseCommitVersionOrder
+--- PASS: TestFreshBidCallbacksUseCommitVersionOrder (0.00s)
+=== RUN   TestFreshPlayingCallbacksOnlyRenewForHigherVersions
+--- PASS: TestFreshPlayingCallbacksOnlyRenewForHigherVersions (0.00s)
+=== RUN   TestSweepDoesNotExpireRenewedDeadline
+--- PASS: TestSweepDoesNotExpireRenewedDeadline (0.00s)
+=== RUN   TestCommittedBeforeCallbackDoesNotExpire
+--- PASS: TestCommittedBeforeCallbackDoesNotExpire (0.00s)
+=== RUN   TestParticipantCancellationRequiresASeat
+--- PASS: TestParticipantCancellationRequiresASeat (0.00s)
+=== RUN   TestCompletedPlayForgetsTheDeadline
+--- PASS: TestCompletedPlayForgetsTheDeadline (0.00s)
+=== RUN   TestLifecycleResultDecodingIsStrict
+--- PASS: TestLifecycleResultDecodingIsStrict (0.00s)
+PASS
+ok  	github.com/oublie6/awesome-zero-platform/server/business/doudizhu/application/lifecycle	0.014s

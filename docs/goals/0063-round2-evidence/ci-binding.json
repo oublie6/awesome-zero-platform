@@ -1,0 +1,17 @@
+{
+  "candidate": "099af4eaa117628a6337841928cbbbc5f13697c1",
+  "CIcheckout": "de6aa816ae41ae3bc413595f234e9899303c37ed",
+  "sourceInputDiff": [],
+  "comparedPaths": [
+    "server",
+    "clients",
+    "scripts",
+    ".github"
+  ],
+  "adminVueSourceEquivalentToReused406f156": true,
+  "cliRevision": "f506fa3de403b48b4833334fa48dddd27bb26364",
+  "engineRevision": "d0a696cfe63fd8d19c70d7913ba11aa641c2e3c7",
+  "engineVersion": "4.0.0-beta.0",
+  "nativeExport": "PASS; strict generated Cocos4 types and8JS AST audit",
+  "cacheLimits": "CLI tracked code clean;5engine built-in asset.meta differences, no engine code diff. Shared tool cache was not reset."
+}

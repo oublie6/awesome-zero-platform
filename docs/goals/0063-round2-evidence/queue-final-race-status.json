@@ -1,0 +1,1 @@
+{"command": ["/opt/goal0042-toolchain/go/bin/go", "test", "-race", "-p", "1", "-parallel", "1", "-count=1", "-overlay=/root/goal0063-round2-099af4e/queue-overlay.json", "-v", "./platform/delayqueue"], "exit": 0, "seconds": 34.592597246170044}

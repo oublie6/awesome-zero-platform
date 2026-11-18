@@ -1,0 +1,227 @@
+{
+  "source": "099af4eaa117628a6337841928cbbbc5f13697c1",
+  "result": "FAIL",
+  "cases": [
+    {
+      "name": "COMPLETED-final-live-ACK-loss",
+      "hand": "g63-full-ac4e71660ca4ce70e26d66e1",
+      "fault": "final live COMMIT OK lost without restart",
+      "advisory": {
+        "before": {
+          "version": 1,
+          "seat": 1,
+          "deadline": 1795005380049,
+          "now": 1795005363801,
+          "retry": 1795005382049
+        },
+        "after": {
+          "version": 1,
+          "seat": 1,
+          "deadline": 1795005380049,
+          "now": 1795005365563,
+          "retry": 1795005382049
+        },
+        "realNodes": 2,
+        "variants": 5,
+        "oldWrapper": "constructed31min timestamp, not31min wall-clock outage"
+      },
+      "partialReplica": {
+        "before": {
+          "version": 1,
+          "seat": 1,
+          "deadline": 1795005380049,
+          "now": 1795005366668,
+          "retry": 1795005382049
+        },
+        "after": {
+          "version": 2,
+          "seat": 2,
+          "deadline": 1795005402444,
+          "now": 1795005383658,
+          "retry": 1795005382444
+        },
+        "committedActions": 1
+      },
+      "before": {
+        "at": 1795005637476,
+        "domain": "PLAYING",
+        "writer": [
+          "1",
+          "60"
+        ],
+        "markers": [
+          [
+            "PLAYING",
+            "60",
+            "2"
+          ]
+        ],
+        "archives": [],
+        "actionCount": 59
+      },
+      "afterLiveCommit": {
+        "at": 1795005642047,
+        "domain": "PLAYING",
+        "writer": [
+          "1",
+          "61"
+        ],
+        "markers": [
+          [
+            "COMPLETED",
+            "61",
+            "2"
+          ]
+        ],
+        "archives": [],
+        "actionCount": 60
+      },
+      "afterWithoutRestart": {
+        "at": 1795005711038,
+        "domain": "COMPLETED",
+        "writer": [
+          "1",
+          "61"
+        ],
+        "markers": [],
+        "archives": [],
+        "actionCount": 60
+      },
+      "afterRestart": {
+        "at": 1795005723923,
+        "domain": "COMPLETED",
+        "writer": [
+          "2",
+          "61"
+        ],
+        "markers": [],
+        "archives": [
+          [
+            "61",
+            "B8E95CFF299B519457814FDB95D4C12ADE23461D93E3BDC9B50725AD3BF191FD"
+          ]
+        ],
+        "actionCount": 60
+      },
+      "relayBefore": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 1,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 74,
+        "commitAcksDropped": 0,
+        "dropDomainCommitAcks": 0,
+        "domainCommitAcksDropped": 0,
+        "dropDomainPhase": "",
+        "lastDroppedDomainPhase": ""
+      },
+      "relayAfter": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 0,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 78,
+        "commitAcksDropped": 1,
+        "dropDomainCommitAcks": 0,
+        "domainCommitAcksDropped": 0,
+        "dropDomainPhase": "",
+        "lastDroppedDomainPhase": ""
+      },
+      "firstStartup": "READY",
+      "finalResponse": "business error INTERNAL",
+      "result": "FAIL"
+    },
+    {
+      "name": "COMPLETED-repair-crash-takeover-domain-ACK-loss",
+      "hand": "g63-full-2cb17d4227e47a5709e50b0a",
+      "fault": "archive committed; domain locked; SIGKILL during repair; terminal-domain COMMIT ACK loss during takeover",
+      "before": {
+        "at": 1795006077735,
+        "domain": "PLAYING",
+        "writer": [
+          "1",
+          "59"
+        ],
+        "markers": [
+          [
+            "PLAYING",
+            "59",
+            "1"
+          ]
+        ],
+        "archives": [],
+        "actionCount": 58
+      },
+      "afterLiveCommit": {
+        "at": 1795006083083,
+        "domain": "PLAYING",
+        "writer": [
+          "1",
+          "60"
+        ],
+        "markers": [
+          [
+            "COMPLETED",
+            "60",
+            "1"
+          ]
+        ],
+        "archives": [
+          [
+            "60",
+            "5CD07694879652ED39A422D7E0DF902387693B404F34AF61BAB81098D7898F74"
+          ]
+        ],
+        "actionCount": 59
+      },
+      "afterRestart": {
+        "at": 1795006128169,
+        "domain": "COMPLETED",
+        "writer": [
+          "3",
+          "60"
+        ],
+        "markers": [],
+        "archives": [
+          [
+            "60",
+            "5CD07694879652ED39A422D7E0DF902387693B404F34AF61BAB81098D7898F74"
+          ]
+        ],
+        "actionCount": 59
+      },
+      "relayBefore": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 0,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 155,
+        "commitAcksDropped": 1,
+        "dropDomainCommitAcks": 0,
+        "domainCommitAcksDropped": 0,
+        "dropDomainPhase": "",
+        "lastDroppedDomainPhase": ""
+      },
+      "relayAfter": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 0,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 168,
+        "commitAcksDropped": 1,
+        "dropDomainCommitAcks": 0,
+        "domainCommitAcksDropped": 1,
+        "dropDomainPhase": "",
+        "lastDroppedDomainPhase": "COMPLETED"
+      },
+      "lockWaitCount": 2,
+      "firstStartup": "NOT_READY",
+      "firstStartupError": "isolated API not Ready",
+      "firstUnit": "ExecMainStatus=1\nActiveState=failed\n",
+      "secondStartup": "READY",
+      "finalResponse": "socket lost; outcome unknown",
+      "result": "PASS for executed crash/takeover and domain-ACK reconciliation scope"
+    }
+  ],
+  "limit": "Crash case persistence/takeover succeeded after a second startup. First startup exited1 after targeted COMPLETED domain COMMIT ACK loss; not a single-start availability PASS."
+}

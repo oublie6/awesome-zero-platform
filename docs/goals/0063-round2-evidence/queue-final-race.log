@@ -1,0 +1,29 @@
+=== RUN   TestRequiresTwoDistinctServers
+--- PASS: TestRequiresTwoDistinctServers (0.00s)
+=== RUN   TestDeadlineAwarePublisherInterruptsSilentEstablishedConnections
+--- PASS: TestDeadlineAwarePublisherInterruptsSilentEstablishedConnections (0.10s)
+=== RUN   TestPublisherRoundsBeanstalkDelayUpAndPreservesDQEnvelope
+--- PASS: TestPublisherRoundsBeanstalkDelayUpAndPreservesDQEnvelope (0.00s)
+=== RUN   TestPublisherThirdSilentReplicaDoesNotDelayTwoNodeQuorum
+--- PASS: TestPublisherThirdSilentReplicaDoesNotDelayTwoNodeQuorum (0.00s)
+=== RUN   TestR2RealThreeReplicaQuorumAndSilentThird
+    round2_expanded_test.go:24: two healthy + silent third: elapsed=4.651037ms id=127.0.0.1:36131/g63-queue-1795006674851350406/377,127.0.0.1:36130/g63-queue-1795006674851350406/376 err=<nil>
+--- PASS: TestR2RealThreeReplicaQuorumAndSilentThird (0.12s)
+=== RUN   TestR2RealCancelAndBoundedSilentConcurrency
+    round2_expanded_test.go:35: cancel returns in 858.575µs
+    round2_expanded_test.go:39: 64 concurrent timeouts goroutines baseline=5 after=5
+--- PASS: TestR2RealCancelAndBoundedSilentConcurrency (0.86s)
+=== RUN   TestR2RealDefaultTimeoutAndOtherPublication
+    round2_expanded_test.go:47: no caller deadline elapsed=2.001293787s err=dq publication accepted by 1/2 replicas: put: read tcp 127.0.0.1:39788->127.0.0.1:36130: i/o timeout
+    round2_expanded_test.go:50: other healthy hand elapsed=3.998859ms err=<nil>
+--- PASS: TestR2RealDefaultTimeoutAndOtherPublication (2.15s)
+=== RUN   TestG63RealTwoNodeReplicationDedupAndNewDelivery
+    round2_independent_test.go:61: real beanstalkd x2, actual Redis dedup: duplicate once, fresh delivery retries
+--- PASS: TestG63RealTwoNodeReplicationDedupAndNewDelivery (3.38s)
+=== RUN   TestG63ActualPausedQueueMustRespectPublishContext
+--- PASS: TestG63ActualPausedQueueMustRespectPublishContext (0.49s)
+=== RUN   TestR2RealUnknownPutOutcomeThenIdenticalRetryDeduplicates
+    round2_unknown_test.go:38: real replica ACKs suppressed=2; publisher unknown, exact retry durable, consumer callback once
+--- PASS: TestR2RealUnknownPutOutcomeThenIdenticalRetryDeduplicates (2.85s)
+PASS
+ok  	github.com/oublie6/awesome-zero-platform/server/platform/delayqueue	11.081s

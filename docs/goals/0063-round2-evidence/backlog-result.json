@@ -1,0 +1,11 @@
+{
+  "dispatchCycles": 2,
+  "elapsedMillis": 11116,
+  "goroutinesAfter": 8,
+  "goroutinesBefore": 8,
+  "heapAfterGC": 693056,
+  "heapBefore": 1795960,
+  "result": "PASS",
+  "rows": 1000,
+  "scope": "Real MySQL query/update and real two-replica DQ publishing; synthetic future turns; store filters test-owned prefix after unmodified production scan. No business callbacks, not a full1000-real-game or long-duration leak proof. Direct MySQL bypasses fault relay for this nominal resource measurement."
+}

@@ -1,0 +1,24 @@
+{
+  "workflow_runs": [
+    {
+      "id": 44225458135,
+      "name": "CI",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 1550,
+      "jobs_url": "https://api.github.com/repos/oublie6/awesome-zero-platform/actions/runs/44225458135/jobs",
+      "logs_url": "https://api.github.com/repos/oublie6/awesome-zero-platform/actions/runs/44225458135/logs",
+      "workflow_id": 320557229
+    },
+    {
+      "id": 44225458131,
+      "name": "Fair Doudizhu",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 1248,
+      "jobs_url": "https://api.github.com/repos/oublie6/awesome-zero-platform/actions/runs/44225458131/jobs",
+      "logs_url": "https://api.github.com/repos/oublie6/awesome-zero-platform/actions/runs/44225458131/logs",
+      "workflow_id": 321784681
+    }
+  ]
+}
