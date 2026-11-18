@@ -4,6 +4,7 @@ go 1.25.8
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/beanstalkd/go-beanstalk v0.2.0
 	github.com/casbin/casbin/v2 v2.135.0
 	github.com/cloudflare/circl v1.6.4
 	github.com/go-sql-driver/mysql v1.10.0
@@ -24,7 +25,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
-	github.com/beanstalkd/go-beanstalk v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
 	github.com/casbin/govaluate v1.3.0 // indirect

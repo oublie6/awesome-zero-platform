@@ -22,8 +22,7 @@ test('missing or unreasonable time is not a fabricated countdown',()=>{
 test('table preserves countdown origin when selecting cards without a new snapshot',async()=>{
  const {readFile}=await import('node:fs/promises')
  const source=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
- assert.match(source,/this\.data\.version!==data\.version/)
- assert.match(source,/this\.countdownClock\.turnDeadlineMillis!==pub\?\.turnDeadlineMillis/)
- assert.match(source,/this\.countdownCapture=/)
+ assert.match(source,/this\.turnClock\.observe\(data\.handID,data\.version/)
+ assert.match(source,/this\.turnClock\.remainingSeconds\(\)/)
  assert.match(source,/clearInterval\(this\.tickHandle\)/)
 })

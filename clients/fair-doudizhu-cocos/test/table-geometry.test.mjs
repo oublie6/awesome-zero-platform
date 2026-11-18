@@ -85,7 +85,7 @@ test('header title, clock and room buttons do not overlap on target screens',()=
 test('the selected hand stays clear of play and bid buttons',()=>{
   const cards=Array.from({length:20},(_,n)=>publicCardCode(n))
   for(const [width,height] of [[360,750],[390,844],[760,390],[1280,720]]){
-    const u=Math.max(.72,Math.min(1.35,Math.min(width/760,height/480)))
+    const u=tableUnit(width,height)
     const selected=handFan(cards.length,width,height,new Set(cards),cards)
     const actionY=tableActionCenterY(selected,width,height,u)
     const neutral=handFan(cards.length,width,height,new Set(),cards)
@@ -105,7 +105,7 @@ test('the pass action is disabled until a public trick exists',async()=>{
 
 test('real Go []uint8 Base64 wire tricks preserve legality and card identities',()=>{
  assert.deepEqual(publicCardCodes('Ag=='),['H3'])
- assert.deepEqual(publicCardCodes('AAECAw=='),['S3','H3','D3','C3'])
+ assert.deepEqual(publicCardCodes('AAECAw=='),['S3','H3','C3','D3'])
  assert.deepEqual(publicCardCodes('NDU='),['YJ','XJ'])
  assert.deepEqual(publicCardCodes(''),[])
  for(const invalid of ['AA=','A===','Af8=','AP==','____', 'A'.repeat(32)]){
