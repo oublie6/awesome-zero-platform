@@ -59,10 +59,30 @@ deadline_at=VALUES(deadline_at),next_attempt_at=UTC_TIMESTAMP(3),updated_at=UTC_
 		string(id), version, phase, seat, timeout.Microseconds())
 	return err
 }
+// Keep a durable terminal repair cursor after the final live action commits.
+// The separate domain lifecycle transaction may fail or lose its ACK.
+func (j *LiveJournal) writeTerminalRepair(ctx context.Context, tx *sql.Tx,
+	id domain.HandID, version uint64, phase string) error {
+	result, err := tx.ExecContext(ctx, `UPDATE doudizhu_turn_deadlines SET
+live_version=?,phase=?,deadline_at=UTC_TIMESTAMP(3),
+next_attempt_at=UTC_TIMESTAMP(3),updated_at=UTC_TIMESTAMP(6)
+WHERE hand_id=?`, version, phase, string(id))
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected != 1 {
+		return ErrLiveWatermarkConflict
+	}
+	return nil
+}
+
 func (j *LiveJournal) updateTurnDeadline(ctx context.Context, tx *sql.Tx, id domain.HandID, outcome gamecore.CommandOutcome) error {
 	if outcome.Terminal {
-		_, err := tx.ExecContext(ctx, `DELETE FROM doudizhu_turn_deadlines WHERE hand_id=?`, string(id))
-		return err
+		return j.writeTerminalRepair(ctx, tx, id, outcome.Version, livehand.PhaseCompleted)
 	}
 	var payload struct {
 		Phase   string `json:"phase"`
@@ -87,8 +107,7 @@ func (j *LiveJournal) updateTurnDeadline(ctx context.Context, tx *sql.Tx, id dom
 		} // first landlord turn after final bid
 		return j.writeTurnDeadline(ctx, tx, id, outcome.Version, payload.Phase, seat)
 	case livehand.PhaseNoLandlord, livehand.PhaseCompleted:
-		_, err := tx.ExecContext(ctx, `DELETE FROM doudizhu_turn_deadlines WHERE hand_id=?`, string(id))
-		return err
+		return j.writeTerminalRepair(ctx, tx, id, outcome.Version, payload.Phase)
 	default:
 		return fmt.Errorf("unexpected committed phase %q", payload.Phase)
 	}
@@ -155,6 +174,19 @@ next_attempt_at=DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 2 SECOND)
 WHERE hand_id=? AND live_version=? AND seat=? AND deadline_at=?`
 	}
 	_, err := j.db.ExecContext(ctx, query, string(item.HandID), item.Version, item.Seat, item.Deadline)
+	return err
+}
+
+// Remove a terminal repair marker only after the durable domain phase has
+// converged. The caller verifies domain state via the lifecycle API.
+func (j *LiveJournal) ClearTerminalRepair(ctx context.Context, item TurnDeadline) error {
+	if j == nil || j.turnTimeouts == nil ||
+		(item.Phase != livehand.PhaseNoLandlord && item.Phase != livehand.PhaseCompleted) {
+		return errors.New("invalid terminal repair")
+	}
+	_, err := j.db.ExecContext(ctx, `DELETE FROM doudizhu_turn_deadlines
+WHERE hand_id=? AND live_version=? AND phase=? AND seat=? AND deadline_at=?`,
+		string(item.HandID), item.Version, item.Phase, item.Seat, item.Deadline)
 	return err
 }
 

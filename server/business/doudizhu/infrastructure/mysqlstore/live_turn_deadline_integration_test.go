@@ -88,8 +88,15 @@ WHERE hand_id=?`, id); err != nil {
 	if err := journal.Append(ctx, id, epoch, "turn-timeout:unit-2", "crash-player-2", cmd, outcome); err != nil {
 		t.Fatalf("authoritative expired turn should be consumed: %v", err)
 	}
+	marker, _, err := journal.GetTurnDeadline(ctx, id)
+	if err != nil || marker.Version != 3 || marker.Phase != livehand.PhaseNoLandlord {
+		t.Fatalf("terminal commit lost durable lifecycle repair: marker=%+v err=%v", marker, err)
+	}
+	if err = journal.ClearTerminalRepair(ctx, marker); err != nil {
+		t.Fatal(err)
+	}
 	if _, _, err = journal.GetTurnDeadline(ctx, id); !errors.Is(err, sql.ErrNoRows) {
-		t.Fatalf("terminal timeout did not retire turn record: %v", err)
+		t.Fatalf("terminal repair marker was not retired: %v", err)
 	}
 	log, err := journal.Read(ctx, id)
 	if err != nil || len(log) != 2 || log[1].CommandID != "turn-timeout:unit-2" {

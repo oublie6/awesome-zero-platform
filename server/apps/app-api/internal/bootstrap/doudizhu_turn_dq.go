@@ -31,6 +31,7 @@ type turnDqStore interface {
 	GetTurnDeadline(context.Context, domain.HandID) (mysqlstore.TurnDeadline, time.Time, error)
 	PendingTurnDeliveries(context.Context, int) ([]mysqlstore.TurnDeadline, error)
 	MarkTurnDelivery(context.Context, mysqlstore.TurnDeadline, bool) error
+	ClearTerminalRepair(context.Context, mysqlstore.TurnDeadline) error
 }
 type turnDqReader interface {
 	LoadHand(context.Context, domain.HandID) (domain.HandSnapshot, error)
@@ -44,6 +45,7 @@ type turnDqGame interface {
 type turnDqLifecycle interface {
 	AfterBid(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) (lifecycle.Outcome, error)
 	AfterPlay(context.Context, domain.AccountID, domain.HandID, application.LiveHandCommandResult) error
+	RepairTerminal(context.Context, domain.HandID, string) error
 }
 type turnDqWorker struct {
 	store       turnDqStore
@@ -128,7 +130,7 @@ func startDoudizhuTurnDQ(ctx context.Context, cfg config.Config,
 }
 
 // The cursor is a *repair mechanism*, not a permanent per-hand timer. After
-// dispatching, it reschedules a bounded retry at deadline+10s because dq may
+// dispatching, it reschedules a bounded retry at deadline+2s because dq may
 // delete jobs before callbacks. New committed versions replace the row.
 // dispatch drains a bounded burst of ready deadlines. A failed one does
 // not starve unrelated hands; each failed row has a durable retry cursor.
@@ -190,6 +192,20 @@ func (w *turnDqWorker) process(ctx context.Context, ticket turntimer.Ticket) err
 	if now.Before(current.Deadline) {
 		return nil
 	} // never execute prematurely
+	if current.Phase == livehand.PhaseNoLandlord || current.Phase == livehand.PhaseCompleted {
+		// The final game action and the domain transition have different
+		// COMMIT/ACK boundaries. Keep retrying until domain state converges.
+		if err := w.lifecycle.RepairTerminal(ctx, handID, current.Phase); err != nil {
+			return err
+		}
+		if err := w.store.ClearTerminalRepair(ctx, current); err != nil {
+			return err
+		}
+		if w.onCommitted != nil {
+			w.onCommitted(ctx, handID)
+		}
+		return nil
+	}
 	snapshot, err := w.reader.LoadHand(ctx, handID)
 	if err != nil {
 		return err

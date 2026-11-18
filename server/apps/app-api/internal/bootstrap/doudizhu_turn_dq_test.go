@@ -23,6 +23,7 @@ type dqStoreFixture struct {
 	now     time.Time
 	missing bool
 	marked  bool
+	cleared bool
 }
 
 func (x *dqStoreFixture) GetTurnDeadline(_ context.Context, id domain.HandID) (mysqlstore.TurnDeadline, time.Time, error) {
@@ -42,6 +43,14 @@ func (x *dqStoreFixture) MarkTurnDelivery(_ context.Context, item mysqlstore.Tur
 		return errors.New("unexpected delivery")
 	}
 	x.marked = true
+	return nil
+}
+
+func (x *dqStoreFixture) ClearTerminalRepair(_ context.Context, item mysqlstore.TurnDeadline) error {
+	if item != x.turn {
+		return errors.New("wrong terminal marker")
+	}
+	x.cleared = true
 	return nil
 }
 
@@ -91,7 +100,7 @@ func (x *dqGameFixture) SubmitLiveHandPassWithID(_ context.Context, a domain.Acc
 	return application.LiveHandCommandResult{Version: 4}, nil
 }
 
-type dqLifecycleFixture struct{ bids, plays int }
+type dqLifecycleFixture struct{ bids, plays, terminal int }
 
 func (x *dqLifecycleFixture) AfterBid(_ context.Context, a domain.AccountID, id domain.HandID, result application.LiveHandCommandResult) (lifecycle.Outcome, error) {
 	x.bids++
@@ -99,6 +108,14 @@ func (x *dqLifecycleFixture) AfterBid(_ context.Context, a domain.AccountID, id 
 }
 func (x *dqLifecycleFixture) AfterPlay(_ context.Context, a domain.AccountID, id domain.HandID, result application.LiveHandCommandResult) error {
 	x.plays++
+	return nil
+}
+
+func (x *dqLifecycleFixture) RepairTerminal(_ context.Context, hand domain.HandID, phase string) error {
+	if hand != "hand-1" || (phase != livehand.PhaseNoLandlord && phase != livehand.PhaseCompleted) {
+		return errors.New("wrong terminal repair")
+	}
+	x.terminal++
 	return nil
 }
 
@@ -202,6 +219,16 @@ func TestDeterministicTimeoutCommandID(t *testing.T) {
 	}
 }
 
+func TestTurnDQTerminalMarkerRepairsAfterLostLifecycleAck(t *testing.T) {
+	w, store, _, life := dqWorkerFixture(livehand.PhaseNoLandlord)
+	if err := w.process(context.Background(), dqTicket(store)); err != nil {
+		t.Fatal(err)
+	}
+	if life.terminal != 1 || !store.cleared {
+		t.Fatalf("terminal repair not acknowledged: repairs=%d cleared=%v", life.terminal, store.cleared)
+	}
+}
+
 type dqBatchStoreFixture struct {
 	rows    []mysqlstore.TurnDeadline
 	seen    bool
@@ -220,6 +247,9 @@ func (x *dqBatchStoreFixture) PendingTurnDeliveries(_ context.Context, limit int
 	}
 	x.seen = true
 	return append([]mysqlstore.TurnDeadline(nil), x.rows...), nil
+}
+func (x *dqBatchStoreFixture) ClearTerminalRepair(context.Context, mysqlstore.TurnDeadline) error {
+	return errors.New("not used by dispatch")
 }
 func (x *dqBatchStoreFixture) MarkTurnDelivery(_ context.Context, item mysqlstore.TurnDeadline, ok bool) error {
 	if x.results == nil {

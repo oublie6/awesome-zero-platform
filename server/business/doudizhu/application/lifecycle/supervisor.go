@@ -208,6 +208,45 @@ func (s *Supervisor) AfterPlay(
 	return nil
 }
 
+// RepairTerminal resumes an acknowledged terminal live action whose domain
+// transition/archival callback failed or lost the MySQL commit response.
+func (s *Supervisor) RepairTerminal(ctx context.Context, handID domain.HandID, phase string) error {
+	if s == nil {
+		return fmt.Errorf("missing lifecycle supervisor")
+	}
+	snapshot, err := s.hands.LoadHand(ctx, handID)
+	if err != nil {
+		return err
+	}
+	if snapshot.Phase.Terminal() {
+		s.Forget(handID)
+		return nil
+	}
+	if snapshot.Seats[0].AccountID == "" {
+		return fmt.Errorf("terminal repair lacks authorized participant")
+	}
+	switch phase {
+	case livehand.PhaseNoLandlord:
+		_, err = s.terminate(ctx, snapshot.Seats[0].AccountID, handID, terminationAbort, ReasonNoLandlord)
+	case livehand.PhaseCompleted:
+		err = s.advanceLiveHand(ctx, handID, true)
+	default:
+		return fmt.Errorf("invalid terminal repair phase %q", phase)
+	}
+	if err != nil {
+		return err
+	}
+	finished, err := s.hands.LoadHand(ctx, handID)
+	if err != nil {
+		return err
+	}
+	if !finished.Phase.Terminal() {
+		return fmt.Errorf("terminal repair has not converged for hand %s", handID)
+	}
+	s.Forget(handID)
+	return nil
+}
+
 func (s *Supervisor) Cancel(ctx context.Context, actor domain.AccountID, handID domain.HandID) (Outcome, error) {
 	return s.terminate(ctx, actor, handID, terminationAbort, ReasonParticipantCancel)
 }
