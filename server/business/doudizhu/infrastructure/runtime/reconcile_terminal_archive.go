@@ -25,18 +25,26 @@ func (c *LiveHandCoordinator) ReconcileTerminalArchive(
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	// Serialize replay/archive against new commands for this hand. Taking a
-	// MySQL epoch fence first ensures that even an in-flight old executor can
-	// no longer append a subsequent command to this terminal journal.
+	// Serialize against local commands. Domain terminal transitions already
+	// fenced the writer under their own domain+writer transaction: re-acquiring
+	// there would unnecessarily increment epoch twice (and break retry
+	// semantics). Before domain completion, a committed terminal live action
+	// still needs a fresh epoch fence for unacknowledged old executors.
 	stripe := c.commandStripe(handID)
 	stripe.Lock()
 	defer stripe.Unlock()
-	if _, _, _, err := c.journal.Acquire(ctx, handID); err != nil {
-		return fmt.Errorf("fence terminal live journal: %w", err)
-	}
 	snapshot, genesis, actions, err := c.journal.ReadRecoveryHistory(ctx, handID)
 	if err != nil {
 		return fmt.Errorf("read terminal recovery history: %w", err)
+	}
+	if !snapshot.Phase.Terminal() {
+		if _, _, _, err := c.journal.Acquire(ctx, handID); err != nil {
+			return fmt.Errorf("fence active terminal live journal: %w", err)
+		}
+		snapshot, genesis, actions, err = c.journal.ReadRecoveryHistory(ctx, handID)
+		if err != nil {
+			return fmt.Errorf("reread fenced terminal history: %w", err)
+		}
 	}
 	if !sameImmutableRecoveryHand(snapshot, genesis) {
 		return gamecore.ErrVerificationFailed
