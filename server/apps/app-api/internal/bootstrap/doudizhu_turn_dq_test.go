@@ -102,7 +102,7 @@ func (x *dqGameFixture) SubmitLiveHandPassWithID(_ context.Context, a domain.Acc
 
 type dqLifecycleFixture struct {
 	bids, plays, terminal int
-	repairFails bool
+	repairFails           bool
 }
 
 func (x *dqLifecycleFixture) AfterBid(_ context.Context, a domain.AccountID, id domain.HandID, result application.LiveHandCommandResult) (lifecycle.Outcome, error) {
@@ -310,7 +310,7 @@ func TestTurnDQCancelledHandRetiresOldActiveCursorOnlyAfterVerifiedArchive(t *te
 		t.Fatal(err)
 	}
 	if !store.cleared || life.terminal != 1 || game.bidScore != 0 {
-		t.Fatalf("cancel repair=%d clear=%v bid=%d",life.terminal,store.cleared,game.bidScore)
+		t.Fatalf("cancel repair=%d clear=%v bid=%d", life.terminal, store.cleared, game.bidScore)
 	}
 }
 func TestTurnDQCompletedArchiveFailureRetainsCursor(t *testing.T) {

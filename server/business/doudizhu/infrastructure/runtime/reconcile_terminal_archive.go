@@ -71,9 +71,9 @@ func (c *LiveHandCoordinator) ReconcileTerminalArchive(
 			return fmt.Errorf("%w: terminal actor/seat mismatch", gamecore.ErrVerificationFailed)
 		}
 		outcome, err := game.Apply(gamecore.Command{
-			ActorPosition: item.ActorPosition,
+			ActorPosition:   item.ActorPosition,
 			ExpectedVersion: item.ExpectedVersion,
-			Payload: append([]byte(nil), item.Payload...),
+			Payload:         append([]byte(nil), item.Payload...),
 		})
 		if err != nil {
 			return fmt.Errorf("replay terminal command v%d: %w", item.Version, err)
