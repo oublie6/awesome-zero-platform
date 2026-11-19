@@ -15,6 +15,12 @@ import (
 
 type TurnTimeouts struct{ Bidding, Playing time.Duration }
 
+// TurnDeadlinesEnabled is a read-only startup capability, not a per-request
+// schema lookup. Legacy durable games run without this optional table.
+func (j *LiveJournal) TurnDeadlinesEnabled() bool {
+	return j != nil && j.turnTimeouts != nil
+}
+
 func (j *LiveJournal) EnableTurnDeadlines(ctx context.Context, limits TurnTimeouts) error {
 	if j == nil || j.db == nil || limits.Bidding <= 0 || limits.Playing <= 0 ||
 		limits.Bidding > 24*time.Hour || limits.Playing > 24*time.Hour {

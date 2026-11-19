@@ -15,10 +15,23 @@ import (
 
 type transaction struct{ tx *sql.Tx }
 
+// CommittedTurnPhase reads the latest authoritative live phase while the
+// caller holds the writer FOR UPDATE row lock. Only used when DQ deadlines
+// have passed their startup migration check and are enabled.
+func (t *transaction) CommittedTurnPhase(ctx context.Context, id domain.HandID) (string, error) {
+	var phase string
+	err := t.tx.QueryRowContext(ctx,
+		"SELECT phase FROM doudizhu_turn_deadlines WHERE hand_id=?", id).Scan(&phase)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return phase, err
+}
+
 // LockLiveCommittedVersion participates in the existing command transaction.
 // LiveJournal.Append takes FOR UPDATE on the same writer row before updating
 // committed_version, making the expiry decision atomic with durable live writes.
-// FenceLiveWriter is called only inside a successful candidate expiry
+// FenceLiveWriter is called only inside a successful dealt-hand terminal
 // transaction after holding LockLiveCommittedVersion's FOR UPDATE row lock.
 // Its epoch change rolls back if any later domain mutation fails.
 func (t *transaction) FenceLiveWriter(ctx context.Context, id domain.HandID) error {
@@ -32,7 +45,7 @@ func (t *transaction) FenceLiveWriter(ctx context.Context, id domain.HandID) err
 		return err
 	}
 	if count != 1 {
-		return fmt.Errorf("live writer not found for expiry")
+		return fmt.Errorf("live writer not found for termination")
 	}
 	return nil
 }

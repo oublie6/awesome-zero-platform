@@ -12,6 +12,10 @@ import (
 
 func (c *LiveHandCoordinator) DurabilityEnforced() bool { return c != nil && c.journal != nil }
 
+func (c *LiveHandCoordinator) TurnDeadlinesEnabled() bool {
+	return c != nil && c.journal != nil && c.journal.TurnDeadlinesEnabled()
+}
+
 // applyLive requires a stable command ID for every durably acknowledged live
 // mutation. The durable path uses a clone, an epoch-fenced MySQL transaction,
 // then publishes the committed candidate. A failed/ambiguous commit quarantines

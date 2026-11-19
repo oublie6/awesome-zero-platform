@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/livehand"
 )
 
 type SubmitCommitInput struct{ Commitment domain.Commitment }
@@ -330,6 +331,26 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 							return mutationOutcome{}, ErrLiveProgressed
 						}
 					}
+					// The final live bid/play may have committed while the
+					// domain is still BIDDING/PLAYING. A cancel/expiry must
+					// not replace that committed NO_LANDLORD/COMPLETED phase
+					// with a conflicting domain archive. Read under the
+					// same live-writer FOR UPDATE lock as journal.Append.
+					if enabled, ok := s.liveHands.(interface{ TurnDeadlinesEnabled() bool }); ok && enabled.TurnDeadlinesEnabled() {
+						readPhase, ok := tx.(interface {
+							CommittedTurnPhase(context.Context, domain.HandID) (string, error)
+						})
+						if !ok {
+							return mutationOutcome{}, fmt.Errorf("committed turn phase guard unavailable")
+						}
+						livePhase, err := readPhase.CommittedTurnPhase(txCtx, handSnapshot.ID)
+						if err != nil {
+							return mutationOutcome{}, fmt.Errorf("read committed turn phase: %w", err)
+						}
+						if err := guardCommittedTerminalTurn(livePhase, name, payload); err != nil {
+							return mutationOutcome{}, err
+						}
+					}
 					if err := guard.FenceLiveWriter(txCtx, handSnapshot.ID); err != nil {
 						return mutationOutcome{}, fmt.Errorf("fence live writer on termination: %w", err)
 					}
@@ -345,6 +366,29 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 			events := append(append([]domain.Event{}, handEvents...), roomEvents...)
 			return mutationOutcome{aggregateVersion: updatedHand.Version, events: events}, nil
 		})
+}
+
+// guardCommittedTerminalTurn prevents a domain terminal command from
+// contradicting a FINAL live action already committed by the writer.
+func guardCommittedTerminalTurn(phase, name string, payload any) error {
+	switch phase {
+	case livehand.PhaseNoLandlord:
+		input, _ := payload.(TerminateHandInput)
+		if name != CommandHandAbort || input.ReasonCode != "no_landlord" {
+			return domain.ErrHandTerminal
+		}
+	case livehand.PhaseCompleted:
+		if name != CommandHandComplete {
+			return domain.ErrHandTerminal
+		}
+	case "":
+		// Deadline scheduling is disabled for legacy writers.
+	default:
+		if name == CommandHandComplete {
+			return domain.ErrWrongPhase
+		}
+	}
+	return nil
 }
 
 func resolveHandContribution(snapshot domain.HandSnapshot, actor domain.AccountID) (domain.Seat, domain.ContributionSnapshot, error) {
