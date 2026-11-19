@@ -181,7 +181,7 @@ func (w *turnDqWorker) process(ctx context.Context, ticket turntimer.Ticket) err
 	current, now, err := w.store.GetTurnDeadline(ctx, handID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
-	} // terminal hand already archived
+	} // an absent cursor is already retired
 	if err != nil {
 		return err
 	}
@@ -211,6 +211,15 @@ func (w *turnDqWorker) process(ctx context.Context, ticket turntimer.Ticket) err
 		return err
 	}
 	if snapshot.Phase.Terminal() {
+		// Cancel/abort/expiry can leave an ordinary BIDDING/PLAYING row.
+		// Do not keep republishing forever; verify its archive first, then
+		// delete only this exact version/seat/deadline cursor.
+		if err := w.lifecycle.RepairTerminal(ctx, handID, current.Phase); err != nil {
+			return err
+		}
+		if err := w.store.ClearTerminalRepair(ctx, current); err != nil {
+			return err
+		}
 		return nil
 	}
 	var actor domain.AccountID

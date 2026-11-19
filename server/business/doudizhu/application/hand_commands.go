@@ -204,13 +204,34 @@ func (s *Service) ExpireHand(ctx context.Context, actor domain.AccountID, comman
 	return s.finalizeTerminatedRuntime(ctx, domain.HandID(command.AggregateID), input.ReasonCode, result, err)
 }
 
+// ReconcileTerminalArchive is the lifecycle's narrow, authoritative
+// terminalization port. It does not expose private journal/storage internals.
+func (s *Service) ReconcileTerminalArchive(ctx context.Context, handID domain.HandID, phase, reason string) error {
+	reconciler, ok := s.liveHands.(interface {
+		ReconcileTerminalArchive(context.Context, domain.HandID, string, string) error
+	})
+	if !ok {
+		return fmt.Errorf("durable terminal archive reconciler unavailable")
+	}
+	return reconciler.ReconcileTerminalArchive(ctx, handID, phase, reason)
+}
+
 func (s *Service) finalizeTerminatedRuntime(ctx context.Context, handID domain.HandID, reason string, result CommandResult, commandErr error) (CommandResult, error) {
 	if commandErr != nil || !result.Accepted {
 		return result, commandErr
 	}
 	if s.liveHands.Contains(handID) {
-		if _, err := s.liveHands.Abort(ctx, handID, reason); err != nil {
-			return result, wrapInfrastructure("archive terminal live hand", err)
+		// Domain/room COMMIT and live archive are separate transactions.
+		// A prior live COMMIT may be quarantined with stale RAM. Never
+		// archive that RAM; re-verify the fenced journal instead.
+		if durable, ok := s.liveHands.(interface{ DurabilityEnforced() bool }); ok && durable.DurabilityEnforced() {
+			if err := s.ReconcileTerminalArchive(ctx, handID, "TERMINATED", reason); err != nil {
+				return result, wrapInfrastructure("reconcile terminal live archive", err)
+			}
+		} else {
+			if _, err := s.liveHands.Abort(ctx, handID, reason); err != nil {
+				return result, wrapInfrastructure("archive terminal live hand", err)
+			}
 		}
 		return result, nil
 	}

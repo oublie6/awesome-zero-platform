@@ -178,12 +178,15 @@ WHERE hand_id=? AND live_version=? AND seat=? AND deadline_at=?`
 	return err
 }
 
-// Remove a terminal repair marker only after the durable domain phase has
-// converged. The caller verifies domain state via the lifecycle API.
+// Remove a repair cursor only after both the domain and a journal-verified
+// final archive converge. The caller checks this before invoking the store.
+// A cancelled/expired hand may still have a BIDDING or PLAYING cursor.
 func (j *LiveJournal) ClearTerminalRepair(ctx context.Context, item TurnDeadline) error {
-	if j == nil || j.turnTimeouts == nil ||
-		(item.Phase != livehand.PhaseNoLandlord && item.Phase != livehand.PhaseCompleted) {
-		return errors.New("invalid terminal repair")
+	if j == nil || j.turnTimeouts == nil || item.HandID == "" || item.Version == 0 ||
+		item.Seat < 1 || item.Seat > 3 ||
+		(item.Phase != livehand.PhaseNoLandlord && item.Phase != livehand.PhaseCompleted &&
+			item.Phase != livehand.PhaseBidding && item.Phase != livehand.PhasePlaying) {
+		return errors.New("invalid reconciled cursor")
 	}
 	_, err := j.db.ExecContext(ctx, `DELETE FROM doudizhu_turn_deadlines
 WHERE hand_id=? AND live_version=? AND phase=? AND seat=? AND deadline_at=?`,

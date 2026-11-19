@@ -77,6 +77,7 @@ export class GameTableView {
   private data:TableDisplay|null=null
   private width=760
   private height=440
+  private unit=1
   private noticeText=''
   private countdownLabel:Label|null=null
   private tickHandle:ReturnType<typeof setInterval>|null=null
@@ -117,6 +118,7 @@ export class GameTableView {
     const data=this.data
     const w=Math.max(240,width), h=Math.max(280,height)
     const u=tableUnit(w,h)
+    this.unit=u
     this.root.getComponent(UITransform)!.setContentSize(w,h)
 
     // Original drawn felt and gold edging. No copied commercial assets.
@@ -323,8 +325,15 @@ export class GameTableView {
     const border=enabled?(primary?new Color(245,193,110,255):new Color(100,157,131,255)):
       new Color(71,109,96,255)
     const node=this.panel(name,x,y,w,h,fill,border,Math.min(13,h*.36))
-    const label=this.label(name+'Caption',text,x,y,Math.min(18,w*.19,h*.48),
-      enabled?WHITE:MUTED,w-6,h-4)
+    // The logical Cocos canvas can be 1280px wide but only 390 CSS px
+    // wide on a portrait phone. A fixed 18 logical-px cap gave 5.48px
+    // unreadable labels. Scale font with the same unit as the button, and
+    // bound it by available width for long captions to prevent SHRINK.
+    const glyphs=Array.from(text).length
+    const captionSize=Math.min(20*this.unit,h*.52,
+      Math.max(1,(w-8*this.unit)/(Math.max(1,glyphs)*1.04)))
+    const label=this.label(name+'Caption',text,x,y,captionSize,
+      enabled?WHITE:MUTED,w-6*this.unit,h-4*this.unit)
     label.node.setParent(node)
     label.node.setPosition(0,0,0)
     if(enabled){
