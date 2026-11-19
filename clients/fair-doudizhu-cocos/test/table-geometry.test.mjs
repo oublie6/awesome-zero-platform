@@ -147,7 +147,7 @@ test('monotonic turn clock survives view recreation and ignores stale timestamps
  assert.equal(c.remainingSeconds(27500),30,'new committed turn must reset')
 })
 
-test('table button captions remain readable in real CSS portrait scaling',()=>{
+test('table button captions remain readable in real CSS portrait scaling',async()=>{
  const actions=[
    ['返回',75,35],['同步',75,34],['不叫',110,38],
    ['3 分',110,38],['不出',150,42],['出牌 (20)',150,42],
