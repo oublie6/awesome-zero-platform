@@ -1,6 +1,6 @@
 import { Color, EventTouch, Graphics, Label, Layers, Node, UITransform } from 'cc'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
-import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots, tableUnit } from './TableGeometry.ts'
+import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots, tableUnit, tableCaptionFont } from './TableGeometry.ts'
 import { TurnClockAnchor } from './TurnClock.ts'
 
 export interface TableDisplay {
@@ -329,9 +329,7 @@ export class GameTableView {
     // wide on a portrait phone. A fixed 18 logical-px cap gave 5.48px
     // unreadable labels. Scale font with the same unit as the button, and
     // bound it by available width for long captions to prevent SHRINK.
-    const glyphs=Array.from(text).length
-    const captionSize=Math.min(20*this.unit,h*.52,
-      Math.max(1,(w-8*this.unit)/(Math.max(1,glyphs)*1.04)))
+    const captionSize=tableCaptionFont(text,w,h,this.unit)
     const label=this.label(name+'Caption',text,x,y,captionSize,
       enabled?WHITE:MUTED,w-6*this.unit,h-4*this.unit)
     label.node.setParent(node)

@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY,tableUnit}
+import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY,tableUnit,tableCaptionFont}
  from '../dist/bootstrap/TableGeometry.js'
 
 test('Dou Dizhu sorts ranks descending with deterministic suit ties',()=>{
@@ -145,4 +145,24 @@ test('monotonic turn clock survives view recreation and ignores stale timestamps
  assert.equal(c.remainingSeconds(27500),3,'stale server clock moved anchor backwards')
  c.observe('h',8,{turnDeadlineMillis:180000,serverTimeMillis:150000},27500)
  assert.equal(c.remainingSeconds(27500),30,'new committed turn must reset')
+})
+
+test('table button captions remain readable in real CSS portrait scaling',()=>{
+ const actions=[
+   ['返回',75,35],['同步',75,34],['不叫',110,38],
+   ['3 分',110,38],['不出',150,42],['出牌 (20)',150,42],
+   ['核验结算',272,38],['核对上次操作',150,36],
+ ]
+ for(const [w,h,cssRatio] of [[760,440,1],[1280,720,1],[1216,2770,390/1216]]){
+   const u=tableUnit(w,h)
+   for(const [caption,logicalWidth,logicalHeight] of actions){
+     const pixelFont=tableCaptionFont(caption,logicalWidth*u,logicalHeight*u,u)*cssRatio
+     assert.ok(pixelFont>=11,
+       'unreadable caption '+caption+' at '+w+'x'+h+': '+pixelFont+' CSS px')
+   }
+ }
+ const {readFile}=await import('node:fs/promises')
+ const table=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
+ assert.match(table,/tableCaptionFont\(text,w,h,this\.unit\)/)
+ assert.doesNotMatch(table,/Math\.min\(18,w\*\.19,h\*\.48\)/)
 })

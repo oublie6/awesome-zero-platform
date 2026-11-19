@@ -81,6 +81,14 @@ export function tableUnit(width:number,height:number):number{
   return h>w?Math.max(.72,Math.min(4,w/390)):
     Math.max(.72,Math.min(1.35,Math.min(w/760,h/480)))
 }
+/** Scaled Cocos logical font units, bounded by actual caption width.
+ * Called by every table button (navigation, bid, play, pass, reconciliation).
+ * The same factor must scale buttons and text on CSS-downscaled portrait. */
+export function tableCaptionFont(text:string,width:number,height:number,unit:number):number{
+  const glyphs=Array.from(text).length
+  return Math.min(20*unit,height*.52,
+    Math.max(1,(width-8*unit)/(Math.max(1,glyphs)*1.04)))
+}
 export interface HandCardPlace{
   x:number
   y:number

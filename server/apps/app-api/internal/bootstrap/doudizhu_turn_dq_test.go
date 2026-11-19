@@ -100,7 +100,10 @@ func (x *dqGameFixture) SubmitLiveHandPassWithID(_ context.Context, a domain.Acc
 	return application.LiveHandCommandResult{Version: 4}, nil
 }
 
-type dqLifecycleFixture struct{ bids, plays, terminal int }
+type dqLifecycleFixture struct {
+	bids, plays, terminal int
+	repairFails bool
+}
 
 func (x *dqLifecycleFixture) AfterBid(_ context.Context, a domain.AccountID, id domain.HandID, result application.LiveHandCommandResult) (lifecycle.Outcome, error) {
 	x.bids++
@@ -112,8 +115,12 @@ func (x *dqLifecycleFixture) AfterPlay(_ context.Context, a domain.AccountID, id
 }
 
 func (x *dqLifecycleFixture) RepairTerminal(_ context.Context, hand domain.HandID, phase string) error {
-	if hand != "hand-1" || (phase != livehand.PhaseNoLandlord && phase != livehand.PhaseCompleted) {
+	if hand != "hand-1" || (phase != livehand.PhaseNoLandlord && phase != livehand.PhaseCompleted &&
+		phase != livehand.PhaseBidding && phase != livehand.PhasePlaying) {
 		return errors.New("wrong terminal repair")
+	}
+	if x.repairFails {
+		return errors.New("archive has not converged")
 	}
 	x.terminal++
 	return nil
@@ -288,5 +295,28 @@ func TestTurnDQDispatchContinuesAfterOnePublisherFailure(t *testing.T) {
 	if !store.seen || store.results["broken"] || !store.results["healthy"] ||
 		len(publisher.delivered) != 1 || publisher.delivered[0] != "healthy" {
 		t.Fatalf("failed hand starved healthy delivery: results=%v published=%v", store.results, publisher.delivered)
+	}
+}
+
+func TestTurnDQCancelledHandRetiresOldActiveCursorOnlyAfterVerifiedArchive(t *testing.T) {
+	w, store, game, life := dqWorkerFixture(livehand.PhaseBidding)
+	w.reader = &dqReaderFixture{phase: domain.HandAborted}
+	life.repairFails = true
+	if err := w.process(context.Background(), dqTicket(store)); err == nil || store.cleared {
+		t.Fatal("unverified cancelled hand cursor must not be retired")
+	}
+	life.repairFails = false
+	if err := w.process(context.Background(), dqTicket(store)); err != nil {
+		t.Fatal(err)
+	}
+	if !store.cleared || life.terminal != 1 || game.bidScore != 0 {
+		t.Fatalf("cancel repair=%d clear=%v bid=%d",life.terminal,store.cleared,game.bidScore)
+	}
+}
+func TestTurnDQCompletedArchiveFailureRetainsCursor(t *testing.T) {
+	w, store, _, life := dqWorkerFixture(livehand.PhaseCompleted)
+	life.repairFails = true
+	if err := w.process(context.Background(), dqTicket(store)); err == nil || store.cleared {
+		t.Fatal("missing completed final archive silently retired cursor")
 	}
 }
