@@ -290,6 +290,46 @@ func (d *LiveDirectory) ArchiveRecoveredFinal(game LiveGame, outcome CommandOutc
 	return record, nil
 }
 
+// ArchiveVerifiedRecord writes only a replay-verified record from the caller's
+// durable game journal. The archive enforces exact version/digest idempotency;
+// conflicting old or corrupted records must never be overwritten. Once the
+// archive succeeds, retire an existing quarantined or stale executor so later
+// callbacks cannot mutate a finished game. Caller must fence the journal writer.
+func (d *LiveDirectory) ArchiveVerifiedRecord(record FinalRecord) error {
+	if d == nil || d.archive == nil {
+		return fmt.Errorf("%w: unavailable final directory", ErrInvalidArgument)
+	}
+	if err := record.Validate(); err != nil {
+		return err
+	}
+	entry, err := d.entry(record.InstanceID())
+	if err != nil && !errors.Is(err, ErrInstanceNotFound) {
+		return err
+	}
+	if entry == nil {
+		if err := d.archive.Archive(record); err != nil {
+			return errors.Join(ErrArchiveFailed, err)
+		}
+		return nil
+	}
+	entry.mu.Lock()
+	defer entry.mu.Unlock()
+	if entry.pending != nil && entry.pending.Digest() != record.Digest() {
+		return fmt.Errorf("%w: pending archive conflicts with durable journal", ErrVerificationFailed)
+	}
+	if err := d.archive.Archive(record); err != nil {
+		return errors.Join(ErrArchiveFailed, err)
+	}
+	d.mu.Lock()
+	if d.entries[record.InstanceID()] == entry {
+		delete(d.entries, record.InstanceID())
+	}
+	d.mu.Unlock()
+	entry.pending = nil
+	entry.closed = true
+	return nil
+}
+
 func (d *LiveDirectory) View(id InstanceID, request ViewRequest) (GameView, error) {
 	entry, err := d.entry(id)
 	if err != nil {
@@ -323,6 +363,9 @@ func (d *LiveDirectory) Abort(id InstanceID, reason string) (FinalRecord, error)
 	defer entry.mu.Unlock()
 	if entry.closed {
 		return FinalRecord{}, fmt.Errorf("%w: %s", ErrInstanceNotFound, id)
+	}
+	if entry.quarantined {
+		return FinalRecord{}, fmt.Errorf("%w: abort requires verified recovery of ambiguous live commit: %s", ErrFinalizationPending, id)
 	}
 	if entry.pending != nil {
 		return FinalRecord{}, fmt.Errorf("%w: %s", ErrFinalizationPending, id)

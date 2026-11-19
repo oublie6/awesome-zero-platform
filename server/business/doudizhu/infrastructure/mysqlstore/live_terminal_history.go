@@ -30,7 +30,17 @@ func (j *LiveJournal) HasLiveCommand(ctx context.Context, id domain.HandID, comm
 	return err == nil, err
 }
 
+// ReadRecoveryHistory permits the domain lifecycle to be in-flight. The
+// authenticated writer watermark and journal remain the gameplay authority.
+func (j *LiveJournal) ReadRecoveryHistory(ctx context.Context, id domain.HandID) (domain.HandSnapshot, domain.HandSnapshot, []LiveAction, error) {
+	return j.readRecoveryHistory(ctx, id, false)
+}
+
 func (j *LiveJournal) ReadTerminalHistory(ctx context.Context, id domain.HandID) (domain.HandSnapshot, domain.HandSnapshot, []LiveAction, error) {
+	return j.readRecoveryHistory(ctx, id, true)
+}
+
+func (j *LiveJournal) readRecoveryHistory(ctx context.Context, id domain.HandID, requireTerminal bool) (domain.HandSnapshot, domain.HandSnapshot, []LiveAction, error) {
 	var snapshot, genesis domain.HandSnapshot
 	var raw []byte
 	if err := j.db.QueryRowContext(ctx, "SELECT snapshot_json FROM doudizhu_hands WHERE hand_id=?", id).Scan(&raw); err != nil {
@@ -39,7 +49,7 @@ func (j *LiveJournal) ReadTerminalHistory(ctx context.Context, id domain.HandID)
 	if err := json.Unmarshal(raw, &snapshot); err != nil {
 		return snapshot, genesis, nil, fmt.Errorf("%w: terminal hand JSON: %v", ErrLiveReplayIntegrity, err)
 	}
-	if snapshot.ID != id || !snapshot.Phase.Terminal() {
+	if snapshot.ID != id || (requireTerminal && !snapshot.Phase.Terminal()) {
 		return snapshot, genesis, nil, ErrLiveReplayIntegrity
 	}
 	if _, err := domain.RestoreHand(snapshot); err != nil {
