@@ -1,0 +1,56 @@
+{
+  "source": "3502b6acedc128d37b63a34b4f5286a9a9e642e2",
+  "processes": {
+    "api": {
+      "pid": 160047,
+      "running": false
+    },
+    "browser": {
+      "pid": 151582,
+      "running": false
+    },
+    "web": {
+      "pid": 139567,
+      "running": false
+    },
+    "relays": {
+      "pid": 139566,
+      "running": false
+    }
+  },
+  "triggerAbsent": true,
+  "persistentDataPreserved": true,
+  "kubernetesCommands": "none during this round; no cluster mutation or global state-equivalence claim",
+  "containers": [
+    {
+      "name": "codex0063r2-mysql",
+      "status": "exited",
+      "running": false,
+      "image": "mysql:5.7.44"
+    },
+    {
+      "name": "codex0063r2-redis",
+      "status": "exited",
+      "running": false,
+      "image": "redis:8.8.0-alpine3.23"
+    },
+    {
+      "name": "codex0063r2-bean-a",
+      "status": "exited",
+      "running": false,
+      "image": "codex0063-beanstalk:74125d6"
+    },
+    {
+      "name": "codex0063r2-bean-b",
+      "status": "exited",
+      "running": false,
+      "image": "codex0063-beanstalk:74125d6"
+    },
+    {
+      "name": "codex0063r2-bean-c",
+      "status": "exited",
+      "running": false,
+      "image": "codex0063-beanstalk:74125d6"
+    }
+  ]
+}

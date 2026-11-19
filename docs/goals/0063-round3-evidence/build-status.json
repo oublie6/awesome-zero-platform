@@ -1,0 +1,1 @@
+{"command": ["go", "build", "-p", "1", "-trimpath", "-o", "/root/goal0063-round3-3502b6a/app-api", "./apps/app-api"], "exit": 0, "seconds": 21.717684984207153}

@@ -1,0 +1,228 @@
+//go:build integration
+
+package mysqlstore_test
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+"errors"
+"database/sql"
+"os/exec"
+"strconv"
+"strings"
+ddzruntime "github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/runtime"
+"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
+"github.com/oublie6/awesome-zero-platform/server/business/gamecore/infrastructure/mysqlarchive"
+	"fmt"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/application"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/bidding"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/livehand"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/protection"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/textnormalization"
+)
+
+// Round 10 regression: a business-rejected ExpireHand must persist only its
+// rejection receipt, never a writer fence. The subsequent legitimate writer
+// must still be able to commit, and a valid expiry must still fence atomically.
+func runR3TerminalGuard(t *testing.T, mode string) {
+	if os.Getenv("APP_API_INTEGRATION") != "1" {
+		t.Skip("real MySQL integration disabled")
+	}
+	db := openIntegrationDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+	prefix := fmt.Sprintf("round10-expiry-%d", time.Now().UnixNano())
+	roomID := domain.RoomID(prefix + "-room")
+	id := domain.HandID(prefix + "-hand")
+	t.Cleanup(func() {
+		for _, query := range []string{
+			"DELETE FROM game_final_records WHERE instance_id=?",
+"DELETE FROM doudizhu_turn_deadlines WHERE hand_id=?",
+"DELETE FROM doudizhu_live_checkpoints WHERE hand_id=?",
+			"DELETE FROM doudizhu_live_actions WHERE hand_id=?",
+			"DELETE FROM doudizhu_live_writers WHERE hand_id=?",
+			"DELETE FROM doudizhu_protected_server_seeds WHERE hand_id=?",
+		} {
+			if _, err := db.Exec(query, id); err != nil {
+				t.Errorf("cleanup durable hand: %v", err)
+			}
+		}
+		cleanupIntegrationRows(t, db, prefix)
+	})
+
+	seed, genesis, biddingHand := coordinatorCrashFixture(t, id)
+	genesis.RoomID, biddingHand.RoomID = roomID, roomID
+	room, _, err := domain.NewRoom(roomID, "crash-player-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, actor := range []domain.AccountID{"crash-player-2", "crash-player-3"} {
+		if _, err := room.Join(actor, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, actor := range []domain.AccountID{"crash-player-1", "crash-player-2", "crash-player-3"} {
+		if _, err := room.SetReady(actor, true, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := room.StartHand("crash-player-1", id, room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
+	store, err := mysqlstore.New(sqlDatabase{db})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.WithinCommand(ctx, "crash-player-1", prefix+"-fixture", func(txCtx context.Context, tx application.Transaction) error {
+		if err := tx.InsertRoom(txCtx, room.Snapshot(), time.Now().UTC()); err != nil {
+			return err
+		}
+		return tx.InsertHand(txCtx, biddingHand, time.Now().UTC())
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	protected, err := mysqlstore.NewProtectedSeedStore(db, coordinatorCrashKey())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := protected.Save(ctx, id, seed); err != nil {
+		t.Fatal(err)
+	}
+	journal, err := mysqlstore.NewLiveJournal(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := journal.ConfigureCheckpoints(coordinatorCrashKey()); err != nil {
+		t.Fatal(err)
+	}
+	if err := journal.EnableTurnDeadlines(ctx,mysqlstore.TurnTimeouts{Bidding:time.Hour,Playing:time.Hour});err!=nil{t.Fatal(err)}
+if err := journal.Create(ctx, genesis,1); err != nil {
+		t.Fatal(err)
+	}
+	live := newR3Runtime(t, db)
+	if err := live.RecoverActive(ctx, func(_ context.Context, target domain.HandID) (domain.HandSnapshot, error) {
+		if target != id {
+			return domain.HandSnapshot{}, application.ErrNotFound
+		}
+		return biddingHand, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	public, err := live.PublicView(ctx, id, "crash-player-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var state livehand.PublicView
+	if err := json.Unmarshal(public.Payload, &state); err != nil {
+		t.Fatal(err)
+	}
+	if _,err:=db.ExecContext(ctx,"UPDATE doudizhu_turn_deadlines SET seat=? WHERE hand_id=?",state.Bidding.FirstBidder,id);err!=nil{t.Fatal(err)}
+	bidder := domain.AccountID(fmt.Sprintf("crash-player-%d", state.Bidding.FirstBidder))
+	clock := &integrationClock{now: time.Now().UTC().Truncate(time.Millisecond)}
+	keyring, err := protection.NewStaticKeyring("round10-storage", map[string][]byte{"round10-storage": bytes.Repeat([]byte{7}, 32)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	protector, err := protection.New(keyring)
+	if err != nil {
+		t.Fatal(err)
+	}
+	service, err := application.NewService(store, clock, &integrationIDs{prefix: prefix},
+		integrationSetup{}, integrationBeaconVerifier{}, live, &integrationOpener{}, protector,
+		textnormalization.NFKC{}, application.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+ readEpoch:=func() uint64{var v uint64;if err:=db.QueryRow("SELECT owner_epoch FROM doudizhu_live_writers WHERE hand_id=?",id).Scan(&v);err!=nil{t.Fatal(err)};return v}
+ initialEpoch:=readEpoch()
+ if mode=="cancel-wins"||mode=="expire-wins"{
+ terminate:=service.AbortHand;commandName:=application.CommandHandAbort
+ if mode=="expire-wins"{terminate=service.ExpireHand;commandName=application.CommandHandExpire}
+  blocker,err:=db.BeginTx(ctx,nil);if err!=nil{t.Fatal(err)};defer blocker.Rollback()
+  if _,err=blocker.ExecContext(ctx,"SELECT hand_id FROM doudizhu_live_writers WHERE hand_id=? FOR UPDATE",id);err!=nil{t.Fatal(err)}
+  type response struct{r application.CommandResult;e error};ch:=make(chan response,1)
+  cmd:=integrationCommand(clock.Now(),commandName,domain.AggregateHand,string(id),prefix+"-cancel",1,biddingHand.Version)
+  go func(){v,e:=terminate(ctx,"crash-player-1",cmd,application.TerminateHandInput{ReasonCode:"bidding_timeout"});ch<-response{v,e}}()
+  waitLocks:=func(want int){deadline:=time.Now().Add(5*time.Second);for{var n int;raw,err:=exec.Command("docker","exec","codex0063r2-mysql","sh","-c",`MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot --batch --raw --skip-column-names -e "SELECT COUNT(*) FROM information_schema.INNODB_LOCK_WAITS"`).Output();if err!=nil{t.Fatal(err)};n,err=strconv.Atoi(strings.TrimSpace(string(raw)));if err!=nil{t.Fatal(err)};if n>=want{return};if time.Now().After(deadline){t.Fatalf("wanted %d real lock waits; have %d",want,n)};time.Sleep(20*time.Millisecond)}}
+  waitLocks(1)
+  liveErr:=make(chan error,1);go func(){_,e:=live.BidCommitted(ctx,id,bidder,prefix+"-losing-bid",1,bidding.ScoreOne);liveErr<-e}()
+  waitLocks(2);t.Log("actual writer lock waiters=2; domain cancellation queued before live Append")
+  if err:=blocker.Rollback();err!=nil{t.Fatal(err)}
+  v:=<-ch;if v.e!=nil||!v.r.Accepted{t.Fatalf("cancel %+v %v",v.r,v.e)}
+  if e:=<-liveErr;!errors.Is(e,mysqlstore.ErrLiveWriterFenced){t.Fatalf("cancel loser append: %v",e)}
+  if readEpoch()!=initialEpoch+1{t.Fatal("cancel fence count")}
+  dup,e:=terminate(ctx,"crash-player-1",cmd,application.TerminateHandInput{ReasonCode:"bidding_timeout"});if e!=nil||!dup.Duplicate||!dup.Accepted{t.Fatalf("cancel duplicate %+v %v",dup,e)}
+  if readEpoch()!=initialEpoch+1{t.Fatal("duplicate cancellation increased epoch")}
+  actions,e:=journal.Read(ctx,id);if e!=nil||len(actions)!=0{t.Fatalf("postcancel actions %d %v",len(actions),e)}
+  t.Log("cancel committed once; old live writer rejected; duplicate epoch unchanged; archive verified")
+  return
+ }
+ actor:=func(seat uint8)domain.AccountID{return domain.AccountID(fmt.Sprintf("crash-player-%d",seat))}
+ for action:=1;action<=100;action++{
+  pub,e:=live.PublicView(ctx,id,"crash-player-1");if e!=nil{t.Fatal(e)}
+  var v livehand.PublicView;if e=json.Unmarshal(pub.Payload,&v);e!=nil{t.Fatal(e)}
+  var result application.LiveHandCommandResult
+  request:=fmt.Sprintf("%s-live-%d",prefix,action)
+  if v.Phase==livehand.PhaseBidding{
+   score:=bidding.Score(0);if mode=="completed"{score=bidding.ScoreThree}
+   result,e=live.BidCommitted(ctx,id,actor(v.Bidding.CurrentBidder),request,pub.Version,score)
+  }else{
+   seat:=v.Playing.CurrentSeat
+   if seat==v.LandlordSeat{priv,err:=live.PrivateView(ctx,id,actor(seat));if err!=nil{t.Fatal(err)};var hand livehand.PrivateView;if err=json.Unmarshal(priv.Payload,&hand);err!=nil{t.Fatal(err)};result,e=live.PlayCommitted(ctx,id,actor(seat),request,pub.Version,hand.Cards[:1])
+   }else{result,e=live.PassCommitted(ctx,id,actor(seat),request,pub.Version)}
+  }
+  if e!=nil{t.Fatal(e)}
+  var phase string;if e=db.QueryRow("SELECT phase FROM doudizhu_turn_deadlines WHERE hand_id=?",id).Scan(&phase);e!=nil{t.Fatal(e)}
+  if phase==livehand.PhaseCompleted||phase==livehand.PhaseNoLandlord{t.Logf("real final committed phase=%s liveVersion=%d",phase,result.Version);break}
+  if action==100{t.Fatal("did not reach terminal")}
+ }
+ for index,name:=range []string{application.CommandHandAbort,application.CommandHandExpire}{
+  cmd:=integrationCommand(clock.Now(),name,domain.AggregateHand,string(id),fmt.Sprintf("%s-reject-%d",prefix,index),uint64(index+1),biddingHand.Version)
+  input:=application.TerminateHandInput{ReasonCode:"participant_cancelled"}
+  var result application.CommandResult;var err error
+  if index==0{result,err=service.AbortHand(ctx,"crash-player-1",cmd,input)}else{input.ReasonCode="bidding_timeout";result,err=service.ExpireHand(ctx,"crash-player-1",cmd,input)}
+  if err==nil&&result.Accepted{t.Fatalf("conflicting %s accepted",name)}
+  if readEpoch()!=initialEpoch{t.Fatalf("rejected %s increased epoch",name)}
+  now,e:=store.LoadHand(ctx,id);if e!=nil||now.Phase!=domain.HandBidding||now.Version!=biddingHand.Version{t.Fatalf("reject changed domain %+v %v",now,e)}
+  t.Logf("%s rejected: accepted=%t err=%v; epoch unchanged=%d",name,result.Accepted,err,readEpoch())
+ }
+}
+func TestR3CommittedTerminalAndWriterRace(t *testing.T){for _,mode:=range []string{"no-landlord","completed","cancel-wins","expire-wins"}{t.Run(mode,func(t *testing.T){runR3TerminalGuard(t,mode)})}}
+func newR3Runtime(t *testing.T, db *sql.DB) *ddzruntime.LiveHandCoordinator {
+	t.Helper()
+	protected, err := mysqlstore.NewProtectedSeedStore(db, coordinatorCrashKey())
+	if err != nil {
+		t.Fatal(err)
+	}
+	seeds, err := ddzruntime.NewPersistentSeedVault(nil, protected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive,err:=mysqlarchive.New(db,&integrationClock{now:time.Now().UTC()});if err!=nil{t.Fatal(err)}
+directory, err := gamecore.NewLiveDirectory(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	journal, err := mysqlstore.NewLiveJournal(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := journal.ConfigureCheckpoints(coordinatorCrashKey()); err != nil {
+		t.Fatal(err)
+	}
+	if err:=journal.EnableTurnDeadlines(context.Background(),mysqlstore.TurnTimeouts{Bidding:time.Hour,Playing:time.Hour});err!=nil{t.Fatal(err)}
+coordinator, err := ddzruntime.NewDurableLiveHandCoordinator(seeds, directory, journal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return coordinator
+}

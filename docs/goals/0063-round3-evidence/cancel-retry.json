@@ -1,0 +1,79 @@
+{
+  "source": "3502b6acedc128d37b63a34b4f5286a9a9e642e2",
+  "room": "g63r2-room-40678a8f47b60b34f0d8",
+  "hand": "g63-full-1ae471ce039f71c7e1c4464a",
+  "resumedAfterExternalSIGTERM": true,
+  "before": {
+    "at": 1795052877204,
+    "domain": "BIDDING",
+    "clock": {
+      "version": 1,
+      "seat": 1,
+      "deadline": 1795052878772,
+      "now": 1795052877783,
+      "retry": 1795052880772
+    },
+    "writer": [
+      "1",
+      "1"
+    ],
+    "archives": [],
+    "actions": 0
+  },
+  "command": {
+    "outcome": "business error INTERNAL"
+  },
+  "duringFailure": {
+    "at": 1795052883199,
+    "domain": "ABORTED",
+    "clock": {
+      "version": 2,
+      "seat": 2,
+      "deadline": 1795052900211,
+      "now": 1795052883824,
+      "retry": 1795052902211
+    },
+    "writer": [
+      "2",
+      "2"
+    ],
+    "archives": [],
+    "actions": 1
+  },
+  "failedRetry": {
+    "at": 1795052884938,
+    "domain": "ABORTED",
+    "clock": {
+      "version": 2,
+      "seat": 2,
+      "deadline": 1795052900211,
+      "now": 1795052885626,
+      "retry": 1795052902211
+    },
+    "writer": [
+      "2",
+      "2"
+    ],
+    "archives": [],
+    "actions": 1
+  },
+  "finalBaseline": "duringFailure after accepted cancellation, allowing committed auto-bid before cancellation",
+  "afterRecovery": {
+    "at": 1795052922604,
+    "domain": "ABORTED",
+    "clock": null,
+    "writer": [
+      "2",
+      "2"
+    ],
+    "archives": [
+      [
+        "3",
+        "D2B107A5DF983092C38B53F3A6E3924DA3EA41F66043F489B558109CA90E96E4"
+      ]
+    ],
+    "actions": 1
+  },
+  "result": "BLOCKED",
+  "error": "Error: real queue request timeout\n    at Timeout._onTimeout (/root/goal0063-round3-3502b6a/cancel-converge.cjs:3:164)\n    at listOnTimeout (node:internal/timers:585:17)\n    at process.processTimers (node:internal/timers:521:7)"
+}

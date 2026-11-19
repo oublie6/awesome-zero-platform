@@ -1,0 +1,542 @@
+{
+  "source": "3502b6acedc128d37b63a34b4f5286a9a9e642e2",
+  "cases": [
+    {
+      "name": "final-live-auto-COMMIT-ACK-loss",
+      "room": "g63r2-room-d4436e1b6d3ee70d653c",
+      "hand": "g63-full-e2037b02ce880e8d9ace4986",
+      "automatic": true,
+      "skipCommitAcks": 0,
+      "samples": [
+        {
+          "at": 1795051843095,
+          "phase": "BIDDING",
+          "writer": [
+            "1",
+            "4"
+          ],
+          "marker": [
+            [
+              "NO_LANDLORD",
+              "4",
+              "3",
+              "1795051842970"
+            ]
+          ],
+          "archives": [],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051845466,
+          "phase": "BIDDING",
+          "writer": [
+            "1",
+            "4"
+          ],
+          "marker": [
+            [
+              "NO_LANDLORD",
+              "4",
+              "3",
+              "1795051842970"
+            ]
+          ],
+          "archives": [],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051847617,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051849944,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051852373,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051854715,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051857117,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051859318,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051861478,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051864119,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051866433,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051868778,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051871092,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051873270,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        },
+        {
+          "at": 1795051875557,
+          "phase": "ABORTED",
+          "writer": [
+            "2",
+            "4"
+          ],
+          "marker": [],
+          "archives": [
+            [
+              "5",
+              "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+            ]
+          ],
+          "actions": [
+            [
+              "2",
+              "g63-cmd-4492e182a0b31bbd97ebe6a9"
+            ],
+            [
+              "3",
+              "g63-cmd-d47bfbd92cceed815e25c5fc"
+            ],
+            [
+              "4",
+              "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+            ]
+          ]
+        }
+      ],
+      "before": {
+        "at": 1795051822836,
+        "phase": "BIDDING",
+        "writer": [
+          "1",
+          "3"
+        ],
+        "marker": [
+          [
+            "BIDDING",
+            "3",
+            "3",
+            "1795051841774"
+          ]
+        ],
+        "archives": [],
+        "actions": [
+          [
+            "2",
+            "g63-cmd-4492e182a0b31bbd97ebe6a9"
+          ],
+          [
+            "3",
+            "g63-cmd-d47bfbd92cceed815e25c5fc"
+          ]
+        ]
+      },
+      "beforeClock": {
+        "version": 3,
+        "seat": 3,
+        "deadline": 1795051841774,
+        "now": 1795051824519,
+        "retry": 1795051843774
+      },
+      "relayBefore": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 1,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 22,
+        "commitAcksDropped": 0,
+        "dropDomainCommitAcks": 0,
+        "domainCommitAcksDropped": 0,
+        "dropDomainPhase": "",
+        "lastDroppedDomainPhase": ""
+      },
+      "relayAfter": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 0,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 23,
+        "commitAcksDropped": 1,
+        "dropDomainCommitAcks": 0,
+        "domainCommitAcksDropped": 0,
+        "dropDomainPhase": "",
+        "lastDroppedDomainPhase": ""
+      },
+      "after": {
+        "at": 1795051877738,
+        "phase": "ABORTED",
+        "writer": [
+          "2",
+          "4"
+        ],
+        "marker": [],
+        "archives": [
+          [
+            "5",
+            "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+          ]
+        ],
+        "actions": [
+          [
+            "2",
+            "g63-cmd-4492e182a0b31bbd97ebe6a9"
+          ],
+          [
+            "3",
+            "g63-cmd-d47bfbd92cceed815e25c5fc"
+          ],
+          [
+            "4",
+            "turn-timeout:74306bc0201c2e2dc25161e40b8836be0cb126d1fdd288efe80c47307bf8a0d5"
+          ]
+        ]
+      },
+      "result": "PASS"
+    }
+  ],
+  "result": "PASS"
+}

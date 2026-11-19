@@ -1,0 +1,106 @@
+{
+  "noLandlord": {
+    "hand": "g63-full-e2037b02ce880e8d9ace4986",
+    "domain": [
+      [
+        "ABORTED"
+      ]
+    ],
+    "writer": [
+      [
+        "3",
+        "4"
+      ]
+    ],
+    "archive": [
+      [
+        "5",
+        "3E1B364FF566FE5E3580DFEBE8EDD5B055B61EF1C058B15F846A20CDCDC68719"
+      ]
+    ],
+    "cursor": [],
+    "actions": [
+      [
+        "3"
+      ]
+    ]
+  },
+  "completed": {
+    "hand": "g63-full-2ce4dae28ed6a7409af9bdfa",
+    "domain": [
+      [
+        "COMPLETED"
+      ]
+    ],
+    "writer": [
+      [
+        "5",
+        "60"
+      ]
+    ],
+    "archive": [
+      [
+        "60",
+        "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+      ]
+    ],
+    "cursor": [],
+    "actions": [
+      [
+        "59"
+      ]
+    ]
+  },
+  "cancel": {
+    "hand": "g63-full-1ae471ce039f71c7e1c4464a",
+    "domain": [
+      [
+        "ABORTED"
+      ]
+    ],
+    "writer": [
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "archive": [
+      [
+        "3",
+        "D2B107A5DF983092C38B53F3A6E3924DA3EA41F66043F489B558109CA90E96E4"
+      ]
+    ],
+    "cursor": [],
+    "actions": [
+      [
+        "1"
+      ]
+    ]
+  },
+  "native": {
+    "hand": "g63-full-2f7b4a83d53971a002922fd4",
+    "domain": [
+      [
+        "ABORTED"
+      ]
+    ],
+    "writer": [
+      [
+        "2",
+        "14"
+      ]
+    ],
+    "archive": [
+      [
+        "15",
+        "6A7D2AC2B30E6F795E328868043F1FFCE1B41041638BDDBAE746887FB0094FF7"
+      ]
+    ],
+    "cursor": [],
+    "actions": [
+      [
+        "13"
+      ]
+    ]
+  }
+}

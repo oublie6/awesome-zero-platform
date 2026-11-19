@@ -1,0 +1,174 @@
+{
+  "source": "3502b6acedc128d37b63a34b4f5286a9a9e642e2",
+  "sizes": [
+    {
+      "width": 1280,
+      "height": 720,
+      "labels": [
+        {
+          "name": "BackToRoomCaption",
+          "text": "返回",
+          "fontSizeCSS": 24.570000000000057,
+          "logical": 24.57,
+          "actualLogical": 24,
+          "contentWidth": 93.15
+        },
+        {
+          "name": "UpdateHandCaption",
+          "text": "同步",
+          "fontSizeCSS": 23.868000000000094,
+          "logical": 23.868000000000002,
+          "actualLogical": 23,
+          "contentWidth": 93.15
+        },
+        {
+          "name": "VerifyFinalEvidenceCaption",
+          "text": "核验结算",
+          "fontSizeCSS": 26.67599999999993,
+          "logical": 26.676000000000002,
+          "actualLogical": 26,
+          "contentWidth": 359.1
+        }
+      ],
+      "buttons": [
+        {
+          "name": "BackToRoom",
+          "x": 1159.85,
+          "y": 14.174999999999978,
+          "w": 101.25,
+          "h": 47.24999999999995
+        },
+        {
+          "name": "UpdateHand",
+          "x": 1159.85,
+          "y": 72.89999999999996,
+          "w": 101.25,
+          "h": 45.90000000000015
+        },
+        {
+          "name": "VerifyFinalEvidence",
+          "x": 456.4,
+          "y": 572.8499999999999,
+          "w": 367.20000000000016,
+          "h": 51.30000000000018
+        }
+      ],
+      "file": "terminal-1280x720.png",
+      "touchEvidenceRequests": 1
+    },
+    {
+      "width": 760,
+      "height": 390,
+      "labels": [
+        {
+          "name": "BackToRoomCaption",
+          "text": "返回",
+          "fontSizeCSS": 14.588437500000078,
+          "logical": 24.57,
+          "actualLogical": 24,
+          "contentWidth": 93.15
+        },
+        {
+          "name": "UpdateHandCaption",
+          "text": "同步",
+          "fontSizeCSS": 14.171625000000013,
+          "logical": 23.868000000000002,
+          "actualLogical": 23,
+          "contentWidth": 93.15
+        },
+        {
+          "name": "VerifyFinalEvidenceCaption",
+          "text": "核验结算",
+          "fontSizeCSS": 15.83887500000003,
+          "logical": 26.676000000000002,
+          "actualLogical": 26,
+          "contentWidth": 359.1
+        }
+      ],
+      "buttons": [
+        {
+          "name": "BackToRoom",
+          "x": 688.6609375,
+          "y": 8.416406249999982,
+          "w": 60.1171875,
+          "h": 28.05468749999997
+        },
+        {
+          "name": "UpdateHand",
+          "x": 688.6609375,
+          "y": 43.28437499999993,
+          "w": 60.1171875,
+          "h": 27.253125000000104
+        },
+        {
+          "name": "VerifyFinalEvidence",
+          "x": 270.9875,
+          "y": 302.6296875,
+          "w": 218.0250000000001,
+          "h": 30.459375000000023
+        }
+      ],
+      "file": "terminal-760x390.png",
+      "touchEvidenceRequests": 1
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "labels": [
+        {
+          "name": "BackToRoomCaption",
+          "text": "返回",
+          "fontSizeCSS": 18.199999999999978,
+          "logical": 59.73333333333333,
+          "actualLogical": 59,
+          "contentWidth": 226.46153846153845
+        },
+        {
+          "name": "UpdateHandCaption",
+          "text": "同步",
+          "fontSizeCSS": 17.680000000000028,
+          "logical": 58.02666666666667,
+          "actualLogical": 58,
+          "contentWidth": 226.46153846153845
+        },
+        {
+          "name": "VerifyFinalEvidenceCaption",
+          "text": "核验结算",
+          "fontSizeCSS": 19.75999999999999,
+          "logical": 64.85333333333334,
+          "actualLogical": 64,
+          "contentWidth": 671.5076923076923
+        }
+      ],
+      "buttons": [
+        {
+          "name": "BackToRoom",
+          "x": 300.99999999999994,
+          "y": 10.499999999999886,
+          "w": 75.00000000000006,
+          "h": 34.999999999999964
+        },
+        {
+          "name": "UpdateHand",
+          "x": 300.99999999999994,
+          "y": 54.00000000000004,
+          "w": 75.00000000000006,
+          "h": 33.999999999999744
+        },
+        {
+          "name": "VerifyFinalEvidence",
+          "x": 89.69999999999999,
+          "y": 735.0000000000001,
+          "w": 210.60000000000002,
+          "h": 37.999999999999886
+        }
+      ],
+      "file": "terminal-390x844.png",
+      "touchEvidenceRequests": 1
+    }
+  ],
+  "errors": [],
+  "hand": "g63-full-2ce4dae28ed6a7409af9bdfa",
+  "room": "g63r2-room-de4fe87cf19affa55e75",
+  "result": "PASS"
+}

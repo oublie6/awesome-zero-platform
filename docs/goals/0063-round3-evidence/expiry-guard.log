@@ -1,0 +1,8 @@
+=== RUN   TestR3CommittedTerminalAndWriterRace
+=== RUN   TestR3CommittedTerminalAndWriterRace/expire-wins
+    codex_round3_guard_test.go:158: actual writer lock waiters=2; domain cancellation queued before live Append
+    codex_round3_guard_test.go:166: cancel committed once; old live writer rejected; duplicate epoch unchanged; archive verified
+--- PASS: TestR3CommittedTerminalAndWriterRace (0.62s)
+    --- PASS: TestR3CommittedTerminalAndWriterRace/expire-wins (0.62s)
+PASS
+ok  	github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore	0.641s

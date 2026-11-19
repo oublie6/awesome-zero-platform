@@ -1,0 +1,346 @@
+{
+  "source": "3502b6acedc128d37b63a34b4f5286a9a9e642e2",
+  "cases": [
+    {
+      "name": "COMPLETED-final-live-ACK-loss",
+      "room": "g63r2-room-de4fe87cf19affa55e75",
+      "hand": "g63-full-2ce4dae28ed6a7409af9bdfa",
+      "samples": [
+        {
+          "at": 1795052178798,
+          "domain": "PLAYING",
+          "writer": [
+            "2",
+            "60"
+          ],
+          "markers": [
+            [
+              "COMPLETED",
+              "60",
+              "1"
+            ]
+          ],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052180935,
+          "domain": "SETTLING",
+          "writer": [
+            "2",
+            "60"
+          ],
+          "markers": [
+            [
+              "COMPLETED",
+              "60",
+              "1"
+            ]
+          ],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052183084,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052185512,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052187861,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052190068,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052192608,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052194885,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052197262,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052199513,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052201705,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        {
+          "at": 1795052203893,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        }
+      ],
+      "fault": "final live COMMIT OK lost without restart",
+      "landlord": 1,
+      "before": {
+        "at": 1795052174731,
+        "domain": "PLAYING",
+        "writer": [
+          "1",
+          "59"
+        ],
+        "markers": [
+          [
+            "PLAYING",
+            "59",
+            "1"
+          ]
+        ],
+        "archives": [],
+        "actionCount": 58
+      },
+      "relayBefore": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 1,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 97,
+        "commitAcksDropped": 1,
+        "dropDomainCommitAcks": 0,
+        "domainCommitAcksDropped": 0,
+        "dropDomainPhase": "",
+        "lastDroppedDomainPhase": ""
+      },
+      "finalResponse": "business error INTERNAL",
+      "afterLiveCommit": {
+        "at": 1795052177595,
+        "domain": "PLAYING",
+        "writer": [
+          "1",
+          "60"
+        ],
+        "markers": [
+          [
+            "COMPLETED",
+            "60",
+            "1"
+          ]
+        ],
+        "archives": [],
+        "actionCount": 59
+      },
+      "afterWithoutRestart": {
+        "at": 1795052206107,
+        "domain": "COMPLETED",
+        "writer": [
+          "4",
+          "60"
+        ],
+        "markers": [],
+        "archives": [
+          [
+            "60",
+            "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+          ]
+        ],
+        "actionCount": 59
+      },
+      "relayAfter": {
+        "mysqlDown": false,
+        "redisDown": false,
+        "dropCommitAcks": 0,
+        "skipCommitAcks": 0,
+        "commitAcksSeen": 102,
+        "commitAcksDropped": 2,
+        "dropDomainCommitAcks": 0,
+        "domainCommitAcksDropped": 0,
+        "dropDomainPhase": "",
+        "lastDroppedDomainPhase": ""
+      },
+      "result": "PASS",
+      "restartInvariant": {
+        "before": {
+          "at": 1795052207345,
+          "domain": "COMPLETED",
+          "writer": [
+            "4",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        "after": {
+          "at": 1795052220320,
+          "domain": "COMPLETED",
+          "writer": [
+            "5",
+            "60"
+          ],
+          "markers": [],
+          "archives": [
+            [
+              "60",
+              "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+            ]
+          ],
+          "actionCount": 59
+        },
+        "result": "PASS"
+      },
+      "afterRestart": {
+        "at": 1795052223051,
+        "domain": "COMPLETED",
+        "writer": [
+          "5",
+          "60"
+        ],
+        "markers": [],
+        "archives": [
+          [
+            "60",
+            "B2EFA8B32534AF59DFD83634121D52208B062D5C617C2C2812AF2B21244E9B24"
+          ]
+        ],
+        "actionCount": 59
+      }
+    }
+  ],
+  "result": "PASS"
+}

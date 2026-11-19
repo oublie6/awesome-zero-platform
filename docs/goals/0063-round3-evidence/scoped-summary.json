@@ -1,0 +1,92 @@
+{
+  "source": "3502b6acedc128d37b63a34b4f5286a9a9e642e2",
+  "R2N01": "PASS in executed scope",
+  "R2N02": "PASS for caption sizing and displayed controls; separate pending-visibility FAIL",
+  "R2N03": "PASS in executed scope",
+  "R3N01": "FAIL/P2: cached TableDisplay needsReconciliation not refreshed",
+  "result": "FAIL",
+  "nativeSteps": [
+    {
+      "name": "portrait selected play",
+      "result": "PASS"
+    },
+    {
+      "name": "portrait legal pass",
+      "result": "PASS"
+    },
+    {
+      "name": "portrait back/reentry and sync",
+      "result": "PASS"
+    }
+  ],
+  "nativePointerFallbacks": [],
+  "activeScreenshotCount": 9,
+  "terminalViewportTouchCount": 3,
+  "cancelArchiveFailure": {
+    "at": 1795052883199,
+    "domain": "ABORTED",
+    "clock": {
+      "version": 2,
+      "seat": 2,
+      "deadline": 1795052900211,
+      "now": 1795052883824,
+      "retry": 1795052902211
+    },
+    "writer": [
+      "2",
+      "2"
+    ],
+    "archives": [],
+    "actions": 1
+  },
+  "cancelRecovered": {
+    "at": 1795052922604,
+    "domain": "ABORTED",
+    "clock": null,
+    "writer": [
+      "2",
+      "2"
+    ],
+    "archives": [
+      [
+        "3",
+        "D2B107A5DF983092C38B53F3A6E3924DA3EA41F66043F489B558109CA90E96E4"
+      ]
+    ],
+    "actions": 1
+  },
+  "queueIdle": {
+    "source": "3502b6acedc128d37b63a34b4f5286a9a9e642e2",
+    "hand": "g63-full-1ae471ce039f71c7e1c4464a",
+    "before": [
+      {
+        "port": 36130,
+        "totalJobs": 87
+      },
+      {
+        "port": 36131,
+        "totalJobs": 87
+      }
+    ],
+    "after": [
+      {
+        "port": 36130,
+        "totalJobs": 87
+      },
+      {
+        "port": 36131,
+        "totalJobs": 87
+      }
+    ],
+    "cursor": null,
+    "archive": [
+      [
+        "3",
+        "D2B107A5DF983092C38B53F3A6E3924DA3EA41F66043F489B558109CA90E96E4"
+      ]
+    ],
+    "actions": 1,
+    "result": "PASS"
+  },
+  "rawRunnerLabelCaveat": "native-targeted and cancel-retry retain BLOCKED labels from optional ACK-injection/statistics observer assertions; scoped observed states and final queue-idle/SQL are used above"
+}
