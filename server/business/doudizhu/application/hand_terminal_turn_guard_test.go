@@ -11,7 +11,7 @@ import (
 func TestGuardCommittedTerminalTurnRejectsConflictingCancellation(t *testing.T) {
 	cases := []struct {
 		name, phase, command, reason string
-		want error
+		want                         error
 	}{
 		{"cancel final winning play", livehand.PhaseCompleted, CommandHandCancel, "participant_cancelled", domain.ErrHandTerminal},
 		{"expire final winning play", livehand.PhaseCompleted, CommandHandExpire, "playing_timeout", domain.ErrHandTerminal},
