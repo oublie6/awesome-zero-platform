@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY,tableUnit,tableCaptionFont}
+import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY,tableUnit,tableCaptionFont,tableNoticePlacement,tableNoticeText}
  from '../dist/bootstrap/TableGeometry.js'
 
 test('Dou Dizhu sorts ranks descending with deterministic suit ties',()=>{
@@ -180,4 +180,40 @@ test('Round3 UNKNOWN action and room UI are refreshed from current owner state',
  assert.match(boot,/this\.roomInput\.string=input/)
  assert.match(table,/!data\.needsReconciliation && !data\.actionInFlight/)
  assert.match(online,/new GameHandActions\(this\.shell, platform\.random, onHandActionStateChange\)/)
+})
+
+test('Round4 retry controls and status are independent rows in three target viewports',()=>{
+ const {tableNoticePlacement,tableNoticeText}=requireTableHelpers()
+ const cards=Array.from({length:20},(_,i)=>publicCardCode(i))
+ const unknown='叫地主失败：command timeout; outcome unknown, retry with same requestId'
+ assert.equal(tableNoticeText(unknown),'操作结果未知，请核对原请求')
+ assert.ok(Array.from(tableNoticeText('当前请求错误信息很长很长无法全部完整显示在窄手机')).length<=18)
+ for(const [w,h,cssRatio] of [[1280,720,1],[760,390,1],[1216,2770,390/1216],[390,844,1]]){
+   const u=tableUnit(w,h)
+   const fan=handFan(cards.length,w,h,new Set(cards),cards)
+   const actionY=tableActionCenterY(fan,w,h,u)
+   const notice=tableNoticePlacement(actionY,w,h,u)
+   const widestButtonHalf=21*u
+   assert.ok(notice.y-notice.height/2>actionY+widestButtonHalf,
+     'status covers the play or retry button at '+w+'x'+h)
+   // Playing trick occupies a centered band. The message must sit below it.
+   const trickY=Math.max(5*u,h*.035)
+   const trickCardWidth=Math.min(51*u,Math.max(26,w*.12))
+   const trickBottom=trickY-trickCardWidth*1.4/2
+   assert.ok(notice.y+notice.height/2<trickBottom,
+     'status covers the public trick at '+w+'x'+h)
+   assert.ok(notice.font*cssRatio>=11,'status text unreadable at '+w+'x'+h)
+ }
+})
+function requireTableHelpers(){
+ return {tableNoticePlacement,tableNoticeText}
+}
+test('UNKNOWN takes over action row, including terminal proof button',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
+ assert.match(source,/if\(data\.needsReconciliation\)\{[\s\S]*?this\.button\('RetryUnknown'[^\n]*controlsY,/)
+ assert.match(source,/\}else if\(data\.phase==='BIDDING'\)/)
+ assert.match(source,/\(final \|\| data\.phase==='COMPLETED'\) && !data\.needsReconciliation/)
+ assert.match(source,/tableNoticePlacement\(controlsY,w,h,u\)/)
+ assert.doesNotMatch(source,/controlsY\+46\*u/)
 })

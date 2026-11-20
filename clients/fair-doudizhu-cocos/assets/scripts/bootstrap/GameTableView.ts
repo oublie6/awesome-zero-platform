@@ -1,6 +1,6 @@
 import { Color, EventTouch, Graphics, Label, Layers, Node, UITransform } from 'cc'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
-import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots, tableUnit, tableCaptionFont } from './TableGeometry.ts'
+import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots, tableUnit, tableCaptionFont, tableNoticeText, tableNoticePlacement } from './TableGeometry.ts'
 import { TurnClockAnchor } from './TurnClock.ts'
 
 export interface TableDisplay {
@@ -83,7 +83,7 @@ export class GameTableView {
   private countdownLabel:Label|null=null
   private tickHandle:ReturnType<typeof setInterval>|null=null
   setNotice(message:string):void{
-    this.noticeText=message.slice(0,140)
+    this.noticeText=tableNoticeText(message)
     if(this.data)this.layout(this.width,this.height)
   }
   constructor(parent:Node,private readonly callbacks:TableCallbacks,
@@ -223,7 +223,14 @@ export class GameTableView {
     const fan=handFan(cards.length,w,h,selected,cards)
     const controlsY=tableActionCenterY(fan,w,h,u)
     // Operations are always in their own row; cards never share pagination.
-    if(data.phase==='BIDDING'){
+    if(data.needsReconciliation){
+      // These are the only actionable controls until the original durable
+      // request is resolved. Replacing (rather than stacking on) the main row
+      // leaves a dedicated, non-overlapping message row for ACK loss.
+      const bw=Math.min(150*u,w*.39)
+      this.button('RetryUnknown','核对上次操作',-bw*.54,controlsY,bw,36*u,true,this.callbacks.retryUnknown)
+      this.button('DiscardUnknown','按新快照放弃',bw*.54,controlsY,bw,36*u,true,this.callbacks.discardUnknown)
+    }else if(data.phase==='BIDDING'){
       const highest=highestBid(view??null)
       const scores=[0,1,2,3]
       const bw=Math.min(110*u,(w-30*u)/4-6*u)
@@ -238,12 +245,6 @@ export class GameTableView {
       this.button('PlaySelected','出牌'+(selected.size?' ('+selected.size+')':''),
         bw*.58,controlsY,bw,42*u,myTurn&&selected.size>0,this.callbacks.play,true)
     }
-    if(data.needsReconciliation){
-      const bw=Math.min(150*u,w*.39)
-      this.button('RetryUnknown','核对上次操作',-bw*.54,controlsY+46*u,bw,36*u,true,this.callbacks.retryUnknown)
-      this.button('DiscardUnknown','按新快照放弃',bw*.54,controlsY+46*u,bw,36*u,true,this.callbacks.discardUnknown)
-    }
-
     // Main hand: stable sorted rank order, full hand visible and raised on tap.
     // Draw backs / opponents separately: only these private cards are exposed.
     cards.forEach((code,i)=>{
@@ -254,8 +255,9 @@ export class GameTableView {
       card.on(Node.EventType.TOUCH_END,(_event:EventTouch)=>this.callbacks.selectCard(code))
     })
     if(this.noticeText){
-      this.label('TableNotice',this.noticeText,0,controlsY+51*u,
-        15*u,new Color(255,216,143,255),w*.74,24*u)
+      const feedback=tableNoticePlacement(controlsY,w,h,u)
+      this.label('TableNotice',this.noticeText,0,feedback.y,
+        feedback.font,new Color(255,216,143,255),w*.74,feedback.height)
     }
     if(me>=1 && me<=3){
       const mineRole=landlord===me?'地主':'农民'
@@ -263,7 +265,7 @@ export class GameTableView {
       this.label('OwnSeatInfo',ownText,header.leftX,top-56*u,
         15*u,MUTED,header.leftWidth,23*u)
     }
-    if(final || data.phase==='COMPLETED'){
+    if((final || data.phase==='COMPLETED') && !data.needsReconciliation){
       const bw=Math.min(136*u,w*.27)
       this.button('VerifyFinalEvidence','核验结算',0,controlsY,2*bw,38*u,
         !!data.handID,this.callbacks.evidence)

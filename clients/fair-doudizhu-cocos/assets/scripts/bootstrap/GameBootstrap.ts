@@ -9,7 +9,7 @@ import { createPlatform } from '../platform/createPlatform.ts'
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
-import { menuWindow } from './MenuPagination.ts'
+import { menuWindow, sameRoomInputContext, type RoomInputContext } from './MenuPagination.ts'
 import { GameTableView } from './GameTableView.ts'
 import { TurnClockAnchor } from './TurnClock.ts'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
@@ -60,6 +60,8 @@ export class GameBootstrap extends Component {
   // Capturing the last rendered value detects async transitions without
   // destroying an in-progress room-code or personal-phrase input on notices.
   private roomRetryRendered = false
+  // Scope-only metadata; never store draft room codes or private phrases here.
+  private roomInputContext: RoomInputContext | null = null
   private inputNode: Node | null = null
   private roomInput: EditBox | null = null
   private loginIdentifier: EditBox | null = null
@@ -184,6 +186,17 @@ export class GameBootstrap extends Component {
     return label
   }
   private renderScreen(screen: Screen): void {
+    // A room menu refresh (UNKNOWN, ready, recover, fairness refresh) can
+    // rebuild its native EditBox. Preserve its draft ONLY while the account,
+    // room, hand and input purpose are unchanged. A hand switch, logout or
+    // return from another screen must not restore an old personal phrase.
+    const nextRoomInputContext:RoomInputContext|null=screen==='rooms'
+      ? {owner:this.online,roomID:this.roomID,handID:this.handID,fairnessMode:this.fairnessMode}
+      : null
+    const draft=screen==='rooms' && this.screen==='rooms' &&
+      nextRoomInputContext && sameRoomInputContext(this.roomInputContext,nextRoomInputContext)
+        ? this.roomInput?.string : undefined
+    this.roomInputContext=nextRoomInputContext
     if(this.screen!==screen)this.menuPage=0
     this.screen = screen
     if(screen!=='table' && this.tableView){
@@ -217,6 +230,7 @@ export class GameBootstrap extends Component {
       this.status!.string = this.online?.session.authenticated
         ? '连接服务端，可创建或加入真实好友房间' : '登录后才能创建或加入真实房间'
       this.roomInput=this.createRoomInput()
+      if(draft!==undefined)this.roomInput.string=draft
       const actions:MenuAction[]=[
         {name:'LoginEntry',caption:detectRuntimeTarget()==='web'?'账号登录':'微信登录',
           action:()=>{if(detectRuntimeTarget()==='web')this.renderScreen('login');else void this.login()}},
@@ -436,9 +450,7 @@ export class GameBootstrap extends Component {
     // changed, preserving whatever the user typed into the room field.
     if(this.screen==='rooms' && this.content?.isValid &&
        this.roomRetryRendered!==!!this.online?.rooms.needsReconciliation){
-      const input=this.roomInput?.string
       this.renderScreen('rooms')
-      if(this.roomInput && input!==undefined)this.roomInput.string=input
     }
     if(this.status?.isValid)this.status.string=message
     if(this.screen==='table')this.tableView?.setNotice(message)
@@ -853,7 +865,8 @@ export class GameBootstrap extends Component {
       await this.refreshRoom()
     }catch(error){
       if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
-      if(this.online?.rooms.needsReconciliation && this.screen==='rooms')this.renderScreen('rooms')
+      // notice() performs the single UNKNOWN structural refresh; doing a
+      // direct render first destroys the draft before it can be preserved.
       this.notice('建房失败：'+this.message(error))
     }finally{
       if(this.roomMutation===mutation)this.roomMutation=null

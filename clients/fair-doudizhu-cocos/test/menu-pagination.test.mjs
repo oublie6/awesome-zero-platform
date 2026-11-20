@@ -75,3 +75,29 @@ test('G59 follow-up: login actions do not overlap the password input hitbox',()=
  const room=menuWindow(9,760,592,false,'rooms',0)
  assert.equal(room.firstY,-592*0.103,'other screens keep their layouts')
 })
+
+test('room drafts survive only the exact in-place owner/room/hand/input-purpose refresh',async()=>{
+ const {sameRoomInputContext}=await import('../dist/bootstrap/MenuPagination.js')
+ const original={owner:{},roomID:'room-A',handID:'hand-1',fairnessMode:'client-contributed-server-custodied-v1'}
+ assert.equal(sameRoomInputContext(original,{...original}),true)
+ assert.equal(sameRoomInputContext(null,original),false)
+ assert.equal(sameRoomInputContext(original,{...original,owner:{}}),false,
+   'old account draft must never appear after relogin')
+ assert.equal(sameRoomInputContext(original,{...original,roomID:'room-B'}),false)
+ assert.equal(sameRoomInputContext(original,{...original,handID:'hand-2'}),false,
+   'private contribution phrase must never leak to a new hand')
+ assert.equal(sameRoomInputContext(original,{...original,fairnessMode:''}),false)
+ assert.equal(sameRoomInputContext(original,{...original,fairnessMode:null}),false)
+ assert.equal(sameRoomInputContext({...original,owner:null},{...original,owner:null}),true,
+   'the user may continue editing a room code while unauthenticated')
+})
+test('all room rerenders use the same scoped draft protection, including create UNKNOWN',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.match(source,/sameRoomInputContext\(this\.roomInputContext,nextRoomInputContext\)/)
+ assert.match(source,/if\(draft!==undefined\)this\.roomInput\.string=draft/)
+ assert.match(source,/this\.roomInputContext=nextRoomInputContext/)
+ const create=source.split('private async createRoom()')[1].split('private async joinRoom()')[0]
+ assert.doesNotMatch(create,/if\(this\.online\?\.rooms\.needsReconciliation[^\n]*renderScreen/)
+ assert.match(create,/this\.notice\('建房失败：'/)
+})

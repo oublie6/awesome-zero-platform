@@ -89,6 +89,27 @@ export function tableCaptionFont(text:string,width:number,height:number,unit:num
   return Math.min(20*unit,height*.52,
     Math.max(1,(width-8*unit)/(Math.max(1,glyphs)*1.04)))
 }
+
+/** Table feedback is presentation text, not an error log. Bound the visible
+ * message so long transport details cannot shrink the font to unreadability.
+ * The complete error is still retained by the caller's ordinary status path. */
+export function tableNoticeText(message:string):string{
+  if(/outcome unknown|结果未知|结果尚未确认/i.test(message))
+    return '操作结果未知，请核对原请求'
+  const glyphs=Array.from(message.replace(/\s+/g,' ').trim())
+  return glyphs.length<=18?glyphs.join(''):glyphs.slice(0,17).join('')+'…'
+}
+
+/** The retry controls replace the normal action row on UNKNOWN. Feedback
+ * occupies a distinct row below the public trick and above the actions;
+ * short landscape screens require a more compact reserved gap. */
+export function tableNoticePlacement(actionY:number,width:number,height:number,unit:number):{
+  y:number;font:number;height:number
+}{
+  const compact=width>height && height<=480
+  return {y:actionY+(compact?33:51)*unit,
+    font:(compact?14:15)*unit,height:(compact?18:24)*unit}
+}
 export interface HandCardPlace{
   x:number
   y:number
