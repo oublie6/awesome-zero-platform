@@ -1,0 +1,313 @@
+{
+  "source": "5d0f6157cfe724bf960dd66d1f6572787f96a330",
+  "cases": [
+    {
+      "name": "settled same-hand phrase survives real room fairness reconnect refreshes",
+      "data": {
+        "checks": [
+          {
+            "method": "refreshRoom",
+            "preserved": true
+          },
+          {
+            "method": "refreshFairness",
+            "preserved": true
+          },
+          {
+            "method": "reconnect",
+            "preserved": true
+          }
+        ],
+        "phraseInStorage": false,
+        "scope": "current real Go hand, awaited recovery completion"
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "actual room switch isolates late refresh and drops former phrase",
+      "data": {
+        "switched": {
+          "screen": "rooms",
+          "room": "g63r2-room-f0c78ebcf45c33ed2fcf",
+          "hand": "hand-cmd-3c64753d064855417617e68893f0054e",
+          "version": 18,
+          "pending": false,
+          "submitting": false,
+          "roomPending": false,
+          "input": "",
+          "menus": [
+            "LoginEntry",
+            "RestoreWebSession",
+            "ReconnectRoom",
+            "CreateRoom",
+            "JoinRoom",
+            "ReadyRoom",
+            "LeaveRoom",
+            "StartHand",
+            "RefreshRoom",
+            "DiscoverMyRooms",
+            "LogoutWebSession",
+            "SubmitOwnContribution",
+            "VerifyOwnContribution",
+            "RetryUnknownFairness",
+            "RefreshFairness",
+            "RoomEvidence",
+            "OpenTable",
+            "BackHome"
+          ],
+          "nodes": [],
+          "sent": 0
+        },
+        "end": {
+          "screen": "rooms",
+          "room": "g63r2-room-f0c78ebcf45c33ed2fcf",
+          "hand": "hand-cmd-3c64753d064855417617e68893f0054e",
+          "version": 18,
+          "pending": false,
+          "submitting": false,
+          "roomPending": false,
+          "input": "R5-NEW-ROOM-DRAFT",
+          "menus": [
+            "LoginEntry",
+            "RestoreWebSession",
+            "ReconnectRoom",
+            "CreateRoom",
+            "JoinRoom",
+            "ReadyRoom",
+            "LeaveRoom",
+            "StartHand",
+            "RefreshRoom",
+            "DiscoverMyRooms",
+            "LogoutWebSession",
+            "SubmitOwnContribution",
+            "VerifyOwnContribution",
+            "RetryUnknownFairness",
+            "RefreshFairness",
+            "RoomEvidence",
+            "OpenTable",
+            "BackHome"
+          ],
+          "nodes": [],
+          "sent": 0
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "real render boundaries never restore old hand or input purpose drafts",
+      "data": {
+        "controlledMetadataBoundaryChecks": [
+          {
+            "key": "handID",
+            "cleared": true,
+            "returnedOldDraft": false
+          },
+          {
+            "key": "fairnessMode",
+            "cleared": true,
+            "returnedOldDraft": false
+          }
+        ],
+        "screenBoundary": true,
+        "scope": "real native EditBox/render; controlled hand/purpose metadata, no fake server projection"
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "old controller completion cannot repaint replacement account or restore its draft",
+      "data": {
+        "records": [
+          {
+            "current": true,
+            "renders": 1
+          },
+          {
+            "current": false,
+            "renders": 0
+          }
+        ],
+        "oldResult": "hand changed before command submission",
+        "before": {
+          "sent": 0
+        },
+        "end": {
+          "screen": "table",
+          "room": "",
+          "hand": "",
+          "pending": false,
+          "submitting": false,
+          "roomPending": false,
+          "menus": [],
+          "nodes": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordPublic0",
+            "LandlordPublic1",
+            "LandlordPublic2",
+            "KittyLabel",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "Seat2",
+            "Name2",
+            "Remaining2",
+            "OppBack2-0",
+            "OppBack2-0Inner",
+            "OppBack2-0BackMark",
+            "OppBack2-1",
+            "OppBack2-1Inner",
+            "OppBack2-1BackMark",
+            "OppBack2-2",
+            "OppBack2-2Inner",
+            "OppBack2-2BackMark",
+            "EmptyTrick",
+            "PassTurn",
+            "PlaySelected",
+            "HandCard_XJ",
+            "HandCard_C2",
+            "HandCard_HA",
+            "HandCard_HK",
+            "HandCard_CK",
+            "HandCard_CQ",
+            "HandCard_DQ",
+            "HandCard_DJ",
+            "HandCard_H10",
+            "HandCard_D10",
+            "HandCard_H8",
+            "HandCard_D8",
+            "HandCard_H6",
+            "HandCard_H5",
+            "HandCard_C5",
+            "HandCard_D4",
+            "HandCard_C3",
+            "TableNotice",
+            "OwnSeatInfo"
+          ],
+          "sent": 0
+        }
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "real account switch does not keep previous account draft; native editing still works",
+      "data": {
+        "oldDraftAbsent": true,
+        "newNativeEditing": true
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "bounded native rerenders retain one table clock and clean up on exit",
+      "data": {
+        "before": {
+          "nodes": 59,
+          "clocks": 1,
+          "inputs": 0
+        },
+        "after": {
+          "nodes": 59,
+          "clocks": 1,
+          "inputs": 0
+        },
+        "exited": {
+          "nodes": 0,
+          "clocks": 0,
+          "inputs": 1
+        },
+        "newInputWorks": true,
+        "boundedOnly": true
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "actual next hand in same room clears previous personal phrase",
+      "data": {
+        "old": {
+          "screen": "rooms",
+          "room": "g63r2-room-cb5a0c00d0df763d6b4e",
+          "hand": "hand-cmd-1202a943fe2aed6741624427a0725368",
+          "version": 17,
+          "pending": false,
+          "submitting": false,
+          "roomPending": false,
+          "input": "R5-OLD-HAND-PERSONAL-DUMMY",
+          "menus": [
+            "LoginEntry",
+            "RestoreWebSession",
+            "ReconnectRoom",
+            "CreateRoom",
+            "JoinRoom",
+            "ReadyRoom",
+            "LeaveRoom",
+            "StartHand",
+            "RefreshRoom",
+            "DiscoverMyRooms",
+            "LogoutWebSession",
+            "SubmitOwnContribution",
+            "VerifyOwnContribution",
+            "RetryUnknownFairness",
+            "RefreshFairness",
+            "RoomEvidence",
+            "OpenTable",
+            "BackHome"
+          ],
+          "nodes": [],
+          "sent": 0
+        },
+        "current": {
+          "screen": "rooms",
+          "room": "g63r2-room-cb5a0c00d0df763d6b4e",
+          "hand": "hand-cmd-cd72d883642c8e6d9bc871bf866d35c4",
+          "pending": false,
+          "submitting": false,
+          "roomPending": false,
+          "input": "",
+          "menus": [
+            "LoginEntry",
+            "RestoreWebSession",
+            "ReconnectRoom",
+            "CreateRoom",
+            "JoinRoom",
+            "ReadyRoom",
+            "LeaveRoom",
+            "StartHand",
+            "RefreshRoom",
+            "DiscoverMyRooms",
+            "LogoutWebSession",
+            "SubmitOwnContribution",
+            "VerifyOwnContribution",
+            "RetryUnknownFairness",
+            "RefreshFairness",
+            "RoomEvidence",
+            "OpenTable",
+            "BackHome"
+          ],
+          "nodes": [],
+          "sent": 1
+        },
+        "newHandClearedOldPhrase": true
+      },
+      "result": "PASS"
+    }
+  ],
+  "room": "g63r2-room-cb5a0c00d0df763d6b4e",
+  "hand": "hand-cmd-1202a943fe2aed6741624427a0725368",
+  "followupHand": "hand-cmd-cd72d883642c8e6d9bc871bf866d35c4",
+  "result": "PASS"
+}

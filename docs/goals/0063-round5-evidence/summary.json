@@ -1,0 +1,13 @@
+{
+  "source": "5d0f6157cfe724bf960dd66d1f6572787f96a330",
+  "R4-N01": "PASS",
+  "R4-N02": "FAIL",
+  "final": "FAIL",
+  "residual": "760x390 Pass UNKNOWN feedback overlaps PublicTrick0 by 10.465125 CSS pixels",
+  "authoritativeEvidence": {
+    "input": "followups.json + actual create/ready/leave/start UNKNOWN records in native-check.json",
+    "UI": "desktop passing cases in native-check.json; corrected resume.json + passive visual-observer.json; final overlap-760x390.json",
+    "rawFixtureFailures": "native-check.json initial start-clear / phrase-click / non-projected geometry assertions are fixture issues, not accepted product failures; see fixture-notes.md",
+    "unverified": "mobile/narrow Bid exact retry not completed in this round after early geometry fixture interruption; narrow Pass retry/discard after latest error not executed; earlier Round4 same action logic evidence reused only within its scope"
+  }
+}

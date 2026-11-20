@@ -1,0 +1,22 @@
+PASS create UNKNOWN retains complete draft and exact retry
+PASS same room ready refresh reconnect retain draft
+PASS leave UNKNOWN retains draft then confirmed leave clears context
+PASS ready UNKNOWN and refresh preserve input
+FAIL start UNKNOWN retains old input until adopted new hand: Expected "actual" to be strictly unequal to:
+
+'R5-start-保留'
+FAIL custodied phrase survives refresh fairness reconnect without persistence: locator.fill: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('textarea:visible,input:visible').last()[22m
+
+PASS Bid UNKNOWN 1280x720
+FAIL Bid UNKNOWN 390x844: notice overlaps RetryUnknown
+
+true !== false
+
+FAIL Bid UNKNOWN 760x390: notice overlaps EmptyTrick
+
+true !== false
+
+PASS Play UNKNOWN 1280x720
+PASS Pass UNKNOWN 1280x720

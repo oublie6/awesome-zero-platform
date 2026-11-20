@@ -1,0 +1,66 @@
+{
+  "source": "5d0f6157cfe724bf960dd66d1f6572787f96a330",
+  "processes": {
+    "api": {
+      "pid": 22934,
+      "running": false
+    },
+    "browser": {
+      "pid": 23528,
+      "running": false
+    },
+    "web": {
+      "pid": 22984,
+      "running": false
+    }
+  },
+  "dataPreserved": true,
+  "kubernetesMutations": "none",
+  "partialHands": {
+    "purpose": "stop only two partial Round5 QA hands; not terminal/recovery acceptance",
+    "original": {
+      "hand": "hand-cmd-1202a943fe2aed6741624427a0725368",
+      "phase": "ABORTED"
+    },
+    "followup": {
+      "hand": "hand-cmd-cd72d883642c8e6d9bc871bf866d35c4",
+      "status": 200,
+      "accepted": false,
+      "phase": "ABORTED"
+    },
+    "error": "QA cleanup rejected"
+  },
+  "partialHandFinalObservation": "both ABORTED; followup expired/aborted before optional cancellation, accepted=false was a cleanup fixture assumption failure, no retry necessary",
+  "containers": [
+    {
+      "name": "codex0063r2-mysql",
+      "running": false,
+      "status": "exited",
+      "image": "mysql:5.7.44"
+    },
+    {
+      "name": "codex0063r2-redis",
+      "running": false,
+      "status": "exited",
+      "image": "redis:8.8.0-alpine3.23"
+    },
+    {
+      "name": "codex0063r2-bean-a",
+      "running": false,
+      "status": "exited",
+      "image": "codex0063-beanstalk:74125d6"
+    },
+    {
+      "name": "codex0063r2-bean-b",
+      "running": false,
+      "status": "exited",
+      "image": "codex0063-beanstalk:74125d6"
+    },
+    {
+      "name": "codex0063r2-bean-c",
+      "running": false,
+      "status": "exited",
+      "image": "codex0063-beanstalk:74125d6"
+    }
+  ]
+}

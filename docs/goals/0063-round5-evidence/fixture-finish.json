@@ -1,0 +1,14 @@
+{
+  "purpose": "stop only two partial Round5 QA hands; not terminal/recovery acceptance",
+  "original": {
+    "hand": "hand-cmd-1202a943fe2aed6741624427a0725368",
+    "phase": "ABORTED"
+  },
+  "followup": {
+    "hand": "hand-cmd-cd72d883642c8e6d9bc871bf866d35c4",
+    "status": 200,
+    "accepted": false,
+    "phase": "ABORTED"
+  },
+  "error": "QA cleanup rejected"
+}

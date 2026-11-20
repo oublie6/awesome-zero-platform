@@ -1,0 +1,1 @@
+{"command": ["sh", "-c", "cd ../../native-input/clients/fair-doudizhu-cocos && node node_modules/typescript/bin/tsc -p tsconfig.shell.json && node --test test/menu-pagination.test.mjs test/table-geometry.test.mjs"], "exit": 0, "seconds": 5.810241222381592}

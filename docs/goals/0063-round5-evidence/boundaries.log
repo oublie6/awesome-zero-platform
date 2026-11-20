@@ -1,0 +1,7 @@
+PASS settled same-hand phrase survives real room fairness reconnect refreshes
+PASS actual room switch isolates late refresh and drops former phrase
+PASS real render boundaries never restore old hand or input purpose drafts
+PASS old controller completion cannot repaint replacement account or restore its draft
+PASS real account switch does not keep previous account draft; native editing still works
+PASS bounded native rerenders retain one table clock and clean up on exit
+PASS actual next hand in same room clears previous personal phrase

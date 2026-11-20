@@ -1,0 +1,5 @@
+PASS hand.bid 1280 font 20.249999999999982 overlaps []
+PASS hand.bid 390 font 14.999999999999925 overlaps []
+PASS hand.bid 760 font 12.023437499999988 overlaps []
+PASS hand.play 1280 font 20.249999999999982 overlaps []
+PASS hand.pass 1280 font 20.249999999999982 overlaps []

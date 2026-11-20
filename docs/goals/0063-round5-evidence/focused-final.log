@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: landscape crowded room menu remains paged with readable, non-overlapping targets
+ok 1 - landscape crowded room menu remains paged with readable, non-overlapping targets
+  ---
+  duration_ms: 5.894439
+  type: 'test'
+  ...
+# Subtest: historical menu paging stays compatible for legacy layout consumers
+ok 2 - historical menu paging stays compatible for legacy layout consumers
+  ---
+  duration_ms: 1.157108
+  type: 'test'
+  ...
+# Subtest: ordinary small screens retain a single visible menu page
+ok 3 - ordinary small screens retain a single visible menu page
+  ---
+  duration_ms: 3.197024
+  type: 'test'
+  ...
+# Subtest: visible-page clamping supports resize without losing action access
+ok 4 - visible-page clamping supports resize without losing action access
+  ---
+  duration_ms: 0.643817
+  type: 'test'
+  ...
+# Subtest: portrait room captions use a full-width target rather than 9px shrink-to-fit
+ok 5 - portrait room captions use a full-width target rather than 9px shrink-to-fit
+  ---
+  duration_ms: 0.899201
+  type: 'test'
+  ...
+# Subtest: G59 follow-up: login actions do not overlap the password input hitbox
+ok 6 - G59 follow-up: login actions do not overlap the password input hitbox
+  ---
+  duration_ms: 0.711889
+  type: 'test'
+  ...
+# Subtest: room drafts survive only the exact in-place owner/room/hand/input-purpose refresh
+ok 7 - room drafts survive only the exact in-place owner/room/hand/input-purpose refresh
+  ---
+  duration_ms: 1.219219
+  type: 'test'
+  ...
+# Subtest: all room rerenders use the same scoped draft protection, including create UNKNOWN
+ok 8 - all room rerenders use the same scoped draft protection, including create UNKNOWN
+  ---
+  duration_ms: 31.155319
+  type: 'test'
+  ...
+# Subtest: Dou Dizhu sorts ranks descending with deterministic suit ties
+ok 9 - Dou Dizhu sorts ranks descending with deterministic suit ties
+  ---
+  duration_ms: 7.435525
+  type: 'test'
+  ...
+# Subtest: public numeric card IDs map exactly to Go canonical deck
+ok 10 - public numeric card IDs map exactly to Go canonical deck
+  ---
+  duration_ms: 1.454112
+  type: 'test'
+  ...
+# Subtest: three seats rotate consistently relative to the local player
+ok 11 - three seats rotate consistently relative to the local player
+  ---
+  duration_ms: 0.810182
+  type: 'test'
+  ...
+# Subtest: full 20-card hand fits narrow portrait and short landscape with no paging
+ok 12 - full 20-card hand fits narrow portrait and short landscape with no paging
+  ---
+  duration_ms: 3.02101
+  type: 'test'
+  ...
+# Subtest: table view is a distinct authority-preserving scene, not a paged menu
+ok 13 - table view is a distinct authority-preserving scene, not a paged menu
+  ---
+  duration_ms: 25.522476
+  type: 'test'
+  ...
+# Subtest: header title, clock and room buttons do not overlap on target screens
+ok 14 - header title, clock and room buttons do not overlap on target screens
+  ---
+  duration_ms: 0.965498
+  type: 'test'
+  ...
+# Subtest: the selected hand stays clear of play and bid buttons
+ok 15 - the selected hand stays clear of play and bid buttons
+  ---
+  duration_ms: 0.969214
+  type: 'test'
+  ...
+# Subtest: the pass action is disabled until a public trick exists
+ok 16 - the pass action is disabled until a public trick exists
+  ---
+  duration_ms: 8.35598
+  type: 'test'
+  ...
+# Subtest: real Go []uint8 Base64 wire tricks preserve legality and card identities
+ok 17 - real Go []uint8 Base64 wire tricks preserve legality and card identities
+  ---
+  duration_ms: 2.377535
+  type: 'test'
+  ...
+# Subtest: portrait design resolution retains physical touch sizes and playable fan
+ok 18 - portrait design resolution retains physical touch sizes and playable fan
+  ---
+  duration_ms: 2.129826
+  type: 'test'
+  ...
+# Subtest: table view consumes terminal evidence without a live public projection
+ok 19 - table view consumes terminal evidence without a live public projection
+  ---
+  duration_ms: 81.41781
+  type: 'test'
+  ...
+# Subtest: monotonic turn clock survives view recreation and ignores stale timestamps
+ok 20 - monotonic turn clock survives view recreation and ignores stale timestamps
+  ---
+  duration_ms: 3.588012
+  type: 'test'
+  ...
+# Subtest: table button captions remain readable in real CSS portrait scaling
+ok 21 - table button captions remain readable in real CSS portrait scaling
+  ---
+  duration_ms: 25.863049
+  type: 'test'
+  ...
+# Subtest: Round3 UNKNOWN action and room UI are refreshed from current owner state
+ok 22 - Round3 UNKNOWN action and room UI are refreshed from current owner state
+  ---
+  duration_ms: 29.199003
+  type: 'test'
+  ...
+# Subtest: Round4 retry controls and status are independent rows in three target viewports
+ok 23 - Round4 retry controls and status are independent rows in three target viewports
+  ---
+  duration_ms: 2.090765
+  type: 'test'
+  ...
+# Subtest: UNKNOWN takes over action row, including terminal proof button
+ok 24 - UNKNOWN takes over action row, including terminal proof button
+  ---
+  duration_ms: 26.445288
+  type: 'test'
+  ...
+# Subtest: transient table errors suppress secondary hints sharing their visual band
+ok 25 - transient table errors suppress secondary hints sharing their visual band
+  ---
+  duration_ms: 5.045182
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 426.047271
