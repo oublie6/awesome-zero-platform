@@ -13,8 +13,14 @@ export class GameHandActions {
   private handTransition = false
   private pending: Omit<WireCommand, 'v'> | null = null
   private readonly identities
-  constructor(private readonly shell: GameClientShell, random: SecureRandomSource) {
+  constructor(private readonly shell: GameClientShell, random: SecureRandomSource,
+    private readonly onStateChange: () => void = () => {}) {
     this.identities = secureRoomCommandIdentity(random)
+  }
+  // Rendering is best-effort: a disposed/failed UI must not change the
+  // authority-backed request ID, outcome handling or pending journal.
+  private notifyState(): void {
+    try { this.onStateChange() } catch { /* presentation cannot affect commands */ }
   }
   bid(score: number): Promise<WireCommandResult> {
     if (!Number.isSafeInteger(score) || score < 0 || score > 3) return Promise.reject(new Error('invalid bid score'))
@@ -29,6 +35,9 @@ export class GameHandActions {
   }
   pass(): Promise<WireCommandResult> { return this.send('hand.pass', {}, 'PLAYING') }
   get needsReconciliation(): boolean { return this.pending !== null }
+  // Distinguish an in-flight request from an UNKNOWN response. Both block
+  // new gameplay, but "retry exact request" must only appear after settlement.
+  get isSubmitting(): boolean { return this.inFlight }
 
   /** Prevent live Bid/Play/Pass from racing a new-hand room command.
    * Unknown commands must be reconciled explicitly, never thrown away. */
@@ -48,6 +57,7 @@ export class GameHandActions {
   async retryUnknown(): Promise<WireCommandResult> {
     if (!this.pending || this.inFlight) throw new Error('no pending hand command to retry')
     this.inFlight = true
+    this.notifyState()
     try {
       const result = await this.shell.submitCommand(this.pending, true)
       this.pending = null
@@ -57,6 +67,7 @@ export class GameHandActions {
       throw err
     } finally {
       this.inFlight = false
+      this.notifyState()
     }
   }
   /** No local command can prove its own unknown outcome. After a trusted
@@ -69,6 +80,7 @@ export class GameHandActions {
       !this.shell.hand.canSubmit || snapshot.version <= this.pending.expectedVersion)
       throw new Error('server has not confirmed a newer hand version')
     this.pending = null
+    this.notifyState()
   }
 
   private async send(type: 'hand.bid'|'hand.play'|'hand.pass', payload: Record<string, unknown>, phase: 'BIDDING'|'PLAYING'): Promise<WireCommandResult> {
@@ -77,6 +89,7 @@ export class GameHandActions {
     const snapshot = this.shell.hand.snapshot
     if (!snapshot || snapshot.phase !== phase || !this.shell.hand.canSubmit) throw new Error('hand is not ready for this action')
     this.inFlight = true
+    this.notifyState()
     try {
       const seq = (this.seq.get(snapshot.handId) ?? 0) + 1
       if (!Number.isSafeInteger(seq)) throw new Error('hand command sequence exhausted')
@@ -102,6 +115,7 @@ export class GameHandActions {
       }
     } finally {
       this.inFlight = false
+      this.notifyState()
     }
   }
 }

@@ -56,6 +56,10 @@ export class GameBootstrap extends Component {
   // Keep the full accessible action set even when it does not fit in one view.
   private menuActions: MenuAction[] = []
   private menuPage = 0
+  // Structural menu entry depends on the room command's UNKNOWN state.
+  // Capturing the last rendered value detects async transitions without
+  // destroying an in-progress room-code or personal-phrase input on notices.
+  private roomRetryRendered = false
   private inputNode: Node | null = null
   private roomInput: EditBox | null = null
   private loginIdentifier: EditBox | null = null
@@ -240,7 +244,8 @@ export class GameBootstrap extends Component {
           action:()=>void this.login(true)})
         actions.push({name:'LogoutWebSession',caption:'退出网页账号',action:()=>void this.logoutWeb()})
       }
-      if(this.online?.rooms.needsReconciliation)
+      this.roomRetryRendered=!!this.online?.rooms.needsReconciliation
+      if(this.roomRetryRendered)
         actions.push({name:'RetryUnknownRoom',caption:'核对未确认房间命令',action:()=>void this.reconnect()})
       for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
         caption:(room.status==='HAND_ACTIVE'?'继续牌局 ':'恢复房间 ')+room.roomId,
@@ -349,7 +354,9 @@ export class GameBootstrap extends Component {
         roomID:this.roomID,handID:snapshot?.handId??this.handID,
         version:snapshot?.version??0,phase:snapshot?.phase??'WAITING',
         view:projection,selected:this.selectedCards,
-        needsReconciliation:!!this.online?.actions.needsReconciliation,
+        needsReconciliation:!!this.online?.actions.needsReconciliation &&
+          !this.online?.actions.isSubmitting,
+        actionInFlight:!!this.online?.actions.isSubmitting,
         finalSummary
       },size.width,size.height)
       return
@@ -424,6 +431,15 @@ export class GameBootstrap extends Component {
     this.menuActions.push(...actions)
   }
   private notice(message:string):void {
+    // A room command can become UNKNOWN after its callback returns without
+    // changing the room snapshot. Rebuild only if the retry entry actually
+    // changed, preserving whatever the user typed into the room field.
+    if(this.screen==='rooms' && this.content?.isValid &&
+       this.roomRetryRendered!==!!this.online?.rooms.needsReconciliation){
+      const input=this.roomInput?.string
+      this.renderScreen('rooms')
+      if(this.roomInput && input!==undefined)this.roomInput.string=input
+    }
     if(this.status?.isValid)this.status.string=message
     if(this.screen==='table')this.tableView?.setNotice(message)
   }
@@ -457,7 +473,12 @@ export class GameBootstrap extends Component {
       let online:GameOnlineController
       const exchange=target==='web'?createWebIdentityExchange(platform):createWeChatIdentityExchange(platform)
       online=new GameOnlineController(platform,exchange,cfg.socketEndpoint,
-        text=>{if(this.currentAccount(online,generation))this.notice(text)},cfg.revealManifestRoots)
+        text=>{if(this.currentAccount(online,generation))this.notice(text)},
+        cfg.revealManifestRoots,
+        ()=>{
+          if(this.currentAccount(online,generation) && this.screen==='table')
+            this.renderScreen('table')
+        })
       generation=++this.requestGeneration
       this.platform=platform
       ++this.recoveryAttempt

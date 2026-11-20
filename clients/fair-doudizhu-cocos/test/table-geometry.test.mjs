@@ -166,3 +166,18 @@ test('table button captions remain readable in real CSS portrait scaling',async(
  assert.match(table,/tableCaptionFont\(text,w,h,this\.unit\)/)
  assert.doesNotMatch(table,/Math\.min\(18,w\*\.19,h\*\.48\)/)
 })
+
+test('Round3 UNKNOWN action and room UI are refreshed from current owner state',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const boot=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const table=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
+ const online=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
+ assert.match(boot,/onHandActionStateChange|this\.renderScreen\('table'\)/)
+ assert.match(boot,/this\.online\?\.actions\.needsReconciliation/)
+ assert.match(boot,/!this\.online\?\.actions\.isSubmitting/)
+ assert.match(boot,/this\.roomRetryRendered!==!!this\.online\?\.rooms\.needsReconciliation/)
+ assert.match(boot,/const input=this\.roomInput\?\.string/)
+ assert.match(boot,/this\.roomInput\.string=input/)
+ assert.match(table,/!data\.needsReconciliation && !data\.actionInFlight/)
+ assert.match(online,/new GameHandActions\(this\.shell, platform\.random, onHandActionStateChange\)/)
+})

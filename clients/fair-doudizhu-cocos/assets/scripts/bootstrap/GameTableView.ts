@@ -11,6 +11,7 @@ export interface TableDisplay {
   view:PrivateHandProjection | null
   selected:ReadonlySet<string>
   needsReconciliation:boolean
+  actionInFlight:boolean
   finalSummary:string
 }
 export interface TableCallbacks {
@@ -133,7 +134,8 @@ export class GameTableView {
     const me=view?.position??0
     const landlord=seatNumber(pub?.landlordSeat)
     const turn= data.phase==='BIDDING'?currentBidder(view):seatNumber(pub?.playingSeat)
-    const myTurn=me!==0 && turn===me && !data.needsReconciliation
+    const myTurn=me!==0 && turn===me &&
+      !data.needsReconciliation && !data.actionInFlight
     const final=data.phase==='COMPLETED'||data.phase==='ABORTED'
 
     // Separate top chrome: room/hand/version are informational, not game actions.
