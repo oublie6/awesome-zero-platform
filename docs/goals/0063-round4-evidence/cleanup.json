@@ -1,0 +1,58 @@
+{
+  "source": "871ac82be1bce7d3e08e5068d7f46e84f920a76d",
+  "processes": {
+    "api": {
+      "pid": 312341,
+      "running": false
+    },
+    "browser": {
+      "pid": 312358,
+      "running": false
+    },
+    "web": {
+      "pid": 312357,
+      "running": false
+    }
+  },
+  "dataPreserved": true,
+  "kubernetesMutations": "none",
+  "partialHandCleanup": {
+    "purpose": "cleanup of the single partial QA hand; not a terminal acceptance rerun",
+    "hand": "hand-cmd-3c64753d064855417617e68893f0054e",
+    "before": "PLAYING",
+    "accepted": null,
+    "after": "ABORTED"
+  },
+  "containers": [
+    {
+      "name": "codex0063r2-mysql",
+      "running": false,
+      "status": "exited",
+      "image": "mysql:5.7.44"
+    },
+    {
+      "name": "codex0063r2-redis",
+      "running": false,
+      "status": "exited",
+      "image": "redis:8.8.0-alpine3.23"
+    },
+    {
+      "name": "codex0063r2-bean-a",
+      "running": false,
+      "status": "exited",
+      "image": "codex0063-beanstalk:74125d6"
+    },
+    {
+      "name": "codex0063r2-bean-b",
+      "running": false,
+      "status": "exited",
+      "image": "codex0063-beanstalk:74125d6"
+    },
+    {
+      "name": "codex0063r2-bean-c",
+      "running": false,
+      "status": "exited",
+      "image": "codex0063-beanstalk:74125d6"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "candidate": "871ac82be1bce7d3e08e5068d7f46e84f920a76d",
+  "serverSourceBaseline": "3502b6acedc128d37b63a34b4f5286a9a9e642e2",
+  "unchanged": [
+    "server",
+    "scripts",
+    ".github"
+  ],
+  "reusedBinary": "Round3 app-api",
+  "newNativeBuildReason": "only prior-source Web artifact available locally; changed tracked client inputs"
+}

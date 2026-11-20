@@ -1,0 +1,3 @@
+FAIL real create UNKNOWN draft preservation
+PASS actual pre-commit conflict clears pending and no UNKNOWN controls
+PASS old account/controller async completion cannot render replacement account

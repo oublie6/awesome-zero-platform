@@ -1,0 +1,249 @@
+{
+  "source": "871ac82be1bce7d3e08e5068d7f46e84f920a76d",
+  "cases": [
+    {
+      "name": "real create UNKNOWN draft preservation",
+      "result": "FAIL",
+      "error": "AssertionError [ERR_ASSERTION]: create UNKNOWN rebuilt room input with a different value\n+ actual - expected\n\n+ ''\n- 'R4-create-draft-保留'\n\n    at /root/goal0063-round4-871ac82/followups.cjs:9:738\n    at async step (/root/goal0063-round4-871ac82/followups.cjs:5:79)\n    at async /root/goal0063-round4-871ac82/followups.cjs:9:20"
+    },
+    {
+      "name": "actual pre-commit conflict clears pending and no UNKNOWN controls",
+      "data": {
+        "held": {
+          "v": "doudizhu-api-command-v1",
+          "requestId": "cmd-6900b7233349fdcdc1f8c3b68f485868",
+          "type": "hand.play",
+          "aggregateId": "hand-cmd-3c64753d064855417617e68893f0054e",
+          "clientSeq": 1,
+          "expectedVersion": 11,
+          "payload": {
+            "cards": [
+              "H4"
+            ]
+          }
+        },
+        "end": {
+          "screen": "table",
+          "room": "g63r2-room-f0c78ebcf45c33ed2fcf",
+          "hand": "hand-cmd-3c64753d064855417617e68893f0054e",
+          "version": 12,
+          "pending": false,
+          "submitting": false,
+          "roomPending": false,
+          "menus": [],
+          "nodes": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordPublic0",
+            "LandlordPublic1",
+            "LandlordPublic2",
+            "KittyLabel",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "LeadingSeat",
+            "PublicTrick0",
+            "PassTurn",
+            "PlaySelected",
+            "HandCard_YJ",
+            "HandCard_HA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_DQ",
+            "HandCard_DJ",
+            "HandCard_S10",
+            "HandCard_H10",
+            "HandCard_C9",
+            "HandCard_D9",
+            "HandCard_S8",
+            "HandCard_H8",
+            "HandCard_D7",
+            "HandCard_H6",
+            "HandCard_D5",
+            "HandCard_S4",
+            "TableNotice",
+            "OwnSeatInfo"
+          ],
+          "sent": 1
+        },
+        "responses": [
+          {
+            "at": 1795155742701,
+            "id": "cmd-6900b7233349fdcdc1f8c3b68f485868",
+            "type": "doudizhu.error",
+            "payload": {
+              "v": "doudizhu-realtime-event-v1",
+              "requestId": "cmd-6900b7233349fdcdc1f8c3b68f485868",
+              "code": "CONFLICT",
+              "message": "Doudizhu state conflict"
+            }
+          }
+        ]
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "old account/controller async completion cannot render replacement account",
+      "data": {
+        "records": [
+          {
+            "current": true,
+            "room": "g63r2-room-f0c78ebcf45c33ed2fcf",
+            "renders": 1
+          },
+          {
+            "current": false,
+            "room": "room-cmd-0e9d7e658c01cf33beb75466dc993479",
+            "renders": 0
+          }
+        ],
+        "oldResult": "hand changed before command submission",
+        "before": {
+          "sent": 1
+        },
+        "after": {
+          "screen": "rooms",
+          "room": "room-cmd-0e9d7e658c01cf33beb75466dc993479",
+          "hand": "",
+          "pending": false,
+          "submitting": false,
+          "roomPending": false,
+          "input": "room-cmd-0e9d7e658c01cf33beb75466dc993479",
+          "menus": [
+            "LoginEntry",
+            "RestoreWebSession",
+            "ReconnectRoom",
+            "CreateRoom",
+            "JoinRoom",
+            "ReadyRoom",
+            "LeaveRoom",
+            "StartHand",
+            "RefreshRoom",
+            "DiscoverMyRooms",
+            "LogoutWebSession",
+            "RetryUnknownFairness",
+            "RefreshFairness",
+            "RoomEvidence",
+            "OpenTable",
+            "BackHome"
+          ],
+          "nodes": [],
+          "sent": 1
+        }
+      },
+      "result": "PASS"
+    }
+  ],
+  "room": "g63r2-room-f0c78ebcf45c33ed2fcf",
+  "hand": "hand-cmd-3c64753d064855417617e68893f0054e",
+  "createUnknown": {
+    "screen": "rooms",
+    "room": "",
+    "hand": "",
+    "pending": false,
+    "submitting": false,
+    "roomPending": true,
+    "input": "",
+    "menus": [
+      "LoginEntry",
+      "RestoreWebSession",
+      "ReconnectRoom",
+      "CreateRoom",
+      "JoinRoom",
+      "ReadyRoom",
+      "LeaveRoom",
+      "StartHand",
+      "RefreshRoom",
+      "DiscoverMyRooms",
+      "LogoutWebSession",
+      "RetryUnknownRoom",
+      "RetryUnknownFairness",
+      "RefreshFairness",
+      "RoomEvidence",
+      "OpenTable",
+      "BackHome"
+    ],
+    "nodes": [],
+    "sent": 1
+  },
+  "createConfirmed": {
+    "screen": "rooms",
+    "room": "",
+    "hand": "",
+    "pending": false,
+    "submitting": false,
+    "roomPending": false,
+    "input": "",
+    "menus": [
+      "LoginEntry",
+      "RestoreWebSession",
+      "ReconnectRoom",
+      "CreateRoom",
+      "JoinRoom",
+      "ReadyRoom",
+      "LeaveRoom",
+      "StartHand",
+      "RefreshRoom",
+      "DiscoverMyRooms",
+      "LogoutWebSession",
+      "RetryUnknownFairness",
+      "RefreshFairness",
+      "RoomEvidence",
+      "OpenTable",
+      "BackHome"
+    ],
+    "nodes": [],
+    "sent": 2
+  },
+  "createRequests": [
+    {
+      "at": 1795155700517,
+      "v": "doudizhu-api-command-v1",
+      "requestId": "cmd-155af90b9ea2246218e51f0067299228",
+      "type": "room.create",
+      "aggregateId": "room-cmd-0e9d7e658c01cf33beb75466dc993479",
+      "clientSeq": 1,
+      "expectedVersion": 0,
+      "payload": {}
+    },
+    {
+      "at": 1795155721635,
+      "v": "doudizhu-api-command-v1",
+      "requestId": "cmd-155af90b9ea2246218e51f0067299228",
+      "type": "room.create",
+      "aggregateId": "room-cmd-0e9d7e658c01cf33beb75466dc993479",
+      "clientSeq": 1,
+      "expectedVersion": 0,
+      "payload": {}
+    }
+  ],
+  "result": "FAIL"
+}

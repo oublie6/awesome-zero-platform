@@ -1,0 +1,5 @@
+PASS committed room.hand.start UNKNOWN after authoritative refresh
+PASS hand.bid real ACK loss, second timeout, exact retry
+PASS hand.play real ACK loss and exact retry
+PASS hand.pass real ACK loss and exact retry
+PASS new authoritative snapshot permits explicit discard

@@ -1,0 +1,43 @@
+{
+  "source": "871ac82be1bce7d3e08e5068d7f46e84f920a76d",
+  "result": "FAIL",
+  "R3N01": "PASS in executed actual Bid/Play/Pass cases",
+  "R4N01": {
+    "severity": "P2",
+    "result": "FAIL",
+    "expectedInput": "R4-create-draft-\u4fdd\u7559",
+    "observedInput": "",
+    "createRequest": "cmd-155af90b9ea2246218e51f0067299228",
+    "wireRetryIdentical": true
+  },
+  "R4N02": {
+    "severity": "P2",
+    "result": "FAIL by actual screenshots + source coordinates",
+    "retryY": "controlsY+46*u",
+    "retryHeight": "36*u",
+    "noticeY": "controlsY+51*u",
+    "noticeHeight": "24*u"
+  },
+  "coreCaseResults": [
+    {
+      "name": "hand.bid real ACK loss, second timeout, exact retry",
+      "result": "PASS"
+    },
+    {
+      "name": "hand.play real ACK loss and exact retry",
+      "result": "PASS"
+    },
+    {
+      "name": "hand.pass real ACK loss and exact retry",
+      "result": "PASS"
+    },
+    {
+      "name": "new authoritative snapshot permits explicit discard",
+      "result": "PASS"
+    }
+  ],
+  "actualExplicitRejection": "PASS/CONFLICT",
+  "actualOldControllerCompletion": "PASS/0 renders on replacement owner",
+  "controlledProbes": "4/4 PASS",
+  "roomCaseCaveat": "native-check retains a fixture create FAIL with sent0/already managing a room; that is not R4N01. One earlier start was a durably rejected stale version, then refreshed accepted start tested separately."
+}
