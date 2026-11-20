@@ -215,7 +215,9 @@ export class GameTableView {
         turn?('等待座位 '+turn+' 出牌'):'等待服务端牌局状态'
       this.label('EmptyTrick',result,0,trickY+10*u,20*u,PALE,w*.58,58*u)
     }
-    if(playing.passSeat && !final)
+    // Temporary command feedback takes precedence over historical hints;
+    // both otherwise occupy the narrow strip between the trick and actions.
+    if(playing.passSeat && !final && !this.noticeText)
       this.label('LastPass','座位 '+playing.passSeat+' 不出',0,trickY-55*u,15*u,MUTED,w*.5,22*u)
 
     const cards=final?[]:Array.isArray(view?.cards)?sortHandCards(view!.cards):[]
@@ -270,7 +272,7 @@ export class GameTableView {
       this.button('VerifyFinalEvidence','核验结算',0,controlsY,2*bw,38*u,
         !!data.handID,this.callbacks.evidence)
     }
-    if(!view && data.handID && !final){
+    if(!view && data.handID && !final && !this.noticeText){
       this.label('ServerSyncNeeded','请同步服务端私有牌局快照',0,-h*.23,15*u,MUTED,w*.66,25*u)
     }
   }

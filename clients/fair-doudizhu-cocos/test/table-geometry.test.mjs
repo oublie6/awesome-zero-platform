@@ -217,3 +217,10 @@ test('UNKNOWN takes over action row, including terminal proof button',async()=>{
  assert.match(source,/tableNoticePlacement\(controlsY,w,h,u\)/)
  assert.doesNotMatch(source,/controlsY\+46\*u/)
 })
+
+test('transient table errors suppress secondary hints sharing their visual band',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
+ assert.match(source,/playing\.passSeat && !final && !this\.noticeText/)
+ assert.match(source,/!view && data\.handID && !final && !this\.noticeText/)
+})
