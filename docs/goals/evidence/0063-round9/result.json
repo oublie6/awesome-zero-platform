@@ -1,0 +1,1098 @@
+{
+  "result": "PASS",
+  "productSource": "9581630174eea848f44580cc4c416a7073442a88",
+  "ci": [
+    {
+      "run": {
+        "id": 44929912373,
+        "head_sha": "9581630174eea848f44580cc4c416a7073442a88",
+        "conclusion": "success",
+        "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912373"
+      },
+      "jobs": [
+        {
+          "name": "unit",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912373/job/136924053099"
+        },
+        {
+          "name": "secure_envelope",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912373/job/136924053305"
+        },
+        {
+          "name": "integration",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912373/job/136924053424"
+        },
+        {
+          "name": "admin_web",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912373/job/136924053446"
+        },
+        {
+          "name": "runtime",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912373/job/136925163820"
+        },
+        {
+          "name": "report",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912373/job/136925699134"
+        }
+      ]
+    },
+    {
+      "run": {
+        "id": 44929912358,
+        "head_sha": "9581630174eea848f44580cc4c416a7073442a88",
+        "conclusion": "success",
+        "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912358"
+      },
+      "jobs": [
+        {
+          "name": "mysql_integration",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912358/job/136924053040"
+        },
+        {
+          "name": "client_foundation",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912358/job/136924053240"
+        },
+        {
+          "name": "manifest_client",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912358/job/136924053335"
+        },
+        {
+          "name": "application",
+          "conclusion": "success",
+          "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44929912358/job/136924053349"
+        }
+      ]
+    }
+  ],
+  "image": {
+    "source": "9581630174eea848f44580cc4c416a7073442a88",
+    "image": "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f",
+    "digest": "sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f",
+    "binarySHA256": "2d125dac9becc1f11d56c1b6f71b6c0827363fee4b23ce604854758e82ced707"
+  },
+  "runtimeFiles": {
+    "result": "PASS",
+    "apiPod": "app-api-99f88b95-dxrwx",
+    "apiUID": "db8d2573-ed36-4ade-8039-35126370a9b3",
+    "apiActualExecutableSHA256": "2d125dac9becc1f11d56c1b6f71b6c0827363fee4b23ce604854758e82ced707",
+    "apiManifestMatchesRequestedImageID": true,
+    "webFileCount": 30,
+    "allDeployedWebFilesMatchQualifiedArtifact": true
+  },
+  "clientReuse": {
+    "gitDiff9474b9aTo9581630ClientsScriptsDeploy": "empty",
+    "webImage": "docker.io/awesome-zero-platform/goal0063-web@sha256:990da69543f3501283a0958fe26919ba93eb289ad139924791e6988421ed4e12",
+    "actualNativeExportSource": "8b9465d",
+    "round7And8HistoricalEvidenceRetained": true
+  },
+  "P1": {
+    "result": "PASS",
+    "knownDefect": "G63-R8-N01/P1",
+    "scope": "real MySQL5.7/runtime/dq, owned clone20s timers, no deadline SQL edits",
+    "cases": [
+      {
+        "type": "hand.bid",
+        "beforeVersion": 1,
+        "seat": 1,
+        "deadline": 1795284040817,
+        "http": 409,
+        "code": "CONFLICT",
+        "rejectedActionAndAcceptedReceiptAbsent": true,
+        "originalViewsAndDeadlineUnchanged": true,
+        "auto": {
+          "version": 2,
+          "payload": {
+            "v": "doudizhu-live-bid-command-v1",
+            "score": 0
+          },
+          "committed": 1795284045210,
+          "latency": 4393
+        },
+        "result": "PASS",
+        "nextPlayerCommand": true,
+        "requestSentAfterDeadlineMillis": 24
+      },
+      {
+        "type": "hand.play",
+        "beforeVersion": 3,
+        "seat": 2,
+        "deadline": 1795284067988,
+        "http": 409,
+        "code": "CONFLICT",
+        "rejectedActionAndAcceptedReceiptAbsent": true,
+        "originalViewsAndDeadlineUnchanged": true,
+        "auto": {
+          "version": 4,
+          "payload": {
+            "v": "doudizhu-live-play-command-v1",
+            "cards": [
+              "C3"
+            ]
+          },
+          "committed": 1795284072073,
+          "latency": 4085
+        },
+        "result": "PASS",
+        "nextPlayerCommand": true,
+        "requestSentAfterDeadlineMillis": 28
+      },
+      {
+        "type": "hand.pass",
+        "beforeVersion": 5,
+        "seat": 1,
+        "deadline": 1795284094185,
+        "http": 409,
+        "code": "CONFLICT",
+        "rejectedActionAndAcceptedReceiptAbsent": true,
+        "originalViewsAndDeadlineUnchanged": true,
+        "auto": {
+          "version": 6,
+          "payload": {
+            "v": "doudizhu-live-pass-command-v1"
+          },
+          "committed": 1795284098493,
+          "latency": 4308
+        },
+        "result": "PASS",
+        "nextPlayerCommand": true,
+        "requestSentAfterDeadlineMillis": 25
+      }
+    ]
+  },
+  "protection": [
+    {
+      "name": "early/stale/wrong-seat dq, stale version and request/sequence identity, real exact retry",
+      "data": {
+        "earlyAndStaleIgnored": true,
+        "deterministicRejectsReadable": true,
+        "exactRetryAfterRestartOneAction": true,
+        "duplicateRequestAndSequenceRejected": true,
+        "terminalTicketIgnored": true
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "real live COMMIT OK lost: quarantine, no accepted response, fenced cold exact retry",
+      "data": {
+        "actualCommitAckDropped": true,
+        "uncertainHTTP": 500,
+        "private404BeforeRecovery": true,
+        "monotonicEpoch": true,
+        "deadlinePreserved": true,
+        "exactRetryOneAction": true
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "MySQL connection outage remains fail-closed and replay restores committed state",
+      "data": {
+        "noAcceptedUndurableOperation": true,
+        "actionsWhileUnavailable": 0,
+        "readableAfterReplay": true
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "old writer epoch cannot commit or publish after simulated ownership fence",
+      "data": {
+        "oldEpoch": 1,
+        "oldCommitRejected": true,
+        "oldViewQuarantined": true,
+        "noStaleAction": true,
+        "recoveredWithHigherEpoch": true
+      },
+      "result": "PASS"
+    }
+  ],
+  "targetedTests": [
+    {
+      "command": [
+        "go",
+        "test",
+        "-p",
+        "1",
+        "-parallel",
+        "1",
+        "./business/gamecore",
+        "./apps/app-api/internal/doudizhuapi",
+        "-run",
+        "TestCommitted|TestCertifiedPreCommitTurnRejection",
+        "-count=1",
+        "-v"
+      ],
+      "exit": 0,
+      "seconds": 46.45676827430725
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "-p",
+        "1",
+        "-parallel",
+        "1",
+        "-tags=integration",
+        "./business/doudizhu/infrastructure/mysqlstore",
+        "-run",
+        "TestDQTurnDeadlineEnforcesHumanTimeoutAndAtomicTurnAdvance|TestDQExpiredHumanBidKeepsCoordinatorLiveAndAutoBidCommits|TestLiveJournalFenceContiguousLogAndProtectedSeedInMySQL",
+        "-count=1",
+        "-v"
+      ],
+      "exit": 0,
+      "seconds": 9.950508832931519
+    }
+  ],
+  "dqReliability": {
+    "result": "PASS",
+    "cases": [
+      {
+        "name": "boundary manual versus valid repeated same-body due ticket: exactly one version",
+        "data": {
+          "manualHTTP": 409,
+          "copies": 8,
+          "validEnvelope": true,
+          "oneAction": true
+        },
+        "result": "PASS"
+      },
+      {
+        "name": "one queue down at actual minimal-single deadline; recovery does not duplicate",
+        "data": {
+          "nodeAStopped": true,
+          "nodeBServedDueJob": true,
+          "minimumCard": "C4",
+          "oneAction": true,
+          "latency": 943
+        },
+        "result": "PASS"
+      },
+      {
+        "name": "genuine current delayed jobs lost on both queues, MySQL repair and restart retain deadline",
+        "data": {
+          "onlyOwnedCurrentHandJobsDeleted": 3,
+          "originalDeadline": 1795284809276,
+          "deadlineRetained": true,
+          "repairOnePass": true,
+          "latency": 3558
+        },
+        "result": "PASS"
+      },
+      {
+        "name": "callback fails during MySQL relay outage, durable repair retries after restoration",
+        "data": {
+          "actualCallbackFailures": 1,
+          "noUndurableAction": true,
+          "oneRepairedAutoBid": true,
+          "latency": 6325
+        },
+        "result": "PASS"
+      }
+    ],
+    "initialCallbackObserver": "configured15m access token expired; original FAILED observer retained separately; owned hand drained and affected case rerun",
+    "affectedRerunOnly": true,
+    "originalRawResult": "FAIL"
+  },
+  "backup": {
+    "result": "PASS",
+    "tableCount": 22,
+    "allTablesRestoredByteIdentically": true,
+    "sqlSHA256": "815fadec6bcfd98996ed9842359814bd2e1f5eade507a17bae2d1111afd8399b",
+    "sessionKeysBefore": 7,
+    "noSharedDDLNeeded": true
+  },
+  "safeActivation": {
+    "result": "PASS",
+    "unfinishedHands": 0,
+    "P1AndProtectionAndDQFaultMatrix": "PASS",
+    "originalDataBackupRestored": true,
+    "strategy": "Recreate"
+  },
+  "round8ResidueRetired": {
+    "result": "PASS",
+    "unfinishedHands": 0,
+    "deadlineRows": 0,
+    "a": {
+      "current-jobs-ready": 0,
+      "current-jobs-delayed": 0,
+      "current-jobs-buried": 0
+    },
+    "b": {
+      "current-jobs-ready": 0,
+      "current-jobs-delayed": 0,
+      "current-jobs-buried": 0
+    }
+  },
+  "actualSharedBusiness": [
+    {
+      "name": "three real Vue logins; Cocos create/join/ready/start and contributions",
+      "result": "PASS",
+      "data": {
+        "players": 3,
+        "readyViaUI": true,
+        "startViaUI": true,
+        "realCustodiedContributions": 3
+      }
+    },
+    {
+      "name": "original clock survives refresh, WSS reconnect and same-DQ API restart",
+      "result": "PASS",
+      "data": {
+        "deadline": 1795285839661,
+        "unchanged": true,
+        "clockTicked": true,
+        "geometry": [
+          {
+            "viewport": [
+              760,
+              390
+            ],
+            "check": {
+              "touchButtonsInside": true,
+              "handHitboxesSeparate": true
+            },
+            "labels": []
+          },
+          {
+            "viewport": [
+              390,
+              844
+            ],
+            "check": {
+              "touchButtonsInside": true,
+              "handHitboxesSeparate": true
+            },
+            "labels": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "real automatic no-bid exactly once",
+      "result": "PASS",
+      "data": {
+        "version": 2,
+        "deadline": 1795285839661,
+        "committed": 1795285840087,
+        "latency": 426,
+        "payload": {
+          "v": "doudizhu-live-bid-command-v1",
+          "score": 0
+        },
+        "clientUpdated": true
+      }
+    },
+    {
+      "name": "original manual score3 durably started PLAYING",
+      "result": "PASS",
+      "data": {
+        "version": 3
+      }
+    },
+    {
+      "name": "real deterministic minimal legal lead exactly once",
+      "result": "PASS",
+      "data": {
+        "version": 4,
+        "deadline": 1795286148221,
+        "committed": 1795286149110,
+        "latency": 889,
+        "payload": {
+          "v": "doudizhu-live-play-command-v1",
+          "cards": [
+            "D3"
+          ]
+        },
+        "clientUpdated": true
+      }
+    },
+    {
+      "name": "real automatic Pass exactly once",
+      "result": "PASS",
+      "data": {
+        "version": 6,
+        "deadline": 1795286463099,
+        "committed": 1795286464066,
+        "latency": 967,
+        "payload": {
+          "v": "doudizhu-live-pass-command-v1"
+        },
+        "clientUpdated": true
+      }
+    },
+    {
+      "name": "actual Play UNKNOWN and exact retry",
+      "result": "PASS",
+      "data": {
+        "actualAcceptedReceiptLost": true,
+        "identicalRequests": 2,
+        "oneAction": true,
+        "version": 7,
+        "geometry": [
+          {
+            "viewport": [
+              760,
+              390
+            ],
+            "check": {
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 12.46874999999997,
+              "publicCards": 0
+            },
+            "labels": [
+              {
+                "key": "RoomVersion",
+                "cssFont": 11.875000000000004
+              },
+              {
+                "key": "KittyLabel",
+                "cssFont": 11.874999999999991
+              },
+              {
+                "key": "EmptyTrick",
+                "cssFont": 16.031250000000007
+              },
+              {
+                "key": "RetryUnknown/RetryUnknownCaption",
+                "cssFont": 14.843749999999986
+              },
+              {
+                "key": "DiscardUnknown/DiscardUnknownCaption",
+                "cssFont": 14.843749999999986
+              },
+              {
+                "key": "TableNotice",
+                "cssFont": 12.46874999999997
+              },
+              {
+                "key": "OwnSeatInfo",
+                "cssFont": 11.874999999999979
+              }
+            ]
+          },
+          {
+            "viewport": [
+              390,
+              844
+            ],
+            "check": {
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 15.234374999999927,
+              "publicCards": 0
+            },
+            "labels": [
+              {
+                "key": "RoomVersion",
+                "cssFont": 14.3203125
+              },
+              {
+                "key": "KittyLabel",
+                "cssFont": 14.929687500000082
+              },
+              {
+                "key": "EmptyTrick",
+                "cssFont": 19.8046875
+              },
+              {
+                "key": "RetryUnknown/RetryUnknownCaption",
+                "cssFont": 18.5859375
+              },
+              {
+                "key": "DiscardUnknown/DiscardUnknownCaption",
+                "cssFont": 18.5859375
+              },
+              {
+                "key": "TableNotice",
+                "cssFont": 15.234374999999927
+              },
+              {
+                "key": "OwnSeatInfo",
+                "cssFont": 13.406250000000066
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "affected actual Pass UNKNOWN and exact retry rerun",
+      "result": "PASS",
+      "data": {
+        "actualAcceptedReceiptLost": true,
+        "identicalRequests": 2,
+        "oneAction": true,
+        "version": 8,
+        "geometry": [
+          {
+            "viewport": [
+              760,
+              390
+            ],
+            "check": {
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 12.46874999999997,
+              "publicCards": 1
+            },
+            "labels": [
+              {
+                "key": "RoomVersion",
+                "cssFont": 11.875000000000004
+              },
+              {
+                "key": "KittyLabel",
+                "cssFont": 11.874999999999991
+              },
+              {
+                "key": "LeadingSeat",
+                "cssFont": 12.468750000000005
+              },
+              {
+                "key": "RetryUnknown/RetryUnknownCaption",
+                "cssFont": 14.843749999999986
+              },
+              {
+                "key": "DiscardUnknown/DiscardUnknownCaption",
+                "cssFont": 14.843749999999986
+              },
+              {
+                "key": "TableNotice",
+                "cssFont": 12.46874999999997
+              },
+              {
+                "key": "OwnSeatInfo",
+                "cssFont": 11.874999999999979
+              }
+            ]
+          },
+          {
+            "viewport": [
+              390,
+              844
+            ],
+            "check": {
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 15.234374999999927,
+              "publicCards": 1
+            },
+            "labels": [
+              {
+                "key": "RoomVersion",
+                "cssFont": 14.3203125
+              },
+              {
+                "key": "KittyLabel",
+                "cssFont": 14.929687500000082
+              },
+              {
+                "key": "LeadingSeat",
+                "cssFont": 15.843750000000037
+              },
+              {
+                "key": "RetryUnknown/RetryUnknownCaption",
+                "cssFont": 18.5859375
+              },
+              {
+                "key": "DiscardUnknown/DiscardUnknownCaption",
+                "cssFont": 18.5859375
+              },
+              {
+                "key": "TableNotice",
+                "cssFont": 15.234374999999927
+              },
+              {
+                "key": "OwnSeatInfo",
+                "cssFont": 13.406250000000066
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "bidUnknownAffectedRerun": [
+    {
+      "name": "affected Bid UNKNOWN UI check rerun with correct observed pending field",
+      "result": "PASS",
+      "data": {
+        "actualAcceptedReceiptLost": true,
+        "identicalRequests": 2,
+        "oneAction": true,
+        "version": 2,
+        "geometry": [
+          {
+            "viewport": [
+              760,
+              390
+            ],
+            "check": {
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 12.46874999999997,
+              "publicCards": 0
+            },
+            "labels": [
+              {
+                "key": "RoomVersion",
+                "cssFont": 11.875000000000004
+              },
+              {
+                "key": "KittyLabel",
+                "cssFont": 11.874999999999991
+              },
+              {
+                "key": "EmptyTrick",
+                "cssFont": 16.031250000000007
+              },
+              {
+                "key": "RetryUnknown/RetryUnknownCaption",
+                "cssFont": 14.843749999999986
+              },
+              {
+                "key": "DiscardUnknown/DiscardUnknownCaption",
+                "cssFont": 14.843749999999986
+              },
+              {
+                "key": "TableNotice",
+                "cssFont": 12.46874999999997
+              },
+              {
+                "key": "OwnSeatInfo",
+                "cssFont": 11.874999999999979
+              }
+            ]
+          },
+          {
+            "viewport": [
+              390,
+              844
+            ],
+            "check": {
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 15.234374999999927,
+              "publicCards": 0
+            },
+            "labels": [
+              {
+                "key": "RoomVersion",
+                "cssFont": 14.3203125
+              },
+              {
+                "key": "KittyLabel",
+                "cssFont": 14.929687500000082
+              },
+              {
+                "key": "EmptyTrick",
+                "cssFont": 19.8046875
+              },
+              {
+                "key": "RetryUnknown/RetryUnknownCaption",
+                "cssFont": 18.5859375
+              },
+              {
+                "key": "DiscardUnknown/DiscardUnknownCaption",
+                "cssFont": 18.5859375
+              },
+              {
+                "key": "TableNotice",
+                "cssFont": 15.234374999999927
+              },
+              {
+                "key": "OwnSeatInfo",
+                "cssFont": 13.406250000000066
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "historicalActualUI": {
+    "result": "PASS",
+    "actualVueLogin": true,
+    "actualCocosCompletedTable": true,
+    "actualEvidenceAction": true,
+    "verifiedStatusShown": true,
+    "finalVersion": 60,
+    "tlsValidationNormal": true
+  },
+  "legacyBusiness": [
+    {
+      "result": "PASS",
+      "phase": "before",
+      "existingIdentityStable": true,
+      "sessionHTTP": 200,
+      "historicalEvidenceHTTP": 200,
+      "readyHTTP": 200,
+      "originalRefreshWorked": false
+    },
+    {
+      "result": "PASS",
+      "phase": "disabled",
+      "existingIdentityStable": true,
+      "sessionHTTP": 200,
+      "historicalEvidenceHTTP": 200,
+      "readyHTTP": 200,
+      "originalRefreshWorked": false
+    },
+    {
+      "result": "PASS",
+      "phase": "enabled",
+      "existingIdentityStable": true,
+      "sessionHTTP": 200,
+      "historicalEvidenceHTTP": 200,
+      "readyHTTP": 200,
+      "originalRefreshWorked": false
+    },
+    {
+      "result": "PASS",
+      "phase": "final",
+      "existingIdentityStable": true,
+      "sessionHTTP": 200,
+      "historicalEvidenceHTTP": 200,
+      "readyHTTP": 200,
+      "originalRefreshWorked": true
+    }
+  ],
+  "sessionRetention": {
+    "result": "PASS",
+    "originalKeys": 7,
+    "allOriginalSessionValuesByteIdentical": true,
+    "expiryNotExtended": true
+  },
+  "originalDataIntegrity": {
+    "result": "PASS",
+    "tables": {
+      "authorization_casbin_rules": {
+        "originalRows": 2,
+        "retainedRows": 2,
+        "exact": true
+      },
+      "authorization_policy_state": {
+        "originalRows": 1,
+        "retainedRows": 1,
+        "exact": true
+      },
+      "authorization_resources": {
+        "originalRows": 6,
+        "retainedRows": 6,
+        "exact": true
+      },
+      "authorization_roles": {
+        "originalRows": 4,
+        "retainedRows": 4,
+        "exact": true
+      },
+      "doudizhu_client_sequences": {
+        "originalRows": 31,
+        "retainedRows": 31,
+        "exact": false,
+        "changedRows": 3,
+        "changedColumns": [
+          "last_sequence",
+          "updated_at"
+        ],
+        "expectedChange": "only monotonic recovery metadata or explicitly recorded owned old-QA-room UI fixture actions"
+      },
+      "doudizhu_command_results": {
+        "originalRows": 84,
+        "retainedRows": 84,
+        "exact": true
+      },
+      "doudizhu_contribution_records": {
+        "originalRows": 26,
+        "retainedRows": 26,
+        "exact": true
+      },
+      "doudizhu_hands": {
+        "originalRows": 4,
+        "retainedRows": 4,
+        "exact": true
+      },
+      "doudizhu_live_actions": {
+        "originalRows": 186,
+        "retainedRows": 186,
+        "exact": true
+      },
+      "doudizhu_live_checkpoints": {
+        "originalRows": 634,
+        "retainedRows": 634,
+        "exact": true
+      },
+      "doudizhu_live_writers": {
+        "originalRows": 4,
+        "retainedRows": 4,
+        "exact": false,
+        "changedRows": 4,
+        "changedColumns": [
+          "owner_epoch",
+          "updated_at"
+        ],
+        "expectedChange": "only monotonic recovery metadata or explicitly recorded owned old-QA-room UI fixture actions"
+      },
+      "doudizhu_outbox_events": {
+        "originalRows": 98,
+        "retainedRows": 98,
+        "exact": true
+      },
+      "doudizhu_protected_server_seeds": {
+        "originalRows": 5,
+        "retainedRows": 5,
+        "exact": true
+      },
+      "doudizhu_rooms": {
+        "originalRows": 6,
+        "retainedRows": 6,
+        "exact": false,
+        "changedRows": 1,
+        "changedColumns": [
+          "aggregate_version",
+          "snapshot_json",
+          "updated_at"
+        ],
+        "expectedChange": "only monotonic recovery metadata or explicitly recorded owned old-QA-room UI fixture actions"
+      },
+      "doudizhu_turn_deadlines": {
+        "originalRows": 1,
+        "retainedRows": 0,
+        "exact": false,
+        "expectedChange": "Round8 known terminal cursor retired by actual repair; historical hand/archive retained"
+      },
+      "foundation_schema_meta": {
+        "originalRows": 2,
+        "retainedRows": 2,
+        "exact": true
+      },
+      "game_final_records": {
+        "originalRows": 4,
+        "retainedRows": 4,
+        "exact": true
+      },
+      "identity_accounts": {
+        "originalRows": 13,
+        "retainedRows": 13,
+        "exact": true
+      },
+      "identity_external_pending": {
+        "originalRows": 0,
+        "retainedRows": 0,
+        "exact": true
+      },
+      "identity_external_subjects": {
+        "originalRows": 0,
+        "retainedRows": 0,
+        "exact": true
+      },
+      "identity_password_credentials": {
+        "originalRows": 13,
+        "retainedRows": 13,
+        "exact": true
+      },
+      "platform_audit_events": {
+        "originalRows": 8,
+        "retainedRows": 8,
+        "exact": true
+      }
+    },
+    "unexpectedChanges": [],
+    "allSecretFieldsIdentical": true,
+    "ownedOriginalQARoomFixtureChangesExplicitlyScoped": true
+  },
+  "protectionMaterials": {
+    "allOriginalProtectionSecretFieldsIdenticalToRound8": true,
+    "revealPublicValidity": {
+      "currentKeyId": "g61-reveal-v2-20261115",
+      "keys": [
+        {
+          "keyId": "g57-reveal",
+          "notBefore": "2026-11-09T12:38:02.613469Z",
+          "expiresAt": "2026-11-10T12:43:02.613469Z",
+          "status": "retiring",
+          "retiringAt": "2026-11-10T12:43:02.613469Z"
+        },
+        {
+          "keyId": "g61-reveal-v2-20261115",
+          "notBefore": "2026-11-15T02:58:43.438Z",
+          "expiresAt": "2026-12-15T02:59:43.438Z",
+          "status": "active"
+        }
+      ]
+    },
+    "tlsPublicCertificateMetadata": "notBefore=Nov 15 01:30:22 2026 GMT\nnotAfter=Nov 12 01:30:22 2036 GMT\nsubject=CN = game-web.awesome-zero-game-test.svc\nissuer=CN = Awesome Zero Goal0061 Private Test CA\n"
+  },
+  "rollback": {
+    "result": "PASS",
+    "beforeAndAfterUnfinishedHands": 0,
+    "oldSource": "a739e23f315a98ad76fd83c233aae1813415037a",
+    "newSource": "9581630174eea848f44580cc4c416a7073442a88",
+    "actualOldAPIThenNewAPIStarted": true,
+    "oldDQDisabled": true,
+    "newDQEnabled": true,
+    "newTableAndQueueJournalsRetained": true,
+    "sharedEnvironmentRollbackNotRequired": true
+  },
+  "finalHealth": {
+    "result": "PASS",
+    "observedUTC": "2026-11-21T18:47:25Z",
+    "pods": [
+      {
+        "pod": "app-api-99f88b95-dxrwx",
+        "uid": "db8d2573-ed36-4ade-8039-35126370a9b3",
+        "node": "ser730417996259",
+        "ready": true,
+        "requestedImages": [
+          "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f"
+        ],
+        "actualImageIDs": [
+          "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f"
+        ],
+        "restarts": [
+          0
+        ]
+      },
+      {
+        "pod": "beanstalkd-a-0",
+        "uid": "37184b34-e579-4102-a7c1-604333cd30f5",
+        "node": "ser730417996259",
+        "ready": true,
+        "requestedImages": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+        ],
+        "actualImageIDs": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+        ],
+        "restarts": [
+          0
+        ]
+      },
+      {
+        "pod": "beanstalkd-b-0",
+        "uid": "c3cc5fcf-875b-4be4-af9a-d874ff72cd7b",
+        "node": "ser730417996259",
+        "ready": true,
+        "requestedImages": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+        ],
+        "actualImageIDs": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+        ],
+        "restarts": [
+          0
+        ]
+      },
+      {
+        "pod": "game-web-7f596dc6d6-6jgcq",
+        "uid": "901d993a-5d64-45d0-8a6c-a06f06f7fd40",
+        "node": "ser730417996259",
+        "ready": true,
+        "requestedImages": [
+          "docker.io/awesome-zero-platform/goal0063-web@sha256:990da69543f3501283a0958fe26919ba93eb289ad139924791e6988421ed4e12"
+        ],
+        "actualImageIDs": [
+          "docker.io/awesome-zero-platform/goal0063-web@sha256:990da69543f3501283a0958fe26919ba93eb289ad139924791e6988421ed4e12"
+        ],
+        "restarts": [
+          0
+        ]
+      },
+      {
+        "pod": "mysql-5cc48fd9b4-5hz6j",
+        "uid": "bd7574dd-1fb4-4010-b392-cc5e3f326f9d",
+        "node": "ser730417996259",
+        "ready": true,
+        "requestedImages": [
+          "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+        ],
+        "actualImageIDs": [
+          "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+        ],
+        "restarts": [
+          2
+        ]
+      },
+      {
+        "pod": "redis-67bdd89687-krvb4",
+        "uid": "c1f0b042-43a9-4ffe-8da1-4031331a200a",
+        "node": "ser730417996259",
+        "ready": true,
+        "requestedImages": [
+          "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+        ],
+        "actualImageIDs": [
+          "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+        ],
+        "restarts": [
+          2
+        ]
+      }
+    ],
+    "nodesReady": [
+      "hk-worker",
+      "ser730417996259"
+    ],
+    "originalMySQLRedisAndQueuePodUIDsAndRestartCountsUnchanged": true,
+    "originalServiceSpecsAndConfigMapDataUnchanged": true,
+    "pvcBound": 2,
+    "dqEnabled": true,
+    "unfinishedHands": 0,
+    "deadlineRows": 0,
+    "queues": {
+      "a": {
+        "version": "1.13",
+        "current-jobs-ready": 0,
+        "current-jobs-delayed": 0,
+        "current-jobs-buried": 0
+      },
+      "b": {
+        "version": "1.13",
+        "current-jobs-ready": 0,
+        "current-jobs-delayed": 0,
+        "current-jobs-buried": 0
+      }
+    },
+    "queueClearedManually": false
+  },
+  "cleanup": {
+    "result": "PASS",
+    "ownedBrowserStopped": false,
+    "ownedCloneAPIStopped": true,
+    "ownedRelayStopped": true,
+    "ownedQueueRedisMySQLContainersStopped": true,
+    "allVolumesAndPrivateBackupsRetained": true,
+    "browserExitVerified": true,
+    "browserCloseMethod": "CDP Browser.close after SIGTERM did not terminate browser",
+    "ownedDependencyContainerExitVerified": true,
+    "verifiedUTC": "2026-11-21T23:27:40Z"
+  },
+  "observerCorrections": {
+    "originalFailureFilesRetainedPrivately": true,
+    "affectedChecksActuallyRerun": true,
+    "issues": [
+      "private QA configured15m token expiry",
+      "reused managed QA room and stale lastHandId observation",
+      "missing pending-state observation field",
+      "waited for stable non-submitting UNKNOWN controls",
+      "viewport restoration now waits for layout and verifies click sent identical request"
+    ],
+    "productSourceEdited": false
+  },
+  "limits": [
+    "no device/WeChat/production release qualification",
+    "both queue processes/PVCs on same control-plane host; no physical-node failure qualification",
+    "normal300s shared turns; private fault cases20s",
+    "no full Go/client suite repeated",
+    "port-forward service remains transient; host reboot behavior not qualified"
+  ]
+}
