@@ -1,6 +1,6 @@
 import { Color, EventTouch, Graphics, Label, Layers, Node, UITransform } from 'cc'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
-import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots, tableUnit, tableCaptionFont, tableNoticeText, tableNoticePlacement } from './TableGeometry.ts'
+import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots, tableUnit, tableCaptionFont, tableNoticeText, tableNoticePlacement, tableTrickGeometry } from './TableGeometry.ts'
 import { TurnClockAnchor } from './TurnClock.ts'
 
 export interface TableDisplay {
@@ -195,9 +195,10 @@ export class GameTableView {
 
     // Central trick accepts Go's Base64 []uint8 public wire representation.
     const playing=publicPlaying(view??null)
-    const trickY=Math.max(5*u,h*.035)
+    const trick=tableTrickGeometry(w,h,u)
+    const trickY=trick.y
     const trickCards=playing.cards
-    const trickCardWidth=Math.min(51*u,Math.max(26,w*.12))
+    const trickCardWidth=trick.cardWidth
     const trickWidth=Math.min(w*.57,560*u)
     const trickStep=trickCards.length<=1?0:
       Math.min(trickCardWidth*.67,(trickWidth-trickCardWidth)/(trickCards.length-1))
@@ -207,7 +208,7 @@ export class GameTableView {
       for(let i=0;i<trickCards.length;i++){
         this.faceCard('PublicTrick'+i,trickCards[i],
           -trickSpan/2+trickCardWidth/2+i*trickStep,trickY,
-          trickCardWidth,trickCardWidth*1.4,Math.min(u,0.9),false)
+          trickCardWidth,trick.cardHeight,Math.min(u,0.9),false)
       }
     }else{
       const result=final?(data.finalSummary||'本局已结束'):

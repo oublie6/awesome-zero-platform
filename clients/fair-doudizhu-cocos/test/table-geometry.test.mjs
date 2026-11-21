@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY,tableUnit,tableCaptionFont,tableNoticePlacement,tableNoticeText}
+import {sortHandCards,faceOfCard,publicCardCode,publicCardCodes,relativeOpponents,handFan,tableHeaderSlots,tableActionCenterY,tableUnit,tableCaptionFont,tableNoticePlacement,tableNoticeText,tableTrickGeometry}
  from '../dist/bootstrap/TableGeometry.js'
 
 test('Dou Dizhu sorts ranks descending with deterministic suit ties',()=>{
@@ -223,4 +223,66 @@ test('transient table errors suppress secondary hints sharing their visual band'
  const source=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
  assert.match(source,/playing\.passSeat && !final && !this\.noticeText/)
  assert.match(source,/!view && data\.handID && !final && !this\.noticeText/)
+})
+
+test('Round5 regression: actual Cocos projection of 760x390 PASS UNKNOWN never covers public trick',()=>{
+ // Browser 760x390 is NOT the GameTableView logical size. This exact value
+ // comes from the Round5 native Cocos node-metrics evidence (R4-N02).
+ const actualWidth=1280, actualHeight=656.8421052631579, cssScale=760/1280
+ const u=tableUnit(actualWidth,actualHeight)
+ assert.equal(u,1.35)
+ const fullHand=Array.from({length:17},(_,id)=>publicCardCode(id))
+ const fan=handFan(fullHand.length,actualWidth,actualHeight,new Set(),fullHand)
+ const controlsY=tableActionCenterY(fan,actualWidth,actualHeight,u)
+ const trick=tableTrickGeometry(actualWidth,actualHeight,u)
+ const notice=tableNoticePlacement(controlsY,actualWidth,actualHeight,u)
+ const buttonTop=controlsY+21*u
+ const clearanceBelow=notice.y-notice.height/2-buttonTop
+ const clearanceAbove=trick.lowerEdge-(notice.y+notice.height/2)
+ assert.ok(clearanceBelow>=3*u-1e-6,'notice collides with reconciliation/action controls')
+ assert.ok(clearanceAbove>=3*u-1e-6,'notice collides with visible public card')
+ assert.ok(notice.font*cssScale>=11,'real narrow-landscape CSS font unreadable')
+ // Independently verify the older +51*u normal placement would intersect
+ // the same card, so a future fixed logical-height decision fails this test.
+ assert.ok(controlsY+51*u+12*u>trick.lowerEdge,'expected Round5 reproduced overlap')
+})
+
+test('table feedback adapts to measured trick/button space at real and projected viewports',()=>{
+ // All geometries use Cocos logical dimensions; cssRatio denotes the final
+ // output scale for the caption, not a replacement logical layout size.
+ for(const [w,h,cssRatio] of [
+   [1280,656.8421052631579,760/1280], // actual 760x390 viewport
+   [760,390,1],[760,440,1],
+   [1280,720,1],[390,844,1],[360,750,1],
+   [1216,2770,390/1216],
+ ]){
+   const u=tableUnit(w,h)
+   for(const n of [0,1,17,20]){
+     const cards=Array.from({length:n},(_,i)=>publicCardCode(i))
+     const fan=handFan(n,w,h,new Set(cards),cards)
+     const actionY=tableActionCenterY(fan,w,h,u)
+     const trick=tableTrickGeometry(w,h,u)
+     const notice=tableNoticePlacement(actionY,w,h,u)
+     const lower=notice.y-notice.height/2
+     const upper=notice.y+notice.height/2
+     assert.ok(lower>=actionY+21*u+3*u-1e-6,
+       'notice overlaps Bid/Play/Pass or Retry controls at '+w+'x'+h+' cards='+n)
+     assert.ok(upper<=trick.lowerEdge-3*u+1e-6,
+       'notice overlaps public trick at '+w+'x'+h+' cards='+n)
+     // Without a public trick the empty-state label has a less restrictive
+     // lower boundary: trick.y+10*u-29*u.
+     assert.ok(upper<=trick.y-19*u,'notice overlaps empty trick label at '+w+'x'+h)
+     assert.ok(notice.font*cssRatio>=11,
+       'notice text becomes unreadable at '+w+'x'+h+' CSS ratio '+cssRatio)
+   }
+ }
+})
+test('actual public card geometry and notice spacing share one authority',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const view=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
+ const geometry=await readFile(new URL('../assets/scripts/bootstrap/TableGeometry.ts',import.meta.url),'utf8')
+ assert.match(view,/const trick=tableTrickGeometry\(w,h,u\)/)
+ assert.match(view,/trickCardWidth,trick\.cardHeight/)
+ assert.match(geometry,/const trickBottom=tableTrickGeometry\(width,height,u\)\.lowerEdge/)
+ assert.doesNotMatch(geometry,/height<=480/,'must not infer CSS viewport height from Cocos units')
 })

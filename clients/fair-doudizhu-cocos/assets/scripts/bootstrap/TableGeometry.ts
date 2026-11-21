@@ -100,15 +100,41 @@ export function tableNoticeText(message:string):string{
   return glyphs.length<=18?glyphs.join(''):glyphs.slice(0,17).join('')+'…'
 }
 
-/** The retry controls replace the normal action row on UNKNOWN. Feedback
- * occupies a distinct row below the public trick and above the actions;
- * short landscape screens require a more compact reserved gap. */
+/** Keep public trick sizing in one place, so the notification layout cannot
+ * silently drift from the actual Cocos face-card dimensions. */
+export function tableTrickGeometry(width:number,height:number,unit:number):{
+  y:number;cardWidth:number;cardHeight:number;lowerEdge:number
+}{
+  const w=Math.max(240,width),h=Math.max(280,height)
+  const y=Math.max(5*unit,h*.035)
+  const cardWidth=Math.min(51*unit,Math.max(26,w*.12))
+  const cardHeight=cardWidth*1.4
+  return {y,cardWidth,cardHeight,lowerEdge:y-cardHeight/2}
+}
+
+/** Place command feedback in the *available* gap from the upper edge of the
+ * primary/reconciliation button row to the bottom of the public trick.
+ * A CSS viewport of 760x390 can project to a 1280x656.84 Cocos canvas; an
+ * absolute logical-height cutoff (e.g. height <= 480) is not reliable.
+ * Reserve 3 units against each edge and select the compact line only when
+ * a full-height message cannot fit between the real game elements. */
 export function tableNoticePlacement(actionY:number,width:number,height:number,unit:number):{
   y:number;font:number;height:number
 }{
-  const compact=width>height && height<=480
-  return {y:actionY+(compact?33:51)*unit,
-    font:(compact?14:15)*unit,height:(compact?18:24)*unit}
+  const u=unit
+  const trickBottom=tableTrickGeometry(width,height,u).lowerEdge
+  // Playing action buttons are 42 units high (more than Bid/Retry), so this
+  // top boundary remains safe in every phase without inspecting card data.
+  const actionTop=actionY+21*u
+  const compact=trickBottom-actionTop<30*u // 24-unit notice plus 2*3-unit clearance
+  const noticeHeight=(compact?18:24)*u
+  const preferredY=actionY+(compact?33:51)*u
+  const minY=actionTop+noticeHeight/2+3*u
+  const maxY=trickBottom-noticeHeight/2-3*u
+  // In supported playable sizes minY <= maxY. Clamp to keep the feedback
+  // close to its controls while preserving both occupied regions.
+  const y=Math.max(minY,Math.min(preferredY,maxY))
+  return {y,font:(compact?14:15)*u,height:noticeHeight}
 }
 export interface HandCardPlace{
   x:number
