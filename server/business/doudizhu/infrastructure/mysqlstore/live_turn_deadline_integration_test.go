@@ -186,7 +186,7 @@ SET deadline_at=DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 1 SECOND)
 WHERE hand_id=? AND live_version=1`,id); err != nil { t.Fatal(err) }
 	for seq:=uint64(1);seq<=2;seq++ {
 		_,err := coordinator.BidCommittedWithSequence(ctx,id,bidder,
-			fmt.Sprintf("r8-late-human-%d",seq),1,bidding.ScoreZero,seq)
+			fmt.Sprintf("r8-late-human-%d",seq),1,bidding.ScorePass,seq)
 		if !errors.Is(err,gamecore.ErrCommitRejected) || !errors.Is(err,mysqlstore.ErrTurnExpired) {
 			t.Fatalf("late human request must be deterministic conflict, not ambiguous COMMIT: %v",err)
 		}
@@ -197,7 +197,7 @@ WHERE hand_id=? AND live_version=1`,id); err != nil { t.Fatal(err) }
 		actions,err := journal.Read(ctx,id)
 		if err!=nil || len(actions)!=0 { t.Fatalf("uncommitted action became durable: %+v %v",actions,err) }
 	}
-	timeout,err:=coordinator.BidCommitted(ctx,id,bidder,"turn-timeout:repair-round8",1,bidding.ScoreZero)
+	timeout,err:=coordinator.BidCommitted(ctx,id,bidder,"turn-timeout:repair-round8",1,bidding.ScorePass)
 	if err!=nil || timeout.Version!=2 { t.Fatalf("server timeout failed to progress after rejection: %+v %v",timeout,err) }
 	actions,err:=journal.Read(ctx,id)
 	if err!=nil || len(actions)!=1 || actions[0].CommandID!="turn-timeout:repair-round8" ||
