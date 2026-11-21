@@ -44,8 +44,8 @@ function safePhase(phase:string):string{
   if(phase==='ABORTED')return '已结束'
   return '等待开局'
 }
-function smallID(value:string):string{
-  return value.length>15?value.slice(0,12)+'…':value
+function smallID(value:string,maxPrefix=12):string{
+  return value.length>maxPrefix+3?value.slice(0,maxPrefix)+'…':value
 }
 function seatNumber(value:unknown):number{
   return typeof value==='number' && Number.isInteger(value) && value>=1 && value<=3?value:0
@@ -143,8 +143,12 @@ export class GameTableView {
     const header=tableHeaderSlots(w,u)
     this.label('TableBrand','斗地主  ·  '+safePhase(data.phase),
       header.leftX,top,22*u,GOLD,header.leftWidth,38*u)
-    this.label('RoomVersion','房间 '+smallID(data.roomID||'—')+'  ·  v'+data.version,
-      header.leftX,top-29*u,14*u,MUTED,header.leftWidth,24*u)
+    // On portrait canvases the left header is narrow after CSS projection.
+    // Shorten the informational room ID before Cocos SHRINK is considered.
+    const narrowHeader=h>w
+    this.label('RoomVersion',(narrowHeader?'房 ':'房间 ')+
+      smallID(data.roomID||'—',narrowHeader?5:12)+'  ·  v'+data.version,
+      header.leftX,top-29*u,15*u,MUTED,header.leftWidth,24*u)
     const buttonW=header.rightWidth
     this.button('BackToRoom','返回',header.rightX,top,buttonW,35*u,true,this.callbacks.back,true)
     this.button('UpdateHand','同步',header.rightX,top-43*u,buttonW,34*u,
@@ -166,7 +170,8 @@ export class GameTableView {
         x,kittyY,smallCardW,smallCardH,u*.70,false)
       else this.cardBack('LandlordBack'+i,x,kittyY,smallCardW,smallCardH,u*.70)
     }
-    this.label('KittyLabel','地主底牌',0,kittyY-32*u,13*u,MUTED,130*u,21*u)
+    // This short heading must survive integer font quantization on 760x390.
+    this.label('KittyLabel','地主底牌',0,kittyY-32*u,15*u,MUTED,130*u,21*u)
 
     // Both opponents rotate relative to my true server-assigned seat.
     if(me>=1&&me<=3&&pub?.seats?.length===3){
@@ -261,6 +266,9 @@ export class GameTableView {
       const feedback=tableNoticePlacement(controlsY,w,h,u)
       const notice=this.label('TableNotice',this.noticeText,0,feedback.y,
         feedback.font,new Color(255,216,143,255),w*.74,feedback.height)
+      // The message is bounded to 18 glyphs, and its box is sized for it.
+      // Do not let SHRINK silently reduce the integer Cocos font below 11 CSS px.
+      notice.overflow=Label.Overflow.CLAMP
       notice.lineHeight=feedback.lineHeight
     }
     if(me>=1 && me<=3){

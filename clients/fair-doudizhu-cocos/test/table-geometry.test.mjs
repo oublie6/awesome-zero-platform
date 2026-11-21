@@ -241,7 +241,8 @@ test('Round5 regression: actual Cocos projection of 760x390 PASS UNKNOWN never c
  const clearanceAbove=trick.lowerEdge-(notice.y+notice.height/2)
  assert.ok(clearanceBelow>=3*u-1e-6,'notice collides with reconciliation/action controls')
  assert.ok(clearanceAbove>=3*u-1e-6,'notice collides with visible public card')
- assert.ok(notice.font*cssScale>=11,'real narrow-landscape CSS font unreadable')
+ assert.ok(Math.floor(notice.font)*cssScale>=11,
+   'actual integer Cocos font would fall below 11 CSS px')
  // Independently verify the older +51*u normal placement would intersect
  // the same card, so a future fixed logical-height decision fails this test.
  assert.ok(controlsY+51*u+12*u>trick.lowerEdge,'expected Round5 reproduced overlap')
@@ -272,8 +273,8 @@ test('table feedback adapts to measured trick/button space at real and projected
      // Without a public trick the empty-state label has a less restrictive
      // lower boundary: trick.y+10*u-29*u.
      assert.ok(upper<=trick.y-19*u,'notice overlaps empty trick label at '+w+'x'+h)
-     assert.ok(notice.font*cssRatio>=11,
-       'notice text becomes unreadable at '+w+'x'+h+' CSS ratio '+cssRatio)
+     assert.ok(Math.floor(notice.font)*cssRatio>=11,
+       'integer-quantized Cocos font becomes unreadable at '+w+'x'+h+' CSS ratio '+cssRatio)
      assert.ok(notice.lineHeight<=notice.height && notice.lineHeight>=notice.font,
        'Cocos Label SHRINK may shrink the message below its declared size at '+w+'x'+h)
    }
@@ -288,4 +289,34 @@ test('actual public card geometry and notice spacing share one authority',async(
  assert.match(view,/notice\.lineHeight=feedback\.lineHeight/)
  assert.match(geometry,/const trickBottom=tableTrickGeometry\(width,height,u\)\.lowerEdge/)
  assert.doesNotMatch(geometry,/height<=480/,'must not infer CSS viewport height from Cocos units')
+})
+
+test('Round6 P2: actual Cocos SHRINK integer font, not configured float, meets 11px',()=>{
+ // The pinned Cocos 4.0 beta.0 engine floors actualFontSize on its SHRINK
+ // path. The previous 14*u=18.9 passed the configured-font check but became
+ // exactly 18 logical px / 10.6875 CSS px in the native Round6 evidence.
+ const w=1280,h=656.8421052631579,scale=760/1280,u=tableUnit(w,h)
+ const cards=Array.from({length:17},(_,id)=>publicCardCode(id))
+ const fan=handFan(cards.length,w,h,new Set(),cards)
+ const notice=tableNoticePlacement(tableActionCenterY(fan,w,h,u),w,h,u)
+ assert.equal(u,1.35)
+ assert.equal(Math.floor(14*u)*scale,10.6875,'reproduce pinned engine regression')
+ assert.ok(Math.floor(notice.font)*scale>=11,'actual font after integer conversion <11 CSS px')
+ assert.ok(notice.lineHeight>=notice.font && notice.lineHeight<=notice.height)
+ assert.ok(notice.font>=19,'real viewport needs at least 19 logical px after conversion')
+})
+test('short table metadata and bounded status do not repeat the low-font pattern',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
+ // RoomVersion and KittyLabel previously used 14*u and 13*u, which also
+ // floor below 11 CSS px on the real 760x390 camera projection.
+ const u=tableUnit(1280,656.8421052631579),ratio=760/1280
+ assert.ok(Math.floor(15*u)*ratio>=11)
+ assert.ok(Math.floor(14*u)*ratio<11)
+ assert.ok(Math.floor(13*u)*ratio<11)
+ assert.match(source,/narrowHeader\?5:12/)
+ assert.match(source,/header\.leftX,top-29\*u,15\*u,MUTED/)
+ assert.match(source,/kittyY-32\*u,15\*u,MUTED/)
+ assert.match(source,/notice\.overflow=Label\.Overflow\.CLAMP/)
+ assert.match(source,/notice\.lineHeight=feedback\.lineHeight/)
 })

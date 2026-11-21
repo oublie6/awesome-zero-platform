@@ -134,10 +134,15 @@ export function tableNoticePlacement(actionY:number,width:number,height:number,u
   // In supported playable sizes minY <= maxY. Clamp to keep the feedback
   // close to its controls while preserving both occupied regions.
   const y=Math.max(minY,Math.min(preferredY,maxY))
-  // Cocos Label defaults to fontSize+5 logical pixels; that can exceed an
-  // 18u compact box when u<1 and trigger implicit SHRINK below 11 CSS px.
-  return {y,font:(compact?14:15)*u,height:noticeHeight,
-    lineHeight:(compact?16:18)*u}
+  // Cocos 4.0.0-beta.0 quantizes label actualFontSize to an integer.
+  // For 760x390 CSS, the logical 1280x656.84 canvas has u=1.35 and
+  // scale=0.59375: compact 14u=18.9 became 18 logical => 10.6875 CSS px.
+  // A compact 15u font rounded UP before rendering gives at least 21
+  // logical / 12.46875 CSS px, leaving budget for integer quantization.
+  // We also use CLAMP for this bounded, single-line text in GameTableView.
+  const font=Math.ceil(15*u)
+  return {y,font,height:noticeHeight,
+    lineHeight:Math.max(font,(compact?17:18)*u)}
 }
 export interface HandCardPlace{
   x:number
