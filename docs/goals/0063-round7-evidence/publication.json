@@ -1,0 +1,8 @@
+{
+  "privateRawSHA256": {
+    "native.json": "b27f808a0eb40a22cc35c6ec912ad9e7c201e25cd6725d30142feacd60da4b9e",
+    "resume.json": "a799e34e5df8b60d6740d08161d74aeafcea3dc94507fd3ce3863919f535b915",
+    "resource.json": "e7b01a3ba5d50393f87117a4159f4438903e26d11adf50feb15ef1863b67de5d"
+  },
+  "transform": "Case screenshot duplicates replaced by references; irrelevant background and card-face child label nodes omitted. All target label measurements, hand/public-card projected rectangles, result labels and requests retained unchanged. Complete private raw retained."
+}

@@ -1,0 +1,534 @@
+{
+  "result": "PASS",
+  "cases": 48,
+  "rows": [
+    {
+      "w": 1280,
+      "h": 656.8421052631579,
+      "n": 0,
+      "selected": false,
+      "gaps": {
+        "action": 24.30000000000004,
+        "trick": 96.66552631578946
+      },
+      "noticeCSSFont": 12.46875
+    },
+    {
+      "w": 1280,
+      "h": 656.8421052631579,
+      "n": 0,
+      "selected": true,
+      "gaps": {
+        "action": 24.30000000000004,
+        "trick": 96.66552631578946
+      },
+      "noticeCSSFont": 12.46875
+    },
+    {
+      "w": 1280,
+      "h": 656.8421052631579,
+      "n": 1,
+      "selected": false,
+      "gaps": {
+        "action": 4.050000000000011,
+        "trick": 10.72452631578946
+      },
+      "noticeCSSFont": 12.46875
+    },
+    {
+      "w": 1280,
+      "h": 656.8421052631579,
+      "n": 1,
+      "selected": true,
+      "gaps": {
+        "action": 4.050000000000011,
+        "trick": 10.72452631578946
+      },
+      "noticeCSSFont": 12.46875
+    },
+    {
+      "w": 1280,
+      "h": 656.8421052631579,
+      "n": 17,
+      "selected": false,
+      "gaps": {
+        "action": 4.050000000000011,
+        "trick": 10.72452631578946
+      },
+      "noticeCSSFont": 12.46875
+    },
+    {
+      "w": 1280,
+      "h": 656.8421052631579,
+      "n": 17,
+      "selected": true,
+      "gaps": {
+        "action": 4.050000000000011,
+        "trick": 10.72452631578946
+      },
+      "noticeCSSFont": 12.46875
+    },
+    {
+      "w": 1280,
+      "h": 656.8421052631579,
+      "n": 20,
+      "selected": false,
+      "gaps": {
+        "action": 4.050000000000011,
+        "trick": 10.72452631578946
+      },
+      "noticeCSSFont": 12.46875
+    },
+    {
+      "w": 1280,
+      "h": 656.8421052631579,
+      "n": 20,
+      "selected": true,
+      "gaps": {
+        "action": 4.050000000000011,
+        "trick": 10.72452631578946
+      },
+      "noticeCSSFont": 12.46875
+    },
+    {
+      "w": 1280,
+      "h": 720,
+      "n": 0,
+      "selected": false,
+      "gaps": {
+        "action": 24.30000000000004,
+        "trick": 130.45499999999998
+      },
+      "noticeCSSFont": 21
+    },
+    {
+      "w": 1280,
+      "h": 720,
+      "n": 0,
+      "selected": true,
+      "gaps": {
+        "action": 24.30000000000004,
+        "trick": 130.45499999999998
+      },
+      "noticeCSSFont": 21
+    },
+    {
+      "w": 1280,
+      "h": 720,
+      "n": 1,
+      "selected": false,
+      "gaps": {
+        "action": 24.30000000000001,
+        "trick": 16.163999999999966
+      },
+      "noticeCSSFont": 21
+    },
+    {
+      "w": 1280,
+      "h": 720,
+      "n": 1,
+      "selected": true,
+      "gaps": {
+        "action": 24.30000000000001,
+        "trick": 16.163999999999966
+      },
+      "noticeCSSFont": 21
+    },
+    {
+      "w": 1280,
+      "h": 720,
+      "n": 17,
+      "selected": false,
+      "gaps": {
+        "action": 24.30000000000001,
+        "trick": 16.163999999999966
+      },
+      "noticeCSSFont": 21
+    },
+    {
+      "w": 1280,
+      "h": 720,
+      "n": 17,
+      "selected": true,
+      "gaps": {
+        "action": 24.30000000000001,
+        "trick": 16.163999999999966
+      },
+      "noticeCSSFont": 21
+    },
+    {
+      "w": 1280,
+      "h": 720,
+      "n": 20,
+      "selected": false,
+      "gaps": {
+        "action": 24.30000000000001,
+        "trick": 16.163999999999966
+      },
+      "noticeCSSFont": 21
+    },
+    {
+      "w": 1280,
+      "h": 720,
+      "n": 20,
+      "selected": true,
+      "gaps": {
+        "action": 24.30000000000001,
+        "trick": 16.163999999999966
+      },
+      "noticeCSSFont": 21
+    },
+    {
+      "w": 1216,
+      "h": 2770,
+      "n": 0,
+      "selected": false,
+      "gaps": {
+        "action": 56.123076923077065,
+        "trick": 902.7598461538461
+      },
+      "noticeCSSFont": 15.074013157894738
+    },
+    {
+      "w": 1216,
+      "h": 2770,
+      "n": 0,
+      "selected": true,
+      "gaps": {
+        "action": 56.123076923077065,
+        "trick": 902.7598461538461
+      },
+      "noticeCSSFont": 15.074013157894738
+    },
+    {
+      "w": 1216,
+      "h": 2770,
+      "n": 1,
+      "selected": false,
+      "gaps": {
+        "action": 56.12307692307695,
+        "trick": 638.7943076923079
+      },
+      "noticeCSSFont": 15.074013157894738
+    },
+    {
+      "w": 1216,
+      "h": 2770,
+      "n": 1,
+      "selected": true,
+      "gaps": {
+        "action": 56.12307692307695,
+        "trick": 638.7943076923079
+      },
+      "noticeCSSFont": 15.074013157894738
+    },
+    {
+      "w": 1216,
+      "h": 2770,
+      "n": 17,
+      "selected": false,
+      "gaps": {
+        "action": 56.12307692307695,
+        "trick": 638.7943076923079
+      },
+      "noticeCSSFont": 15.074013157894738
+    },
+    {
+      "w": 1216,
+      "h": 2770,
+      "n": 17,
+      "selected": true,
+      "gaps": {
+        "action": 56.12307692307695,
+        "trick": 638.7943076923079
+      },
+      "noticeCSSFont": 15.074013157894738
+    },
+    {
+      "w": 1216,
+      "h": 2770,
+      "n": 20,
+      "selected": false,
+      "gaps": {
+        "action": 56.12307692307695,
+        "trick": 638.7943076923079
+      },
+      "noticeCSSFont": 15.074013157894738
+    },
+    {
+      "w": 1216,
+      "h": 2770,
+      "n": 20,
+      "selected": true,
+      "gaps": {
+        "action": 56.12307692307695,
+        "trick": 638.7943076923079
+      },
+      "noticeCSSFont": 15.074013157894738
+    },
+    {
+      "w": 1280,
+      "h": 2770.051282051282,
+      "n": 0,
+      "selected": false,
+      "gaps": {
+        "action": 59.076923076923094,
+        "trick": 872.30358974359
+      },
+      "noticeCSSFont": 15.234375
+    },
+    {
+      "w": 1280,
+      "h": 2770.051282051282,
+      "n": 0,
+      "selected": true,
+      "gaps": {
+        "action": 59.076923076923094,
+        "trick": 872.30358974359
+      },
+      "noticeCSSFont": 15.234375
+    },
+    {
+      "w": 1280,
+      "h": 2770.051282051282,
+      "n": 1,
+      "selected": false,
+      "gaps": {
+        "action": 59.076923076923094,
+        "trick": 594.4451282051285
+      },
+      "noticeCSSFont": 15.234375
+    },
+    {
+      "w": 1280,
+      "h": 2770.051282051282,
+      "n": 1,
+      "selected": true,
+      "gaps": {
+        "action": 59.076923076923094,
+        "trick": 594.4451282051285
+      },
+      "noticeCSSFont": 15.234375
+    },
+    {
+      "w": 1280,
+      "h": 2770.051282051282,
+      "n": 17,
+      "selected": false,
+      "gaps": {
+        "action": 59.076923076923094,
+        "trick": 594.4451282051285
+      },
+      "noticeCSSFont": 15.234375
+    },
+    {
+      "w": 1280,
+      "h": 2770.051282051282,
+      "n": 17,
+      "selected": true,
+      "gaps": {
+        "action": 59.076923076923094,
+        "trick": 594.4451282051285
+      },
+      "noticeCSSFont": 15.234375
+    },
+    {
+      "w": 1280,
+      "h": 2770.051282051282,
+      "n": 20,
+      "selected": false,
+      "gaps": {
+        "action": 59.076923076923094,
+        "trick": 594.4451282051285
+      },
+      "noticeCSSFont": 15.234375
+    },
+    {
+      "w": 1280,
+      "h": 2770.051282051282,
+      "n": 20,
+      "selected": true,
+      "gaps": {
+        "action": 59.076923076923094,
+        "trick": 594.4451282051285
+      },
+      "noticeCSSFont": 15.234375
+    },
+    {
+      "w": 760,
+      "h": 390,
+      "n": 0,
+      "selected": false,
+      "gaps": {
+        "action": 14.625,
+        "trick": 55.33125000000001
+      },
+      "noticeCSSFont": 13
+    },
+    {
+      "w": 760,
+      "h": 390,
+      "n": 0,
+      "selected": true,
+      "gaps": {
+        "action": 14.625,
+        "trick": 55.33125000000001
+      },
+      "noticeCSSFont": 13
+    },
+    {
+      "w": 760,
+      "h": 390,
+      "n": 1,
+      "selected": false,
+      "gaps": {
+        "action": 2.4375,
+        "trick": 3.607500000000009
+      },
+      "noticeCSSFont": 13
+    },
+    {
+      "w": 760,
+      "h": 390,
+      "n": 1,
+      "selected": true,
+      "gaps": {
+        "action": 2.4375,
+        "trick": 3.607500000000009
+      },
+      "noticeCSSFont": 13
+    },
+    {
+      "w": 760,
+      "h": 390,
+      "n": 17,
+      "selected": false,
+      "gaps": {
+        "action": 2.4375,
+        "trick": 3.607500000000009
+      },
+      "noticeCSSFont": 13
+    },
+    {
+      "w": 760,
+      "h": 390,
+      "n": 17,
+      "selected": true,
+      "gaps": {
+        "action": 2.4375,
+        "trick": 3.607500000000009
+      },
+      "noticeCSSFont": 13
+    },
+    {
+      "w": 760,
+      "h": 390,
+      "n": 20,
+      "selected": false,
+      "gaps": {
+        "action": 2.4375,
+        "trick": 3.607500000000009
+      },
+      "noticeCSSFont": 13
+    },
+    {
+      "w": 760,
+      "h": 390,
+      "n": 20,
+      "selected": true,
+      "gaps": {
+        "action": 2.4375,
+        "trick": 3.607500000000009
+      },
+      "noticeCSSFont": 13
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "n": 0,
+      "selected": false,
+      "gaps": {
+        "action": 18,
+        "trick": 265.78000000000003
+      },
+      "noticeCSSFont": 15
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "n": 0,
+      "selected": true,
+      "gaps": {
+        "action": 18,
+        "trick": 265.78000000000003
+      },
+      "noticeCSSFont": 15
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "n": 1,
+      "selected": false,
+      "gaps": {
+        "action": 18,
+        "trick": 181.12000000000003
+      },
+      "noticeCSSFont": 15
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "n": 1,
+      "selected": true,
+      "gaps": {
+        "action": 18,
+        "trick": 181.12000000000003
+      },
+      "noticeCSSFont": 15
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "n": 17,
+      "selected": false,
+      "gaps": {
+        "action": 18,
+        "trick": 181.12000000000003
+      },
+      "noticeCSSFont": 15
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "n": 17,
+      "selected": true,
+      "gaps": {
+        "action": 18,
+        "trick": 181.12000000000003
+      },
+      "noticeCSSFont": 15
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "n": 20,
+      "selected": false,
+      "gaps": {
+        "action": 18,
+        "trick": 181.12000000000003
+      },
+      "noticeCSSFont": 15
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "n": 20,
+      "selected": true,
+      "gaps": {
+        "action": 18,
+        "trick": 181.12000000000003
+      },
+      "noticeCSSFont": 15
+    }
+  ]
+}

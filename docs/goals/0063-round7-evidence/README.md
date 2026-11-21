@@ -1,0 +1,9 @@
+# Goal0063 Round7 evidence
+
+Fixed source: `8b9465d87ea3d3ca6893de61aeb33e21a7c78dae`. R6-N01 closed; code pre-merge acceptance PASS. Merge/deployment/device acceptance not executed.
+
+native.json contains two completed passing cases, then an interrupted original single-card Pass case. Runner exit143/no status file is recorded in interruption-state.json; original page/request survived. resume.json completes original pending single-card and new multi-card Pass checks, but retains the last resource assertion FAIL from sampling an unassembled Label actualFontSize=0. resource.json explicitly waits each current Label to assemble and verifies actual font/glyph geometry, six stable redraws and clock disposal. No result label or threshold was changed. The report maps these scoped results to the overall verdict.
+
+font-summary.json records 13 real UNKNOWN captures, exact configured/actual font, projection, line height, box height and target label metrics. Original Cocos snapshot authority and backend were real, not Mock data. CLAMP text/SHRINK metadata use actual font results plus glyph measurements and manually inspected screenshots. Image dimensions checked. One official Web export/strict generated types/JS audit, 22 affected tests and 48 independent geometric combinations; no full server rerun.
+
+runs/ci/fair/pr are connector metadata; actual CI merge checkout has identical product/build inputs. binding.json distinguishes original export hashes and private runtime-config HTML reference. Logs trim trailing whitespace only. Public JSON removes duplicate case geometries and irrelevant background/card-face labels; projected hand/public-card rectangles and all target measurements retained. publication.json binds complete private raw files. Private root /root/goal0063-round7-8b9465d retains configs, QA credentials, tokens, keys, browser profile and raw data, excluded from publication. sha256.json covers all evidence except itself.

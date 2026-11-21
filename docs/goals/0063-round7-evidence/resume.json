@@ -1,0 +1,4608 @@
+{
+  "source": "8b9465d87ea3d3ca6893de61aeb33e21a7c78dae",
+  "cases": [
+    {
+      "name": "original single-card Pass UNKNOWN: all sizes, second timeout, exact touch retry and discard",
+      "data": {
+        "original": {
+          "at": 1795224884999,
+          "v": "doudizhu-api-command-v1",
+          "requestId": "cmd-8bcc319ce0a502ea31316d5549800ee1",
+          "type": "hand.pass",
+          "aggregateId": "g63-full-b98c9b0e1a99c4a2fff02290",
+          "clientSeq": 1,
+          "expectedVersion": 3,
+          "payload": {}
+        },
+        "unknown": {
+          "screen": "table",
+          "room": "g63r2-room-072beaa9a729c129b22c",
+          "hand": "g63-full-b98c9b0e1a99c4a2fff02290",
+          "version": 3,
+          "phase": "PLAYING",
+          "submitting": false,
+          "pending": true,
+          "roomPending": false,
+          "actions": [],
+          "buttons": [
+            "BackToRoom",
+            "UpdateHand",
+            "RetryUnknown",
+            "DiscardUnknown",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4"
+          ],
+          "rootNames": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordPublic0",
+            "LandlordPublic1",
+            "LandlordPublic2",
+            "KittyLabel",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "LeadingSeat",
+            "PublicTrick0",
+            "RetryUnknown",
+            "DiscardUnknown",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4",
+            "TableNotice",
+            "OwnSeatInfo"
+          ],
+          "selected": [],
+          "renders": 6,
+          "sent": 1,
+          "dropped": 3,
+          "status": "\u8fc7\u724c\u5931\u8d25\uff1acommand timeout; outcome unknown, retry with same requestId"
+        },
+        "shots": [
+          {
+            "file": "single-pass-unknown-760x390.png",
+            "check": {
+              "labelsChecked": [
+                {
+                  "key": "RoomVersion",
+                  "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+                  "cssFont": 11.875000000000004,
+                  "overflow": 2
+                },
+                {
+                  "key": "KittyLabel",
+                  "text": "\u5730\u4e3b\u5e95\u724c",
+                  "cssFont": 11.874999999999991,
+                  "overflow": 2
+                },
+                {
+                  "key": "LeadingSeat",
+                  "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+                  "cssFont": 12.468750000000005,
+                  "overflow": 2
+                },
+                {
+                  "key": "RetryUnknown/RetryUnknownCaption",
+                  "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+                  "cssFont": 14.843749999999986,
+                  "overflow": 2
+                },
+                {
+                  "key": "DiscardUnknown/DiscardUnknownCaption",
+                  "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+                  "cssFont": 14.843749999999986,
+                  "overflow": 2
+                },
+                {
+                  "key": "TableNotice",
+                  "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+                  "cssFont": 12.46874999999997,
+                  "overflow": 1
+                },
+                {
+                  "key": "OwnSeatInfo",
+                  "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+                  "cssFont": 11.874999999999979,
+                  "overflow": 2
+                }
+              ],
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 12.46874999999997,
+              "publicCards": 1
+            },
+            "geometryReference": "top-level screenshots matching file"
+          },
+          {
+            "file": "single-pass-unknown-1280x720.png",
+            "check": {
+              "labelsChecked": [
+                {
+                  "key": "RoomVersion",
+                  "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+                  "cssFont": 20.000000000000053,
+                  "overflow": 2
+                },
+                {
+                  "key": "KittyLabel",
+                  "text": "\u5730\u4e3b\u5e95\u724c",
+                  "cssFont": 19.999999999999936,
+                  "overflow": 2
+                },
+                {
+                  "key": "LeadingSeat",
+                  "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+                  "cssFont": 20.999999999999943,
+                  "overflow": 2
+                },
+                {
+                  "key": "RetryUnknown/RetryUnknownCaption",
+                  "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+                  "cssFont": 24.999999999999993,
+                  "overflow": 2
+                },
+                {
+                  "key": "DiscardUnknown/DiscardUnknownCaption",
+                  "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+                  "cssFont": 24.999999999999993,
+                  "overflow": 2
+                },
+                {
+                  "key": "TableNotice",
+                  "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+                  "cssFont": 20.999999999999982,
+                  "overflow": 1
+                },
+                {
+                  "key": "OwnSeatInfo",
+                  "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+                  "cssFont": 19.999999999999897,
+                  "overflow": 2
+                }
+              ],
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 20.999999999999982,
+              "publicCards": 1
+            },
+            "geometryReference": "top-level screenshots matching file"
+          },
+          {
+            "file": "single-pass-unknown-390x844.png",
+            "check": {
+              "labelsChecked": [
+                {
+                  "key": "RoomVersion",
+                  "text": "\u623f g63r2\u2026  \u00b7  v3",
+                  "cssFont": 14.3203125,
+                  "overflow": 2
+                },
+                {
+                  "key": "KittyLabel",
+                  "text": "\u5730\u4e3b\u5e95\u724c",
+                  "cssFont": 14.929687500000082,
+                  "overflow": 2
+                },
+                {
+                  "key": "LeadingSeat",
+                  "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+                  "cssFont": 15.843750000000037,
+                  "overflow": 2
+                },
+                {
+                  "key": "RetryUnknown/RetryUnknownCaption",
+                  "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+                  "cssFont": 18.5859375,
+                  "overflow": 2
+                },
+                {
+                  "key": "DiscardUnknown/DiscardUnknownCaption",
+                  "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+                  "cssFont": 18.5859375,
+                  "overflow": 2
+                },
+                {
+                  "key": "TableNotice",
+                  "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+                  "cssFont": 15.234374999999927,
+                  "overflow": 1
+                },
+                {
+                  "key": "OwnSeatInfo",
+                  "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+                  "cssFont": 13.406250000000066,
+                  "overflow": 2
+                }
+              ],
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 15.234374999999927,
+              "publicCards": 1
+            },
+            "geometryReference": "top-level screenshots matching file"
+          },
+          {
+            "file": "single-pass-again-760x390.png",
+            "check": {
+              "labelsChecked": [
+                {
+                  "key": "RoomVersion",
+                  "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+                  "cssFont": 11.875000000000004,
+                  "overflow": 2
+                },
+                {
+                  "key": "KittyLabel",
+                  "text": "\u5730\u4e3b\u5e95\u724c",
+                  "cssFont": 11.874999999999991,
+                  "overflow": 2
+                },
+                {
+                  "key": "LeadingSeat",
+                  "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+                  "cssFont": 12.468750000000005,
+                  "overflow": 2
+                },
+                {
+                  "key": "RetryUnknown/RetryUnknownCaption",
+                  "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+                  "cssFont": 14.843749999999986,
+                  "overflow": 2
+                },
+                {
+                  "key": "DiscardUnknown/DiscardUnknownCaption",
+                  "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+                  "cssFont": 14.843749999999986,
+                  "overflow": 2
+                },
+                {
+                  "key": "TableNotice",
+                  "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+                  "cssFont": 12.46874999999997,
+                  "overflow": 1
+                },
+                {
+                  "key": "OwnSeatInfo",
+                  "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+                  "cssFont": 11.874999999999979,
+                  "overflow": 2
+                }
+              ],
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 12.46874999999997,
+              "publicCards": 1
+            },
+            "geometryReference": "top-level screenshots matching file"
+          }
+        ],
+        "after": {
+          "screen": "table",
+          "room": "g63r2-room-072beaa9a729c129b22c",
+          "hand": "g63-full-b98c9b0e1a99c4a2fff02290",
+          "version": 4,
+          "phase": "PLAYING",
+          "submitting": false,
+          "pending": false,
+          "roomPending": false,
+          "actions": [],
+          "buttons": [
+            "BackToRoom",
+            "UpdateHand",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4"
+          ],
+          "rootNames": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordPublic0",
+            "LandlordPublic1",
+            "LandlordPublic2",
+            "KittyLabel",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "LeadingSeat",
+            "PublicTrick0",
+            "PassTurn",
+            "PlaySelected",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4",
+            "TableNotice",
+            "OwnSeatInfo"
+          ],
+          "selected": [],
+          "renders": 11,
+          "sent": 2,
+          "dropped": 6,
+          "status": "\u5df2\u57fa\u4e8e\u65b0\u7684\u670d\u52a1\u7aef\u724c\u5c40\u7248\u672c\u653e\u5f03\u65e7\u8bf7\u6c42\uff0c\u4e0d\u4f1a\u91cd\u590d\u6267\u884c"
+        },
+        "identicalRequests": 2,
+        "sqlActions": 1,
+        "keptOriginalPageAndRequest": true
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "Pass UNKNOWN multiple public cards, three sizes and successful exact retry",
+      "data": {
+        "before": {
+          "screen": "table",
+          "room": "g63r2-room-072beaa9a729c129b22c",
+          "hand": "g63-full-b98c9b0e1a99c4a2fff02290",
+          "version": 6,
+          "phase": "PLAYING",
+          "submitting": false,
+          "pending": false,
+          "roomPending": false,
+          "actions": [],
+          "buttons": [
+            "BackToRoom",
+            "UpdateHand",
+            "PassTurn",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4"
+          ],
+          "rootNames": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordPublic0",
+            "LandlordPublic1",
+            "LandlordPublic2",
+            "KittyLabel",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "LeadingSeat",
+            "PublicTrick0",
+            "PublicTrick1",
+            "PassTurn",
+            "PlaySelected",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4",
+            "OwnSeatInfo"
+          ],
+          "selected": [],
+          "renders": 4,
+          "sent": 0,
+          "dropped": 0,
+          "status": "\u5df2\u901a\u8fc7\u670d\u52a1\u5668\u6062\u590d\u672c\u4eba\u623f\u95f4\u548c\u724c\u5c40"
+        },
+        "inflight": {
+          "screen": "table",
+          "room": "g63r2-room-072beaa9a729c129b22c",
+          "hand": "g63-full-b98c9b0e1a99c4a2fff02290",
+          "version": 6,
+          "phase": "PLAYING",
+          "submitting": true,
+          "pending": true,
+          "roomPending": false,
+          "actions": [],
+          "buttons": [
+            "BackToRoom",
+            "UpdateHand",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4"
+          ],
+          "rootNames": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordPublic0",
+            "LandlordPublic1",
+            "LandlordPublic2",
+            "KittyLabel",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "LeadingSeat",
+            "PublicTrick0",
+            "PublicTrick1",
+            "PassTurn",
+            "PlaySelected",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4",
+            "OwnSeatInfo"
+          ],
+          "selected": [],
+          "renders": 5,
+          "sent": 1,
+          "dropped": 3,
+          "status": "\u5df2\u901a\u8fc7\u670d\u52a1\u5668\u6062\u590d\u672c\u4eba\u623f\u95f4\u548c\u724c\u5c40"
+        },
+        "unknown": {
+          "screen": "table",
+          "room": "g63r2-room-072beaa9a729c129b22c",
+          "hand": "g63-full-b98c9b0e1a99c4a2fff02290",
+          "version": 6,
+          "phase": "PLAYING",
+          "submitting": false,
+          "pending": true,
+          "roomPending": false,
+          "actions": [],
+          "buttons": [
+            "BackToRoom",
+            "UpdateHand",
+            "RetryUnknown",
+            "DiscardUnknown",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4"
+          ],
+          "rootNames": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordPublic0",
+            "LandlordPublic1",
+            "LandlordPublic2",
+            "KittyLabel",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "LeadingSeat",
+            "PublicTrick0",
+            "PublicTrick1",
+            "RetryUnknown",
+            "DiscardUnknown",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4",
+            "TableNotice",
+            "OwnSeatInfo"
+          ],
+          "selected": [],
+          "renders": 6,
+          "sent": 1,
+          "dropped": 3,
+          "status": "\u8fc7\u724c\u5931\u8d25\uff1acommand timeout; outcome unknown, retry with same requestId"
+        },
+        "original": {
+          "at": 1795225012215,
+          "v": "doudizhu-api-command-v1",
+          "requestId": "cmd-e1f01cab0cb5e4a1e237f387278afac7",
+          "type": "hand.pass",
+          "aggregateId": "g63-full-b98c9b0e1a99c4a2fff02290",
+          "clientSeq": 1,
+          "expectedVersion": 6,
+          "payload": {}
+        },
+        "shots": [
+          {
+            "file": "hand.pass-2cards-unknown-760x390.png",
+            "check": {
+              "labelsChecked": [
+                {
+                  "key": "RoomVersion",
+                  "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v6",
+                  "cssFont": 11.875000000000004,
+                  "overflow": 2
+                },
+                {
+                  "key": "KittyLabel",
+                  "text": "\u5730\u4e3b\u5e95\u724c",
+                  "cssFont": 11.874999999999991,
+                  "overflow": 2
+                },
+                {
+                  "key": "LeadingSeat",
+                  "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+                  "cssFont": 12.468750000000005,
+                  "overflow": 2
+                },
+                {
+                  "key": "RetryUnknown/RetryUnknownCaption",
+                  "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+                  "cssFont": 14.843749999999986,
+                  "overflow": 2
+                },
+                {
+                  "key": "DiscardUnknown/DiscardUnknownCaption",
+                  "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+                  "cssFont": 14.843749999999986,
+                  "overflow": 2
+                },
+                {
+                  "key": "TableNotice",
+                  "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+                  "cssFont": 12.46874999999997,
+                  "overflow": 1
+                },
+                {
+                  "key": "OwnSeatInfo",
+                  "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+                  "cssFont": 11.874999999999979,
+                  "overflow": 2
+                }
+              ],
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 12.46874999999997,
+              "publicCards": 2
+            },
+            "geometryReference": "top-level screenshots matching file"
+          },
+          {
+            "file": "hand.pass-2cards-unknown-1280x720.png",
+            "check": {
+              "labelsChecked": [
+                {
+                  "key": "RoomVersion",
+                  "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v6",
+                  "cssFont": 20.000000000000053,
+                  "overflow": 2
+                },
+                {
+                  "key": "KittyLabel",
+                  "text": "\u5730\u4e3b\u5e95\u724c",
+                  "cssFont": 19.999999999999936,
+                  "overflow": 2
+                },
+                {
+                  "key": "LeadingSeat",
+                  "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+                  "cssFont": 20.999999999999943,
+                  "overflow": 2
+                },
+                {
+                  "key": "RetryUnknown/RetryUnknownCaption",
+                  "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+                  "cssFont": 24.999999999999993,
+                  "overflow": 2
+                },
+                {
+                  "key": "DiscardUnknown/DiscardUnknownCaption",
+                  "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+                  "cssFont": 24.999999999999993,
+                  "overflow": 2
+                },
+                {
+                  "key": "TableNotice",
+                  "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+                  "cssFont": 20.999999999999982,
+                  "overflow": 1
+                },
+                {
+                  "key": "OwnSeatInfo",
+                  "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+                  "cssFont": 19.999999999999897,
+                  "overflow": 2
+                }
+              ],
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 20.999999999999982,
+              "publicCards": 2
+            },
+            "geometryReference": "top-level screenshots matching file"
+          },
+          {
+            "file": "hand.pass-2cards-unknown-390x844.png",
+            "check": {
+              "labelsChecked": [
+                {
+                  "key": "RoomVersion",
+                  "text": "\u623f g63r2\u2026  \u00b7  v6",
+                  "cssFont": 14.3203125,
+                  "overflow": 2
+                },
+                {
+                  "key": "KittyLabel",
+                  "text": "\u5730\u4e3b\u5e95\u724c",
+                  "cssFont": 14.929687500000082,
+                  "overflow": 2
+                },
+                {
+                  "key": "LeadingSeat",
+                  "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+                  "cssFont": 15.843750000000037,
+                  "overflow": 2
+                },
+                {
+                  "key": "RetryUnknown/RetryUnknownCaption",
+                  "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+                  "cssFont": 18.5859375,
+                  "overflow": 2
+                },
+                {
+                  "key": "DiscardUnknown/DiscardUnknownCaption",
+                  "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+                  "cssFont": 18.5859375,
+                  "overflow": 2
+                },
+                {
+                  "key": "TableNotice",
+                  "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+                  "cssFont": 15.234374999999927,
+                  "overflow": 1
+                },
+                {
+                  "key": "OwnSeatInfo",
+                  "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+                  "cssFont": 13.406250000000066,
+                  "overflow": 2
+                }
+              ],
+              "geometryPass": true,
+              "fontBudgetPass": true,
+              "noticeCSSFont": 15.234374999999927,
+              "publicCards": 2
+            },
+            "geometryReference": "top-level screenshots matching file"
+          }
+        ],
+        "after": {
+          "screen": "table",
+          "room": "g63r2-room-072beaa9a729c129b22c",
+          "hand": "g63-full-b98c9b0e1a99c4a2fff02290",
+          "version": 7,
+          "phase": "PLAYING",
+          "submitting": false,
+          "pending": false,
+          "roomPending": false,
+          "actions": [],
+          "buttons": [
+            "BackToRoom",
+            "UpdateHand",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4"
+          ],
+          "rootNames": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordPublic0",
+            "LandlordPublic1",
+            "LandlordPublic2",
+            "KittyLabel",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "LeadingSeat",
+            "PublicTrick0",
+            "PublicTrick1",
+            "PassTurn",
+            "PlaySelected",
+            "HandCard_YJ",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_HQ",
+            "HandCard_SJ",
+            "HandCard_HJ",
+            "HandCard_S10",
+            "HandCard_D10",
+            "HandCard_S8",
+            "HandCard_C8",
+            "HandCard_D8",
+            "HandCard_S7",
+            "HandCard_S6",
+            "HandCard_H6",
+            "HandCard_H4",
+            "TableNotice",
+            "OwnSeatInfo"
+          ],
+          "selected": [],
+          "renders": 10,
+          "sent": 2,
+          "dropped": 3,
+          "status": "\u539f\u8bf7\u6c42\u5df2\u786e\u8ba4\uff0c\u6b63\u5728\u540c\u6b65\u6743\u5a01\u724c\u5c40\u72b6\u6001"
+        },
+        "identicalRequests": 2,
+        "sqlActions": 1,
+        "again": false,
+        "discard": false
+      },
+      "result": "PASS"
+    },
+    {
+      "name": "bounded redraw and normal status typography; clock disposal",
+      "result": "FAIL",
+      "error": "AssertionError [ERR_ASSERTION]: actual SHRINK font below 11 CSS px: 0\n    at Object.check (/root/goal0063-round7-8b9465d/metrics.cjs:3:232)\n    at /root/goal0063-round7-8b9465d/resume.cjs:26:660\n    at async observe (/root/goal0063-round7-8b9465d/resume.cjs:4:96)\n    at async /root/goal0063-round7-8b9465d/resume.cjs:26:1"
+    }
+  ],
+  "failures": [
+    {
+      "name": "bounded redraw and normal status typography; clock disposal",
+      "error": "actual SHRINK font below 11 CSS px: 0"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "single-pass-unknown-760x390.png",
+      "geometry": {
+        "roomID": "g63r2-room-072beaa9a729c129b22c",
+        "version": 3,
+        "viewport": {
+          "width": 760,
+          "height": 390
+        },
+        "logical": {
+          "width": 1280,
+          "height": 656.8421052631579,
+          "unit": 1.35
+        },
+        "nodes": {
+          "TableBrand": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 7.2140624999999545,
+            "bottom": 37.67343749999992,
+            "touch": false,
+            "text": "\u6597\u5730\u4e3b  \u00b7  \u51fa\u724c\u4e2d",
+            "font": 29.700000000000003,
+            "actualFont": 29,
+            "cssFont": 17.218749999999982,
+            "lineHeight": 34.7,
+            "boxHeight": 51.300000000000004,
+            "boxWidth": 297,
+            "scale": 0.5937499999999993,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "29px Arial",
+              "width": 220.09158325195312,
+              "left": -1,
+              "right": 218.09153747558594,
+              "ascent": 26,
+              "descent": 3
+            }
+          },
+          "RoomVersion": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 36.0703125,
+            "bottom": 55.30781250000001,
+            "touch": false,
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.875000000000004,
+            "lineHeight": 25.25,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 297,
+            "scale": 0.5937500000000002,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 260.6933288574219,
+              "left": 0,
+              "right": 259.9687194824219,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "AuthoritativeTurnClock": {
+            "left": 297.83984375,
+            "right": 462.16015625000006,
+            "top": 7.61484374999992,
+            "bottom": 37.272656249999955,
+            "touch": false,
+            "text": "172s",
+            "font": 32.400000000000006,
+            "actualFont": 32,
+            "cssFont": 19.00000000000002,
+            "lineHeight": 37.400000000000006,
+            "boxHeight": 49.95,
+            "boxWidth": 276.75,
+            "scale": 0.5937500000000007,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "32px Arial",
+              "width": 77.75,
+              "left": -3,
+              "right": 77.078125,
+              "ascent": 23,
+              "descent": 0
+            }
+          },
+          "KittyLabel": {
+            "left": 327.8984375,
+            "right": 432.10156250000006,
+            "top": 95.78671874999998,
+            "bottom": 112.61953124999997,
+            "touch": false,
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.874999999999991,
+            "lineHeight": 25.25,
+            "boxHeight": 28.35,
+            "boxWidth": 175.5,
+            "scale": 0.5937499999999996,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 79.99993896484375,
+              "left": 0,
+              "right": 79.99995422363281,
+              "ascent": 18,
+              "descent": 2
+            }
+          },
+          "LeadingSeat": {
+            "left": 170.99999999999997,
+            "right": 589,
+            "top": 118.02656250000001,
+            "bottom": 137.26406250000002,
+            "touch": false,
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "font": 21.6,
+            "actualFont": 21,
+            "cssFont": 12.468750000000005,
+            "lineHeight": 26.6,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 704,
+            "scale": 0.5937500000000002,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 110.7110595703125,
+              "left": 0,
+              "right": 110.71115112304688,
+              "ascent": 18,
+              "descent": 3
+            }
+          },
+          "PublicTrick0": {
+            "left": 359.56015625000003,
+            "right": 400.43984374999997,
+            "top": 152.73421875000003,
+            "bottom": 209.96578125000002,
+            "touch": false,
+            "boxHeight": 96.39,
+            "boxWidth": 68.85000000000001,
+            "scale": 0.59375
+          },
+          "RetryUnknown": {
+            "left": 254.95624999999998,
+            "right": 375.190625,
+            "top": 235.57096875,
+            "bottom": 264.42721874999995,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.5937499999999991
+          },
+          "RetryUnknown/RetryUnknownCaption": {
+            "left": 257.3609375,
+            "right": 372.78593750000005,
+            "top": 237.17409375,
+            "bottom": 262.82409375,
+            "touch": false,
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 14.843749999999986,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.5937499999999994,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 150.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "DiscardUnknown": {
+            "left": 384.809375,
+            "right": 505.04375,
+            "top": 235.57096875,
+            "bottom": 264.42721874999995,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.5937499999999991
+          },
+          "DiscardUnknown/DiscardUnknownCaption": {
+            "left": 387.2140625,
+            "right": 502.6390625000001,
+            "top": 237.17409375,
+            "bottom": 262.82409375,
+            "touch": false,
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 14.843749999999986,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.5937499999999994,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 149.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "HandCard_YJ": {
+            "left": 23.994856283454528,
+            "right": 95.7811437165454,
+            "top": 287.06129950198977,
+            "bottom": 385.00029424801016,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_C2": {
+            "left": 64.56737761508379,
+            "right": 135.23662238491616,
+            "top": 286.0945074796898,
+            "bottom": 383.3369593171851,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999999
+          },
+          "HandCard_D2": {
+            "left": 105.14595335235563,
+            "right": 174.6860466476443,
+            "top": 285.3113882510233,
+            "bottom": 381.8406351864767,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_DA": {
+            "left": 145.73048675812385,
+            "right": 214.12951324187614,
+            "top": 284.71188071399604,
+            "bottom": 380.511382957879,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000001
+          },
+          "HandCard_SK": {
+            "left": 186.32088007442647,
+            "right": 253.56711992557354,
+            "top": 284.2959223496099,
+            "bottom": 379.34926515039007,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_HQ": {
+            "left": 226.91703453923603,
+            "right": 292.99896546076394,
+            "top": 284.0634492325752,
+            "bottom": 378.35434568929975,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_SJ": {
+            "left": 267.518850403382,
+            "right": 332.4251495966181,
+            "top": 284.014396042264,
+            "bottom": 377.52668989523596,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_HJ": {
+            "left": 308.12622694764195,
+            "right": 371.84577305235797,
+            "top": 284.14869607390244,
+            "bottom": 376.8663644729725,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S10": {
+            "left": 348.73906250000005,
+            "right": 411.2609375,
+            "top": 284.46628124999995,
+            "bottom": 376.37343749999997,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_D10": {
+            "left": 388.15422694764203,
+            "right": 451.87377305235805,
+            "top": 284.14869607390244,
+            "bottom": 376.8663644729725,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S8": {
+            "left": 427.57485040338196,
+            "right": 492.481149596618,
+            "top": 284.014396042264,
+            "bottom": 377.52668989523596,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_C8": {
+            "left": 467.0010345392361,
+            "right": 533.0829654607641,
+            "top": 284.0634492325752,
+            "bottom": 378.35434568929975,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_D8": {
+            "left": 506.4328800744266,
+            "right": 573.6791199255736,
+            "top": 284.2959223496099,
+            "bottom": 379.34926515039007,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S7": {
+            "left": 545.8704867581239,
+            "right": 614.2695132418761,
+            "top": 284.71188071399604,
+            "bottom": 380.511382957879,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999997
+          },
+          "HandCard_S6": {
+            "left": 585.3139533523557,
+            "right": 654.8540466476444,
+            "top": 285.3113882510233,
+            "bottom": 381.8406351864767,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_H6": {
+            "left": 624.763377615084,
+            "right": 695.4326223849162,
+            "top": 286.0945074796898,
+            "bottom": 383.3369593171851,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_H4": {
+            "left": 664.2188562834546,
+            "right": 736.0051437165454,
+            "top": 287.06129950198977,
+            "bottom": 385.00029424801016,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "TableNotice": {
+            "left": 98.8,
+            "right": 661.2,
+            "top": 216.33346875,
+            "bottom": 230.76159374999997,
+            "touch": false,
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "font": 21,
+            "actualFont": 21,
+            "cssFont": 12.46874999999997,
+            "lineHeight": 22.950000000000003,
+            "boxHeight": 24.3,
+            "boxWidth": 947.2,
+            "scale": 0.5937499999999986,
+            "overflow": 1,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 272.9988098144531,
+              "left": 0,
+              "right": 272.9989013671875,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "OwnSeatInfo": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 58.11328125000006,
+            "bottom": 76.54921875000002,
+            "touch": false,
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.874999999999979,
+            "lineHeight": 25.25,
+            "boxHeight": 31.05,
+            "boxWidth": 297,
+            "scale": 0.5937499999999989,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 171.92376708984375,
+              "left": 0,
+              "right": 171.9237823486328,
+              "ascent": 18,
+              "descent": 3
+            }
+          }
+        },
+        "pending": true,
+        "submitting": false,
+        "sent": 1
+      },
+      "check": {
+        "labelsChecked": [
+          {
+            "key": "RoomVersion",
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+            "cssFont": 11.875000000000004,
+            "overflow": 2
+          },
+          {
+            "key": "KittyLabel",
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "cssFont": 11.874999999999991,
+            "overflow": 2
+          },
+          {
+            "key": "LeadingSeat",
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "cssFont": 12.468750000000005,
+            "overflow": 2
+          },
+          {
+            "key": "RetryUnknown/RetryUnknownCaption",
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "cssFont": 14.843749999999986,
+            "overflow": 2
+          },
+          {
+            "key": "DiscardUnknown/DiscardUnknownCaption",
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "cssFont": 14.843749999999986,
+            "overflow": 2
+          },
+          {
+            "key": "TableNotice",
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "cssFont": 12.46874999999997,
+            "overflow": 1
+          },
+          {
+            "key": "OwnSeatInfo",
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "cssFont": 11.874999999999979,
+            "overflow": 2
+          }
+        ],
+        "geometryPass": true,
+        "fontBudgetPass": true,
+        "noticeCSSFont": 12.46874999999997,
+        "publicCards": 1
+      }
+    },
+    {
+      "file": "single-pass-unknown-1280x720.png",
+      "geometry": {
+        "roomID": "g63r2-room-072beaa9a729c129b22c",
+        "version": 3,
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "logical": {
+          "width": 1280,
+          "height": 720,
+          "unit": 1.35
+        },
+        "nodes": {
+          "TableBrand": {
+            "left": 18.900000000000006,
+            "right": 315.90000000000003,
+            "top": 12.149999999999977,
+            "bottom": 63.44999999999993,
+            "touch": false,
+            "text": "\u6597\u5730\u4e3b  \u00b7  \u51fa\u724c\u4e2d",
+            "font": 29.700000000000003,
+            "actualFont": 29,
+            "cssFont": 28.99999999999997,
+            "lineHeight": 34.7,
+            "boxHeight": 51.300000000000004,
+            "boxWidth": 297,
+            "scale": 0.999999999999999,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "29px Arial",
+              "width": 220.09158325195312,
+              "left": -1,
+              "right": 218.09153747558594,
+              "ascent": 26,
+              "descent": 3
+            }
+          },
+          "RoomVersion": {
+            "left": 18.900000000000006,
+            "right": 315.90000000000003,
+            "top": 60.75,
+            "bottom": 93.15000000000009,
+            "touch": false,
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 20.000000000000053,
+            "lineHeight": 25.25,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 297,
+            "scale": 1.0000000000000027,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 260.6933288574219,
+              "left": 0,
+              "right": 259.9687194824219,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "AuthoritativeTurnClock": {
+            "left": 501.625,
+            "right": 778.375,
+            "top": 12.824999999999932,
+            "bottom": 62.77499999999998,
+            "touch": false,
+            "text": "171s",
+            "font": 32.400000000000006,
+            "actualFont": 32,
+            "cssFont": 32.00000000000003,
+            "lineHeight": 37.400000000000006,
+            "boxHeight": 49.95,
+            "boxWidth": 276.75,
+            "scale": 1.0000000000000009,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "32px Arial",
+              "width": 77.75,
+              "left": -3,
+              "right": 77.078125,
+              "ascent": 23,
+              "descent": 0
+            }
+          },
+          "KittyLabel": {
+            "left": 552.25,
+            "right": 727.75,
+            "top": 161.32500000000005,
+            "bottom": 189.67499999999995,
+            "touch": false,
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 19.999999999999936,
+            "lineHeight": 25.25,
+            "boxHeight": 28.35,
+            "boxWidth": 175.5,
+            "scale": 0.9999999999999968,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 79.99993896484375,
+              "left": 0,
+              "right": 79.99995422363281,
+              "ascent": 18,
+              "descent": 2
+            }
+          },
+          "LeadingSeat": {
+            "left": 288,
+            "right": 992,
+            "top": 228.15000000000003,
+            "bottom": 260.54999999999995,
+            "touch": false,
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "font": 21.6,
+            "actualFont": 21,
+            "cssFont": 20.999999999999943,
+            "lineHeight": 26.6,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 704,
+            "scale": 0.9999999999999973,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 110.7110595703125,
+              "left": 0,
+              "right": 110.71115112304688,
+              "ascent": 18,
+              "descent": 3
+            }
+          },
+          "PublicTrick0": {
+            "left": 605.575,
+            "right": 674.425,
+            "top": 286.605,
+            "bottom": 382.995,
+            "touch": false,
+            "boxHeight": 96.39,
+            "boxWidth": 68.85000000000001,
+            "scale": 0.9999999999999999
+          },
+          "RetryUnknown": {
+            "left": 429.4,
+            "right": 631.9,
+            "top": 459.909,
+            "bottom": 508.50899999999996,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.9999999999999992
+          },
+          "RetryUnknown/RetryUnknownCaption": {
+            "left": 433.45,
+            "right": 627.85,
+            "top": 462.609,
+            "bottom": 505.80899999999997,
+            "touch": false,
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 24.999999999999993,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.9999999999999997,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 150.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "DiscardUnknown": {
+            "left": 648.1,
+            "right": 850.6,
+            "top": 459.909,
+            "bottom": 508.50899999999996,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.9999999999999992
+          },
+          "DiscardUnknown/DiscardUnknownCaption": {
+            "left": 652.1500000000001,
+            "right": 846.5500000000002,
+            "top": 462.609,
+            "bottom": 505.80899999999997,
+            "touch": false,
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 24.999999999999993,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.9999999999999997,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 149.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "HandCard_YJ": {
+            "left": 40.412389530028676,
+            "right": 161.3156104699712,
+            "top": 546.6295570559828,
+            "bottom": 711.5794429440172,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000004
+          },
+          "HandCard_C2": {
+            "left": 108.74505703593059,
+            "right": 227.7669429640693,
+            "top": 545.0012757552671,
+            "bottom": 708.7780367447328,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_D2": {
+            "left": 177.08792143554632,
+            "right": 294.20807856445356,
+            "top": 543.6823381069867,
+            "bottom": 706.2579118930133,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999998
+          },
+          "HandCard_DA": {
+            "left": 245.44081980315596,
+            "right": 360.639180196844,
+            "top": 542.6726412025196,
+            "bottom": 704.0191712974804,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_SK": {
+            "left": 313.80358749377086,
+            "right": 427.0604125062291,
+            "top": 541.9720797467114,
+            "bottom": 702.0619202532887,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000007
+          },
+          "HandCard_HQ": {
+            "left": 382.1760581713449,
+            "right": 493.4719418286551,
+            "top": 541.5805460759161,
+            "bottom": 700.3862664240838,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999998
+          },
+          "HandCard_SJ": {
+            "left": 450.5580638372749,
+            "right": 559.8739361627252,
+            "top": 541.4979301764447,
+            "bottom": 698.9923198235552,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000002
+          },
+          "HandCard_HJ": {
+            "left": 518.9494348591865,
+            "right": 626.2665651408134,
+            "top": 541.7241197034147,
+            "bottom": 697.8801927965853,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999992
+          },
+          "HandCard_S10": {
+            "left": 587.35,
+            "right": 692.65,
+            "top": 542.2589999999999,
+            "bottom": 697.05,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000002
+          },
+          "HandCard_D10": {
+            "left": 653.7334348591866,
+            "right": 761.0505651408135,
+            "top": 541.7241197034147,
+            "bottom": 697.8801927965853,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_S8": {
+            "left": 720.1260638372748,
+            "right": 829.4419361627251,
+            "top": 541.4979301764447,
+            "bottom": 698.9923198235552,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000002
+          },
+          "HandCard_C8": {
+            "left": 786.528058171345,
+            "right": 897.8239418286552,
+            "top": 541.5805460759161,
+            "bottom": 700.3862664240838,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999998
+          },
+          "HandCard_D8": {
+            "left": 852.9395874937711,
+            "right": 966.1964125062292,
+            "top": 541.9720797467114,
+            "bottom": 702.0619202532887,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_S7": {
+            "left": 919.3608198031561,
+            "right": 1034.559180196844,
+            "top": 542.6726412025196,
+            "bottom": 704.0191712974804,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_S6": {
+            "left": 985.7919214355466,
+            "right": 1102.9120785644536,
+            "top": 543.6823381069867,
+            "bottom": 706.2579118930133,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999998
+          },
+          "HandCard_H6": {
+            "left": 1052.2330570359309,
+            "right": 1171.2549429640694,
+            "top": 545.0012757552671,
+            "bottom": 708.7780367447328,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_H4": {
+            "left": 1118.6843895300287,
+            "right": 1239.5876104699712,
+            "top": 546.6295570559828,
+            "bottom": 711.5794429440172,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000004
+          },
+          "TableNotice": {
+            "left": 166.4,
+            "right": 1113.6,
+            "top": 399.159,
+            "bottom": 431.55899999999997,
+            "touch": false,
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "font": 21,
+            "actualFont": 21,
+            "cssFont": 20.999999999999982,
+            "lineHeight": 24.3,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 947.2,
+            "scale": 0.9999999999999991,
+            "overflow": 1,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 272.9988098144531,
+              "left": 0,
+              "right": 272.9989013671875,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "OwnSeatInfo": {
+            "left": 18.900000000000006,
+            "right": 315.90000000000003,
+            "top": 97.87500000000011,
+            "bottom": 128.92499999999995,
+            "touch": false,
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 19.999999999999897,
+            "lineHeight": 25.25,
+            "boxHeight": 31.05,
+            "boxWidth": 297,
+            "scale": 0.9999999999999949,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 171.92376708984375,
+              "left": 0,
+              "right": 171.9237823486328,
+              "ascent": 18,
+              "descent": 3
+            }
+          }
+        },
+        "pending": true,
+        "submitting": false,
+        "sent": 1
+      },
+      "check": {
+        "labelsChecked": [
+          {
+            "key": "RoomVersion",
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+            "cssFont": 20.000000000000053,
+            "overflow": 2
+          },
+          {
+            "key": "KittyLabel",
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "cssFont": 19.999999999999936,
+            "overflow": 2
+          },
+          {
+            "key": "LeadingSeat",
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "cssFont": 20.999999999999943,
+            "overflow": 2
+          },
+          {
+            "key": "RetryUnknown/RetryUnknownCaption",
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "cssFont": 24.999999999999993,
+            "overflow": 2
+          },
+          {
+            "key": "DiscardUnknown/DiscardUnknownCaption",
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "cssFont": 24.999999999999993,
+            "overflow": 2
+          },
+          {
+            "key": "TableNotice",
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "cssFont": 20.999999999999982,
+            "overflow": 1
+          },
+          {
+            "key": "OwnSeatInfo",
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "cssFont": 19.999999999999897,
+            "overflow": 2
+          }
+        ],
+        "geometryPass": true,
+        "fontBudgetPass": true,
+        "noticeCSSFont": 20.999999999999982,
+        "publicCards": 1
+      }
+    },
+    {
+      "file": "single-pass-unknown-390x844.png",
+      "geometry": {
+        "roomID": "g63r2-room-072beaa9a729c129b22c",
+        "version": 3,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "logical": {
+          "width": 1280,
+          "height": 2770.051282051282,
+          "unit": 3.282051282051282
+        },
+        "nodes": {
+          "TableBrand": {
+            "left": 13.999999999999993,
+            "right": 131,
+            "top": 8.999999999999886,
+            "bottom": 46.99999999999977,
+            "touch": false,
+            "text": "\u6597\u5730\u4e3b  \u00b7  \u51fa\u724c\u4e2d",
+            "font": 72.2051282051282,
+            "actualFont": 50,
+            "cssFont": 15.234374999999956,
+            "lineHeight": 77.2051282051282,
+            "boxHeight": 124.71794871794872,
+            "boxWidth": 384,
+            "scale": 0.3046874999999991,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "50px Arial",
+              "width": 379.46746826171875,
+              "left": -2,
+              "right": 375.467529296875,
+              "ascent": 43,
+              "descent": 5
+            }
+          },
+          "RoomVersion": {
+            "left": 13.999999999999993,
+            "right": 131,
+            "top": 44.999999999999886,
+            "bottom": 68.99999999999989,
+            "touch": false,
+            "text": "\u623f g63r2\u2026  \u00b7  v3",
+            "font": 49.230769230769226,
+            "actualFont": 47,
+            "cssFont": 14.3203125,
+            "lineHeight": 54.230769230769226,
+            "boxHeight": 78.76923076923077,
+            "boxWidth": 384,
+            "scale": 0.3046875,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "47px Arial",
+              "width": 380.22259521484375,
+              "left": -1,
+              "right": 377.31976318359375,
+              "ascent": 37,
+              "descent": 10
+            }
+          },
+          "AuthoritativeTurnClock": {
+            "left": 148.2,
+            "right": 241.80000000000004,
+            "top": 9.499999999999886,
+            "bottom": 46.499999999999886,
+            "touch": false,
+            "text": "170s",
+            "font": 78.76923076923077,
+            "actualFont": 78,
+            "cssFont": 23.765625,
+            "lineHeight": 83.76923076923077,
+            "boxHeight": 121.43589743589743,
+            "boxWidth": 307.2,
+            "scale": 0.3046875,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "78px Arial",
+              "width": 189.515625,
+              "left": -8,
+              "right": 185.8779296875,
+              "ascent": 59,
+              "descent": 1
+            }
+          },
+          "KittyLabel": {
+            "left": 130.00000000000003,
+            "right": 260,
+            "top": 119.49999999999989,
+            "bottom": 140.5,
+            "touch": false,
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "font": 49.230769230769226,
+            "actualFont": 49,
+            "cssFont": 14.929687500000082,
+            "lineHeight": 54.230769230769226,
+            "boxHeight": 68.92307692307692,
+            "boxWidth": 426.66666666666663,
+            "scale": 0.30468750000000167,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "49px Arial",
+              "width": 196.0001220703125,
+              "left": -1,
+              "right": 194.00009155273438,
+              "ascent": 42,
+              "descent": 5
+            }
+          },
+          "LeadingSeat": {
+            "left": 87.74999999999999,
+            "right": 302.25,
+            "top": 313.4599999999999,
+            "bottom": 337.46,
+            "touch": false,
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "font": 52.51282051282051,
+            "actualFont": 52,
+            "cssFont": 15.843750000000037,
+            "lineHeight": 57.51282051282051,
+            "boxHeight": 78.76923076923077,
+            "boxWidth": 704,
+            "scale": 0.3046875000000007,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "52px Arial",
+              "width": 274.14276123046875,
+              "left": -1,
+              "right": 272.1427001953125,
+              "ascent": 45,
+              "descent": 5
+            }
+          },
+          "PublicTrick0": {
+            "left": 171.60000000000002,
+            "right": 218.39999999999998,
+            "top": 359.7,
+            "bottom": 425.21999999999997,
+            "touch": false,
+            "boxHeight": 215.04,
+            "boxWidth": 153.6,
+            "scale": 0.30468749999999994
+          },
+          "RetryUnknown": {
+            "left": 38.99999999999999,
+            "right": 189,
+            "top": 651.34,
+            "bottom": 687.3400000000001,
+            "touch": true,
+            "boxHeight": 118.15384615384615,
+            "boxWidth": 492.30769230769226,
+            "scale": 0.304687500000001
+          },
+          "RetryUnknown/RetryUnknownCaption": {
+            "left": 42,
+            "right": 186,
+            "top": 653.34,
+            "bottom": 685.34,
+            "touch": false,
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "font": 61.44,
+            "actualFont": 61,
+            "cssFont": 18.5859375,
+            "lineHeight": 66.44,
+            "boxHeight": 105.02564102564102,
+            "boxWidth": 472.6153846153846,
+            "scale": 0.3046875,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "61px Arial",
+              "width": 366.00067138671875,
+              "left": -1,
+              "right": 364.00054931640625,
+              "ascent": 53,
+              "descent": 6
+            }
+          },
+          "DiscardUnknown": {
+            "left": 200.99999999999997,
+            "right": 351,
+            "top": 651.34,
+            "bottom": 687.3400000000001,
+            "touch": true,
+            "boxHeight": 118.15384615384615,
+            "boxWidth": 492.30769230769226,
+            "scale": 0.304687500000001
+          },
+          "DiscardUnknown/DiscardUnknownCaption": {
+            "left": 204,
+            "right": 348,
+            "top": 653.34,
+            "bottom": 685.34,
+            "touch": false,
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "font": 61.44,
+            "actualFont": 61,
+            "cssFont": 18.5859375,
+            "lineHeight": 66.44,
+            "boxHeight": 105.02564102564102,
+            "boxWidth": 472.6153846153846,
+            "scale": 0.3046875,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "61px Arial",
+              "width": 366.00067138671875,
+              "left": -1,
+              "right": 363.00054931640625,
+              "ascent": 53,
+              "descent": 6
+            }
+          },
+          "HandCard_YJ": {
+            "left": 8.221029281502755,
+            "right": 97.77897071849723,
+            "top": 715.5774496710984,
+            "bottom": 837.7625503289016,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046875000000001
+          },
+          "HandCard_C2": {
+            "left": 26.667820026615328,
+            "right": 114.83217997338467,
+            "top": 714.371315374272,
+            "bottom": 835.6874346257281,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999994
+          },
+          "HandCard_D2": {
+            "left": 45.12216402633066,
+            "right": 131.87783597366933,
+            "top": 713.3943245236939,
+            "bottom": 833.8206754763062,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046874999999999
+          },
+          "HandCard_DA": {
+            "left": 63.58394059493035,
+            "right": 148.91605940506963,
+            "top": 712.6464008907553,
+            "bottom": 832.1623491092447,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468750000000006
+          },
+          "HandCard_SK": {
+            "left": 82.05302777316363,
+            "right": 165.94697222683638,
+            "top": 712.1274664790454,
+            "bottom": 830.7125335209545,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468750000000006
+          },
+          "HandCard_HQ": {
+            "left": 100.5293023491444,
+            "right": 182.97069765085564,
+            "top": 711.8374415377157,
+            "bottom": 829.4713084622844,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468750000000017
+          },
+          "HandCard_SJ": {
+            "left": 119.0126398794629,
+            "right": 199.98736012053712,
+            "top": 711.7762445751443,
+            "bottom": 828.4387554248558,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046875
+          },
+          "HandCard_HJ": {
+            "left": 137.50291471050855,
+            "right": 216.99708528949148,
+            "top": 711.9437923728998,
+            "bottom": 827.6149576271002,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999983
+          },
+          "HandCard_S10": {
+            "left": 156,
+            "right": 234.00000000000003,
+            "top": 712.34,
+            "bottom": 827,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999994
+          },
+          "HandCard_D10": {
+            "left": 173.00291471050855,
+            "right": 252.49708528949148,
+            "top": 711.9437923728998,
+            "bottom": 827.6149576271002,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046875000000001
+          },
+          "HandCard_S8": {
+            "left": 190.0126398794629,
+            "right": 270.9873601205371,
+            "top": 711.7762445751443,
+            "bottom": 828.4387554248558,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046875
+          },
+          "HandCard_C8": {
+            "left": 207.02930234914442,
+            "right": 289.47069765085564,
+            "top": 711.8374415377157,
+            "bottom": 829.4713084622844,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999983
+          },
+          "HandCard_D8": {
+            "left": 224.05302777316368,
+            "right": 307.94697222683635,
+            "top": 712.1274664790454,
+            "bottom": 830.7125335209545,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999994
+          },
+          "HandCard_S7": {
+            "left": 241.08394059493037,
+            "right": 326.41605940506963,
+            "top": 712.6464008907553,
+            "bottom": 832.1623491092447,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468750000000006
+          },
+          "HandCard_S6": {
+            "left": 258.1221640263307,
+            "right": 344.87783597366933,
+            "top": 713.3943245236939,
+            "bottom": 833.8206754763062,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046874999999999
+          },
+          "HandCard_H6": {
+            "left": 275.1678200266154,
+            "right": 363.3321799733847,
+            "top": 714.371315374272,
+            "bottom": 835.6874346257281,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999994
+          },
+          "HandCard_H4": {
+            "left": 292.2210292815028,
+            "right": 381.7789707184973,
+            "top": 715.5774496710984,
+            "bottom": 837.7625503289016,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999983
+          },
+          "TableNotice": {
+            "left": 50.7,
+            "right": 339.3,
+            "top": 606.3400000000001,
+            "bottom": 630.34,
+            "touch": false,
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "font": 50,
+            "actualFont": 50,
+            "cssFont": 15.234374999999927,
+            "lineHeight": 59.07692307692307,
+            "boxHeight": 78.76923076923077,
+            "boxWidth": 947.2,
+            "scale": 0.30468749999999856,
+            "overflow": 1,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "50px Arial",
+              "width": 649.9993286132812,
+              "left": -1,
+              "right": 648.9993896484375,
+              "ascent": 43,
+              "descent": 6
+            }
+          },
+          "OwnSeatInfo": {
+            "left": 13.999999999999993,
+            "right": 131,
+            "top": 72.49999999999989,
+            "bottom": 95.5,
+            "touch": false,
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "font": 49.230769230769226,
+            "actualFont": 44,
+            "cssFont": 13.406250000000066,
+            "lineHeight": 54.230769230769226,
+            "boxHeight": 75.48717948717949,
+            "boxWidth": 384,
+            "scale": 0.3046875000000015,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "44px Arial",
+              "width": 378.2320556640625,
+              "left": -1,
+              "right": 377.2321472167969,
+              "ascent": 38,
+              "descent": 6
+            }
+          }
+        },
+        "pending": true,
+        "submitting": false,
+        "sent": 1
+      },
+      "check": {
+        "labelsChecked": [
+          {
+            "key": "RoomVersion",
+            "text": "\u623f g63r2\u2026  \u00b7  v3",
+            "cssFont": 14.3203125,
+            "overflow": 2
+          },
+          {
+            "key": "KittyLabel",
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "cssFont": 14.929687500000082,
+            "overflow": 2
+          },
+          {
+            "key": "LeadingSeat",
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "cssFont": 15.843750000000037,
+            "overflow": 2
+          },
+          {
+            "key": "RetryUnknown/RetryUnknownCaption",
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "cssFont": 18.5859375,
+            "overflow": 2
+          },
+          {
+            "key": "DiscardUnknown/DiscardUnknownCaption",
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "cssFont": 18.5859375,
+            "overflow": 2
+          },
+          {
+            "key": "TableNotice",
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "cssFont": 15.234374999999927,
+            "overflow": 1
+          },
+          {
+            "key": "OwnSeatInfo",
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "cssFont": 13.406250000000066,
+            "overflow": 2
+          }
+        ],
+        "geometryPass": true,
+        "fontBudgetPass": true,
+        "noticeCSSFont": 15.234374999999927,
+        "publicCards": 1
+      }
+    },
+    {
+      "file": "single-pass-again-760x390.png",
+      "geometry": {
+        "roomID": "g63r2-room-072beaa9a729c129b22c",
+        "version": 3,
+        "viewport": {
+          "width": 760,
+          "height": 390
+        },
+        "logical": {
+          "width": 1280,
+          "height": 656.8421052631579,
+          "unit": 1.35
+        },
+        "nodes": {
+          "TableBrand": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 7.2140624999999545,
+            "bottom": 37.67343749999992,
+            "touch": false,
+            "text": "\u6597\u5730\u4e3b  \u00b7  \u51fa\u724c\u4e2d",
+            "font": 29.700000000000003,
+            "actualFont": 29,
+            "cssFont": 17.218749999999982,
+            "lineHeight": 34.7,
+            "boxHeight": 51.300000000000004,
+            "boxWidth": 297,
+            "scale": 0.5937499999999993,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "29px Arial",
+              "width": 220.09158325195312,
+              "left": -1,
+              "right": 218.09153747558594,
+              "ascent": 26,
+              "descent": 3
+            }
+          },
+          "RoomVersion": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 36.0703125,
+            "bottom": 55.30781250000001,
+            "touch": false,
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.875000000000004,
+            "lineHeight": 25.25,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 297,
+            "scale": 0.5937500000000002,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 260.6933288574219,
+              "left": 0,
+              "right": 259.9687194824219,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "AuthoritativeTurnClock": {
+            "left": 297.83984375,
+            "right": 462.16015625000006,
+            "top": 7.61484374999992,
+            "bottom": 37.272656249999955,
+            "touch": false,
+            "text": "153s",
+            "font": 32.400000000000006,
+            "actualFont": 32,
+            "cssFont": 19.00000000000002,
+            "lineHeight": 37.400000000000006,
+            "boxHeight": 49.95,
+            "boxWidth": 276.75,
+            "scale": 0.5937500000000007,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "32px Arial",
+              "width": 77.75,
+              "left": -3,
+              "right": 77.078125,
+              "ascent": 23,
+              "descent": 0
+            }
+          },
+          "KittyLabel": {
+            "left": 327.8984375,
+            "right": 432.10156250000006,
+            "top": 95.78671874999998,
+            "bottom": 112.61953124999997,
+            "touch": false,
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.874999999999991,
+            "lineHeight": 25.25,
+            "boxHeight": 28.35,
+            "boxWidth": 175.5,
+            "scale": 0.5937499999999996,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 79.99993896484375,
+              "left": 0,
+              "right": 79.99995422363281,
+              "ascent": 18,
+              "descent": 2
+            }
+          },
+          "LeadingSeat": {
+            "left": 170.99999999999997,
+            "right": 589,
+            "top": 118.02656250000001,
+            "bottom": 137.26406250000002,
+            "touch": false,
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "font": 21.6,
+            "actualFont": 21,
+            "cssFont": 12.468750000000005,
+            "lineHeight": 26.6,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 704,
+            "scale": 0.5937500000000002,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 110.7110595703125,
+              "left": 0,
+              "right": 110.71115112304688,
+              "ascent": 18,
+              "descent": 3
+            }
+          },
+          "PublicTrick0": {
+            "left": 359.56015625000003,
+            "right": 400.43984374999997,
+            "top": 152.73421875000003,
+            "bottom": 209.96578125000002,
+            "touch": false,
+            "boxHeight": 96.39,
+            "boxWidth": 68.85000000000001,
+            "scale": 0.59375
+          },
+          "RetryUnknown": {
+            "left": 254.95624999999998,
+            "right": 375.190625,
+            "top": 235.57096875,
+            "bottom": 264.42721874999995,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.5937499999999991
+          },
+          "RetryUnknown/RetryUnknownCaption": {
+            "left": 257.3609375,
+            "right": 372.78593750000005,
+            "top": 237.17409375,
+            "bottom": 262.82409375,
+            "touch": false,
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 14.843749999999986,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.5937499999999994,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 150.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "DiscardUnknown": {
+            "left": 384.809375,
+            "right": 505.04375,
+            "top": 235.57096875,
+            "bottom": 264.42721874999995,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.5937499999999991
+          },
+          "DiscardUnknown/DiscardUnknownCaption": {
+            "left": 387.2140625,
+            "right": 502.6390625000001,
+            "top": 237.17409375,
+            "bottom": 262.82409375,
+            "touch": false,
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 14.843749999999986,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.5937499999999994,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 149.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "HandCard_YJ": {
+            "left": 23.994856283454528,
+            "right": 95.7811437165454,
+            "top": 287.06129950198977,
+            "bottom": 385.00029424801016,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_C2": {
+            "left": 64.56737761508379,
+            "right": 135.23662238491616,
+            "top": 286.0945074796898,
+            "bottom": 383.3369593171851,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999999
+          },
+          "HandCard_D2": {
+            "left": 105.14595335235563,
+            "right": 174.6860466476443,
+            "top": 285.3113882510233,
+            "bottom": 381.8406351864767,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_DA": {
+            "left": 145.73048675812385,
+            "right": 214.12951324187614,
+            "top": 284.71188071399604,
+            "bottom": 380.511382957879,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000001
+          },
+          "HandCard_SK": {
+            "left": 186.32088007442647,
+            "right": 253.56711992557354,
+            "top": 284.2959223496099,
+            "bottom": 379.34926515039007,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_HQ": {
+            "left": 226.91703453923603,
+            "right": 292.99896546076394,
+            "top": 284.0634492325752,
+            "bottom": 378.35434568929975,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_SJ": {
+            "left": 267.518850403382,
+            "right": 332.4251495966181,
+            "top": 284.014396042264,
+            "bottom": 377.52668989523596,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_HJ": {
+            "left": 308.12622694764195,
+            "right": 371.84577305235797,
+            "top": 284.14869607390244,
+            "bottom": 376.8663644729725,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S10": {
+            "left": 348.73906250000005,
+            "right": 411.2609375,
+            "top": 284.46628124999995,
+            "bottom": 376.37343749999997,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_D10": {
+            "left": 388.15422694764203,
+            "right": 451.87377305235805,
+            "top": 284.14869607390244,
+            "bottom": 376.8663644729725,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S8": {
+            "left": 427.57485040338196,
+            "right": 492.481149596618,
+            "top": 284.014396042264,
+            "bottom": 377.52668989523596,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_C8": {
+            "left": 467.0010345392361,
+            "right": 533.0829654607641,
+            "top": 284.0634492325752,
+            "bottom": 378.35434568929975,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_D8": {
+            "left": 506.4328800744266,
+            "right": 573.6791199255736,
+            "top": 284.2959223496099,
+            "bottom": 379.34926515039007,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S7": {
+            "left": 545.8704867581239,
+            "right": 614.2695132418761,
+            "top": 284.71188071399604,
+            "bottom": 380.511382957879,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999997
+          },
+          "HandCard_S6": {
+            "left": 585.3139533523557,
+            "right": 654.8540466476444,
+            "top": 285.3113882510233,
+            "bottom": 381.8406351864767,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_H6": {
+            "left": 624.763377615084,
+            "right": 695.4326223849162,
+            "top": 286.0945074796898,
+            "bottom": 383.3369593171851,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_H4": {
+            "left": 664.2188562834546,
+            "right": 736.0051437165454,
+            "top": 287.06129950198977,
+            "bottom": 385.00029424801016,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "TableNotice": {
+            "left": 98.8,
+            "right": 661.2,
+            "top": 216.33346875,
+            "bottom": 230.76159374999997,
+            "touch": false,
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "font": 21,
+            "actualFont": 21,
+            "cssFont": 12.46874999999997,
+            "lineHeight": 22.950000000000003,
+            "boxHeight": 24.3,
+            "boxWidth": 947.2,
+            "scale": 0.5937499999999986,
+            "overflow": 1,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 272.9988098144531,
+              "left": 0,
+              "right": 272.9989013671875,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "OwnSeatInfo": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 58.11328125000006,
+            "bottom": 76.54921875000002,
+            "touch": false,
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.874999999999979,
+            "lineHeight": 25.25,
+            "boxHeight": 31.05,
+            "boxWidth": 297,
+            "scale": 0.5937499999999989,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 171.92376708984375,
+              "left": 0,
+              "right": 171.9237823486328,
+              "ascent": 18,
+              "descent": 3
+            }
+          }
+        },
+        "pending": true,
+        "submitting": false,
+        "sent": 2
+      },
+      "check": {
+        "labelsChecked": [
+          {
+            "key": "RoomVersion",
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+            "cssFont": 11.875000000000004,
+            "overflow": 2
+          },
+          {
+            "key": "KittyLabel",
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "cssFont": 11.874999999999991,
+            "overflow": 2
+          },
+          {
+            "key": "LeadingSeat",
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "cssFont": 12.468750000000005,
+            "overflow": 2
+          },
+          {
+            "key": "RetryUnknown/RetryUnknownCaption",
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "cssFont": 14.843749999999986,
+            "overflow": 2
+          },
+          {
+            "key": "DiscardUnknown/DiscardUnknownCaption",
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "cssFont": 14.843749999999986,
+            "overflow": 2
+          },
+          {
+            "key": "TableNotice",
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "cssFont": 12.46874999999997,
+            "overflow": 1
+          },
+          {
+            "key": "OwnSeatInfo",
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "cssFont": 11.874999999999979,
+            "overflow": 2
+          }
+        ],
+        "geometryPass": true,
+        "fontBudgetPass": true,
+        "noticeCSSFont": 12.46874999999997,
+        "publicCards": 1
+      }
+    },
+    {
+      "file": "hand.pass-2cards-unknown-760x390.png",
+      "geometry": {
+        "roomID": "g63r2-room-072beaa9a729c129b22c",
+        "version": 6,
+        "viewport": {
+          "width": 760,
+          "height": 390
+        },
+        "logical": {
+          "width": 1280,
+          "height": 656.8421052631579,
+          "unit": 1.35
+        },
+        "nodes": {
+          "TableBrand": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 7.2140624999999545,
+            "bottom": 37.67343749999992,
+            "touch": false,
+            "text": "\u6597\u5730\u4e3b  \u00b7  \u51fa\u724c\u4e2d",
+            "font": 29.700000000000003,
+            "actualFont": 29,
+            "cssFont": 17.218749999999982,
+            "lineHeight": 34.7,
+            "boxHeight": 51.300000000000004,
+            "boxWidth": 297,
+            "scale": 0.5937499999999993,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "29px Arial",
+              "width": 220.09158325195312,
+              "left": -1,
+              "right": 218.09153747558594,
+              "ascent": 26,
+              "descent": 3
+            }
+          },
+          "RoomVersion": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 36.0703125,
+            "bottom": 55.30781250000001,
+            "touch": false,
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v6",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.875000000000004,
+            "lineHeight": 25.25,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 297,
+            "scale": 0.5937500000000002,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 260.6933288574219,
+              "left": 0,
+              "right": 259.9687194824219,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "AuthoritativeTurnClock": {
+            "left": 297.83984375,
+            "right": 462.16015625000006,
+            "top": 7.61484374999992,
+            "bottom": 37.272656249999955,
+            "touch": false,
+            "text": "279s",
+            "font": 32.400000000000006,
+            "actualFont": 32,
+            "cssFont": 19.00000000000002,
+            "lineHeight": 37.400000000000006,
+            "boxHeight": 49.95,
+            "boxWidth": 276.75,
+            "scale": 0.5937500000000007,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "32px Arial",
+              "width": 77.75,
+              "left": -2,
+              "right": 77.078125,
+              "ascent": 23,
+              "descent": 0
+            }
+          },
+          "KittyLabel": {
+            "left": 327.8984375,
+            "right": 432.10156250000006,
+            "top": 95.78671874999998,
+            "bottom": 112.61953124999997,
+            "touch": false,
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.874999999999991,
+            "lineHeight": 25.25,
+            "boxHeight": 28.35,
+            "boxWidth": 175.5,
+            "scale": 0.5937499999999996,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 79.99993896484375,
+              "left": 0,
+              "right": 79.99995422363281,
+              "ascent": 18,
+              "descent": 2
+            }
+          },
+          "LeadingSeat": {
+            "left": 170.99999999999997,
+            "right": 589,
+            "top": 118.02656250000001,
+            "bottom": 137.26406250000002,
+            "touch": false,
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "font": 21.6,
+            "actualFont": 21,
+            "cssFont": 12.468750000000005,
+            "lineHeight": 26.6,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 704,
+            "scale": 0.5937500000000002,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 110.7110595703125,
+              "left": 0,
+              "right": 110.71115112304688,
+              "ascent": 18,
+              "descent": 3
+            }
+          },
+          "PublicTrick0": {
+            "left": 345.8654609375,
+            "right": 386.7451484375,
+            "top": 152.73421875000003,
+            "bottom": 209.96578125000002,
+            "touch": false,
+            "boxHeight": 96.39,
+            "boxWidth": 68.85000000000001,
+            "scale": 0.59375
+          },
+          "PublicTrick1": {
+            "left": 373.25485156250005,
+            "right": 414.1345390625,
+            "top": 152.73421875000003,
+            "bottom": 209.96578125000002,
+            "touch": false,
+            "boxHeight": 96.39,
+            "boxWidth": 68.85000000000001,
+            "scale": 0.59375
+          },
+          "RetryUnknown": {
+            "left": 254.95624999999998,
+            "right": 375.190625,
+            "top": 235.57096875,
+            "bottom": 264.42721874999995,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.5937499999999991
+          },
+          "RetryUnknown/RetryUnknownCaption": {
+            "left": 257.3609375,
+            "right": 372.78593750000005,
+            "top": 237.17409375,
+            "bottom": 262.82409375,
+            "touch": false,
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 14.843749999999986,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.5937499999999994,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 150.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "DiscardUnknown": {
+            "left": 384.809375,
+            "right": 505.04375,
+            "top": 235.57096875,
+            "bottom": 264.42721874999995,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.5937499999999991
+          },
+          "DiscardUnknown/DiscardUnknownCaption": {
+            "left": 387.2140625,
+            "right": 502.6390625000001,
+            "top": 237.17409375,
+            "bottom": 262.82409375,
+            "touch": false,
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 14.843749999999986,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.5937499999999994,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 149.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "HandCard_YJ": {
+            "left": 23.994856283454528,
+            "right": 95.7811437165454,
+            "top": 287.06129950198977,
+            "bottom": 385.00029424801016,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_C2": {
+            "left": 64.56737761508379,
+            "right": 135.23662238491616,
+            "top": 286.0945074796898,
+            "bottom": 383.3369593171851,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999999
+          },
+          "HandCard_D2": {
+            "left": 105.14595335235563,
+            "right": 174.6860466476443,
+            "top": 285.3113882510233,
+            "bottom": 381.8406351864767,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_DA": {
+            "left": 145.73048675812385,
+            "right": 214.12951324187614,
+            "top": 284.71188071399604,
+            "bottom": 380.511382957879,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000001
+          },
+          "HandCard_SK": {
+            "left": 186.32088007442647,
+            "right": 253.56711992557354,
+            "top": 284.2959223496099,
+            "bottom": 379.34926515039007,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_HQ": {
+            "left": 226.91703453923603,
+            "right": 292.99896546076394,
+            "top": 284.0634492325752,
+            "bottom": 378.35434568929975,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_SJ": {
+            "left": 267.518850403382,
+            "right": 332.4251495966181,
+            "top": 284.014396042264,
+            "bottom": 377.52668989523596,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_HJ": {
+            "left": 308.12622694764195,
+            "right": 371.84577305235797,
+            "top": 284.14869607390244,
+            "bottom": 376.8663644729725,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S10": {
+            "left": 348.73906250000005,
+            "right": 411.2609375,
+            "top": 284.46628124999995,
+            "bottom": 376.37343749999997,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_D10": {
+            "left": 388.15422694764203,
+            "right": 451.87377305235805,
+            "top": 284.14869607390244,
+            "bottom": 376.8663644729725,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S8": {
+            "left": 427.57485040338196,
+            "right": 492.481149596618,
+            "top": 284.014396042264,
+            "bottom": 377.52668989523596,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.59375
+          },
+          "HandCard_C8": {
+            "left": 467.0010345392361,
+            "right": 533.0829654607641,
+            "top": 284.0634492325752,
+            "bottom": 378.35434568929975,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_D8": {
+            "left": 506.4328800744266,
+            "right": 573.6791199255736,
+            "top": 284.2959223496099,
+            "bottom": 379.34926515039007,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999998
+          },
+          "HandCard_S7": {
+            "left": 545.8704867581239,
+            "right": 614.2695132418761,
+            "top": 284.71188071399604,
+            "bottom": 380.511382957879,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937499999999997
+          },
+          "HandCard_S6": {
+            "left": 585.3139533523557,
+            "right": 654.8540466476444,
+            "top": 285.3113882510233,
+            "bottom": 381.8406351864767,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_H6": {
+            "left": 624.763377615084,
+            "right": 695.4326223849162,
+            "top": 286.0945074796898,
+            "bottom": 383.3369593171851,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "HandCard_H4": {
+            "left": 664.2188562834546,
+            "right": 736.0051437165454,
+            "top": 287.06129950198977,
+            "bottom": 385.00029424801016,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.5937500000000002
+          },
+          "TableNotice": {
+            "left": 98.8,
+            "right": 661.2,
+            "top": 216.33346875,
+            "bottom": 230.76159374999997,
+            "touch": false,
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "font": 21,
+            "actualFont": 21,
+            "cssFont": 12.46874999999997,
+            "lineHeight": 22.950000000000003,
+            "boxHeight": 24.3,
+            "boxWidth": 947.2,
+            "scale": 0.5937499999999986,
+            "overflow": 1,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 272.9988098144531,
+              "left": 0,
+              "right": 272.9989013671875,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "OwnSeatInfo": {
+            "left": 11.221875000000004,
+            "right": 187.565625,
+            "top": 58.11328125000006,
+            "bottom": 76.54921875000002,
+            "touch": false,
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 11.874999999999979,
+            "lineHeight": 25.25,
+            "boxHeight": 31.05,
+            "boxWidth": 297,
+            "scale": 0.5937499999999989,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 171.92376708984375,
+              "left": 0,
+              "right": 171.9237823486328,
+              "ascent": 18,
+              "descent": 3
+            }
+          }
+        },
+        "pending": true,
+        "submitting": false,
+        "sent": 1
+      },
+      "check": {
+        "labelsChecked": [
+          {
+            "key": "RoomVersion",
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v6",
+            "cssFont": 11.875000000000004,
+            "overflow": 2
+          },
+          {
+            "key": "KittyLabel",
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "cssFont": 11.874999999999991,
+            "overflow": 2
+          },
+          {
+            "key": "LeadingSeat",
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "cssFont": 12.468750000000005,
+            "overflow": 2
+          },
+          {
+            "key": "RetryUnknown/RetryUnknownCaption",
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "cssFont": 14.843749999999986,
+            "overflow": 2
+          },
+          {
+            "key": "DiscardUnknown/DiscardUnknownCaption",
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "cssFont": 14.843749999999986,
+            "overflow": 2
+          },
+          {
+            "key": "TableNotice",
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "cssFont": 12.46874999999997,
+            "overflow": 1
+          },
+          {
+            "key": "OwnSeatInfo",
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "cssFont": 11.874999999999979,
+            "overflow": 2
+          }
+        ],
+        "geometryPass": true,
+        "fontBudgetPass": true,
+        "noticeCSSFont": 12.46874999999997,
+        "publicCards": 2
+      }
+    },
+    {
+      "file": "hand.pass-2cards-unknown-1280x720.png",
+      "geometry": {
+        "roomID": "g63r2-room-072beaa9a729c129b22c",
+        "version": 6,
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "logical": {
+          "width": 1280,
+          "height": 720,
+          "unit": 1.35
+        },
+        "nodes": {
+          "TableBrand": {
+            "left": 18.900000000000006,
+            "right": 315.90000000000003,
+            "top": 12.149999999999977,
+            "bottom": 63.44999999999993,
+            "touch": false,
+            "text": "\u6597\u5730\u4e3b  \u00b7  \u51fa\u724c\u4e2d",
+            "font": 29.700000000000003,
+            "actualFont": 29,
+            "cssFont": 28.99999999999997,
+            "lineHeight": 34.7,
+            "boxHeight": 51.300000000000004,
+            "boxWidth": 297,
+            "scale": 0.999999999999999,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "29px Arial",
+              "width": 220.09158325195312,
+              "left": -1,
+              "right": 218.09153747558594,
+              "ascent": 26,
+              "descent": 3
+            }
+          },
+          "RoomVersion": {
+            "left": 18.900000000000006,
+            "right": 315.90000000000003,
+            "top": 60.75,
+            "bottom": 93.15000000000009,
+            "touch": false,
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v6",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 20.000000000000053,
+            "lineHeight": 25.25,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 297,
+            "scale": 1.0000000000000027,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 260.6933288574219,
+              "left": 0,
+              "right": 259.9687194824219,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "AuthoritativeTurnClock": {
+            "left": 501.625,
+            "right": 778.375,
+            "top": 12.824999999999932,
+            "bottom": 62.77499999999998,
+            "touch": false,
+            "text": "278s",
+            "font": 32.400000000000006,
+            "actualFont": 32,
+            "cssFont": 32.00000000000003,
+            "lineHeight": 37.400000000000006,
+            "boxHeight": 49.95,
+            "boxWidth": 276.75,
+            "scale": 1.0000000000000009,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "32px Arial",
+              "width": 77.75,
+              "left": -2,
+              "right": 77.078125,
+              "ascent": 23,
+              "descent": 0
+            }
+          },
+          "KittyLabel": {
+            "left": 552.25,
+            "right": 727.75,
+            "top": 161.32500000000005,
+            "bottom": 189.67499999999995,
+            "touch": false,
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 19.999999999999936,
+            "lineHeight": 25.25,
+            "boxHeight": 28.35,
+            "boxWidth": 175.5,
+            "scale": 0.9999999999999968,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 79.99993896484375,
+              "left": 0,
+              "right": 79.99995422363281,
+              "ascent": 18,
+              "descent": 2
+            }
+          },
+          "LeadingSeat": {
+            "left": 288,
+            "right": 992,
+            "top": 228.15000000000003,
+            "bottom": 260.54999999999995,
+            "touch": false,
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "font": 21.6,
+            "actualFont": 21,
+            "cssFont": 20.999999999999943,
+            "lineHeight": 26.6,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 704,
+            "scale": 0.9999999999999973,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 110.7110595703125,
+              "left": 0,
+              "right": 110.71115112304688,
+              "ascent": 18,
+              "descent": 3
+            }
+          },
+          "PublicTrick0": {
+            "left": 582.51025,
+            "right": 651.3602500000001,
+            "top": 286.605,
+            "bottom": 382.995,
+            "touch": false,
+            "boxHeight": 96.39,
+            "boxWidth": 68.85000000000001,
+            "scale": 0.9999999999999999
+          },
+          "PublicTrick1": {
+            "left": 628.63975,
+            "right": 697.48975,
+            "top": 286.605,
+            "bottom": 382.995,
+            "touch": false,
+            "boxHeight": 96.39,
+            "boxWidth": 68.85000000000001,
+            "scale": 0.9999999999999999
+          },
+          "RetryUnknown": {
+            "left": 429.4,
+            "right": 631.9,
+            "top": 459.909,
+            "bottom": 508.50899999999996,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.9999999999999992
+          },
+          "RetryUnknown/RetryUnknownCaption": {
+            "left": 433.45,
+            "right": 627.85,
+            "top": 462.609,
+            "bottom": 505.80899999999997,
+            "touch": false,
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 24.999999999999993,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.9999999999999997,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 150.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "DiscardUnknown": {
+            "left": 648.1,
+            "right": 850.6,
+            "top": 459.909,
+            "bottom": 508.50899999999996,
+            "touch": true,
+            "boxHeight": 48.6,
+            "boxWidth": 202.5,
+            "scale": 0.9999999999999992
+          },
+          "DiscardUnknown/DiscardUnknownCaption": {
+            "left": 652.1500000000001,
+            "right": 846.5500000000002,
+            "top": 462.609,
+            "bottom": 505.80899999999997,
+            "touch": false,
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "font": 25.272000000000002,
+            "actualFont": 25,
+            "cssFont": 24.999999999999993,
+            "lineHeight": 30.272000000000002,
+            "boxHeight": 43.2,
+            "boxWidth": 194.4,
+            "scale": 0.9999999999999997,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "25px Arial",
+              "width": 150.00054931640625,
+              "left": 0,
+              "right": 149.00045776367188,
+              "ascent": 22,
+              "descent": 3
+            }
+          },
+          "HandCard_YJ": {
+            "left": 40.412389530028676,
+            "right": 161.3156104699712,
+            "top": 546.6295570559828,
+            "bottom": 711.5794429440172,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000004
+          },
+          "HandCard_C2": {
+            "left": 108.74505703593059,
+            "right": 227.7669429640693,
+            "top": 545.0012757552671,
+            "bottom": 708.7780367447328,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_D2": {
+            "left": 177.08792143554632,
+            "right": 294.20807856445356,
+            "top": 543.6823381069867,
+            "bottom": 706.2579118930133,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999998
+          },
+          "HandCard_DA": {
+            "left": 245.44081980315596,
+            "right": 360.639180196844,
+            "top": 542.6726412025196,
+            "bottom": 704.0191712974804,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_SK": {
+            "left": 313.80358749377086,
+            "right": 427.0604125062291,
+            "top": 541.9720797467114,
+            "bottom": 702.0619202532887,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000007
+          },
+          "HandCard_HQ": {
+            "left": 382.1760581713449,
+            "right": 493.4719418286551,
+            "top": 541.5805460759161,
+            "bottom": 700.3862664240838,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999998
+          },
+          "HandCard_SJ": {
+            "left": 450.5580638372749,
+            "right": 559.8739361627252,
+            "top": 541.4979301764447,
+            "bottom": 698.9923198235552,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000002
+          },
+          "HandCard_HJ": {
+            "left": 518.9494348591865,
+            "right": 626.2665651408134,
+            "top": 541.7241197034147,
+            "bottom": 697.8801927965853,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999992
+          },
+          "HandCard_S10": {
+            "left": 587.35,
+            "right": 692.65,
+            "top": 542.2589999999999,
+            "bottom": 697.05,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000002
+          },
+          "HandCard_D10": {
+            "left": 653.7334348591866,
+            "right": 761.0505651408135,
+            "top": 541.7241197034147,
+            "bottom": 697.8801927965853,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_S8": {
+            "left": 720.1260638372748,
+            "right": 829.4419361627251,
+            "top": 541.4979301764447,
+            "bottom": 698.9923198235552,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000002
+          },
+          "HandCard_C8": {
+            "left": 786.528058171345,
+            "right": 897.8239418286552,
+            "top": 541.5805460759161,
+            "bottom": 700.3862664240838,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999998
+          },
+          "HandCard_D8": {
+            "left": 852.9395874937711,
+            "right": 966.1964125062292,
+            "top": 541.9720797467114,
+            "bottom": 702.0619202532887,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_S7": {
+            "left": 919.3608198031561,
+            "right": 1034.559180196844,
+            "top": 542.6726412025196,
+            "bottom": 704.0191712974804,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_S6": {
+            "left": 985.7919214355466,
+            "right": 1102.9120785644536,
+            "top": 543.6823381069867,
+            "bottom": 706.2579118930133,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 0.9999999999999998
+          },
+          "HandCard_H6": {
+            "left": 1052.2330570359309,
+            "right": 1171.2549429640694,
+            "top": 545.0012757552671,
+            "bottom": 708.7780367447328,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1
+          },
+          "HandCard_H4": {
+            "left": 1118.6843895300287,
+            "right": 1239.5876104699712,
+            "top": 546.6295570559828,
+            "bottom": 711.5794429440172,
+            "touch": true,
+            "boxHeight": 154.79100000000003,
+            "boxWidth": 105.30000000000001,
+            "scale": 1.0000000000000004
+          },
+          "TableNotice": {
+            "left": 166.4,
+            "right": 1113.6,
+            "top": 399.159,
+            "bottom": 431.55899999999997,
+            "touch": false,
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "font": 21,
+            "actualFont": 21,
+            "cssFont": 20.999999999999982,
+            "lineHeight": 24.3,
+            "boxHeight": 32.400000000000006,
+            "boxWidth": 947.2,
+            "scale": 0.9999999999999991,
+            "overflow": 1,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "21px Arial",
+              "width": 272.9988098144531,
+              "left": 0,
+              "right": 272.9989013671875,
+              "ascent": 18,
+              "descent": 4
+            }
+          },
+          "OwnSeatInfo": {
+            "left": 18.900000000000006,
+            "right": 315.90000000000003,
+            "top": 97.87500000000011,
+            "bottom": 128.92499999999995,
+            "touch": false,
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "font": 20.25,
+            "actualFont": 20,
+            "cssFont": 19.999999999999897,
+            "lineHeight": 25.25,
+            "boxHeight": 31.05,
+            "boxWidth": 297,
+            "scale": 0.9999999999999949,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "20px Arial",
+              "width": 171.92376708984375,
+              "left": 0,
+              "right": 171.9237823486328,
+              "ascent": 18,
+              "descent": 3
+            }
+          }
+        },
+        "pending": true,
+        "submitting": false,
+        "sent": 1
+      },
+      "check": {
+        "labelsChecked": [
+          {
+            "key": "RoomVersion",
+            "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v6",
+            "cssFont": 20.000000000000053,
+            "overflow": 2
+          },
+          {
+            "key": "KittyLabel",
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "cssFont": 19.999999999999936,
+            "overflow": 2
+          },
+          {
+            "key": "LeadingSeat",
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "cssFont": 20.999999999999943,
+            "overflow": 2
+          },
+          {
+            "key": "RetryUnknown/RetryUnknownCaption",
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "cssFont": 24.999999999999993,
+            "overflow": 2
+          },
+          {
+            "key": "DiscardUnknown/DiscardUnknownCaption",
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "cssFont": 24.999999999999993,
+            "overflow": 2
+          },
+          {
+            "key": "TableNotice",
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "cssFont": 20.999999999999982,
+            "overflow": 1
+          },
+          {
+            "key": "OwnSeatInfo",
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "cssFont": 19.999999999999897,
+            "overflow": 2
+          }
+        ],
+        "geometryPass": true,
+        "fontBudgetPass": true,
+        "noticeCSSFont": 20.999999999999982,
+        "publicCards": 2
+      }
+    },
+    {
+      "file": "hand.pass-2cards-unknown-390x844.png",
+      "geometry": {
+        "roomID": "g63r2-room-072beaa9a729c129b22c",
+        "version": 6,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "logical": {
+          "width": 1280,
+          "height": 2770.051282051282,
+          "unit": 3.282051282051282
+        },
+        "nodes": {
+          "TableBrand": {
+            "left": 13.999999999999993,
+            "right": 131,
+            "top": 8.999999999999886,
+            "bottom": 46.99999999999977,
+            "touch": false,
+            "text": "\u6597\u5730\u4e3b  \u00b7  \u51fa\u724c\u4e2d",
+            "font": 72.2051282051282,
+            "actualFont": 50,
+            "cssFont": 15.234374999999956,
+            "lineHeight": 77.2051282051282,
+            "boxHeight": 124.71794871794872,
+            "boxWidth": 384,
+            "scale": 0.3046874999999991,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "50px Arial",
+              "width": 379.46746826171875,
+              "left": -2,
+              "right": 375.467529296875,
+              "ascent": 43,
+              "descent": 5
+            }
+          },
+          "RoomVersion": {
+            "left": 13.999999999999993,
+            "right": 131,
+            "top": 44.999999999999886,
+            "bottom": 68.99999999999989,
+            "touch": false,
+            "text": "\u623f g63r2\u2026  \u00b7  v6",
+            "font": 49.230769230769226,
+            "actualFont": 47,
+            "cssFont": 14.3203125,
+            "lineHeight": 54.230769230769226,
+            "boxHeight": 78.76923076923077,
+            "boxWidth": 384,
+            "scale": 0.3046875,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "47px Arial",
+              "width": 380.22259521484375,
+              "left": -1,
+              "right": 377.31976318359375,
+              "ascent": 37,
+              "descent": 10
+            }
+          },
+          "AuthoritativeTurnClock": {
+            "left": 148.2,
+            "right": 241.80000000000004,
+            "top": 9.499999999999886,
+            "bottom": 46.499999999999886,
+            "touch": false,
+            "text": "277s",
+            "font": 78.76923076923077,
+            "actualFont": 78,
+            "cssFont": 23.765625,
+            "lineHeight": 83.76923076923077,
+            "boxHeight": 121.43589743589743,
+            "boxWidth": 307.2,
+            "scale": 0.3046875,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "78px Arial",
+              "width": 189.515625,
+              "left": -5,
+              "right": 185.8779296875,
+              "ascent": 59,
+              "descent": 1
+            }
+          },
+          "KittyLabel": {
+            "left": 130.00000000000003,
+            "right": 260,
+            "top": 119.49999999999989,
+            "bottom": 140.5,
+            "touch": false,
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "font": 49.230769230769226,
+            "actualFont": 49,
+            "cssFont": 14.929687500000082,
+            "lineHeight": 54.230769230769226,
+            "boxHeight": 68.92307692307692,
+            "boxWidth": 426.66666666666663,
+            "scale": 0.30468750000000167,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "49px Arial",
+              "width": 196.0001220703125,
+              "left": -1,
+              "right": 194.00009155273438,
+              "ascent": 42,
+              "descent": 5
+            }
+          },
+          "LeadingSeat": {
+            "left": 87.74999999999999,
+            "right": 302.25,
+            "top": 313.4599999999999,
+            "bottom": 337.46,
+            "touch": false,
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "font": 52.51282051282051,
+            "actualFont": 52,
+            "cssFont": 15.843750000000037,
+            "lineHeight": 57.51282051282051,
+            "boxHeight": 78.76923076923077,
+            "boxWidth": 704,
+            "scale": 0.3046875000000007,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "52px Arial",
+              "width": 274.14276123046875,
+              "left": -1,
+              "right": 272.1427001953125,
+              "ascent": 45,
+              "descent": 5
+            }
+          },
+          "PublicTrick0": {
+            "left": 155.922,
+            "right": 202.72199999999998,
+            "top": 359.7,
+            "bottom": 425.21999999999997,
+            "touch": false,
+            "boxHeight": 215.04,
+            "boxWidth": 153.6,
+            "scale": 0.30468749999999994
+          },
+          "PublicTrick1": {
+            "left": 187.27800000000002,
+            "right": 234.07800000000003,
+            "top": 359.7,
+            "bottom": 425.21999999999997,
+            "touch": false,
+            "boxHeight": 215.04,
+            "boxWidth": 153.6,
+            "scale": 0.30468749999999994
+          },
+          "RetryUnknown": {
+            "left": 38.99999999999999,
+            "right": 189,
+            "top": 651.34,
+            "bottom": 687.3400000000001,
+            "touch": true,
+            "boxHeight": 118.15384615384615,
+            "boxWidth": 492.30769230769226,
+            "scale": 0.304687500000001
+          },
+          "RetryUnknown/RetryUnknownCaption": {
+            "left": 42,
+            "right": 186,
+            "top": 653.34,
+            "bottom": 685.34,
+            "touch": false,
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "font": 61.44,
+            "actualFont": 61,
+            "cssFont": 18.5859375,
+            "lineHeight": 66.44,
+            "boxHeight": 105.02564102564102,
+            "boxWidth": 472.6153846153846,
+            "scale": 0.3046875,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "61px Arial",
+              "width": 366.00067138671875,
+              "left": -1,
+              "right": 364.00054931640625,
+              "ascent": 53,
+              "descent": 6
+            }
+          },
+          "DiscardUnknown": {
+            "left": 200.99999999999997,
+            "right": 351,
+            "top": 651.34,
+            "bottom": 687.3400000000001,
+            "touch": true,
+            "boxHeight": 118.15384615384615,
+            "boxWidth": 492.30769230769226,
+            "scale": 0.304687500000001
+          },
+          "DiscardUnknown/DiscardUnknownCaption": {
+            "left": 204,
+            "right": 348,
+            "top": 653.34,
+            "bottom": 685.34,
+            "touch": false,
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "font": 61.44,
+            "actualFont": 61,
+            "cssFont": 18.5859375,
+            "lineHeight": 66.44,
+            "boxHeight": 105.02564102564102,
+            "boxWidth": 472.6153846153846,
+            "scale": 0.3046875,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "61px Arial",
+              "width": 366.00067138671875,
+              "left": -1,
+              "right": 363.00054931640625,
+              "ascent": 53,
+              "descent": 6
+            }
+          },
+          "HandCard_YJ": {
+            "left": 8.221029281502755,
+            "right": 97.77897071849723,
+            "top": 715.5774496710984,
+            "bottom": 837.7625503289016,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046875000000001
+          },
+          "HandCard_C2": {
+            "left": 26.667820026615328,
+            "right": 114.83217997338467,
+            "top": 714.371315374272,
+            "bottom": 835.6874346257281,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999994
+          },
+          "HandCard_D2": {
+            "left": 45.12216402633066,
+            "right": 131.87783597366933,
+            "top": 713.3943245236939,
+            "bottom": 833.8206754763062,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046874999999999
+          },
+          "HandCard_DA": {
+            "left": 63.58394059493035,
+            "right": 148.91605940506963,
+            "top": 712.6464008907553,
+            "bottom": 832.1623491092447,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468750000000006
+          },
+          "HandCard_SK": {
+            "left": 82.05302777316363,
+            "right": 165.94697222683638,
+            "top": 712.1274664790454,
+            "bottom": 830.7125335209545,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468750000000006
+          },
+          "HandCard_HQ": {
+            "left": 100.5293023491444,
+            "right": 182.97069765085564,
+            "top": 711.8374415377157,
+            "bottom": 829.4713084622844,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468750000000017
+          },
+          "HandCard_SJ": {
+            "left": 119.0126398794629,
+            "right": 199.98736012053712,
+            "top": 711.7762445751443,
+            "bottom": 828.4387554248558,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046875
+          },
+          "HandCard_HJ": {
+            "left": 137.50291471050855,
+            "right": 216.99708528949148,
+            "top": 711.9437923728998,
+            "bottom": 827.6149576271002,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999983
+          },
+          "HandCard_S10": {
+            "left": 156,
+            "right": 234.00000000000003,
+            "top": 712.34,
+            "bottom": 827,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999994
+          },
+          "HandCard_D10": {
+            "left": 173.00291471050855,
+            "right": 252.49708528949148,
+            "top": 711.9437923728998,
+            "bottom": 827.6149576271002,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046875000000001
+          },
+          "HandCard_S8": {
+            "left": 190.0126398794629,
+            "right": 270.9873601205371,
+            "top": 711.7762445751443,
+            "bottom": 828.4387554248558,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046875
+          },
+          "HandCard_C8": {
+            "left": 207.02930234914442,
+            "right": 289.47069765085564,
+            "top": 711.8374415377157,
+            "bottom": 829.4713084622844,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999983
+          },
+          "HandCard_D8": {
+            "left": 224.05302777316368,
+            "right": 307.94697222683635,
+            "top": 712.1274664790454,
+            "bottom": 830.7125335209545,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999994
+          },
+          "HandCard_S7": {
+            "left": 241.08394059493037,
+            "right": 326.41605940506963,
+            "top": 712.6464008907553,
+            "bottom": 832.1623491092447,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468750000000006
+          },
+          "HandCard_S6": {
+            "left": 258.1221640263307,
+            "right": 344.87783597366933,
+            "top": 713.3943245236939,
+            "bottom": 833.8206754763062,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.3046874999999999
+          },
+          "HandCard_H6": {
+            "left": 275.1678200266154,
+            "right": 363.3321799733847,
+            "top": 714.371315374272,
+            "bottom": 835.6874346257281,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999994
+          },
+          "HandCard_H4": {
+            "left": 292.2210292815028,
+            "right": 381.7789707184973,
+            "top": 715.5774496710984,
+            "bottom": 837.7625503289016,
+            "touch": true,
+            "boxHeight": 376.32,
+            "boxWidth": 256,
+            "scale": 0.30468749999999983
+          },
+          "TableNotice": {
+            "left": 50.7,
+            "right": 339.3,
+            "top": 606.3400000000001,
+            "bottom": 630.34,
+            "touch": false,
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "font": 50,
+            "actualFont": 50,
+            "cssFont": 15.234374999999927,
+            "lineHeight": 59.07692307692307,
+            "boxHeight": 78.76923076923077,
+            "boxWidth": 947.2,
+            "scale": 0.30468749999999856,
+            "overflow": 1,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "50px Arial",
+              "width": 649.9993286132812,
+              "left": -1,
+              "right": 648.9993896484375,
+              "ascent": 43,
+              "descent": 6
+            }
+          },
+          "OwnSeatInfo": {
+            "left": 13.999999999999993,
+            "right": 131,
+            "top": 72.49999999999989,
+            "bottom": 95.5,
+            "touch": false,
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "font": 49.230769230769226,
+            "actualFont": 44,
+            "cssFont": 13.406250000000066,
+            "lineHeight": 54.230769230769226,
+            "boxHeight": 75.48717948717949,
+            "boxWidth": 384,
+            "scale": 0.3046875000000015,
+            "overflow": 2,
+            "wrap": false,
+            "parsedLines": 1,
+            "glyph": {
+              "fontDescription": "44px Arial",
+              "width": 378.2320556640625,
+              "left": -1,
+              "right": 377.2321472167969,
+              "ascent": 38,
+              "descent": 6
+            }
+          }
+        },
+        "pending": true,
+        "submitting": false,
+        "sent": 1
+      },
+      "check": {
+        "labelsChecked": [
+          {
+            "key": "RoomVersion",
+            "text": "\u623f g63r2\u2026  \u00b7  v6",
+            "cssFont": 14.3203125,
+            "overflow": 2
+          },
+          {
+            "key": "KittyLabel",
+            "text": "\u5730\u4e3b\u5e95\u724c",
+            "cssFont": 14.929687500000082,
+            "overflow": 2
+          },
+          {
+            "key": "LeadingSeat",
+            "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+            "cssFont": 15.843750000000037,
+            "overflow": 2
+          },
+          {
+            "key": "RetryUnknown/RetryUnknownCaption",
+            "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+            "cssFont": 18.5859375,
+            "overflow": 2
+          },
+          {
+            "key": "DiscardUnknown/DiscardUnknownCaption",
+            "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+            "cssFont": 18.5859375,
+            "overflow": 2
+          },
+          {
+            "key": "TableNotice",
+            "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+            "cssFont": 15.234374999999927,
+            "overflow": 1
+          },
+          {
+            "key": "OwnSeatInfo",
+            "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+            "cssFont": 13.406250000000066,
+            "overflow": 2
+          }
+        ],
+        "geometryPass": true,
+        "fontBudgetPass": true,
+        "noticeCSSFont": 15.234374999999927,
+        "publicCards": 2
+      }
+    }
+  ],
+  "room": "g63r2-room-072beaa9a729c129b22c",
+  "hand": "g63-full-b98c9b0e1a99c4a2fff02290",
+  "result": "FAIL"
+}

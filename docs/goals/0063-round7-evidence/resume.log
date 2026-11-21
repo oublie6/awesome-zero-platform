@@ -1,0 +1,3 @@
+PASS original single-card Pass UNKNOWN: all sizes, second timeout, exact touch retry and discard
+PASS Pass UNKNOWN multiple public cards, three sizes and successful exact retry
+FAIL bounded redraw and normal status typography; clock disposal: actual SHRINK font below 11 CSS px: 0

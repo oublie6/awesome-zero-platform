@@ -1,0 +1,1106 @@
+{
+  "result": "PASS",
+  "R6-N01": "PASS",
+  "threshold": 11,
+  "actualSnapshots": 13,
+  "minimumCSSFontsByWidth": {
+    "760": {
+      "RoomVersion": 11.875000000000004,
+      "KittyLabel": 11.874999999999991,
+      "EmptyTrick": 16.031250000000007,
+      "RetryUnknown/RetryUnknownCaption": 14.843749999999986,
+      "DiscardUnknown/DiscardUnknownCaption": 14.843749999999986,
+      "TableNotice": 12.46874999999997,
+      "OwnSeatInfo": 11.874999999999979,
+      "LeadingSeat": 12.468750000000005
+    },
+    "1280": {
+      "RoomVersion": 20.000000000000053,
+      "KittyLabel": 19.999999999999936,
+      "EmptyTrick": 27.000000000000018,
+      "RetryUnknown/RetryUnknownCaption": 24.999999999999993,
+      "DiscardUnknown/DiscardUnknownCaption": 24.999999999999993,
+      "TableNotice": 20.999999999999982,
+      "OwnSeatInfo": 19.999999999999897,
+      "LeadingSeat": 20.999999999999943
+    },
+    "390": {
+      "RoomVersion": 14.3203125,
+      "KittyLabel": 14.929687500000082,
+      "EmptyTrick": 19.8046875,
+      "RetryUnknown/RetryUnknownCaption": 18.5859375,
+      "DiscardUnknown/DiscardUnknownCaption": 18.5859375,
+      "TableNotice": 15.234374999999927,
+      "OwnSeatInfo": 13.406250000000066,
+      "LeadingSeat": 15.843750000000037
+    }
+  },
+  "measurements": [
+    {
+      "file": "hand.bid-0cards-unknown-760x390.png",
+      "viewport": {
+        "width": 760,
+        "height": 390
+      },
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 12.46874999999997,
+        "lineHeight": 22.950000000000003,
+        "boxHeight": 24.3,
+        "boxWidth": 947.2,
+        "scale": 0.5937499999999986,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v1",
+          "cssFont": 11.875000000000004,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 11.874999999999991,
+          "overflow": 2
+        },
+        {
+          "key": "EmptyTrick",
+          "text": "\u6b63\u5728\u53eb\u5730\u4e3b",
+          "cssFont": 16.031250000000007,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 12.46874999999997,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(1) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 11.874999999999979,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "hand.bid-0cards-unknown-1280x720.png",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "logical": {
+        "width": 1280,
+        "height": 720,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 166.4,
+        "right": 1113.6,
+        "top": 399.159,
+        "bottom": 431.55899999999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 20.999999999999982,
+        "lineHeight": 24.3,
+        "boxHeight": 32.400000000000006,
+        "boxWidth": 947.2,
+        "scale": 0.9999999999999991,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v1",
+          "cssFont": 20.000000000000053,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 19.999999999999936,
+          "overflow": 2
+        },
+        {
+          "key": "EmptyTrick",
+          "text": "\u6b63\u5728\u53eb\u5730\u4e3b",
+          "cssFont": 27.000000000000018,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 24.999999999999993,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 24.999999999999993,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 20.999999999999982,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(1) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 19.999999999999897,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "hand.bid-0cards-unknown-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "logical": {
+        "width": 1280,
+        "height": 2770.051282051282,
+        "unit": 3.282051282051282
+      },
+      "notice": {
+        "left": 50.7,
+        "right": 339.3,
+        "top": 606.3400000000001,
+        "bottom": 630.34,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 50,
+        "actualFont": 50,
+        "cssFont": 15.234374999999927,
+        "lineHeight": 59.07692307692307,
+        "boxHeight": 78.76923076923077,
+        "boxWidth": 947.2,
+        "scale": 0.30468749999999856,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "50px Arial",
+          "width": 649.9993286132812,
+          "left": -1,
+          "right": 648.9993896484375,
+          "ascent": 43,
+          "descent": 6
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f g63r2\u2026  \u00b7  v1",
+          "cssFont": 14.3203125,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 14.929687500000082,
+          "overflow": 2
+        },
+        {
+          "key": "EmptyTrick",
+          "text": "\u6b63\u5728\u53eb\u5730\u4e3b",
+          "cssFont": 19.8046875,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 18.5859375,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 18.5859375,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 15.234374999999927,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(1) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 13.406250000000066,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "hand.play-0cards-unknown-760x390.png",
+      "viewport": {
+        "width": 760,
+        "height": 390
+      },
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 12.46874999999997,
+        "lineHeight": 22.950000000000003,
+        "boxHeight": 24.3,
+        "boxWidth": 947.2,
+        "scale": 0.5937499999999986,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v2",
+          "cssFont": 11.875000000000004,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 11.874999999999991,
+          "overflow": 2
+        },
+        {
+          "key": "EmptyTrick",
+          "text": "\u7b49\u5f85\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 16.031250000000007,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 12.46874999999997,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(1) \u00b7 \u5730\u4e3b \u00b7 20\u5f20",
+          "cssFont": 11.874999999999979,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "hand.play-0cards-unknown-1280x720.png",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "logical": {
+        "width": 1280,
+        "height": 720,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 166.4,
+        "right": 1113.6,
+        "top": 399.159,
+        "bottom": 431.55899999999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 20.999999999999982,
+        "lineHeight": 24.3,
+        "boxHeight": 32.400000000000006,
+        "boxWidth": 947.2,
+        "scale": 0.9999999999999991,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v2",
+          "cssFont": 20.000000000000053,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 19.999999999999936,
+          "overflow": 2
+        },
+        {
+          "key": "EmptyTrick",
+          "text": "\u7b49\u5f85\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 27.000000000000018,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 24.999999999999993,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 24.999999999999993,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 20.999999999999982,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(1) \u00b7 \u5730\u4e3b \u00b7 20\u5f20",
+          "cssFont": 19.999999999999897,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "hand.play-0cards-unknown-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "logical": {
+        "width": 1280,
+        "height": 2770.051282051282,
+        "unit": 3.282051282051282
+      },
+      "notice": {
+        "left": 50.7,
+        "right": 339.3,
+        "top": 606.3400000000001,
+        "bottom": 630.34,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 50,
+        "actualFont": 50,
+        "cssFont": 15.234374999999927,
+        "lineHeight": 59.07692307692307,
+        "boxHeight": 78.76923076923077,
+        "boxWidth": 947.2,
+        "scale": 0.30468749999999856,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "50px Arial",
+          "width": 649.9993286132812,
+          "left": -1,
+          "right": 648.9993896484375,
+          "ascent": 43,
+          "descent": 6
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f g63r2\u2026  \u00b7  v2",
+          "cssFont": 14.3203125,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 14.929687500000082,
+          "overflow": 2
+        },
+        {
+          "key": "EmptyTrick",
+          "text": "\u7b49\u5f85\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 19.8046875,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 18.5859375,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 18.5859375,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 15.234374999999927,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(1) \u00b7 \u5730\u4e3b \u00b7 20\u5f20",
+          "cssFont": 13.406250000000066,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "single-pass-unknown-760x390.png",
+      "viewport": {
+        "width": 760,
+        "height": 390
+      },
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 12.46874999999997,
+        "lineHeight": 22.950000000000003,
+        "boxHeight": 24.3,
+        "boxWidth": 947.2,
+        "scale": 0.5937499999999986,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+          "cssFont": 11.875000000000004,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 11.874999999999991,
+          "overflow": 2
+        },
+        {
+          "key": "LeadingSeat",
+          "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 12.468750000000005,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 12.46874999999997,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 11.874999999999979,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "single-pass-unknown-1280x720.png",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "logical": {
+        "width": 1280,
+        "height": 720,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 166.4,
+        "right": 1113.6,
+        "top": 399.159,
+        "bottom": 431.55899999999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 20.999999999999982,
+        "lineHeight": 24.3,
+        "boxHeight": 32.400000000000006,
+        "boxWidth": 947.2,
+        "scale": 0.9999999999999991,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+          "cssFont": 20.000000000000053,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 19.999999999999936,
+          "overflow": 2
+        },
+        {
+          "key": "LeadingSeat",
+          "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 20.999999999999943,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 24.999999999999993,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 24.999999999999993,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 20.999999999999982,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 19.999999999999897,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "single-pass-unknown-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "logical": {
+        "width": 1280,
+        "height": 2770.051282051282,
+        "unit": 3.282051282051282
+      },
+      "notice": {
+        "left": 50.7,
+        "right": 339.3,
+        "top": 606.3400000000001,
+        "bottom": 630.34,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 50,
+        "actualFont": 50,
+        "cssFont": 15.234374999999927,
+        "lineHeight": 59.07692307692307,
+        "boxHeight": 78.76923076923077,
+        "boxWidth": 947.2,
+        "scale": 0.30468749999999856,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "50px Arial",
+          "width": 649.9993286132812,
+          "left": -1,
+          "right": 648.9993896484375,
+          "ascent": 43,
+          "descent": 6
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f g63r2\u2026  \u00b7  v3",
+          "cssFont": 14.3203125,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 14.929687500000082,
+          "overflow": 2
+        },
+        {
+          "key": "LeadingSeat",
+          "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 15.843750000000037,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 18.5859375,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 18.5859375,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 15.234374999999927,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 13.406250000000066,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "single-pass-again-760x390.png",
+      "viewport": {
+        "width": 760,
+        "height": 390
+      },
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 12.46874999999997,
+        "lineHeight": 22.950000000000003,
+        "boxHeight": 24.3,
+        "boxWidth": 947.2,
+        "scale": 0.5937499999999986,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v3",
+          "cssFont": 11.875000000000004,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 11.874999999999991,
+          "overflow": 2
+        },
+        {
+          "key": "LeadingSeat",
+          "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 12.468750000000005,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 12.46874999999997,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 11.874999999999979,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "hand.pass-2cards-unknown-760x390.png",
+      "viewport": {
+        "width": 760,
+        "height": 390
+      },
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 12.46874999999997,
+        "lineHeight": 22.950000000000003,
+        "boxHeight": 24.3,
+        "boxWidth": 947.2,
+        "scale": 0.5937499999999986,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v6",
+          "cssFont": 11.875000000000004,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 11.874999999999991,
+          "overflow": 2
+        },
+        {
+          "key": "LeadingSeat",
+          "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 12.468750000000005,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 14.843749999999986,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 12.46874999999997,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 11.874999999999979,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "hand.pass-2cards-unknown-1280x720.png",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "logical": {
+        "width": 1280,
+        "height": 720,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 166.4,
+        "right": 1113.6,
+        "top": 399.159,
+        "bottom": 431.55899999999997,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 21,
+        "actualFont": 21,
+        "cssFont": 20.999999999999982,
+        "lineHeight": 24.3,
+        "boxHeight": 32.400000000000006,
+        "boxWidth": 947.2,
+        "scale": 0.9999999999999991,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "21px Arial",
+          "width": 272.9988098144531,
+          "left": 0,
+          "right": 272.9989013671875,
+          "ascent": 18,
+          "descent": 4
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f\u95f4 g63r2-room-0\u2026  \u00b7  v6",
+          "cssFont": 20.000000000000053,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 19.999999999999936,
+          "overflow": 2
+        },
+        {
+          "key": "LeadingSeat",
+          "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 20.999999999999943,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 24.999999999999993,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 24.999999999999993,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 20.999999999999982,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 19.999999999999897,
+          "overflow": 2
+        }
+      ]
+    },
+    {
+      "file": "hand.pass-2cards-unknown-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "logical": {
+        "width": 1280,
+        "height": 2770.051282051282,
+        "unit": 3.282051282051282
+      },
+      "notice": {
+        "left": 50.7,
+        "right": 339.3,
+        "top": 606.3400000000001,
+        "bottom": 630.34,
+        "touch": false,
+        "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+        "font": 50,
+        "actualFont": 50,
+        "cssFont": 15.234374999999927,
+        "lineHeight": 59.07692307692307,
+        "boxHeight": 78.76923076923077,
+        "boxWidth": 947.2,
+        "scale": 0.30468749999999856,
+        "overflow": 1,
+        "wrap": false,
+        "parsedLines": 1,
+        "glyph": {
+          "fontDescription": "50px Arial",
+          "width": 649.9993286132812,
+          "left": -1,
+          "right": 648.9993896484375,
+          "ascent": 43,
+          "descent": 6
+        }
+      },
+      "labels": [
+        {
+          "key": "RoomVersion",
+          "text": "\u623f g63r2\u2026  \u00b7  v6",
+          "cssFont": 14.3203125,
+          "overflow": 2
+        },
+        {
+          "key": "KittyLabel",
+          "text": "\u5730\u4e3b\u5e95\u724c",
+          "cssFont": 14.929687500000082,
+          "overflow": 2
+        },
+        {
+          "key": "LeadingSeat",
+          "text": "\u5ea7\u4f4d 1 \u51fa\u724c",
+          "cssFont": 15.843750000000037,
+          "overflow": 2
+        },
+        {
+          "key": "RetryUnknown/RetryUnknownCaption",
+          "text": "\u6838\u5bf9\u4e0a\u6b21\u64cd\u4f5c",
+          "cssFont": 18.5859375,
+          "overflow": 2
+        },
+        {
+          "key": "DiscardUnknown/DiscardUnknownCaption",
+          "text": "\u6309\u65b0\u5feb\u7167\u653e\u5f03",
+          "cssFont": 18.5859375,
+          "overflow": 2
+        },
+        {
+          "key": "TableNotice",
+          "text": "\u64cd\u4f5c\u7ed3\u679c\u672a\u77e5\uff0c\u8bf7\u6838\u5bf9\u539f\u8bf7\u6c42",
+          "cssFont": 15.234374999999927,
+          "overflow": 1
+        },
+        {
+          "key": "OwnSeatInfo",
+          "text": "\u6211(2) \u00b7 \u519c\u6c11 \u00b7 17\u5f20",
+          "cssFont": 13.406250000000066,
+          "overflow": 2
+        }
+      ]
+    }
+  ]
+}

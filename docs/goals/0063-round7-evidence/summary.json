@@ -1,0 +1,11 @@
+{
+  "source": "8b9465d87ea3d3ca6893de61aeb33e21a7c78dae",
+  "R6-N01": "PASS, closed",
+  "final": "PASS for code pre-merge acceptance",
+  "originalRunner": "two completed cases PASS; interrupted 143 with original page/request retained; no completion status file",
+  "resume": "single/multi-card cases PASS; final resource assertion sampled unassembled Label actualFontSize=0, raw FAIL preserved",
+  "resourceFollowup": "PASS after waiting current nodes to assemble, six redraws and clock disposal; threshold 11 unchanged",
+  "blockingFindings": [],
+  "mergeCondition": "PR18 fixed candidate meets code pre-merge conditions; merge not performed",
+  "deploymentOrDeviceQualification": false
+}
