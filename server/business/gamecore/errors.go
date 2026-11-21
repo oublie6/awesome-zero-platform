@@ -16,5 +16,5 @@ var (
 	// ErrCommitRejected means the durable adapter positively established
 	// that NO COMMIT was attempted for this candidate. It must never mark
 	// transport errors, writer fencing or unknown COMMIT outcomes as safe.
-	ErrCommitRejected       = errors.New("gamecore: durable command rejected before commit")
+	ErrCommitRejected = errors.New("gamecore: durable command rejected before commit")
 )
