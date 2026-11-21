@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/livehand"
+
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
 	"github.com/oublie6/awesome-zero-platform/server/business/gamecore"
 )
@@ -54,6 +56,7 @@ type LiveJournal struct {
 	checkpointReaders []cipher.AEAD
 	integrityKey      []byte
 	integrityReaders  [][]byte
+	turnTimeouts      *TurnTimeouts // opt-in only after checked additive DDL
 }
 
 func NewLiveJournal(db *sql.DB) (*LiveJournal, error) {
@@ -62,7 +65,7 @@ func NewLiveJournal(db *sql.DB) (*LiveJournal, error) {
 	}
 	return &LiveJournal{db: db}, nil
 }
-func (j *LiveJournal) Create(ctx context.Context, genesis domain.HandSnapshot) error {
+func (j *LiveJournal) Create(ctx context.Context, genesis domain.HandSnapshot, firstBidder ...uint8) error {
 	if j == nil || j.db == nil || genesis.ID == "" || genesis.Phase != domain.HandDealing {
 		return fmt.Errorf("invalid live genesis")
 	}
@@ -73,12 +76,31 @@ func (j *LiveJournal) Create(ctx context.Context, genesis domain.HandSnapshot) e
 	if err != nil {
 		return err
 	}
-	_, err = j.db.ExecContext(ctx, `INSERT INTO doudizhu_live_writers(hand_id,owner_epoch,committed_version,genesis_snapshot,updated_at)
+	// Preserve exact historical Create semantics when dq scheduling is off.
+	if j.turnTimeouts == nil {
+		_, err = j.db.ExecContext(ctx, `INSERT INTO doudizhu_live_writers(hand_id,owner_epoch,committed_version,genesis_snapshot,updated_at)
 VALUES(?,1,1,?,UTC_TIMESTAMP(6))`, string(genesis.ID), b)
-	if err != nil {
-		return fmt.Errorf("create live journal: %w", err)
+		if err != nil {
+			return fmt.Errorf("create live journal: %w", err)
+		}
+		return nil
 	}
-	return nil
+	if len(firstBidder) != 1 || firstBidder[0] < 1 || firstBidder[0] > 3 {
+		return fmt.Errorf("verified first bidder required for durable turn deadline")
+	}
+	tx, err := j.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, `INSERT INTO doudizhu_live_writers(hand_id,owner_epoch,committed_version,genesis_snapshot,updated_at)
+VALUES(?,1,1,?,UTC_TIMESTAMP(6))`, string(genesis.ID), b); err != nil {
+		return err
+	}
+	if err = j.writeTurnDeadline(ctx, tx, genesis.ID, 1, livehand.PhaseBidding, firstBidder[0]); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // DeleteUnused is only for compensating a setup whose enclosing durable
@@ -95,6 +117,11 @@ AND NOT EXISTS (SELECT 1 FROM doudizhu_live_actions WHERE hand_id=?)`, id, id)
 	}
 	if affected != 1 {
 		return ErrLiveWatermarkConflict
+	}
+	if j.turnTimeouts != nil {
+		if _, err = j.db.ExecContext(ctx, `DELETE FROM doudizhu_turn_deadlines WHERE hand_id=?`, id); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -187,6 +214,9 @@ WHERE hand_id=? FOR UPDATE`, id).Scan(&foundEpoch, &committed); err != nil {
 	if committed != command.ExpectedVersion {
 		return ErrLiveWatermarkConflict
 	}
+	if err = j.requireCurrentTurn(ctx, tx, id, commandID, sequence, command.ExpectedVersion, command.ActorPosition); err != nil {
+		return err
+	}
 	if _, err = tx.ExecContext(ctx, `INSERT INTO doudizhu_live_actions(
 hand_id,state_version,owner_epoch,command_id,actor_account_id,actor_position,expected_version,
 client_sequence,command_payload,result_digest,integrity_version,integrity_tag,committed_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`,
@@ -205,6 +235,11 @@ WHERE hand_id=? AND owner_epoch=? AND committed_version=?`, outcome.Version, id,
 	}
 	if rows != 1 {
 		return ErrLiveWatermarkConflict
+	}
+	if j.turnTimeouts != nil {
+		if err = j.updateTurnDeadline(ctx, tx, id, outcome); err != nil {
+			return err
+		}
 	}
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("ambiguous live action commit: %w", err)

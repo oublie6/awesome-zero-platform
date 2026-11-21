@@ -472,3 +472,39 @@ func TestCommittedRuntimeQuarantinesAmbiguousWriteAndNeverExposesCandidate(t *te
 		t.Fatal("unfenced operation after ambiguity")
 	}
 }
+
+func TestVerifiedArchiveRetiresQuarantinedStaleGameWithoutReaborting(t *testing.T) {
+	archive := &memoryArchive{}
+	directory, err := gamecore.NewLiveDirectory(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stale := newFakeLiveGame(t, "unknown-final", 3)
+	if err := directory.Add(stale.Descriptor(), stale); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = directory.ApplyCommitted(stale.InstanceID(),
+		gamecore.Command{ActorPosition: 1, ExpectedVersion: 0, Payload: []byte("bid")},
+		func(gamecore.CommandOutcome) error { return errors.New("lost MySQL COMMIT OK") })
+	if err == nil {
+		t.Fatal("ambiguous write should quarantine in-memory game")
+	}
+	if _, err := directory.Abort(stale.InstanceID(), "no_landlord"); !errors.Is(err, gamecore.ErrFinalizationPending) {
+		t.Fatalf("old quarantined game was aborted: %v", err)
+	}
+	if stale.AbortCalls() != 0 {
+		t.Fatal("old mutable game created a divergent final record")
+	}
+	record, err := gamecore.NewFinalRecord(stale.InstanceID(), stale.Descriptor(),
+		gamecore.FinalStatusAborted, 3, []byte("replay-verified-final"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := directory.ArchiveVerifiedRecord(record); err != nil {
+		t.Fatal(err)
+	}
+	if directory.Contains(stale.InstanceID()) || len(archive.Records()) != 1 ||
+		archive.Records()[0].Digest() != record.Digest() {
+		t.Fatal("replay-verified archival did not remove quarantined executor")
+	}
+}

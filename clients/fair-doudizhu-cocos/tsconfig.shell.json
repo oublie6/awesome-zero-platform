@@ -18,6 +18,7 @@
     "assets/scripts/platform/**/*.ts",
     "assets/scripts/foundation/**/*.ts",
     "assets/scripts/bootstrap/MenuPagination.ts",
-    "assets/scripts/bootstrap/TableGeometry.ts"
+    "assets/scripts/bootstrap/TableGeometry.ts",
+    "assets/scripts/bootstrap/TurnClock.ts"
   ]
 }

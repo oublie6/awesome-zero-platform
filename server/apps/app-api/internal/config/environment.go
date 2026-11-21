@@ -55,6 +55,18 @@ func (c *Config) ApplyEnvironment() error {
 		c.Doudizhu.Enabled = enabled
 	}
 
+	if raw := strings.TrimSpace(os.Getenv("APP_DOUDIZHU_TURN_DQ_ENABLED")); raw != "" {
+		enabled, err := strconv.ParseBool(raw)
+		if err != nil {
+			return fmt.Errorf("parse APP_DOUDIZHU_TURN_DQ_ENABLED: %w", err)
+		}
+		c.Doudizhu.TurnDQ.Enabled = enabled
+	}
+	if raw := strings.TrimSpace(os.Getenv("APP_DOUDIZHU_TURN_DQ_ENDPOINTS")); raw != "" {
+		c.Doudizhu.TurnDQ.Endpoints = strings.Split(raw, ",")
+	}
+	applyString("APP_DOUDIZHU_TURN_DQ_TUBE", &c.Doudizhu.TurnDQ.Tube)
+
 	if raw := strings.TrimSpace(os.Getenv("APP_REVEAL_KEYS_ENABLED")); raw != "" {
 		enabled, err := strconv.ParseBool(raw)
 		if err != nil {

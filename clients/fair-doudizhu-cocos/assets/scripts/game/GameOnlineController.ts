@@ -35,11 +35,12 @@ export class GameOnlineController {
     identity: IdentityExchange,
     private readonly socketEndpoint: string,
     onNotice: (message: string) => void,
-    private readonly trustedManifestRoots: Readonly<Record<string,string>> = {}
+    private readonly trustedManifestRoots: Readonly<Record<string,string>> = {},
+    onHandActionStateChange: () => void = () => {}
   ) {
     this.session = new GameSession(platform, identity)
     this.shell = new GameClientShell(onNotice)
-    this.actions = new GameHandActions(this.shell, platform.random)
+    this.actions = new GameHandActions(this.shell, platform.random, onHandActionStateChange)
     this.api = new DoudizhuHTTPClient(platform.http, () => this.session.token)
     this.fairness = new GameFairnessActions(this.api,platform,this.trustedManifestRoots)
     this.rooms = new RoomCoordinator(

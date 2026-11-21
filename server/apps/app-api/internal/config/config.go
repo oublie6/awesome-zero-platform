@@ -115,10 +115,17 @@ type DoudizhuConfig struct {
 	ContributionKeyID  string        `json:",optional"`
 	ContributionKeyHex string        `json:",optional,env=APP_DOUDIZHU_CONTRIBUTION_KEY_HEX"`
 	PreviousKeysJSON   string        `json:",optional,env=APP_DOUDIZHU_PREVIOUS_KEYS_JSON"`
+	TurnDQ             TurnDQConfig  `json:",optional"`
 	BiddingTimeout     time.Duration `json:",default=45s"`
 	PlayingTimeout     time.Duration `json:",default=60s"`
 	SweepInterval      time.Duration `json:",default=1s"`
 	CommandTTL         time.Duration `json:",default=1m"`
 	ReplayTTL          time.Duration `json:",default=2m"`
 	ReplayEntries      int           `json:",default=4096"`
+}
+
+type TurnDQConfig struct {
+	Enabled   bool
+	Endpoints []string `json:",optional"`
+	Tube      string   `json:",default=doudizhu-turn"`
 }

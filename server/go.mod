@@ -4,6 +4,7 @@ go 1.25.8
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/beanstalkd/go-beanstalk v0.2.0
 	github.com/casbin/casbin/v2 v2.135.0
 	github.com/cloudflare/circl v1.6.4
 	github.com/go-sql-driver/mysql v1.10.0
@@ -13,6 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
 	github.com/redis/go-redis/v9 v9.21.0
+	github.com/zeromicro/go-queue v1.2.2
 	github.com/zeromicro/go-zero v1.10.2
 	go.opentelemetry.io/otel v1.40.0
 	go.opentelemetry.io/otel/sdk v1.40.0

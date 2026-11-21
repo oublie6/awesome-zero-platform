@@ -95,3 +95,55 @@ test('Round15 live hand reservation rejects unknown and in-flight commands',asyn
  assert.throws(()=>f.actions.beginHandTransition(),/outcome unknown/)
  assert.equal(f.actions.needsReconciliation,true)
 })
+
+test('Round3 unknown bid/play/pass notifies presentation only after transport settles',async()=>{
+ for(const [phase,method,arg] of [
+   ['BIDDING','bid',1],['PLAYING','play',['S3']],['PLAYING','pass',undefined]
+ ]){
+   const f=fixture(phase)
+   const events=[]
+   let rejectWire
+   f.actions=new GameHandActions(f.shell,{
+     bytes:async(n)=>new Uint8Array(n).fill(1)
+   },()=>events.push({
+     unknown:f.actions.needsReconciliation,submitting:f.actions.isSubmitting
+   }))
+   f.shell.submitCommand=()=>new Promise((_,reject)=>{rejectWire=reject})
+   const attempt=method==='pass'?f.actions.pass():f.actions[method](arg)
+   await new Promise(resolve=>setImmediate(resolve))
+   assert.equal(f.actions.isSubmitting,true,method)
+   assert.equal(events[0].submitting,true,method)
+   assert.equal(events[0].unknown,false,method)
+   rejectWire(new Error('command timeout; outcome unknown'))
+   await assert.rejects(attempt,/outcome unknown/)
+   assert.equal(f.actions.needsReconciliation,true,method)
+   assert.equal(f.actions.isSubmitting,false,method)
+   assert.deepEqual(events.at(-1),{unknown:true,submitting:false},method)
+   const original=f.commands[0]
+   // A retry of UNKNOWN is the exact original command, never a fresh ID.
+   f.shell.submitCommand=async (command,retry)=>{
+     f.commands.push({command:structuredClone(command),retry:!!retry})
+     return {v:'doudizhu-api-command-result-v1',requestId:command.requestId,type:command.type,live:{version:8,payload:{},requiresTermination:false}}
+   }
+   await f.actions.retryUnknown()
+   assert.equal(f.actions.needsReconciliation,false)
+   assert.equal(f.actions.isSubmitting,false)
+   assert.deepEqual(events.at(-1),{unknown:false,submitting:false})
+   assert.equal(f.commands.at(-1).retry,true)
+   assert.equal(f.commands.at(-1).command.type,method==='bid'?'hand.bid':method==='play'?'hand.play':'hand.pass')
+ }
+})
+
+test('Round3 explicit rejection and authorized discard notify to hide retry controls',async()=>{
+ const f=fixture('PLAYING')
+ const events=[]
+ f.actions=new GameHandActions(f.shell,{bytes:async(n)=>new Uint8Array(n).fill(3)},
+   ()=>events.push({unknown:f.actions.needsReconciliation,submitting:f.actions.isSubmitting}))
+ f.shell.submitCommand=async()=>{throw new Error('lost response')}
+ await assert.rejects(f.actions.pass(),/lost response/)
+ assert.deepEqual(events.at(-1),{unknown:true,submitting:false})
+ f.shell.hand.snapshot={...f.shell.hand.snapshot,version:8}
+ f.actions.discardUnknownAfterSync()
+ assert.deepEqual(events.at(-1),{unknown:false,submitting:false})
+ assert.equal(f.actions.needsReconciliation,false)
+})

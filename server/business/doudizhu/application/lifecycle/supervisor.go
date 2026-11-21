@@ -208,6 +208,84 @@ func (s *Supervisor) AfterPlay(
 	return nil
 }
 
+// RepairTerminal is the common convergence gate for a final bid/play and
+// for already cancelled/expired hands whose old active deadline is still queued.
+// Returning nil means BOTH the domain terminal state AND a replay-verified,
+// idempotent archive exist; only then may the caller retire the durable cursor.
+func (s *Supervisor) RepairTerminal(ctx context.Context, handID domain.HandID, phase string) error {
+	if s == nil {
+		return fmt.Errorf("missing lifecycle supervisor")
+	}
+	snapshot, err := s.hands.LoadHand(ctx, handID)
+	if err != nil {
+		return err
+	}
+	reconciler, ok := s.terminal.(interface {
+		ReconcileTerminalArchive(context.Context, domain.HandID, string, string) error
+	})
+	if !ok {
+		// Fail closed in the durable DQ path; legacy lifecycle stubs do not
+		// use terminal repair and cannot prove an archive is present.
+		return fmt.Errorf("terminal archive reconciliation unavailable")
+	}
+	if snapshot.Phase.Terminal() {
+		reason := snapshot.TerminationReason
+		switch phase {
+		case livehand.PhaseNoLandlord:
+			if reason != ReasonNoLandlord {
+				return fmt.Errorf("no-landlord terminal reason mismatch")
+			}
+		case livehand.PhaseCompleted:
+			if snapshot.Phase != domain.HandCompleted {
+				return fmt.Errorf("completed live phase has incompatible terminal domain")
+			}
+			reason = ""
+		case livehand.PhaseBidding, livehand.PhasePlaying:
+			if snapshot.Phase == domain.HandCompleted {
+				return fmt.Errorf("cancel cursor points to a completed game")
+			}
+		default:
+			return fmt.Errorf("invalid terminal repair phase %q", phase)
+		}
+		if err := reconciler.ReconcileTerminalArchive(ctx, handID, phase, reason); err != nil {
+			return err
+		}
+		s.Forget(handID)
+		return nil
+	}
+	switch phase {
+	case livehand.PhaseNoLandlord:
+		if snapshot.Seats[0].AccountID == "" {
+			return fmt.Errorf("terminal repair lacks authorized participant")
+		}
+		// A normal AbortHand writes the domain and room transaction first.
+		// Its finalization step now archives verified journal state, not
+		// stale quarantined RAM. The durable cursor survives any lost ACK.
+		_, err = s.terminate(ctx, snapshot.Seats[0].AccountID, handID, terminationAbort, ReasonNoLandlord)
+	case livehand.PhaseCompleted:
+		// Completed live state can exist while domain still says PLAYING.
+		// First recover/verify the exact live61 final archive, then advance
+		// domain. Completing the domain alone caused the Round2 archive loss.
+		if err = reconciler.ReconcileTerminalArchive(ctx, handID, phase, ""); err == nil {
+			err = s.advanceLiveHand(ctx, handID, true)
+		}
+	default:
+		return fmt.Errorf("non-terminal domain cannot retire %q cursor", phase)
+	}
+	if err != nil {
+		return err
+	}
+	finished, err := s.hands.LoadHand(ctx, handID)
+	if err != nil {
+		return err
+	}
+	if !finished.Phase.Terminal() {
+		return fmt.Errorf("terminal repair has not converged for hand %s", handID)
+	}
+	s.Forget(handID)
+	return nil
+}
+
 func (s *Supervisor) Cancel(ctx context.Context, actor domain.AccountID, handID domain.HandID) (Outcome, error) {
 	return s.terminate(ctx, actor, handID, terminationAbort, ReasonParticipantCancel)
 }

@@ -144,6 +144,14 @@ func (b *RealtimeBridge) handleSync(ctx context.Context, connection realtime.Con
 	return realtimeErrorEnvelope(envelope.ID, preferredSyncError(err, evidenceErr)), nil
 }
 
+// NotifyCommitted reuses the same account-scoped private snapshot publication
+// after an internal authoritative timeout command.
+func (b *RealtimeBridge) NotifyCommitted(ctx context.Context, id domain.HandID) {
+	if b == nil {
+		return
+	}
+	b.broadcastHand(ctx, id, CommandResponse{Version: CommandResponseV1, Type: "hand.timeout"})
+}
 func (b *RealtimeBridge) broadcastHand(ctx context.Context, handID domain.HandID, response CommandResponse) {
 	hand, err := b.audience.LoadHand(ctx, handID)
 	if err != nil {

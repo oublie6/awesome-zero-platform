@@ -1,5 +1,20 @@
 /** Pure safe-area menu paging. No platform SDK or Cocos dependencies. */
 export type MenuScreen = 'home'|'rooms'|'rules'|'table'|'login'|'wechat-bind'|'wechat-unlink'|'wechat-relink'
+
+/** Identifies the exact owner/hand/input purpose for an in-place room menu
+ * rebuild. Never retain or persist the user's draft itself in this context.
+ * Room IDs and personal contribution phrases MUST NOT cross these boundaries. */
+export interface RoomInputContext {
+  owner: object | null
+  roomID: string
+  handID: string
+  fairnessMode: string | null
+}
+export function sameRoomInputContext(previous: RoomInputContext | null, next: RoomInputContext): boolean {
+  return previous !== null && previous.owner === next.owner &&
+    previous.roomID === next.roomID && previous.handID === next.handID &&
+    previous.fairnessMode === next.fairnessMode
+}
 export interface MenuWindow {
   columns:number
   rows:number

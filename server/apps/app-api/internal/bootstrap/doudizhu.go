@@ -48,10 +48,23 @@ func doudizhuModule(
 				return nil, fmt.Errorf("enabled Doudizhu module is incomplete")
 			}
 			doudizhuapi.Register(server, authentication, components.dispatcher)
+			var bridge *doudizhuapi.RealtimeBridge
 			if hub != nil {
-				if _, err := doudizhuapi.RegisterRealtime(hub, components.dispatcher, components.audience); err != nil {
+				var err error
+				bridge, err = doudizhuapi.RegisterRealtime(hub, components.dispatcher, components.audience)
+				if err != nil {
 					components.cancel()
 					return nil, fmt.Errorf("register Doudizhu realtime handlers: %w", err)
+				}
+			}
+			if components.startTurnQueue != nil {
+				notify := func(context.Context, domain.HandID) {}
+				if bridge != nil {
+					notify = bridge.NotifyCommitted
+				}
+				if err := components.startTurnQueue(notify); err != nil {
+					components.cancel()
+					return nil, fmt.Errorf("start Doudizhu timeout queue: %w", err)
 				}
 			}
 			return components.cancel, nil
@@ -60,9 +73,10 @@ func doudizhuModule(
 }
 
 type doudizhuComponents struct {
-	dispatcher *doudizhuapi.Dispatcher
-	audience   doudizhuapi.HandAudience
-	cancel     context.CancelFunc
+	dispatcher     *doudizhuapi.Dispatcher
+	audience       doudizhuapi.HandAudience
+	cancel         context.CancelFunc
+	startTurnQueue func(func(context.Context, domain.HandID)) error
 }
 
 func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealkeys.Registry) (doudizhuComponents, error) {
@@ -132,6 +146,13 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	}
 	if err := journal.ConfigureCheckpointKeyring(cfg.Doudizhu.ContributionKeyID, allRoots); err != nil {
 		return doudizhuComponents{}, fmt.Errorf("configure protected live checkpoints: %w", err)
+	}
+	if cfg.Doudizhu.TurnDQ.Enabled {
+		if err := journal.EnableTurnDeadlines(context.Background(), mysqlstore.TurnTimeouts{
+			Bidding: cfg.Doudizhu.BiddingTimeout, Playing: cfg.Doudizhu.PlayingTimeout,
+		}); err != nil {
+			return doudizhuComponents{}, fmt.Errorf("initialize DQ turn deadlines: %w", err)
+		}
 	}
 	liveHands, err := ddzruntime.NewDurableLiveHandCoordinator(seeds, directory, journal)
 	if err != nil {
@@ -204,6 +225,11 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	if err := supervisor.ReconcileRecovered(context.Background(), liveHands.RecoveredPhases()); err != nil {
 		return doudizhuComponents{}, fmt.Errorf("reconcile recovered Doudizhu lifecycle: %w", err)
 	}
+	if cfg.Doudizhu.TurnDQ.Enabled {
+		if err := verifyRecoveredTurnDeadlines(context.Background(), journal, liveHands.RecoveredPhases()); err != nil {
+			return doudizhuComponents{}, fmt.Errorf("validate recovered turn deadline: %w", err)
+		}
+	}
 	apiConfig := doudizhuapi.DefaultConfig()
 	apiConfig.CommandTTL = cfg.Doudizhu.CommandTTL
 	apiConfig.ReplayTTL = cfg.Doudizhu.ReplayTTL
@@ -211,6 +237,9 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 	dispatcher, err := doudizhuapi.NewDispatcher(service, evidence, supervisor, clock, apiConfig)
 	if err != nil {
 		return doudizhuComponents{}, err
+	}
+	if cfg.Doudizhu.TurnDQ.Enabled {
+		dispatcher.SetTurnClock(turnClockAdapter{journal})
 	}
 	if err := dispatcher.ConfigureRevealTickets(contributionKey); err != nil {
 		return doudizhuComponents{}, fmt.Errorf("configure bound reveal AAD: %w", err)
@@ -242,12 +271,19 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 			}
 		}()
 	}
-	go func() {
-		for ctx.Err() == nil {
-			if err := supervisor.Run(ctx); err != nil && ctx.Err() == nil {
-				time.Sleep(cfg.Doudizhu.SweepInterval)
-			}
+	var startQueue func(func(context.Context, domain.HandID)) error
+	if cfg.Doudizhu.TurnDQ.Enabled {
+		startQueue = func(notify func(context.Context, domain.HandID)) error {
+			return startDoudizhuTurnDQ(ctx, cfg, store, journal, service, supervisor, ids, notify)
 		}
-	}()
-	return doudizhuComponents{dispatcher: dispatcher, audience: store, cancel: cancel}, nil
+	} else {
+		go func() {
+			for ctx.Err() == nil {
+				if err := supervisor.Run(ctx); err != nil && ctx.Err() == nil {
+					time.Sleep(cfg.Doudizhu.SweepInterval)
+				}
+			}
+		}()
+	}
+	return doudizhuComponents{dispatcher: dispatcher, audience: store, cancel: cancel, startTurnQueue: startQueue}, nil
 }

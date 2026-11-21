@@ -1,6 +1,7 @@
 import { Color, EventTouch, Graphics, Label, Layers, Node, UITransform } from 'cc'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
-import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards } from './TableGeometry.ts'
+import { faceOfCard, handFan, publicCardCodes, relativeOpponents, sortHandCards, tableActionCenterY, tableHeaderSlots, tableUnit, tableCaptionFont, tableNoticeText, tableNoticePlacement, tableTrickGeometry } from './TableGeometry.ts'
+import { TurnClockAnchor } from './TurnClock.ts'
 
 export interface TableDisplay {
   roomID:string
@@ -10,6 +11,7 @@ export interface TableDisplay {
   view:PrivateHandProjection | null
   selected:ReadonlySet<string>
   needsReconciliation:boolean
+  actionInFlight:boolean
   finalSummary:string
 }
 export interface TableCallbacks {
@@ -42,8 +44,8 @@ function safePhase(phase:string):string{
   if(phase==='ABORTED')return '已结束'
   return '等待开局'
 }
-function smallID(value:string):string{
-  return value.length>15?value.slice(0,12)+'…':value
+function smallID(value:string,maxPrefix=12):string{
+  return value.length>maxPrefix+3?value.slice(0,maxPrefix)+'…':value
 }
 function seatNumber(value:unknown):number{
   return typeof value==='number' && Number.isInteger(value) && value>=1 && value<=3?value:0
@@ -76,37 +78,48 @@ export class GameTableView {
   private data:TableDisplay|null=null
   private width=760
   private height=440
+  private unit=1
   private noticeText=''
+  private countdownLabel:Label|null=null
+  private tickHandle:ReturnType<typeof setInterval>|null=null
   setNotice(message:string):void{
-    this.noticeText=message.slice(0,140)
+    this.noticeText=tableNoticeText(message)
     if(this.data)this.layout(this.width,this.height)
   }
-  constructor(parent:Node,private readonly callbacks:TableCallbacks){
+  constructor(parent:Node,private readonly callbacks:TableCallbacks,
+    private readonly turnClock:TurnClockAnchor){
     this.root=new Node('ActualThreeSeatTable')
     this.root.layer=Layers.Enum.UI_2D
     this.root.addComponent(UITransform)
     parent.addChild(this.root)
   }
   destroy():void {
+    if(this.tickHandle!==null){clearInterval(this.tickHandle);this.tickHandle=null}
     if(this.root.isValid)this.root.destroy()
     this.data=null
   }
   render(data:TableDisplay,width:number,height:number):void {
     if(this.data?.handID!==data.handID)this.noticeText=''
+    // The anchor is owned by GameBootstrap, not this disposable table view.
+    // Returning to rooms and reopening must not restart a stale snapshot clock.
+    this.turnClock.observe(data.handID,data.version,data.view?.public??{})
     this.data=data
     this.layout(width,height)
+    if(this.tickHandle===null)this.tickHandle=setInterval(()=>this.updateCountdown(),250)
   }
   layout(width:number,height:number):void {
     if(!this.root.isValid || !this.data)return
     this.width=width
     this.height=height
+    this.countdownLabel=null
     for(const child of [...this.root.children]){
       child.removeFromParent()
       child.destroy()
     }
     const data=this.data
     const w=Math.max(240,width), h=Math.max(280,height)
-    const u=Math.max(0.72,Math.min(1.35,Math.min(w/760,h/480)))
+    const u=tableUnit(w,h)
+    this.unit=u
     this.root.getComponent(UITransform)!.setContentSize(w,h)
 
     // Original drawn felt and gold edging. No copied commercial assets.
@@ -121,20 +134,31 @@ export class GameTableView {
     const me=view?.position??0
     const landlord=seatNumber(pub?.landlordSeat)
     const turn= data.phase==='BIDDING'?currentBidder(view):seatNumber(pub?.playingSeat)
-    const myTurn=me!==0 && turn===me && !data.needsReconciliation
+    const myTurn=me!==0 && turn===me &&
+      !data.needsReconciliation && !data.actionInFlight
     const final=data.phase==='COMPLETED'||data.phase==='ABORTED'
 
     // Separate top chrome: room/hand/version are informational, not game actions.
     const top=h/2-28*u
+    const header=tableHeaderSlots(w,u)
     this.label('TableBrand','斗地主  ·  '+safePhase(data.phase),
-      -w*.33,top,24*u,GOLD,w*.53,38*u)
-    this.label('RoomVersion','房间 '+smallID(data.roomID||'—')+'  ·  v'+data.version,
-      w*.105,top,14*u,MUTED,w*.33,28*u)
-    const buttonW=Math.max(58,75*u)
-    this.button('BackToRoom','返回',w/2-buttonW/2-14*u,top,buttonW,35*u,true,this.callbacks.back,true)
-    this.button('UpdateHand','同步',w/2-buttonW/2-14*u,top-43*u,buttonW,34*u,
+      header.leftX,top,22*u,GOLD,header.leftWidth,38*u)
+    // On portrait canvases the left header is narrow after CSS projection.
+    // Shorten the informational room ID before Cocos SHRINK is considered.
+    const narrowHeader=h>w
+    this.label('RoomVersion',(narrowHeader?'房 ':'房间 ')+
+      smallID(data.roomID||'—',narrowHeader?5:12)+'  ·  v'+data.version,
+      header.leftX,top-29*u,15*u,MUTED,header.leftWidth,24*u)
+    const buttonW=header.rightWidth
+    this.button('BackToRoom','返回',header.rightX,top,buttonW,35*u,true,this.callbacks.back,true)
+    this.button('UpdateHand','同步',header.rightX,top-43*u,buttonW,34*u,
       !!data.handID,this.callbacks.refresh,true)
 
+    // Countdown is presentation-only and driven by the server's timeline.
+    this.countdownLabel=this.label('AuthoritativeTurnClock','等待计时同步',
+      0,top,24*u,GOLD,header.clockWidth,37*u)
+    this.updateCountdown()
+    
     // Top central landlord kitty: reveal only exactly the cards that Go marks public.
     const kitty=Array.isArray(pub?.landlordCards)?pub!.landlordCards:[]
     const safeKitty=kitty.length===3 && kitty.every(c=>typeof c==='string')?kitty:[]
@@ -146,7 +170,8 @@ export class GameTableView {
         x,kittyY,smallCardW,smallCardH,u*.70,false)
       else this.cardBack('LandlordBack'+i,x,kittyY,smallCardW,smallCardH,u*.70)
     }
-    this.label('KittyLabel','地主底牌',0,kittyY-32*u,13*u,MUTED,130*u,21*u)
+    // This short heading must survive integer font quantization on 760x390.
+    this.label('KittyLabel','地主底牌',0,kittyY-32*u,15*u,MUTED,130*u,21*u)
 
     // Both opponents rotate relative to my true server-assigned seat.
     if(me>=1&&me<=3&&pub?.seats?.length===3){
@@ -169,15 +194,16 @@ export class GameTableView {
           this.cardBack('OppBack'+position+'-'+i,
             x+(i-1)*14*u,seatY-65*u,28*u,38*u,u*.65)
       }
-    } else {
+    } else if(!final){
       this.label('NoHandSeats','等待服务端发牌后展示三家座位',0,h*.2,19*u,MUTED,w*.76,28*u)
     }
 
-    // Central trick uses only Go's public leading cards (numeric deck IDs).
+    // Central trick accepts Go's Base64 []uint8 public wire representation.
     const playing=publicPlaying(view??null)
-    const trickY=Math.max(5*u,h*.035)
+    const trick=tableTrickGeometry(w,h,u)
+    const trickY=trick.y
     const trickCards=playing.cards
-    const trickCardWidth=Math.min(51*u,Math.max(26,w*.12))
+    const trickCardWidth=trick.cardWidth
     const trickWidth=Math.min(w*.57,560*u)
     const trickStep=trickCards.length<=1?0:
       Math.min(trickCardWidth*.67,(trickWidth-trickCardWidth)/(trickCards.length-1))
@@ -187,7 +213,7 @@ export class GameTableView {
       for(let i=0;i<trickCards.length;i++){
         this.faceCard('PublicTrick'+i,trickCards[i],
           -trickSpan/2+trickCardWidth/2+i*trickStep,trickY,
-          trickCardWidth,trickCardWidth*1.4,Math.min(u,0.9),false)
+          trickCardWidth,trick.cardHeight,Math.min(u,0.9),false)
       }
     }else{
       const result=final?(data.finalSummary||'本局已结束'):
@@ -195,17 +221,24 @@ export class GameTableView {
         turn?('等待座位 '+turn+' 出牌'):'等待服务端牌局状态'
       this.label('EmptyTrick',result,0,trickY+10*u,20*u,PALE,w*.58,58*u)
     }
-    if(playing.passSeat && !final)
+    // Temporary command feedback takes precedence over historical hints;
+    // both otherwise occupy the narrow strip between the trick and actions.
+    if(playing.passSeat && !final && !this.noticeText)
       this.label('LastPass','座位 '+playing.passSeat+' 不出',0,trickY-55*u,15*u,MUTED,w*.5,22*u)
 
     const cards=final?[]:Array.isArray(view?.cards)?sortHandCards(view!.cards):[]
     const selected=data.selected
     const fan=handFan(cards.length,w,h,selected,cards)
-    const controlsY=cards.length?
-      fan.places[0].y+fan.cardHeight/2+37*u:
-      -h/2+90*u
+    const controlsY=tableActionCenterY(fan,w,h,u)
     // Operations are always in their own row; cards never share pagination.
-    if(data.phase==='BIDDING'){
+    if(data.needsReconciliation){
+      // These are the only actionable controls until the original durable
+      // request is resolved. Replacing (rather than stacking on) the main row
+      // leaves a dedicated, non-overlapping message row for ACK loss.
+      const bw=Math.min(150*u,w*.39)
+      this.button('RetryUnknown','核对上次操作',-bw*.54,controlsY,bw,36*u,true,this.callbacks.retryUnknown)
+      this.button('DiscardUnknown','按新快照放弃',bw*.54,controlsY,bw,36*u,true,this.callbacks.discardUnknown)
+    }else if(data.phase==='BIDDING'){
       const highest=highestBid(view??null)
       const scores=[0,1,2,3]
       const bw=Math.min(110*u,(w-30*u)/4-6*u)
@@ -215,16 +248,11 @@ export class GameTableView {
         myTurn&&(score===0||score>highest),()=>this.callbacks.bid(score)))
     }else if(data.phase==='PLAYING'){
       const bw=Math.min(150*u,w*.30)
-      this.button('PassTurn','不出',-bw*.58,controlsY,bw,42*u,myTurn,this.callbacks.pass)
+      this.button('PassTurn','不出',-bw*.58,controlsY,bw,42*u,
+        myTurn && playing.cards.length>0,this.callbacks.pass)
       this.button('PlaySelected','出牌'+(selected.size?' ('+selected.size+')':''),
         bw*.58,controlsY,bw,42*u,myTurn&&selected.size>0,this.callbacks.play,true)
     }
-    if(data.needsReconciliation){
-      const bw=Math.min(150*u,w*.39)
-      this.button('RetryUnknown','核对上次操作',-bw*.54,controlsY+46*u,bw,36*u,true,this.callbacks.retryUnknown)
-      this.button('DiscardUnknown','按新快照放弃',bw*.54,controlsY+46*u,bw,36*u,true,this.callbacks.discardUnknown)
-    }
-
     // Main hand: stable sorted rank order, full hand visible and raised on tap.
     // Draw backs / opponents separately: only these private cards are exposed.
     cards.forEach((code,i)=>{
@@ -235,25 +263,41 @@ export class GameTableView {
       card.on(Node.EventType.TOUCH_END,(_event:EventTouch)=>this.callbacks.selectCard(code))
     })
     if(this.noticeText){
-      this.label('TableNotice',this.noticeText,0,controlsY+51*u,
-        15*u,new Color(255,216,143,255),w*.74,24*u)
+      const feedback=tableNoticePlacement(controlsY,w,h,u)
+      const notice=this.label('TableNotice',this.noticeText,0,feedback.y,
+        feedback.font,new Color(255,216,143,255),w*.74,feedback.height)
+      // The message is bounded to 18 glyphs, and its box is sized for it.
+      // Do not let SHRINK silently reduce the integer Cocos font below 11 CSS px.
+      notice.overflow=Label.Overflow.CLAMP
+      notice.lineHeight=feedback.lineHeight
     }
     if(me>=1 && me<=3){
       const mineRole=landlord===me?'地主':'农民'
-      const ownText='我 · 座位'+me+' · '+mineRole+' · '+cards.length+' 张'
-      this.label('OwnSeatInfo',ownText,0,
-        -h/2+fan.cardHeight+30*u,16*u,MUTED,w*.78,23*u)
+      const ownText='我('+me+') · '+mineRole+' · '+cards.length+'张'
+      this.label('OwnSeatInfo',ownText,header.leftX,top-56*u,
+        15*u,MUTED,header.leftWidth,23*u)
     }
-    if(final || data.phase==='COMPLETED'){
+    if((final || data.phase==='COMPLETED') && !data.needsReconciliation){
       const bw=Math.min(136*u,w*.27)
       this.button('VerifyFinalEvidence','核验结算',0,controlsY,2*bw,38*u,
         !!data.handID,this.callbacks.evidence)
     }
-    if(!view && data.handID){
+    if(!view && data.handID && !final && !this.noticeText){
       this.label('ServerSyncNeeded','请同步服务端私有牌局快照',0,-h*.23,15*u,MUTED,w*.66,25*u)
     }
   }
 
+  private updateCountdown():void{
+    if(!this.countdownLabel?.isValid || !this.data)return
+    const seconds=this.turnClock.remainingSeconds()
+    const phase=this.data.phase
+    if(phase!=='BIDDING' && phase!=='PLAYING'){
+      this.countdownLabel.string='—'
+      return
+    }
+    this.countdownLabel.string=seconds===null?'等待计时同步':seconds===0?'00s':String(seconds).padStart(2,'0')+'s'
+    this.countdownLabel.color=seconds!==null && seconds<=5?new Color(255,117,90,255):GOLD
+  }
   private node(name:string,x:number,y:number,w:number,h:number):Node{
     const node=new Node(name)
     node.layer=Layers.Enum.UI_2D
@@ -297,8 +341,13 @@ export class GameTableView {
     const border=enabled?(primary?new Color(245,193,110,255):new Color(100,157,131,255)):
       new Color(71,109,96,255)
     const node=this.panel(name,x,y,w,h,fill,border,Math.min(13,h*.36))
-    const label=this.label(name+'Caption',text,x,y,Math.min(18,w*.19,h*.48),
-      enabled?WHITE:MUTED,w-6,h-4)
+    // The logical Cocos canvas can be 1280px wide but only 390 CSS px
+    // wide on a portrait phone. A fixed 18 logical-px cap gave 5.48px
+    // unreadable labels. Scale font with the same unit as the button, and
+    // bound it by available width for long captions to prevent SHRINK.
+    const captionSize=tableCaptionFont(text,w,h,this.unit)
+    const label=this.label(name+'Caption',text,x,y,captionSize,
+      enabled?WHITE:MUTED,w-6*this.unit,h-4*this.unit)
     label.node.setParent(node)
     label.node.setPosition(0,0,0)
     if(enabled){

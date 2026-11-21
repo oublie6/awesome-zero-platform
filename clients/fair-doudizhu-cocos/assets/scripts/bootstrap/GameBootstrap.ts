@@ -9,8 +9,9 @@ import { createPlatform } from '../platform/createPlatform.ts'
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
 import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
-import { menuWindow } from './MenuPagination.ts'
+import { menuWindow, sameRoomInputContext, type RoomInputContext } from './MenuPagination.ts'
 import { GameTableView } from './GameTableView.ts'
+import { TurnClockAnchor } from './TurnClock.ts'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
 import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
@@ -51,9 +52,16 @@ export class GameBootstrap extends Component {
   private status: Label | null = null
   private buttons: Node[] = []
   private tableView: GameTableView | null = null
+  private readonly turnClock = new TurnClockAnchor()
   // Keep the full accessible action set even when it does not fit in one view.
   private menuActions: MenuAction[] = []
   private menuPage = 0
+  // Structural menu entry depends on the room command's UNKNOWN state.
+  // Capturing the last rendered value detects async transitions without
+  // destroying an in-progress room-code or personal-phrase input on notices.
+  private roomRetryRendered = false
+  // Scope-only metadata; never store draft room codes or private phrases here.
+  private roomInputContext: RoomInputContext | null = null
   private inputNode: Node | null = null
   private roomInput: EditBox | null = null
   private loginIdentifier: EditBox | null = null
@@ -178,6 +186,17 @@ export class GameBootstrap extends Component {
     return label
   }
   private renderScreen(screen: Screen): void {
+    // A room menu refresh (UNKNOWN, ready, recover, fairness refresh) can
+    // rebuild its native EditBox. Preserve its draft ONLY while the account,
+    // room, hand and input purpose are unchanged. A hand switch, logout or
+    // return from another screen must not restore an old personal phrase.
+    const nextRoomInputContext:RoomInputContext|null=screen==='rooms'
+      ? {owner:this.online,roomID:this.roomID,handID:this.handID,fairnessMode:this.fairnessMode}
+      : null
+    const draft=screen==='rooms' && this.screen==='rooms' &&
+      nextRoomInputContext && sameRoomInputContext(this.roomInputContext,nextRoomInputContext)
+        ? this.roomInput?.string : undefined
+    this.roomInputContext=nextRoomInputContext
     if(this.screen!==screen)this.menuPage=0
     this.screen = screen
     if(screen!=='table' && this.tableView){
@@ -211,6 +230,7 @@ export class GameBootstrap extends Component {
       this.status!.string = this.online?.session.authenticated
         ? '连接服务端，可创建或加入真实好友房间' : '登录后才能创建或加入真实房间'
       this.roomInput=this.createRoomInput()
+      if(draft!==undefined)this.roomInput.string=draft
       const actions:MenuAction[]=[
         {name:'LoginEntry',caption:detectRuntimeTarget()==='web'?'账号登录':'微信登录',
           action:()=>{if(detectRuntimeTarget()==='web')this.renderScreen('login');else void this.login()}},
@@ -238,7 +258,8 @@ export class GameBootstrap extends Component {
           action:()=>void this.login(true)})
         actions.push({name:'LogoutWebSession',caption:'退出网页账号',action:()=>void this.logoutWeb()})
       }
-      if(this.online?.rooms.needsReconciliation)
+      this.roomRetryRendered=!!this.online?.rooms.needsReconciliation
+      if(this.roomRetryRendered)
         actions.push({name:'RetryUnknownRoom',caption:'核对未确认房间命令',action:()=>void this.reconnect()})
       for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
         caption:(room.status==='HAND_ACTIVE'?'继续牌局 ':'恢复房间 ')+room.roomId,
@@ -307,10 +328,16 @@ export class GameBootstrap extends Component {
       // The real table uses a dedicated Cocos layer; cards are no longer
       // text buttons mixed into the generic paginated menu.
       const snapshot=this.online?.shell.hand.snapshot
-      const projection=(snapshot?.view as PrivateHandProjection | undefined)??null
       const final=snapshot?.phase==='COMPLETED'||snapshot?.phase==='ABORTED'
-      const terminal=(snapshot?.view.terminalEvidence as
-        {winnerSeat:number|null;seatPoints:number[];recordDigest:string}|undefined)
+      // Terminal projections deliberately omit live public and private cards.
+      // Do not coerce them into a PrivateHandProjection or dereference public.
+      const snapshotView=snapshot?.view as
+        (Partial<PrivateHandProjection> & {terminalEvidence?:{
+          winnerSeat:number|null;seatPoints:number[];recordDigest:string
+        }})|null|undefined
+      const projection=!final && snapshotView?.public
+        ? snapshotView as PrivateHandProjection : null
+      const terminal=snapshotView?.terminalEvidence
       const cards=final?[]:Array.isArray(projection?.cards)?projection!.cards:[]
       this.selectedCards.forEach(selected=>{
         if(!cards.includes(selected))this.selectedCards.delete(selected)
@@ -330,7 +357,7 @@ export class GameBootstrap extends Component {
           retryUnknown:()=>void this.retryUnknownHand(),
           discardUnknown:()=>this.discardUnknownHand(),
           back:()=>this.renderScreen('rooms'),
-        })
+        },this.turnClock)
       }
       const finalSummary=final && terminal
         ? '胜者座位'+String(terminal.winnerSeat??'—')+' · 积分'+terminal.seatPoints.join('/')
@@ -341,7 +368,9 @@ export class GameBootstrap extends Component {
         roomID:this.roomID,handID:snapshot?.handId??this.handID,
         version:snapshot?.version??0,phase:snapshot?.phase??'WAITING',
         view:projection,selected:this.selectedCards,
-        needsReconciliation:!!this.online?.actions.needsReconciliation,
+        needsReconciliation:!!this.online?.actions.needsReconciliation &&
+          !this.online?.actions.isSubmitting,
+        actionInFlight:!!this.online?.actions.isSubmitting,
         finalSummary
       },size.width,size.height)
       return
@@ -416,6 +445,13 @@ export class GameBootstrap extends Component {
     this.menuActions.push(...actions)
   }
   private notice(message:string):void {
+    // A room command can become UNKNOWN after its callback returns without
+    // changing the room snapshot. Rebuild only if the retry entry actually
+    // changed, preserving whatever the user typed into the room field.
+    if(this.screen==='rooms' && this.content?.isValid &&
+       this.roomRetryRendered!==!!this.online?.rooms.needsReconciliation){
+      this.renderScreen('rooms')
+    }
     if(this.status?.isValid)this.status.string=message
     if(this.screen==='table')this.tableView?.setNotice(message)
   }
@@ -449,7 +485,12 @@ export class GameBootstrap extends Component {
       let online:GameOnlineController
       const exchange=target==='web'?createWebIdentityExchange(platform):createWeChatIdentityExchange(platform)
       online=new GameOnlineController(platform,exchange,cfg.socketEndpoint,
-        text=>{if(this.currentAccount(online,generation))this.notice(text)},cfg.revealManifestRoots)
+        text=>{if(this.currentAccount(online,generation))this.notice(text)},
+        cfg.revealManifestRoots,
+        ()=>{
+          if(this.currentAccount(online,generation) && this.screen==='table')
+            this.renderScreen('table')
+        })
       generation=++this.requestGeneration
       this.platform=platform
       ++this.recoveryAttempt
@@ -824,7 +865,8 @@ export class GameBootstrap extends Component {
       await this.refreshRoom()
     }catch(error){
       if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
-      if(this.online?.rooms.needsReconciliation && this.screen==='rooms')this.renderScreen('rooms')
+      // notice() performs the single UNKNOWN structural refresh; doing a
+      // direct render first destroys the draft before it can be preserved.
       this.notice('建房失败：'+this.message(error))
     }finally{
       if(this.roomMutation===mutation)this.roomMutation=null

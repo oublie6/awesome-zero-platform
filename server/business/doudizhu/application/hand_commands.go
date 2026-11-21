@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain/livehand"
 )
 
 type SubmitCommitInput struct{ Commitment domain.Commitment }
@@ -204,13 +205,34 @@ func (s *Service) ExpireHand(ctx context.Context, actor domain.AccountID, comman
 	return s.finalizeTerminatedRuntime(ctx, domain.HandID(command.AggregateID), input.ReasonCode, result, err)
 }
 
+// ReconcileTerminalArchive is the lifecycle's narrow, authoritative
+// terminalization port. It does not expose private journal/storage internals.
+func (s *Service) ReconcileTerminalArchive(ctx context.Context, handID domain.HandID, phase, reason string) error {
+	reconciler, ok := s.liveHands.(interface {
+		ReconcileTerminalArchive(context.Context, domain.HandID, string, string) error
+	})
+	if !ok {
+		return fmt.Errorf("durable terminal archive reconciler unavailable")
+	}
+	return reconciler.ReconcileTerminalArchive(ctx, handID, phase, reason)
+}
+
 func (s *Service) finalizeTerminatedRuntime(ctx context.Context, handID domain.HandID, reason string, result CommandResult, commandErr error) (CommandResult, error) {
 	if commandErr != nil || !result.Accepted {
 		return result, commandErr
 	}
 	if s.liveHands.Contains(handID) {
-		if _, err := s.liveHands.Abort(ctx, handID, reason); err != nil {
-			return result, wrapInfrastructure("archive terminal live hand", err)
+		// Domain/room COMMIT and live archive are separate transactions.
+		// A prior live COMMIT may be quarantined with stale RAM. Never
+		// archive that RAM; re-verify the fenced journal instead.
+		if durable, ok := s.liveHands.(interface{ DurabilityEnforced() bool }); ok && durable.DurabilityEnforced() {
+			if err := s.ReconcileTerminalArchive(ctx, handID, "TERMINATED", reason); err != nil {
+				return result, wrapInfrastructure("reconcile terminal live archive", err)
+			}
+		} else {
+			if _, err := s.liveHands.Abort(ctx, handID, reason); err != nil {
+				return result, wrapInfrastructure("archive terminal live hand", err)
+			}
 		}
 		return result, nil
 	}
@@ -282,35 +304,55 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 				return mutationOutcome{}, wrapInfrastructure("release terminal hand room", err)
 			}
 
-			// All domain and room checks have succeeded before acquiring the
-			// durable writer lock/fence. Business rejections are persisted as
-			// successful transactions by execute(), so fencing them earlier
-			// would silently disable an otherwise live writer. Keep the writer
-			// row lock through UpdateHand/UpdateRoom and transaction COMMIT.
-			if name == CommandHandExpire {
-				if input, ok := payload.(TerminateHandInput); ok && input.ExpectedLiveVersion != 0 {
-					if durability, ok := s.liveHands.(interface{ DurabilityEnforced() bool }); ok && durability.DurabilityEnforced() {
-						guard, ok := tx.(interface {
-							LockLiveCommittedVersion(context.Context, domain.HandID) (uint64, error)
-							FenceLiveWriter(context.Context, domain.HandID) error
-						})
-						if !ok {
-							return mutationOutcome{}, fmt.Errorf("live writer lock unavailable for expiry")
-						}
-						committed, err := guard.LockLiveCommittedVersion(txCtx, handSnapshot.ID)
-						if err != nil {
-							return mutationOutcome{}, fmt.Errorf("lock live writer for expiry: %w", err)
-						}
-						if committed > input.ExpectedLiveVersion {
+			// All business and room checks have succeeded. Fence ANY terminal
+			// mutation of a dealt hand, not only expiry: Cancel/Abort/Complete
+			// must also prevent a concurrent gameplay Append from committing
+			// after the domain has become terminal. Keep the writer lock
+			// through domain/room UPDATE and transaction COMMIT. Nondealt
+			// hands have no journal writer and must retain legacy semantics.
+			if handSnapshot.Phase == domain.HandBidding ||
+				handSnapshot.Phase == domain.HandPlaying ||
+				handSnapshot.Phase == domain.HandSettling {
+				if durability, ok := s.liveHands.(interface{ DurabilityEnforced() bool }); ok && durability.DurabilityEnforced() {
+					guard, ok := tx.(interface {
+						LockLiveCommittedVersion(context.Context, domain.HandID) (uint64, error)
+						FenceLiveWriter(context.Context, domain.HandID) error
+					})
+					if !ok {
+						return mutationOutcome{}, fmt.Errorf("live writer fence unavailable for termination")
+					}
+					committed, err := guard.LockLiveCommittedVersion(txCtx, handSnapshot.ID)
+					if err != nil {
+						return mutationOutcome{}, fmt.Errorf("lock live writer for termination: %w", err)
+					}
+					if name == CommandHandExpire {
+						if input, ok := payload.(TerminateHandInput); ok &&
+							input.ExpectedLiveVersion != 0 && committed > input.ExpectedLiveVersion {
 							return mutationOutcome{}, ErrLiveProgressed
 						}
-						// Under the same row lock, advance the owner fence. Any
-						// live operation that starts after this transaction wins
-						// must fail the old-epoch check instead of committing
-						// an action to a now-terminal domain hand.
-						if err := guard.FenceLiveWriter(txCtx, handSnapshot.ID); err != nil {
-							return mutationOutcome{}, fmt.Errorf("fence live writer on expiry: %w", err)
+					}
+					// The final live bid/play may have committed while the
+					// domain is still BIDDING/PLAYING. A cancel/expiry must
+					// not replace that committed NO_LANDLORD/COMPLETED phase
+					// with a conflicting domain archive. Read under the
+					// same live-writer FOR UPDATE lock as journal.Append.
+					if enabled, ok := s.liveHands.(interface{ TurnDeadlinesEnabled() bool }); ok && enabled.TurnDeadlinesEnabled() {
+						readPhase, ok := tx.(interface {
+							CommittedTurnPhase(context.Context, domain.HandID) (string, error)
+						})
+						if !ok {
+							return mutationOutcome{}, fmt.Errorf("committed turn phase guard unavailable")
 						}
+						livePhase, err := readPhase.CommittedTurnPhase(txCtx, handSnapshot.ID)
+						if err != nil {
+							return mutationOutcome{}, fmt.Errorf("read committed turn phase: %w", err)
+						}
+						if err := guardCommittedTerminalTurn(livePhase, name, payload); err != nil {
+							return mutationOutcome{}, err
+						}
+					}
+					if err := guard.FenceLiveWriter(txCtx, handSnapshot.ID); err != nil {
+						return mutationOutcome{}, fmt.Errorf("fence live writer on termination: %w", err)
 					}
 				}
 			}
@@ -324,6 +366,29 @@ func (s *Service) terminateHand(ctx context.Context, actor domain.AccountID, com
 			events := append(append([]domain.Event{}, handEvents...), roomEvents...)
 			return mutationOutcome{aggregateVersion: updatedHand.Version, events: events}, nil
 		})
+}
+
+// guardCommittedTerminalTurn prevents a domain terminal command from
+// contradicting a FINAL live action already committed by the writer.
+func guardCommittedTerminalTurn(phase, name string, payload any) error {
+	switch phase {
+	case livehand.PhaseNoLandlord:
+		input, _ := payload.(TerminateHandInput)
+		if name != CommandHandAbort || input.ReasonCode != "no_landlord" {
+			return domain.ErrHandTerminal
+		}
+	case livehand.PhaseCompleted:
+		if name != CommandHandComplete {
+			return domain.ErrHandTerminal
+		}
+	case "":
+		// Deadline scheduling is disabled for legacy writers.
+	default:
+		if name == CommandHandComplete {
+			return domain.ErrWrongPhase
+		}
+	}
+	return nil
 }
 
 func resolveHandContribution(snapshot domain.HandSnapshot, actor domain.AccountID) (domain.Seat, domain.ContributionSnapshot, error) {
