@@ -1,0 +1,7 @@
+{
+  "purpose": "cleanup of the single partial QA hand; not a terminal acceptance rerun",
+  "hand": "g63-full-d001e975c76ffed87065a6a0",
+  "before": "PLAYING",
+  "accepted": null,
+  "after": "ABORTED"
+}

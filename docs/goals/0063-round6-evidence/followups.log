@@ -1,0 +1,3 @@
+PASS multiple public cards: projected geometry in three sizes and real exact retry
+PASS Round5 exact single-card Pass UNKNOWN: immediate, second timeout, touch retry and discard
+PASS normal table geometry, bounded redraw and clock cleanup

@@ -1,0 +1,53 @@
+{
+  "source": "4aa6c4e02b1dc6fe98f991955d8c99ccd21a07a0",
+  "processes": {
+    "api": {
+      "pid": 104580,
+      "running": false
+    },
+    "browser": {
+      "pid": 104596,
+      "running": false
+    },
+    "web": {
+      "pid": 104595,
+      "running": false
+    }
+  },
+  "dataPreserved": true,
+  "kubernetesMutations": "none",
+  "partialHand": {
+    "purpose": "cleanup of the single partial QA hand; not a terminal acceptance rerun",
+    "hand": "g63-full-d001e975c76ffed87065a6a0",
+    "before": "PLAYING",
+    "accepted": null,
+    "after": "ABORTED"
+  },
+  "containers": [
+    {
+      "name": "codex0063r2-mysql",
+      "running": false,
+      "status": "exited"
+    },
+    {
+      "name": "codex0063r2-redis",
+      "running": false,
+      "status": "exited"
+    },
+    {
+      "name": "codex0063r2-bean-a",
+      "running": false,
+      "status": "exited"
+    },
+    {
+      "name": "codex0063r2-bean-b",
+      "running": false,
+      "status": "exited"
+    },
+    {
+      "name": "codex0063r2-bean-c",
+      "running": false,
+      "status": "exited"
+    }
+  ]
+}

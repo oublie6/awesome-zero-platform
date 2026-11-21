@@ -1,0 +1,131 @@
+TAP version 13
+# Subtest: Dou Dizhu sorts ranks descending with deterministic suit ties
+ok 1 - Dou Dizhu sorts ranks descending with deterministic suit ties
+  ---
+  duration_ms: 7.830934
+  type: 'test'
+  ...
+# Subtest: public numeric card IDs map exactly to Go canonical deck
+ok 2 - public numeric card IDs map exactly to Go canonical deck
+  ---
+  duration_ms: 1.622543
+  type: 'test'
+  ...
+# Subtest: three seats rotate consistently relative to the local player
+ok 3 - three seats rotate consistently relative to the local player
+  ---
+  duration_ms: 0.900175
+  type: 'test'
+  ...
+# Subtest: full 20-card hand fits narrow portrait and short landscape with no paging
+ok 4 - full 20-card hand fits narrow portrait and short landscape with no paging
+  ---
+  duration_ms: 3.736365
+  type: 'test'
+  ...
+# Subtest: table view is a distinct authority-preserving scene, not a paged menu
+ok 5 - table view is a distinct authority-preserving scene, not a paged menu
+  ---
+  duration_ms: 25.082887
+  type: 'test'
+  ...
+# Subtest: header title, clock and room buttons do not overlap on target screens
+ok 6 - header title, clock and room buttons do not overlap on target screens
+  ---
+  duration_ms: 1.815207
+  type: 'test'
+  ...
+# Subtest: the selected hand stays clear of play and bid buttons
+ok 7 - the selected hand stays clear of play and bid buttons
+  ---
+  duration_ms: 1.10071
+  type: 'test'
+  ...
+# Subtest: the pass action is disabled until a public trick exists
+ok 8 - the pass action is disabled until a public trick exists
+  ---
+  duration_ms: 6.826822
+  type: 'test'
+  ...
+# Subtest: real Go []uint8 Base64 wire tricks preserve legality and card identities
+ok 9 - real Go []uint8 Base64 wire tricks preserve legality and card identities
+  ---
+  duration_ms: 2.064488
+  type: 'test'
+  ...
+# Subtest: portrait design resolution retains physical touch sizes and playable fan
+ok 10 - portrait design resolution retains physical touch sizes and playable fan
+  ---
+  duration_ms: 1.452238
+  type: 'test'
+  ...
+# Subtest: table view consumes terminal evidence without a live public projection
+ok 11 - table view consumes terminal evidence without a live public projection
+  ---
+  duration_ms: 6.010008
+  type: 'test'
+  ...
+# Subtest: monotonic turn clock survives view recreation and ignores stale timestamps
+ok 12 - monotonic turn clock survives view recreation and ignores stale timestamps
+  ---
+  duration_ms: 2.629584
+  type: 'test'
+  ...
+# Subtest: table button captions remain readable in real CSS portrait scaling
+ok 13 - table button captions remain readable in real CSS portrait scaling
+  ---
+  duration_ms: 3.885511
+  type: 'test'
+  ...
+# Subtest: Round3 UNKNOWN action and room UI are refreshed from current owner state
+ok 14 - Round3 UNKNOWN action and room UI are refreshed from current owner state
+  ---
+  duration_ms: 6.150928
+  type: 'test'
+  ...
+# Subtest: Round4 retry controls and status are independent rows in three target viewports
+ok 15 - Round4 retry controls and status are independent rows in three target viewports
+  ---
+  duration_ms: 1.606378
+  type: 'test'
+  ...
+# Subtest: UNKNOWN takes over action row, including terminal proof button
+ok 16 - UNKNOWN takes over action row, including terminal proof button
+  ---
+  duration_ms: 6.472998
+  type: 'test'
+  ...
+# Subtest: transient table errors suppress secondary hints sharing their visual band
+ok 17 - transient table errors suppress secondary hints sharing their visual band
+  ---
+  duration_ms: 2.774645
+  type: 'test'
+  ...
+# Subtest: Round5 regression: actual Cocos projection of 760x390 PASS UNKNOWN never covers public trick
+ok 18 - Round5 regression: actual Cocos projection of 760x390 PASS UNKNOWN never covers public trick
+  ---
+  duration_ms: 0.810989
+  type: 'test'
+  ...
+# Subtest: table feedback adapts to measured trick/button space at real and projected viewports
+ok 19 - table feedback adapts to measured trick/button space at real and projected viewports
+  ---
+  duration_ms: 1.725874
+  type: 'test'
+  ...
+# Subtest: actual public card geometry and notice spacing share one authority
+ok 20 - actual public card geometry and notice spacing share one authority
+  ---
+  duration_ms: 7.44098
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 267.985923
+PASS 48 independent geometric combinations; native page evidence required separately

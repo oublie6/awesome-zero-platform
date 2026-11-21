@@ -1,0 +1,294 @@
+{
+  "source": "4aa6c4e02b1dc6fe98f991955d8c99ccd21a07a0",
+  "method": "offline independent geometry assertions over actual captured camera-projected nodes; font budget recorded separately, never relabelled PASS",
+  "geometryResult": "PASS",
+  "fontBudgetResult": "FAIL",
+  "rows": [
+    {
+      "file": "hand.bid-0cards-unknown-760x390.png",
+      "geometryPass": true,
+      "fontBudgetPass": false,
+      "noticeCSSFont": 10.687499999999973,
+      "publicCards": 0,
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 18.900000000000002,
+        "actualFont": 18,
+        "cssFont": 10.687499999999973,
+        "lineHeight": 21.6,
+        "boxHeight": 24.3,
+        "scale": 0.5937499999999986
+      }
+    },
+    {
+      "file": "hand.play-0cards-unknown-760x390.png",
+      "geometryPass": true,
+      "fontBudgetPass": false,
+      "noticeCSSFont": 10.687499999999973,
+      "publicCards": 0,
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 18.900000000000002,
+        "actualFont": 18,
+        "cssFont": 10.687499999999973,
+        "lineHeight": 21.6,
+        "boxHeight": 24.3,
+        "scale": 0.5937499999999986
+      }
+    },
+    {
+      "file": "hand.pass-1cards-unknown-760x390.png",
+      "geometryPass": true,
+      "fontBudgetPass": false,
+      "noticeCSSFont": 10.687499999999973,
+      "publicCards": 1,
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 18.900000000000002,
+        "actualFont": 18,
+        "cssFont": 10.687499999999973,
+        "lineHeight": 21.6,
+        "boxHeight": 24.3,
+        "scale": 0.5937499999999986
+      }
+    },
+    {
+      "file": "hand.pass-2cards-unknown-760x390.png",
+      "geometryPass": true,
+      "fontBudgetPass": false,
+      "noticeCSSFont": 10.687499999999973,
+      "publicCards": 2,
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 18.900000000000002,
+        "actualFont": 18,
+        "cssFont": 10.687499999999973,
+        "lineHeight": 21.6,
+        "boxHeight": 24.3,
+        "scale": 0.5937499999999986
+      }
+    },
+    {
+      "file": "multi-unknown-760x390.png",
+      "geometryPass": true,
+      "fontBudgetPass": false,
+      "noticeCSSFont": 10.687499999999973,
+      "publicCards": 2,
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 18.900000000000002,
+        "actualFont": 18,
+        "cssFont": 10.687499999999973,
+        "lineHeight": 21.6,
+        "boxHeight": 24.3,
+        "scale": 0.5937499999999986
+      }
+    },
+    {
+      "file": "multi-unknown-1280x720.png",
+      "geometryPass": true,
+      "fontBudgetPass": true,
+      "noticeCSSFont": 19.999999999999982,
+      "publicCards": 2,
+      "logical": {
+        "width": 1280,
+        "height": 720,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 166.4,
+        "right": 1113.6,
+        "top": 399.159,
+        "bottom": 431.55899999999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 20.25,
+        "actualFont": 20,
+        "cssFont": 19.999999999999982,
+        "lineHeight": 24.3,
+        "boxHeight": 32.400000000000006,
+        "scale": 0.9999999999999991
+      }
+    },
+    {
+      "file": "multi-unknown-390x844.png",
+      "geometryPass": true,
+      "fontBudgetPass": true,
+      "noticeCSSFont": 14.929687499999929,
+      "publicCards": 2,
+      "logical": {
+        "width": 1280,
+        "height": 2770.051282051282,
+        "unit": 3.282051282051282
+      },
+      "notice": {
+        "left": 50.7,
+        "right": 339.3,
+        "top": 606.3400000000001,
+        "bottom": 630.34,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 49.230769230769226,
+        "actualFont": 49,
+        "cssFont": 14.929687499999929,
+        "lineHeight": 59.07692307692307,
+        "boxHeight": 78.76923076923077,
+        "scale": 0.30468749999999856
+      }
+    },
+    {
+      "file": "single-unknown-760x390.png",
+      "geometryPass": true,
+      "fontBudgetPass": false,
+      "noticeCSSFont": 10.687499999999973,
+      "publicCards": 1,
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 18.900000000000002,
+        "actualFont": 18,
+        "cssFont": 10.687499999999973,
+        "lineHeight": 21.6,
+        "boxHeight": 24.3,
+        "scale": 0.5937499999999986
+      }
+    },
+    {
+      "file": "single-unknown-1280x720.png",
+      "geometryPass": true,
+      "fontBudgetPass": true,
+      "noticeCSSFont": 19.999999999999982,
+      "publicCards": 1,
+      "logical": {
+        "width": 1280,
+        "height": 720,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 166.4,
+        "right": 1113.6,
+        "top": 399.159,
+        "bottom": 431.55899999999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 20.25,
+        "actualFont": 20,
+        "cssFont": 19.999999999999982,
+        "lineHeight": 24.3,
+        "boxHeight": 32.400000000000006,
+        "scale": 0.9999999999999991
+      }
+    },
+    {
+      "file": "single-unknown-390x844.png",
+      "geometryPass": true,
+      "fontBudgetPass": true,
+      "noticeCSSFont": 14.929687499999929,
+      "publicCards": 1,
+      "logical": {
+        "width": 1280,
+        "height": 2770.051282051282,
+        "unit": 3.282051282051282
+      },
+      "notice": {
+        "left": 50.7,
+        "right": 339.3,
+        "top": 606.3400000000001,
+        "bottom": 630.34,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 49.230769230769226,
+        "actualFont": 49,
+        "cssFont": 14.929687499999929,
+        "lineHeight": 59.07692307692307,
+        "boxHeight": 78.76923076923077,
+        "scale": 0.30468749999999856
+      }
+    },
+    {
+      "file": "single-second-timeout-760x390.png",
+      "geometryPass": true,
+      "fontBudgetPass": false,
+      "noticeCSSFont": 10.687499999999973,
+      "publicCards": 1,
+      "logical": {
+        "width": 1280,
+        "height": 656.8421052631579,
+        "unit": 1.35
+      },
+      "notice": {
+        "left": 98.8,
+        "right": 661.2,
+        "top": 216.33346875,
+        "bottom": 230.76159374999997,
+        "touch": false,
+        "text": "操作结果未知，请核对原请求",
+        "font": 18.900000000000002,
+        "actualFont": 18,
+        "cssFont": 10.687499999999973,
+        "lineHeight": 21.6,
+        "boxHeight": 24.3,
+        "scale": 0.5937499999999986
+      }
+    }
+  ]
+}

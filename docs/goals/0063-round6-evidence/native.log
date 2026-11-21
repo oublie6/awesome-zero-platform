@@ -1,0 +1,5 @@
+FAIL Bid UNKNOWN empty public area and all projected sizes: actual SHRINK font below 11 CSS px: 10.687499999999973
+FAIL Play UNKNOWN empty public area and all projected sizes: actual SHRINK font below 11 CSS px: 10.687499999999973
+FAIL Round5 exact Pass UNKNOWN single public card, repeated timeout and explicit discard: actual SHRINK font below 11 CSS px: 10.687499999999973
+FAIL Pass UNKNOWN multiple public cards and exact retry: actual SHRINK font below 11 CSS px: 10.687499999999973
+FAIL bounded redraw, hand/button touch boundaries and clock cleanup: actual SHRINK font below 11 CSS px: 10.687499999999973

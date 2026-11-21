@@ -1,0 +1,11 @@
+{
+  "source": "4aa6c4e02b1dc6fe98f991955d8c99ccd21a07a0",
+  "R4-N02-original-public-card-overlap": "PASS, closed",
+  "Round6": "FAIL",
+  "remainingFinding": "R6-N01/P2 actual narrow-landscape label font 10.6875 CSS px < existing candidate regression budget 11; configured-float tests miss SHRINK integer result",
+  "stockTests": 20,
+  "independentGeometryCombinations": 48,
+  "actualGeometryAndFunctionalFollowups": "PASS",
+  "actualFontBudget": "FAIL",
+  "noMergeOrDeployment": true
+}
