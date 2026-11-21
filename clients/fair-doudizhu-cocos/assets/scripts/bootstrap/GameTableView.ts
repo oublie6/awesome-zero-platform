@@ -259,8 +259,9 @@ export class GameTableView {
     })
     if(this.noticeText){
       const feedback=tableNoticePlacement(controlsY,w,h,u)
-      this.label('TableNotice',this.noticeText,0,feedback.y,
+      const notice=this.label('TableNotice',this.noticeText,0,feedback.y,
         feedback.font,new Color(255,216,143,255),w*.74,feedback.height)
+      notice.lineHeight=feedback.lineHeight
     }
     if(me>=1 && me<=3){
       const mineRole=landlord===me?'地主':'农民'

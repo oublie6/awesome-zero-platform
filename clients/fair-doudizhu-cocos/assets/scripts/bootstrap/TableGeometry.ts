@@ -119,7 +119,7 @@ export function tableTrickGeometry(width:number,height:number,unit:number):{
  * Reserve 3 units against each edge and select the compact line only when
  * a full-height message cannot fit between the real game elements. */
 export function tableNoticePlacement(actionY:number,width:number,height:number,unit:number):{
-  y:number;font:number;height:number
+  y:number;font:number;height:number;lineHeight:number
 }{
   const u=unit
   const trickBottom=tableTrickGeometry(width,height,u).lowerEdge
@@ -134,7 +134,10 @@ export function tableNoticePlacement(actionY:number,width:number,height:number,u
   // In supported playable sizes minY <= maxY. Clamp to keep the feedback
   // close to its controls while preserving both occupied regions.
   const y=Math.max(minY,Math.min(preferredY,maxY))
-  return {y,font:(compact?14:15)*u,height:noticeHeight}
+  // Cocos Label defaults to fontSize+5 logical pixels; that can exceed an
+  // 18u compact box when u<1 and trigger implicit SHRINK below 11 CSS px.
+  return {y,font:(compact?14:15)*u,height:noticeHeight,
+    lineHeight:(compact?16:18)*u}
 }
 export interface HandCardPlace{
   x:number

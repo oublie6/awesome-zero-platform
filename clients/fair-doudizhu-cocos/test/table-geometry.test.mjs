@@ -274,6 +274,8 @@ test('table feedback adapts to measured trick/button space at real and projected
      assert.ok(upper<=trick.y-19*u,'notice overlaps empty trick label at '+w+'x'+h)
      assert.ok(notice.font*cssRatio>=11,
        'notice text becomes unreadable at '+w+'x'+h+' CSS ratio '+cssRatio)
+     assert.ok(notice.lineHeight<=notice.height && notice.lineHeight>=notice.font,
+       'Cocos Label SHRINK may shrink the message below its declared size at '+w+'x'+h)
    }
  }
 })
@@ -283,6 +285,7 @@ test('actual public card geometry and notice spacing share one authority',async(
  const geometry=await readFile(new URL('../assets/scripts/bootstrap/TableGeometry.ts',import.meta.url),'utf8')
  assert.match(view,/const trick=tableTrickGeometry\(w,h,u\)/)
  assert.match(view,/trickCardWidth,trick\.cardHeight/)
+ assert.match(view,/notice\.lineHeight=feedback\.lineHeight/)
  assert.match(geometry,/const trickBottom=tableTrickGeometry\(width,height,u\)\.lowerEdge/)
  assert.doesNotMatch(geometry,/height<=480/,'must not infer CSS viewport height from Cocos units')
 })
