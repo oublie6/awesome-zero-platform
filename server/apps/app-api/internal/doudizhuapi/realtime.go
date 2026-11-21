@@ -225,7 +225,7 @@ func realtimeError(err error) (string, string) {
 		errors.Is(err, livehand.ErrMalformedCommand), errors.Is(err, livehand.ErrCardNotHeld),
 		errors.Is(err, bidding.ErrInvalidScore), errors.Is(err, playing.ErrInvalidPattern), errors.Is(err, playing.ErrInvalidPatternValue):
 		return "INVALID_REQUEST", "Doudizhu request is invalid"
-	case errors.Is(err, ErrReplayConflict), errors.Is(err, application.ErrOptimisticConflict), errors.Is(err, application.ErrSequenceConflict),
+	case errors.Is(err, gamecore.ErrCommitRejected), errors.Is(err, ErrReplayConflict), errors.Is(err, application.ErrOptimisticConflict), errors.Is(err, application.ErrSequenceConflict),
 		errors.Is(err, domain.ErrVersionConflict), errors.Is(err, livehand.ErrVersionConflict), errors.Is(err, gamecore.ErrInstanceExists),
 		errors.Is(err, gamecore.ErrFinalizationPending), errors.Is(err, domain.ErrWrongPhase), errors.Is(err, bidding.ErrWrongTurn), errors.Is(err, bidding.ErrBidNotHigher),
 		errors.Is(err, bidding.ErrBiddingComplete), errors.Is(err, playing.ErrWrongTurn), errors.Is(err, playing.ErrCannotPass),

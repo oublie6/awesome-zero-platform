@@ -508,3 +508,59 @@ func TestVerifiedArchiveRetiresQuarantinedStaleGameWithoutReaborting(t *testing.
 		t.Fatal("replay-verified archival did not remove quarantined executor")
 	}
 }
+
+func TestCommittedPreCommitRejectionKeepsOldStateAndAllowsLaterWorker(t *testing.T) {
+	for _, action := range []string{"bid", "play", "pass"} {
+		t.Run(action, func(t *testing.T) {
+			directory, err := gamecore.NewLiveDirectory(&memoryArchive{})
+			if err != nil { t.Fatal(err) }
+			game := newFakeLiveGame(t, "rejected-"+action, 3)
+			if err := directory.Add(game.Descriptor(), game); err != nil { t.Fatal(err) }
+			denial := errors.New("expired human action")
+			cmd := gamecore.Command{ActorPosition: 1, ExpectedVersion: 0, Payload: []byte(action)}
+			for i := 0; i < 2; i++ {
+				_, candidate, err := directory.ApplyCommitted(game.InstanceID(), cmd,
+					func(gamecore.CommandOutcome) error {
+						return errors.Join(gamecore.ErrCommitRejected, denial)
+					})
+				if !errors.Is(err, gamecore.ErrCommitRejected) || !errors.Is(err, denial) || candidate != nil {
+					t.Fatalf("rejected outcome was published or lost rejection: %v", err)
+				}
+				view, err := directory.View(game.InstanceID(), gamecore.ViewRequest{PublicOnly:true})
+				if err != nil || view.Version != 0 {
+					t.Fatalf("rejected %s quarantined/advanced the game: view=%+v err=%v", action, view, err)
+				}
+			}
+			accepted, _, err := directory.ApplyCommitted(game.InstanceID(),
+				gamecore.Command{ActorPosition: 1, ExpectedVersion: 0, Payload: []byte("turn-timeout:"+action)},
+				func(gamecore.CommandOutcome) error { return nil })
+			if err != nil || accepted.Version != 1 || game.ApplyCalls() != 0 {
+				t.Fatalf("later committed worker could not advance after rejection: %+v %v", accepted, err)
+			}
+		})
+	}
+}
+
+func TestCommittedNonCertifiedErrorsStillQuarantine(t *testing.T) {
+	for _, cause := range []string{
+		"fenced writer epoch", "live watermark conflict", "database unavailable",
+		"ambiguous COMMIT result", "expired but not certified as pre-COMMIT",
+	} {
+		t.Run(cause, func(t *testing.T) {
+			directory, err := gamecore.NewLiveDirectory(&memoryArchive{})
+			if err != nil { t.Fatal(err) }
+			game := newFakeLiveGame(t, "unknown-"+cause, 3)
+			if err := directory.Add(game.Descriptor(), game); err != nil { t.Fatal(err) }
+			_, _, err = directory.ApplyCommitted(game.InstanceID(),
+				gamecore.Command{ActorPosition: 1, ExpectedVersion: 0, Payload: []byte("bid")},
+				func(gamecore.CommandOutcome) error { return errors.New(cause) })
+			if !errors.Is(err, gamecore.ErrVerificationFailed) ||
+				errors.Is(err, gamecore.ErrCommitRejected) {
+				t.Fatalf("uncertain error was treated as a benign rejection: %v", err)
+			}
+			if _, err := directory.View(game.InstanceID(), gamecore.ViewRequest{PublicOnly:true}); !errors.Is(err, gamecore.ErrInstanceNotFound) {
+				t.Fatalf("uncertain outcome leaked stale candidate: %v", err)
+			}
+		})
+	}
+}

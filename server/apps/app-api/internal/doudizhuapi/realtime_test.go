@@ -265,3 +265,17 @@ func TestWrongPhaseHasConflictWireCodeRatherThanInternal(t *testing.T) {
 		t.Fatalf("expected explicit phase conflict, got %s", code)
 	}
 }
+
+func TestCertifiedPreCommitTurnRejectionHasConflictWireCode(t *testing.T) {
+	err := errors.Join(gamecore.ErrCommitRejected, errors.New("expired turn"))
+	code, _ := realtimeError(err)
+	if code != "CONFLICT" {
+		t.Fatalf("proven pre-COMMIT turn rejection mapped to %s; want CONFLICT", code)
+	}
+	// Unknown COMMIT results remain server errors, never masquerading as
+	// a safe client conflict.
+	code, _ = realtimeError(errors.Join(gamecore.ErrVerificationFailed, errors.New("ambiguous COMMIT")))
+	if code != "INTERNAL" {
+		t.Fatalf("uncertain commit mapped as safe client conflict: %s", code)
+	}
+}

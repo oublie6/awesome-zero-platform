@@ -215,8 +215,9 @@ func (d *LiveDirectory) Apply(id InstanceID, command Command) (CommandOutcome, e
 }
 
 // ApplyCommitted computes an isolated candidate, durably records its accepted
-// transition, and only then publishes it. Any persistence ambiguity quarantines
-// this instance: the caller must use explicit fenced recovery before new writes.
+// transition, and only then publishes it. A proven pre-COMMIT business
+// rejection leaves the original game live; unknown persistence outcomes and
+// writer fencing still quarantine until explicit fenced recovery.
 func (d *LiveDirectory) ApplyCommitted(id InstanceID, command Command, persist func(CommandOutcome) error) (CommandOutcome, LiveGame, error) {
 	if persist == nil {
 		return CommandOutcome{}, nil, fmt.Errorf("%w: missing durable commit", ErrInvalidArgument)
@@ -260,6 +261,13 @@ func (d *LiveDirectory) ApplyCommitted(id InstanceID, command Command, persist f
 		final = &record
 	}
 	if err := persist(outcome); err != nil {
+		// Only the durable adapter may claim an error was definitively
+		// rejected before COMMIT. The isolated candidate has not been
+		// published, so readers and the DQ timeout worker retain the last
+		// committed version. Never clear quarantine for ambiguous failures.
+		if errors.Is(err, ErrCommitRejected) {
+			return CommandOutcome{}, nil, err
+		}
 		entry.quarantined = true
 		return CommandOutcome{}, nil, errors.Join(ErrVerificationFailed, err)
 	}

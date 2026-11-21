@@ -215,6 +215,14 @@ WHERE hand_id=? FOR UPDATE`, id).Scan(&foundEpoch, &committed); err != nil {
 		return ErrLiveWatermarkConflict
 	}
 	if err = j.requireCurrentTurn(ctx, tx, id, commandID, sequence, command.ExpectedVersion, command.ActorPosition); err != nil {
+		// This turn-deadline decision happens inside the transaction,
+		// before the action INSERT or tx.Commit. Expired human commands
+		// (and premature timeout tickets) have definitely not committed.
+		// In contrast, writer fencing, watermark mismatches, SQL outages
+		// and COMMIT ambiguity must remain fail-closed.
+		if errors.Is(err, ErrTurnExpired) {
+			return errors.Join(gamecore.ErrCommitRejected, err)
+		}
 		return err
 	}
 	if _, err = tx.ExecContext(ctx, `INSERT INTO doudizhu_live_actions(

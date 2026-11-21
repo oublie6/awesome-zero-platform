@@ -82,8 +82,8 @@ WHERE hand_id=?`, id); err != nil {
 		t.Fatal(err)
 	}
 	outcome := gamecore.CommandOutcome{Version: 3, Payload: finishedPayload}
-	if err := journal.Append(ctx, id, epoch, "human-late", "crash-player-2", cmd, outcome); !errors.Is(err, mysqlstore.ErrTurnExpired) {
-		t.Fatalf("human committed after deadline: %v", err)
+	if err := journal.Append(ctx, id, epoch, "human-late", "crash-player-2", cmd, outcome); !errors.Is(err, mysqlstore.ErrTurnExpired) || !errors.Is(err, gamecore.ErrCommitRejected) {
+		t.Fatalf("human committed after deadline or lost pre-COMMIT rejection marker: %v", err)
 	}
 	if err := journal.Append(ctx, id, epoch, "turn-timeout:unit-2", "crash-player-2", cmd, outcome); err != nil {
 		t.Fatalf("authoritative expired turn should be consumed: %v", err)

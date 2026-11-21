@@ -13,4 +13,8 @@ var (
 	ErrFinalizationPending   = errors.New("gamecore: finalization pending")
 	ErrNotFinalizing         = errors.New("gamecore: no finalization pending")
 	ErrArchiveFailed         = errors.New("gamecore: final archive failed")
+	// ErrCommitRejected means the durable adapter positively established
+	// that NO COMMIT was attempted for this candidate. It must never mark
+	// transport errors, writer fencing or unknown COMMIT outcomes as safe.
+	ErrCommitRejected       = errors.New("gamecore: durable command rejected before commit")
 )
