@@ -1,0 +1,553 @@
+{
+  "source": "9474b9a4b2309cded0fc1dc1664650341d3d03e3",
+  "roundResult": "FAIL",
+  "ci": [
+    {
+      "name": "Kubernetes Observability Manifests",
+      "id": 44864235376,
+      "head_sha": "9474b9a4b2309cded0fc1dc1664650341d3d03e3",
+      "conclusion": "success",
+      "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44864235376"
+    },
+    {
+      "name": "Fair Doudizhu",
+      "id": 44864235366,
+      "head_sha": "9474b9a4b2309cded0fc1dc1664650341d3d03e3",
+      "conclusion": "success",
+      "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44864235366"
+    },
+    {
+      "name": "Cocos Linux Native Client",
+      "id": 44864235645,
+      "head_sha": "9474b9a4b2309cded0fc1dc1664650341d3d03e3",
+      "conclusion": "success",
+      "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44864235645"
+    },
+    {
+      "name": "Fair Doudizhu Vue3 Web",
+      "id": 44864235323,
+      "head_sha": "9474b9a4b2309cded0fc1dc1664650341d3d03e3",
+      "conclusion": "success",
+      "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44864235323"
+    },
+    {
+      "name": "CI",
+      "id": 44864235370,
+      "head_sha": "9474b9a4b2309cded0fc1dc1664650341d3d03e3",
+      "conclusion": "success",
+      "html_url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/44864235370"
+    }
+  ],
+  "jobs": {
+    "CI": [
+      {
+        "name": "integration",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "secure_envelope",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "unit",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "admin_web",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "report",
+        "conclusion": "success",
+        "html_url": null
+      }
+    ],
+    "Fair": [
+      {
+        "name": "application",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "client_foundation",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "mysql_integration",
+        "conclusion": "success",
+        "html_url": null
+      }
+    ],
+    "Cocos": [
+      {
+        "name": "linux_source",
+        "conclusion": "success",
+        "html_url": null
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped",
+        "html_url": null
+      }
+    ],
+    "Vue": [
+      {
+        "name": "vue_build",
+        "conclusion": "success",
+        "html_url": null
+      }
+    ]
+  },
+  "builtImages": {
+    "beanstalk": {
+      "tag": "docker.io/awesome-zero-platform/goal0063-beanstalk:9474b9a",
+      "digest": "sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe",
+      "image": "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe",
+      "configID": "sha256:0ac0639cbb693a230820204161eaea237c4116b11baeefac983901ccfb9af95b"
+    },
+    "api": {
+      "tag": "docker.io/awesome-zero-platform/goal0063-api:9474b9a-exec",
+      "digest": "sha256:5e7f3a4b142556130ac0edd651124585a5e3d68b4c8c7c4cc9669224de6e27bc",
+      "image": "docker.io/awesome-zero-platform/goal0063-api@sha256:5e7f3a4b142556130ac0edd651124585a5e3d68b4c8c7c4cc9669224de6e27bc",
+      "configID": "sha256:7838387417919bd348034ee99fb54e93319814e56445f6a6667e09aa0c6d6db0"
+    },
+    "web": {
+      "tag": "docker.io/awesome-zero-platform/goal0063-web:9474b9a",
+      "digest": "sha256:990da69543f3501283a0958fe26919ba93eb289ad139924791e6988421ed4e12",
+      "image": "docker.io/awesome-zero-platform/goal0063-web@sha256:990da69543f3501283a0958fe26919ba93eb289ad139924791e6988421ed4e12",
+      "configID": "sha256:faa68fb287d858a4a53b095462ae3774abdeed28d1dc858068be2765bb182e4e"
+    }
+  },
+  "apiBinarySHA256": "1003f3cb3b0c2973d5f38b6bc294c17da24d9351a573c104a57516b06056f2d8",
+  "backup": {
+    "sqlSHA256": "1ec1d1cb18f558e8d8168c84ce0d46c8250bbcb9283eba2e2eab824950f2d84b",
+    "compressedSHA256": "89e7a2f65e8692729170faef40930f49912880089bb6fc000a8393c7039a4f0d",
+    "bytes": 580721,
+    "consistentTransaction": true
+  },
+  "independentRestore": {
+    "result": "PASS",
+    "tableCount": 21,
+    "allOrderedBytesMatch": true
+  },
+  "mysql57DDL": {
+    "result": "PASS",
+    "mysqlVersion": "5.7.44",
+    "table": "doudizhu_turn_deadlines",
+    "existingTablesRetained": true
+  },
+  "testedPodsBeforeRollback": [
+    {
+      "pod": "app-api-55d9b88b9d-rx6mh",
+      "node": "ser730417996259",
+      "ready": true,
+      "imageIDs": [
+        "docker.io/awesome-zero-platform/goal0063-api@sha256:5e7f3a4b142556130ac0edd651124585a5e3d68b4c8c7c4cc9669224de6e27bc"
+      ]
+    },
+    {
+      "pod": "beanstalkd-a-0",
+      "node": "ser730417996259",
+      "ready": true,
+      "imageIDs": [
+        "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+      ]
+    },
+    {
+      "pod": "beanstalkd-b-0",
+      "node": "ser730417996259",
+      "ready": true,
+      "imageIDs": [
+        "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+      ]
+    },
+    {
+      "pod": "game-web-cd7598589-8lmh6",
+      "node": "ser730417996259",
+      "ready": true,
+      "imageIDs": [
+        "docker.io/awesome-zero-platform/goal0063-web@sha256:990da69543f3501283a0958fe26919ba93eb289ad139924791e6988421ed4e12"
+      ]
+    },
+    {
+      "pod": "mysql-5cc48fd9b4-5hz6j",
+      "node": "ser730417996259",
+      "ready": true,
+      "imageIDs": [
+        "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+      ]
+    },
+    {
+      "pod": "redis-67bdd89687-krvb4",
+      "node": "ser730417996259",
+      "ready": true,
+      "imageIDs": [
+        "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+      ]
+    }
+  ],
+  "queuePVCPersistence": {
+    "result": "PASS",
+    "queues": [
+      {
+        "node": "a",
+        "oldUID": "2b6599de-81b9-4482-a81b-b54b5ee14ce4",
+        "newUID": "37184b34-e579-4102-a7c1-604333cd30f5",
+        "samePVC": true,
+        "delayedMessageRetained": true,
+        "ownedMessageDeletedOnly": true
+      },
+      {
+        "node": "b",
+        "newUID": "c3cc5fcf-875b-4be4-af9a-d874ff72cd7b",
+        "samePVC": true,
+        "delayedMessageRetained": true,
+        "ownedMessageDeletedOnly": true,
+        "fixtureNote": "Initial post-Ready Service connection raced endpoint propagation; retried without another restart and retained body matched."
+      }
+    ]
+  },
+  "businessPassedCases": [
+    {
+      "label": "same-DQ API restart and repeated private refresh preserve original deadline",
+      "result": "PASS",
+      "deadline": 1795278967856
+    },
+    {
+      "label": "automatic no-bid",
+      "result": "PASS",
+      "deadline": 1795278967856,
+      "committed": 1795278968856,
+      "latency": 1000,
+      "expectedVersion": 1,
+      "nextVersion": 2,
+      "seat": 2,
+      "payload": {
+        "v": "doudizhu-live-bid-command-v1",
+        "score": 0
+      }
+    },
+    {
+      "label": "manual score 3 committed and started play",
+      "result": "PASS",
+      "version": 3
+    }
+  ],
+  "browserRoomCases": [
+    {
+      "player": 0,
+      "login": 200,
+      "identityStable": true,
+      "authenticated": true
+    },
+    {
+      "player": 1,
+      "login": 200,
+      "identityStable": true,
+      "authenticated": true
+    },
+    {
+      "player": 2,
+      "login": 200,
+      "identityStable": true,
+      "authenticated": true
+    }
+  ],
+  "browserPageErrors": [],
+  "browserClockPassedCases": [
+    {
+      "name": "250ms local countdown advances without extending durable deadline",
+      "result": "PASS",
+      "before": "46s",
+      "after": "44s",
+      "deadline": 1795278967856
+    },
+    {
+      "name": "real page reload and WSS restore retain original deadline",
+      "result": "PASS"
+    }
+  ],
+  "defect": {
+    "source": "9474b9a4b2309cded0fc1dc1664650341d3d03e3",
+    "scope": "isolated clone, genuine public command; no synthetic queue messages in this reproduction",
+    "hand": "owned-QA-hand",
+    "priorPhase": "BIDDING",
+    "recoveredVersion": 2,
+    "before": {
+      "clock": {
+        "version": 2,
+        "seat": 1,
+        "deadline": 1795279089061,
+        "now": 1795279069662,
+        "retry": 1795279069061
+      },
+      "actions": "1"
+    },
+    "command": {
+      "type": "hand.bid",
+      "expectedVersion": 2,
+      "seat": 1,
+      "sent": 1795279089091,
+      "deadline": 1795279089061,
+      "sentAfterDeadline": 30
+    },
+    "reply": {
+      "http": 500,
+      "code": "INTERNAL_ERROR",
+      "message": "internal server error",
+      "dataKeys": []
+    },
+    "after": {
+      "privateHTTP": 404,
+      "phase": "BIDDING",
+      "clock": {
+        "version": 2,
+        "seat": 1,
+        "deadline": 1795279089061,
+        "now": 1795279094107,
+        "retry": 1795279093996
+      },
+      "actions": "1"
+    },
+    "reproduced": true,
+    "result": "FAIL"
+  },
+  "rollback": {
+    "result": "PASS",
+    "unfinishedHands": 0,
+    "method": "owned QA business cancel, global persisted count checked before Recreate image downgrade",
+    "dataRestoreOverSharedDB": false,
+    "schemaAndQueuePVCsRetained": true
+  },
+  "rollbackHealth": {
+    "cases": [
+      {
+        "name": "rolled-back API readiness through original HTTPS entry",
+        "http": 200
+      },
+      {
+        "name": "pre-upgrade historical session survives both cutovers without Redis clearing",
+        "http": 200,
+        "identityStable": true
+      },
+      {
+        "name": "historical final evidence after actual rollback",
+        "http": 200
+      },
+      {
+        "name": "all three new QA sessions/accounts survive rollback",
+        "count": 3,
+        "http": 200
+      }
+    ],
+    "result": "PASS"
+  },
+  "integrity": {
+    "result": "PASS",
+    "originalTables": 21,
+    "exactOriginalTables": 20,
+    "expectedMetadataChanges": {
+      "doudizhu_live_writers": [
+        "owner_epoch",
+        "updated_at"
+      ]
+    },
+    "unexpectedOriginalChanges": [],
+    "allSecretFieldsByteIdentical": true,
+    "newTableRetained": true
+  },
+  "finalHealth": {
+    "result": "PASS",
+    "pods": [
+      {
+        "pod": "app-api-5ffd45d6b8-lwfxl",
+        "uid": "8ee93039-576e-4749-8680-2fd2dc6df5af",
+        "ready": true,
+        "node": "ser730417996259",
+        "images": [
+          "docker.io/awesome-zero-platform/goal0062-api:a739e23f315a98ad76fd83c233aae1813415037a"
+        ],
+        "imageIDs": [
+          "docker.io/awesome-zero-platform/goal0062-api@sha256:9b8bf32b89c384c7f6760473c0f29b72999ed3b2ffff36876693ff2e6832906f"
+        ],
+        "restarts": [
+          0
+        ],
+        "requestedImages": [
+          "docker.io/awesome-zero-platform/goal0062-api@sha256:9b8bf32b89c384c7f6760473c0f29b72999ed3b2ffff36876693ff2e6832906f"
+        ]
+      },
+      {
+        "pod": "beanstalkd-a-0",
+        "uid": "37184b34-e579-4102-a7c1-604333cd30f5",
+        "ready": true,
+        "node": "ser730417996259",
+        "images": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk:9474b9a"
+        ],
+        "imageIDs": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+        ],
+        "restarts": [
+          0
+        ],
+        "requestedImages": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+        ]
+      },
+      {
+        "pod": "beanstalkd-b-0",
+        "uid": "c3cc5fcf-875b-4be4-af9a-d874ff72cd7b",
+        "ready": true,
+        "node": "ser730417996259",
+        "images": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk:9474b9a"
+        ],
+        "imageIDs": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+        ],
+        "restarts": [
+          0
+        ],
+        "requestedImages": [
+          "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+        ]
+      },
+      {
+        "pod": "game-web-996b46c84-s54v7",
+        "uid": "1eacbba2-a854-4306-9284-5a9ae7cd19a7",
+        "ready": true,
+        "node": "ser730417996259",
+        "images": [
+          "docker.io/awesome-zero-platform/goal0062-web:a739e23f315a98ad76fd83c233aae1813415037a"
+        ],
+        "imageIDs": [
+          "docker.io/awesome-zero-platform/goal0062-web@sha256:ab52cee0608128afef4af6466c90bb7141b92d4b43e51bbc34ab165a537caab2"
+        ],
+        "restarts": [
+          0
+        ],
+        "requestedImages": [
+          "docker.io/awesome-zero-platform/goal0062-web@sha256:ab52cee0608128afef4af6466c90bb7141b92d4b43e51bbc34ab165a537caab2"
+        ]
+      },
+      {
+        "pod": "mysql-5cc48fd9b4-5hz6j",
+        "uid": "bd7574dd-1fb4-4010-b392-cc5e3f326f9d",
+        "ready": true,
+        "node": "ser730417996259",
+        "images": [
+          "docker.io/library/mysql:5.7.44"
+        ],
+        "imageIDs": [
+          "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+        ],
+        "restarts": [
+          2
+        ],
+        "requestedImages": [
+          "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+        ]
+      },
+      {
+        "pod": "redis-67bdd89687-krvb4",
+        "uid": "c1f0b042-43a9-4ffe-8da1-4031331a200a",
+        "ready": true,
+        "node": "ser730417996259",
+        "images": [
+          "docker.io/library/redis:8.8.0-alpine3.23"
+        ],
+        "imageIDs": [
+          "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+        ],
+        "restarts": [
+          2
+        ],
+        "requestedImages": [
+          "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+        ]
+      }
+    ],
+    "nodesReady": [
+      "hk-worker",
+      "ser730417996259"
+    ],
+    "mysqlRedisPodUIDsAndRestartCountsUnchanged": true,
+    "existingServiceSpecsUnchanged": true,
+    "configMapDataUnchanged": true,
+    "allSecretFieldsUnchanged": true,
+    "unfinishedHands": 0,
+    "dqEnabled": false,
+    "runningProduct": "rolled back Goal0062 baseline; Goal0063 not accepted",
+    "additionalQueuePVCsRetained": 2,
+    "observedUTC": "2026-11-21T16:41:19Z"
+  },
+  "finalObservations": {
+    "queues": {
+      "a": {
+        "version": "1.13",
+        "current-jobs-ready": 2,
+        "current-jobs-delayed": 0,
+        "current-jobs-buried": 0,
+        "current-connections": 1,
+        "binlog-current-index": 2,
+        "binlog-records-written": 5
+      },
+      "b": {
+        "version": "1.13",
+        "current-jobs-ready": 2,
+        "current-jobs-delayed": 0,
+        "current-jobs-buried": 0,
+        "current-connections": 1,
+        "binlog-current-index": 2,
+        "binlog-records-written": 5
+      }
+    },
+    "redisSessionKeyCountFinal": 7,
+    "preDeploymentRedisSessionInventoryCaptured": false,
+    "retainedDeadlineRows": 1,
+    "activeDeadlineRows": 0,
+    "forwardServiceActive": true
+  },
+  "resourcesStopped": {
+    "containers": [
+      {
+        "container": "codex0063r8-queue-a",
+        "stopped": true,
+        "volumesRetained": true
+      },
+      {
+        "container": "codex0063r8-queue-b",
+        "stopped": true,
+        "volumesRetained": true
+      },
+      {
+        "container": "codex0063r8-redis",
+        "stopped": true,
+        "volumesRetained": true
+      },
+      {
+        "container": "codex0063r8-restore",
+        "stopped": true,
+        "volumesRetained": true
+      }
+    ],
+    "browserStopped": true,
+    "privateFaultDumpAndVolumesRetained": true
+  }
+}
