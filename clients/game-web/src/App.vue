@@ -19,12 +19,57 @@ const registerPassword=ref('')
 const registerConfirm=ref('')
 const notice=ref('')
 const error=ref('')
+type BootPhase='waiting'|'document'|'engine'|'scene'|'session'|'ready'|'failed'
+const gameMounted=ref(false)
 const gameStatus=ref('等待加载游戏资源')
 const gameFrame=ref<HTMLIFrameElement|null>(null)
 const gameInstance=ref(0)
+const gamePhase=ref<BootPhase>('waiting')
+const gameLoadSlow=ref(false)
+const gameLoadError=ref('')
 const loggedIn=computed(()=>!!account.value)
-const isReady=computed(()=>gameStatus.value==='游戏就绪')
+const isReady=computed(()=>gamePhase.value==='ready')
+const confirmedStages=computed(()=>({
+  waiting:0,document:1,engine:2,scene:3,session:3,ready:4,failed:0
+})[gamePhase.value])
+const stageWidth=computed(()=>confirmedStages.value*25+'%')
 const protocol='azp-doudizhu-frame-v1'
+let slowTimer:ReturnType<typeof setTimeout>|null=null
+let loadDeadline:ReturnType<typeof setTimeout>|null=null
+function clearLoadWatchdog(){
+  if(slowTimer!==null)clearTimeout(slowTimer)
+  if(loadDeadline!==null)clearTimeout(loadDeadline)
+  slowTimer=null;loadDeadline=null
+}
+function armLoadWatchdog(){
+  clearLoadWatchdog()
+  gameLoadSlow.value=false
+  if(isReady.value)return
+  slowTimer=setTimeout(()=>{if(!isReady.value)gameLoadSlow.value=true},15000)
+  loadDeadline=setTimeout(()=>{
+    if(isReady.value)return
+    gamePhase.value='failed'
+    gameLoadError.value='启动阶段长时间没有响应，请检查网络或重新加载游戏。'
+    gameStatus.value=gameLoadError.value
+  },60000)
+}
+function failGameLoad(message:string){
+  clearLoadWatchdog()
+  gamePhase.value='failed'
+  gameLoadError.value=message
+  gameStatus.value=message
+}
+function reloadGame(){
+  if(!account.value || !client?.authenticated)return
+  clearLoadWatchdog()
+  gamePhase.value='waiting'
+  gameStatus.value='等待游戏页面响应'
+  gameLoadError.value=''
+  gameLoadSlow.value=false
+  gameMounted.value=true
+  gameInstance.value++
+  armLoadWatchdog()
+}
 
 function communicate(type:'SESSION_AVAILABLE'|'SESSION_REVOKED'|'OPEN_ROOMS'){
   const frame=gameFrame.value?.contentWindow
@@ -33,24 +78,46 @@ function communicate(type:'SESSION_AVAILABLE'|'SESSION_REVOKED'|'OPEN_ROOMS'){
   frame.postMessage({protocol,type},window.location.origin)
 }
 function onGameMessage(event:MessageEvent){
-  if(page.value!=='game' || event.source!==gameFrame.value?.contentWindow ||
+  if(!gameMounted.value || event.source!==gameFrame.value?.contentWindow ||
      event.origin!==window.location.origin)return
   const message=event.data
   if(!message || typeof message!=='object' || message.protocol!==protocol ||
      typeof message.type!=='string')return
-  if(message.type==='GAME_READY'){
+  if(message.type==='BOOT_STAGE' && !isReady.value && gamePhase.value!=='failed'){
+    const stage=message.stage
+    if(stage!=='document' && stage!=='engine' && stage!=='scene')return
+    const ranks:Record<string,number>={waiting:0,document:1,engine:2,scene:3,session:4}
+    if((ranks[stage]??0)>(ranks[gamePhase.value]??0)){
+      gamePhase.value=stage
+      gameStatus.value={
+        document:'正在读取游戏页面',engine:'游戏引擎初始化完成',
+        scene:'游戏场景已准备'
+      }[stage]
+      armLoadWatchdog()
+    }
+  }else if(message.type==='BOOT_FAILED' && !isReady.value){
+    failGameLoad('游戏资源或引擎启动失败，请重新加载。')
+  }else if(message.type==='GAME_READY'){
     if(account.value && client?.authenticated){
-      gameStatus.value='验证服务器会话中'
+      if(!isReady.value){
+        gamePhase.value='session'
+        gameStatus.value='正在验证服务器会话并恢复房间'
+        armLoadWatchdog()
+      }
       communicate('SESSION_AVAILABLE')
     }else {
-      gameStatus.value='需要先登录平台账号'
+      failGameLoad('平台会话已过期，请重新登录。')
+      gameMounted.value=false
       page.value='login'
     }
   }else if(message.type==='SESSION_ACTIVE'){
+    clearLoadWatchdog()
+    gamePhase.value='ready'
+    gameLoadError.value=''
     gameStatus.value='游戏就绪'
     communicate('OPEN_ROOMS')
   }else if(message.type==='SESSION_FAILED'){
-    gameStatus.value='游戏连接失败，请检查服务端 HTTPS/WSS 配置或重新进入'
+    failGameLoad('游戏连接失败，请检查 HTTPS/WSS 服务或重新进入。')
   }
 }
 async function initialize(){
@@ -100,8 +167,10 @@ async function logout(){
   busy.value=true
   error.value=''
   communicate('SESSION_REVOKED')
-  // Drop the game frame immediately: a previous account must not continue
-  // submitting commands while logout's server revocation is in flight.
+  // Never retain a previous account's iframe or in-memory game state.
+  clearLoadWatchdog()
+  gameMounted.value=false
+  gamePhase.value='waiting'
   page.value='home'
   account.value=null
   password.value=''
@@ -110,13 +179,10 @@ async function logout(){
   finally{busy.value=false}
 }
 function openGame(){
-  if(!account.value)return
+  if(!account.value || !client?.authenticated)return
   error.value=''
-  // The authenticated Cocos lobby is the only user-facing room entry.
-  // No room mutation is synthesized by Vue; server-authoritative recovery
-  // and exact UNKNOWN reconciliation stay within the game coordinator.
-  gameStatus.value='等待 Cocos4 Web 产物启动'
-  gameInstance.value++
+  // Retain one authenticated iframe across site navigation; no new requests.
+  if(!gameMounted.value || gamePhase.value==='failed')reloadGame()
   page.value='game'
 }
 
@@ -124,7 +190,10 @@ onMounted(()=>{
   window.addEventListener('message',onGameMessage)
   void initialize()
 })
-onUnmounted(()=>window.removeEventListener('message',onGameMessage))
+onUnmounted(()=>{
+  window.removeEventListener('message',onGameMessage)
+  clearLoadWatchdog()
+})
 </script>
 
 <template>
