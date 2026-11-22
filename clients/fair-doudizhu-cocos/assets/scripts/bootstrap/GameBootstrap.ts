@@ -119,8 +119,22 @@ export class GameBootstrap extends Component {
     view.on('canvas-resize', this.layout, this)
     view.on('design-resolution-changed', this.layout, this)
     this.renderScreen('home')
+    // The HTML splash exists before Cocos boot; report only real lifecycle
+    // transitions. Standalone Web can display the guest entry immediately.
+    this.reportNativeBoot('stage','scene')
     this.bindWebHost()
+    if(detectRuntimeTarget()==='web' && typeof window!=='undefined' && window.parent===window)
+      this.reportNativeBoot('done')
     void this.shell.initialize()
+  }
+  private reportNativeBoot(action:'stage'|'done'|'fail',stage?:'scene'):void{
+    if(typeof window==='undefined')return
+    const boot=(window as typeof window & {__AZP_BOOT__?:{
+      stage:(name:'scene')=>void;done:()=>void;fail:()=>void
+    }}).__AZP_BOOT__
+    if(action==='stage' && stage)boot?.stage(stage)
+    else if(action==='done')boot?.done()
+    else if(action==='fail')boot?.fail()
   }
   private bindWebHost():void {
     if(detectRuntimeTarget()!=='web' || typeof window==='undefined' || window.parent===window)return
@@ -135,8 +149,12 @@ export class GameBootstrap extends Component {
         this.hostRestoring=true
         void this.login(true).then(()=>{
           if(!this.content?.isValid)return
-          this.notifyWebHost(this.online?.session.authenticated?'SESSION_ACTIVE':'SESSION_FAILED')
-          if(this.online?.session.authenticated)this.renderScreen('rooms')
+          const active=!!this.online?.session.authenticated
+          if(active)this.renderScreen('rooms')
+          // Never remove the startup splash before an actual room scene
+          // has been rendered and the authenticated restore has completed.
+          this.notifyWebHost(active?'SESSION_ACTIVE':'SESSION_FAILED')
+          this.reportNativeBoot(active?'done':'fail')
         }).finally(()=>{this.hostRestoring=false})
       }else if(data.type==='SESSION_REVOKED'){
         ++this.requestGeneration
