@@ -1,6 +1,6 @@
 # Goal0064 — 斗地主大厅与玩家流程收敛
 
-Status: **in_progress** (2026-11-22)
+Status: **completed** (2026-11-22; 第一阶段 Web/Cocos 与测试环境范围)
 
 设计：[斗地主玩家体验与公平验证 v1](../architecture/doudizhu-player-journey-v1.md)。
 
@@ -19,8 +19,16 @@ Status: **in_progress** (2026-11-22)
 
 当前无通用跨房间历史牌局分页查询接口；不伪造“历史对局”列表，不声称完成独立洗牌全量重算。目标是交互减法，不是删掉旧局恢复、账号关联或公平性保护。所有代码在 main 完成、提交与 CI 通过后才交给 Codex；Kubernetes 现有已验收版本保持不变。
 
-## Round 1 集中修复（待独立复验）
+## Round 1 集中修复（已由 Round 2 独立复验）
 
 基于 [Round 1 FAIL](0064-round1-independent-acceptance.md)，已提交修复 N01（主次操作重复）、N02（竖屏大厅字体、完整房间号和触摸面积）、N03（同目标加入的并发结果竞争），并为准备、开局等房间写操作补充 UI 防重入。控制器复用同目标在途 Join 的请求结果，UNKNOWN 仍只允许原请求 ID 精确重试。
 
-单元和源码回归已扩充；真实 Cocos 渲染、三个客户端交互、窄横屏/竖屏与 Kubernetes 的独立复验未完成时不得判定 Goal PASS。当前仍为 `in_progress`。
+单元和源码回归已扩充；真实 Cocos 渲染、三个客户端交互、窄横屏/竖屏与 Kubernetes 的独立复验未完成时不得判定 Goal PASS；该修复提交时状态为 `in_progress`。
+
+## Round 2 独立验收与完成记录
+
+固定产品 `ea1e1823f35cd17c37c524a378e6fe6e61b3164a` 经 Codex 独立复验 **PASS**，N01/N02/N03 全部关闭。63项定向测试、真实三客户端完整牌局、非法组合/全程异常采集、精确UNKNOWN与账号隔离，以及仅Web镜像的Kubernetes测试部署和部署后完整牌局均通过；原数据、密钥、会话和后端/DQ基线保留。见 [Round2完整报告及边界](0064-round2-independent-acceptance.md)。
+
+Round2测试部署依据用户本轮任务的显式授权；上述保持部署不变为首轮开发阶段约束。
+
+本阶段完成，不封存Goal0045/0046；真实微信/物理设备与生产资格、下一阶段历史分页及独立全量公平验算仍按既定范围另行交付。Round1 FAIL及原始证据保留。
