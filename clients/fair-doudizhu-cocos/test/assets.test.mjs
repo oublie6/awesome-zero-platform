@@ -390,12 +390,16 @@ test('embedded Vue game bridge validates origin/source and never trusts a suppli
  assert.match(src,/window\.removeEventListener\('message',this\.webHostListener\)/)
 })
 
-test('Vue-embedded Cocos does not duplicate account login or logout controls',async()=>{
+test('Vue-embedded Cocos uses host account UI and never exposes standalone login/logout buttons',async()=>{
  const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
- assert.match(src,/if\(this\.webHostListener\)\{/)
- assert.match(src,/findIndex\(item=>item\.name==='LoginEntry'\)/)
- assert.match(src,/else if\(detectRuntimeTarget\(\)==='web'\)/)
- assert.match(src,/StandAlone|Standalone Web exports/)
+ const rooms=src.split("} else if (screen === 'rooms') {")[1].split("} else if (screen === 'login') {")[0]
+ assert.match(rooms,/if\(!this\.online\?\.session\.authenticated && !this\.webHostListener\)/)
+ assert.match(rooms,/name:'LoginEntry'/)
+ assert.match(rooms,/name:'RestoreWebSession'/)
+ assert.match(rooms,/detectRuntimeTarget\(\)==='web' && !this\.webHostListener/)
+ assert.match(rooms,/name:'LogoutWebSession'/)
+ assert.match(src,/this\.roomView=info/)
+ assert.match(src,/this\.fairnessView=\{handId:info\.activeHandId/)
 })
 
 test('G58-N01: dynamically created EditBoxes reuse one engine text/placeholder pair',async()=>{
