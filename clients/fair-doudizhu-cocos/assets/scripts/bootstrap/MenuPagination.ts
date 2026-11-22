@@ -34,8 +34,11 @@ export function menuWindow(count:number,width:number,height:number,portrait:bool
     screen==='table'?(portrait?Math.max(2,Math.min(4,Math.floor(width/90))):Math.max(3,Math.min(6,Math.floor(width/120)))):
     portrait?(width<600?1:2):(width<640?2:3)
   const safeHeight=Math.max(1,height)
-  const rowPitch=Math.max(38,Math.min(56,safeHeight*0.106))
-  const buttonHeight=Math.max(34,Math.min(52,rowPitch-4))
+  // Embedded mobile canvas scales 52 design units to roughly 14 CSS px.
+  const tallRoom=screen==='rooms' && portrait && width>=800
+  const rowPitch=tallRoom?Math.max(166,Math.min(188,safeHeight*0.08)):
+    Math.max(38,Math.min(56,safeHeight*0.106))
+  const buttonHeight=tallRoom?rowPitch-10:Math.max(34,Math.min(52,rowPitch-4))
   // Login has two EditBoxes above its action buttons. The default menu
   // origin intersects the password input on short landscape screens.
   const firstY=-safeHeight*(screen==='wechat-bind'||screen==='wechat-relink'?0.29:screen==='login'||screen==='wechat-unlink'?0.15:0.103)

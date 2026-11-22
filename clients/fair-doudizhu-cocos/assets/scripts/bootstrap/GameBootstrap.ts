@@ -66,6 +66,7 @@ export class GameBootstrap extends Component {
   private roomView: RoomRead | null = null
   private fairnessView: {handId:string;phase:string;revealed:boolean}|null = null
   private roomSeatNodes: Node[] = []
+  private roomCodeLabel: Label | null = null
   private roomMoreExpanded = false
   // Scope-only metadata; never store draft room codes or private phrases here.
   private roomInputContext: RoomInputContext | null = null
@@ -98,7 +99,7 @@ export class GameBootstrap extends Component {
   }|null=null
   // Coalesce duplicate create/leave taps so an already-accepted receipt
   // cannot lose its scene adoption to a later local conflict.
-  private roomMutation:{owner:GameOnlineController|null;kind:'create'|'leave'}|null=null
+  private roomMutation:{owner:GameOnlineController|null;kind:'create'|'join'|'leave'|'ready'|'start'}|null=null
   // Only an authenticated same-origin Vue parent may request session restore.
   // Never accept AccountID, tokens, passwords or game state from frame messages.
   private webHostListener:((event:MessageEvent)=>void)|null=null
@@ -222,6 +223,8 @@ export class GameBootstrap extends Component {
     this.buttons = []
     for(const badge of this.roomSeatNodes)if(badge.isValid)badge.destroy()
     this.roomSeatNodes=[]
+    if(this.roomCodeLabel?.isValid)this.roomCodeLabel.node.destroy()
+    this.roomCodeLabel=null
     this.menuActions = []
     this.inputNode?.destroy()
     this.inputNode = null
@@ -242,8 +245,10 @@ export class GameBootstrap extends Component {
       ])
     } else if (screen === 'rooms') {
       const plan=roomPlan!
-      this.title!.string=plan.title
+      this.title!.string=plan.seats.length===3?'好友房间':plan.title
       this.status!.string=plan.hint
+      if(plan.seats.length===3 && this.roomID)
+        this.roomCodeLabel=this.createLabel('RoomCode','房间号 '+this.roomID,28,new Color(176,205,190,255))
       if(plan.input!=='none'){
         this.roomInput=this.createRoomInput()
         if(draft!==undefined)this.roomInput.string=draft
@@ -499,7 +504,12 @@ export class GameBootstrap extends Component {
   private addMenu(actions: MenuAction[]): void {
     // Collect first; layout() materializes only the current viewport. Large
     // room menus and 17-card hands must remain reachable, not shrink to 9px.
-    this.menuActions.push(...actions)
+    const seen=new Set(this.menuActions.map(action=>action.name))
+    for(const action of actions){
+      if(seen.has(action.name))continue
+      seen.add(action.name)
+      this.menuActions.push(action)
+    }
   }
   private notice(message:string):void {
     // A room command can become UNKNOWN after its callback returns without
@@ -973,6 +983,8 @@ export class GameBootstrap extends Component {
   private async joinRoom():Promise<void> {
     const owner=this.online,epoch=this.requestGeneration
     if(this.roomMutation?.owner===owner)return
+    const mutation:{owner:GameOnlineController|null;kind:'join'}={owner,kind:'join'}
+    this.roomMutation=mutation
     const token=++this.recoveryAttempt
     try {
       const online=this.requireOnline()
@@ -993,6 +1005,8 @@ export class GameBootstrap extends Component {
       if(this.currentAccount(owner,epoch) && token===this.recoveryAttempt &&
          !(error instanceof Error && /selection superseded/.test(error.message)))
         this.notice('加入失败：'+this.message(error))
+    }finally{
+      if(this.roomMutation===mutation)this.roomMutation=null
     }
   }
   private async leaveRoom():Promise<void> {
@@ -1028,6 +1042,9 @@ export class GameBootstrap extends Component {
   }
   private async readyRoom():Promise<void> {
     const owner=this.online,epoch=this.requestGeneration
+    if(this.roomMutation?.owner===owner)return
+    const mutation:{owner:GameOnlineController|null;kind:'ready'}={owner,kind:'ready'}
+    this.roomMutation=mutation
     const roomID=this.roomID,generation=this.roomGeneration,selection=this.recoveryAttempt
     try {
       await this.requireOnline().rooms.ready(true)
@@ -1036,10 +1053,15 @@ export class GameBootstrap extends Component {
     }catch(error){
       if(this.currentRoom(owner,epoch,roomID,generation,selection))
         this.notice('准备失败：'+this.message(error))
+    }finally{
+      if(this.roomMutation===mutation)this.roomMutation=null
     }
   }
   private async startHand():Promise<void> {
     const online=this.online
+    if(this.roomMutation?.owner===online)return
+    const mutation:{owner:GameOnlineController|null;kind:'start'}={owner:online,kind:'start'}
+    this.roomMutation=mutation
     const epoch=this.requestGeneration
     const roomID=this.roomID
     const generation=this.roomGeneration
@@ -1069,6 +1091,8 @@ export class GameBootstrap extends Component {
         this.notice(online?.rooms.needsReconciliation
           ? '开局结果尚未确认，请重连并同步服务端状态，勿重复发起开局：'+this.message(error)
           : '开局失败：'+this.message(error))
+    }finally{
+      if(this.roomMutation===mutation)this.roomMutation=null
     }
   }
   private async refreshRoom():Promise<void> {
@@ -1507,15 +1531,24 @@ export class GameBootstrap extends Component {
       node.setPosition(0,height*(linking?[0.17,0.075,-0.02,-0.115][index]??-0.115:(index===0?0.055:-0.035)),0)
     })
     if(this.screen==='rooms' && this.roomSeatNodes.length===3){
-      this.title.node.setPosition(0,height*(portrait?0.34:0.40),0)
-      this.title.fontSize=portrait?60:36
-      this.status.node.setPosition(0,height*(portrait?0.13:0.11),0)
-      this.status.fontSize=portrait?32:19
+      this.title.node.setPosition(0,height*(portrait?0.38:0.42),0)
+      this.title.fontSize=portrait?66:40
+      this.status.node.setPosition(0,height*0.11,0)
+      this.status.fontSize=portrait?52:28
       this.status.lineHeight=this.status.fontSize+5
-      this.status.node.getComponent(UITransform)!.setContentSize(width,Math.min(64,height*0.13))
+      this.status.node.getComponent(UITransform)!.setContentSize(width,Math.min(portrait?180:90,height*0.14))
+      if(this.roomCodeLabel?.isValid){
+        this.roomCodeLabel.string=portrait
+          ? '房间号\n'+(this.roomID.match(/.{1,20}/g)||[]).join('\n')
+          : '房间号 '+this.roomID
+        this.roomCodeLabel.fontSize=portrait?50:30
+        this.roomCodeLabel.lineHeight=this.roomCodeLabel.fontSize+6
+        this.roomCodeLabel.node.getComponent(UITransform)!.setContentSize(width,portrait?230:54)
+        this.roomCodeLabel.node.setPosition(0,height*(portrait?0.295:0.325),0)
+      }
       this.roomSeatNodes.forEach((node,index)=>{
         const cell=width/3
-        const tileWidth=Math.max(20,cell-8),tileHeight=portrait?58:38
+        const tileWidth=Math.max(20,cell-8),tileHeight=portrait?80:48
         node.getComponent(UITransform)!.setContentSize(tileWidth,tileHeight)
         const graphic=node.getComponent(Graphics)!
         graphic.clear()
@@ -1525,10 +1558,10 @@ export class GameBootstrap extends Component {
         const caption=node.getChildByName('SeatCaption')!
         caption.getComponent(UITransform)!.setContentSize(tileWidth-8,tileHeight-4)
         const label=caption.getComponent(Label)!
-        label.fontSize=portrait?30:19
-        label.lineHeight=label.fontSize+3
+        label.fontSize=portrait?54:27
+        label.lineHeight=label.fontSize+5
         label.overflow=Label.Overflow.SHRINK
-        node.setPosition(-width/2+(index+0.5)*cell,height*(portrait?0.24:0.245),0)
+        node.setPosition(-width/2+(index+0.5)*cell,height*(portrait?0.205:0.235),0)
       })
     }
     const window=menuWindow(this.menuActions.length,width,height,portrait,this.screen,this.menuPage)
@@ -1561,7 +1594,9 @@ export class GameBootstrap extends Component {
       const transform=button.getComponent(UITransform)!
       const cellWidth=width/window.columns
       transform.setContentSize(Math.max(20,cellWidth-8),window.buttonHeight)
-      label.fontSize=Math.max(18,Math.min(26,cellWidth*0.14))
+      label.fontSize=this.screen==='rooms' && portrait && width>=800
+        ? Math.max(52,Math.min(60,cellWidth*0.14))
+        : Math.max(18,Math.min(26,cellWidth*0.14))
       const col=index%window.columns,row=Math.floor(index/window.columns)
       button.setPosition(-width/2+cellWidth*(col+0.5),window.firstY-row*window.rowPitch,0)
     }
@@ -1578,6 +1613,8 @@ export class GameBootstrap extends Component {
     this.menuActions=[]
     for(const badge of this.roomSeatNodes)if(badge.isValid)badge.destroy()
     this.roomSeatNodes=[]
+    if(this.roomCodeLabel?.isValid)this.roomCodeLabel.node.destroy()
+    this.roomCodeLabel=null
     this.tableView?.destroy()
     this.tableView=null
     if(this.loginPassword)this.loginPassword.string=''

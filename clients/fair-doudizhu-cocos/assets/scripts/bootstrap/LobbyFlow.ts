@@ -39,8 +39,13 @@ export interface LobbyPlan {
 
 export function planLobby(ctx:LobbyContext):LobbyPlan {
   const base=(stage:LobbyStage,title:string,hint:string,input:RoomInputPurpose,
-    primary:LobbyCommand[],secondary:LobbyCommand[]=[],seats:LobbyPlan['seats']=[]):LobbyPlan=>
-    ({stage,title,hint,input,primary,secondary,seats})
+    primary:LobbyCommand[],secondary:LobbyCommand[]=[],seats:LobbyPlan=>{
+    // Prefer primary controls and never duplicate an action on screen.
+    const uniquePrimary=[...new Set(primary)]
+    const selected=new Set(uniquePrimary)
+    return {stage,title,hint,input,primary:uniquePrimary,
+      secondary:[...new Set(secondary)].filter(command=>!selected.has(command)),seats}
+  }
   if(!ctx.authenticated)
     return base('signed-out','房间大厅','登录后即可和好友一起玩','none',[])
   // Unknown durable commands must be reconciled by exact identity. A room

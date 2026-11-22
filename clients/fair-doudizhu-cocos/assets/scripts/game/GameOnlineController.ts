@@ -30,6 +30,10 @@ export class GameOnlineController {
     key:string;token:number;membership:number;commands:number;
     promise:Promise<RoomRead|null>
   } | null = null
+  // Coalesce identical in-flight Join requests without losing their ACK.
+  private pendingJoin:{
+    roomId:string;token:number;promise:Promise<Readonly<{roomId:string;version:number}>>
+  }|null=null
   constructor(
     private readonly platform: GamePlatform,
     identity: IdentityExchange,
@@ -219,14 +223,29 @@ export class GameOnlineController {
     return this.api.room(roomId)
   }
   /** Secure join code is a locator; the Go server checks membership and version. */
-  async joinRoom(roomId: string): Promise<Readonly<{roomId:string;version:number}>> {
+  joinRoom(roomId: string): Promise<Readonly<{roomId:string;version:number}>> {
     if (this.disposed || !this.session.authenticated)
-      throw new Error('authenticated session required')
-    if (this.rooms.needsReconciliation && this.rooms.pendingRoomId !== roomId)
-      throw new Error('room outcome unknown for another room; retry original request before switching')
-    const token = ++this.recoveryGeneration
-    const membership = this.membershipGeneration
-    const commands = this.rooms.commandGeneration
+      return Promise.reject(new Error('authenticated session required'))
+    const pending=this.pendingJoin
+    if(pending?.roomId===roomId && pending.token===this.recoveryGeneration)
+      return pending.promise
+    // UNKNOWN must be reconciled by the original request ID, not a fresh Join.
+    if(this.rooms.needsReconciliation)
+      return Promise.reject(new Error(this.rooms.pendingRoomId!==roomId
+        ? 'room outcome unknown for another room; retry original request before switching'
+        : 'room outcome unknown; retry original request before joining'))
+    const token=++this.recoveryGeneration
+    const membership=this.membershipGeneration
+    const commands=this.rooms.commandGeneration
+    const promise=this.performJoin(roomId,token,membership,commands)
+    this.pendingJoin={roomId,token,promise}
+    void promise.finally(()=>{
+      if(this.pendingJoin?.promise===promise)this.pendingJoin=null
+    }).catch(()=>{})
+    return promise
+  }
+  private async performJoin(roomId:string,token:number,membership:number,
+    commands:number):Promise<Readonly<{roomId:string;version:number}>> {
     const current = () => !this.disposed && this.session.authenticated &&
       token === this.recoveryGeneration && membership === this.membershipGeneration
     const readCurrent = () => current() && commands === this.rooms.commandGeneration

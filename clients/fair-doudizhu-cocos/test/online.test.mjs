@@ -1035,3 +1035,47 @@ test('web login rejects header-injection newlines without rejecting ordinary let
  await assert.rejects(online.loginWithPassword('alice','password'),/invalid web authentication token/)
  online.dispose()
 })
+
+test('Goal0064 concurrent same-room Join shares original command and accepted receipt',async()=>{
+ const f=fixture({roomMember:false})
+ let reads=0
+ f.platform.http.request=async()=>{reads++;return {code:'OK',data:{
+  roomId:'room-rejoin',version:4,status:'WAITING_PLAYERS',occupied:1,member:false,lastClientSequence:0
+ }}}
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ const first=online.joinRoom('room-rejoin')
+ const second=online.joinRoom('room-rejoin')
+ assert.strictEqual(first,second)
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(reads,1)
+ assert.equal(f.commands.length,1)
+ const command=f.commands[0].payload
+ assert.equal(command.type,'room.join')
+ assert.strictEqual(online.joinRoom('room-rejoin'),first)
+ for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+  v:'doudizhu-api-command-result-v1',requestId:command.requestId,type:'room.join',
+  durable:{v:'fair-doudizhu-command-result-v1',commandId:command.requestId,
+   aggregateId:'room-rejoin',aggregateVersion:5,accepted:true}
+ }}))
+ assert.deepEqual(await Promise.all([first,second]),[
+  {roomId:'room-rejoin',version:5},{roomId:'room-rejoin',version:5}
+ ])
+ assert.equal(online.rooms.state.roomId,'room-rejoin')
+ online.dispose()
+})
+test('Goal0064 same-room UNKNOWN refuses new Join request rather than replacing original',async()=>{
+ const f=fixture({roomMember:false})
+ f.platform.http.request=async()=>({code:'OK',data:{
+  roomId:'room-rejoin',version:4,status:'WAITING_PLAYERS',occupied:1,member:false,lastClientSequence:0
+ }})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ let commands=0
+ online.shell.submitCommand=async()=>{commands++;throw Error('lost JOIN ACK')}
+ await assert.rejects(online.joinRoom('room-rejoin'),/lost JOIN ACK/)
+ assert.equal(online.rooms.needsReconciliation,true)
+ await assert.rejects(online.joinRoom('room-rejoin'),/unknown; retry original request/)
+ assert.equal(commands,1)
+ online.dispose()
+})

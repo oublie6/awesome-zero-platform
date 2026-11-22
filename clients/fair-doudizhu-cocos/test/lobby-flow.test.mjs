@@ -92,3 +92,16 @@ test('only owner at authoritative seat 1 is offered start, ready players are not
  assert.deepEqual(planLobby({...waiting,viewerAccountID:'account-B'}).primary,['sync-room'])
  assert.equal(planLobby({...waiting,viewerAccountID:'not-a-member'}).stage,'syncing')
 })
+
+test('Goal0064 primary/secondary waiting controls never duplicate refresh',()=>{
+ const all=seats.map(s=>({...s,ready:true,accountId:s.accountId||'account-C'}))
+ for(const state of [
+  context({roomId:'room-1',room:room(),viewerAccountID:'account-B'}),
+  context({roomId:'room-1',room:room({status:'READY',occupied:3,seats:all}),viewerAccountID:'account-B'}),
+  context({roomId:'room-1',room:room({status:'READY',occupied:3,seats:all}),viewerAccountID:'account-A'}),
+  context({roomId:'room-1',room:room({lastHandId:'old'}),viewerAccountID:'account-B'})
+ ]){
+  const {primary,secondary}=planLobby(state)
+  assert.equal(new Set([...primary,...secondary]).size,primary.length+secondary.length)
+ }
+})

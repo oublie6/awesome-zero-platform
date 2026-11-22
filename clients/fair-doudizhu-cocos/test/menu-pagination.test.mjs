@@ -108,3 +108,17 @@ test('room inputs cannot reuse a personal phrase for a different purpose',async(
  assert.equal(sameRoomInputContext({...base,purpose:'contribute'},{...base,purpose:'verify'}),false)
  assert.equal(sameRoomInputContext({...base,purpose:'verify'},{...base,purpose:'verify'}),true)
 })
+
+test('Goal0064 390px embedded portrait room keeps touch targets and pagination',()=>{
+ const first=menuWindow(18,1216,3140,true,'rooms',0)
+ assert.ok(first.buttonHeight>=166)
+ assert.ok(first.rowPitch>=first.buttonHeight+8)
+ let viewed=0
+ for(let i=0;i<first.pages;i++){
+  const page=menuWindow(18,1216,3140,true,'rooms',i)
+  viewed+=page.end-page.start
+  assert.ok(page.firstY-(page.rows-1)*page.rowPitch-page.buttonHeight/2>=-1570)
+ }
+ assert.equal(viewed,18)
+ assert.ok(menuWindow(18,360,750,true,'rooms',0).buttonHeight<100)
+})
