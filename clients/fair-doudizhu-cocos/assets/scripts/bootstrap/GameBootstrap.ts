@@ -12,6 +12,7 @@ import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-clien
 import { menuWindow, sameRoomInputContext, type RoomInputContext } from './MenuPagination.ts'
 import { GameTableView } from './GameTableView.ts'
 import { TurnClockAnchor } from './TurnClock.ts'
+import { planLobby, type LobbyCommand, type LobbyPlan } from './LobbyFlow.ts'
 import type { PrivateHandProjection } from '@awesome-zero-platform/doudizhu-client/view'
 import type { RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 
@@ -60,6 +61,11 @@ export class GameBootstrap extends Component {
   // Capturing the last rendered value detects async transitions without
   // destroying an in-progress room-code or personal-phrase input on notices.
   private roomRetryRendered = false
+  private fairnessRetryRendered = false
+  private roomView: RoomRead | null = null
+  private fairnessView: {handId:string;phase:string;revealed:boolean}|null = null
+  private roomSeatNodes: Node[] = []
+  private roomMoreExpanded = false
   // Scope-only metadata; never store draft room codes or private phrases here.
   private roomInputContext: RoomInputContext | null = null
   private inputNode: Node | null = null
@@ -190,14 +196,17 @@ export class GameBootstrap extends Component {
     // rebuild its native EditBox. Preserve its draft ONLY while the account,
     // room, hand and input purpose are unchanged. A hand switch, logout or
     // return from another screen must not restore an old personal phrase.
+    const roomPlan=screen==='rooms'?this.lobbyPlan():null
     const nextRoomInputContext:RoomInputContext|null=screen==='rooms'
-      ? {owner:this.online,roomID:this.roomID,handID:this.handID,fairnessMode:this.fairnessMode}
+      ? {owner:this.online,roomID:this.roomID,handID:this.handID,
+          fairnessMode:this.fairnessMode,purpose:roomPlan!.input}
       : null
     const draft=screen==='rooms' && this.screen==='rooms' &&
       nextRoomInputContext && sameRoomInputContext(this.roomInputContext,nextRoomInputContext)
         ? this.roomInput?.string : undefined
     this.roomInputContext=nextRoomInputContext
     if(this.screen!==screen)this.menuPage=0
+    if(screen!=='rooms')this.roomMoreExpanded=false
     this.screen = screen
     if(screen!=='table' && this.tableView){
       this.tableView.destroy()
@@ -207,6 +216,8 @@ export class GameBootstrap extends Component {
     if(this.status?.isValid)this.status.node.active=screen!=='table'
     for (const button of this.buttons) if (button.isValid) button.destroy()
     this.buttons = []
+    for(const badge of this.roomSeatNodes)if(badge.isValid)badge.destroy()
+    this.roomSeatNodes=[]
     this.menuActions = []
     this.inputNode?.destroy()
     this.inputNode = null
@@ -226,63 +237,82 @@ export class GameBootstrap extends Component {
         {name:'RulesEntry',caption:'游戏说明',action:()=>this.renderScreen('rules')}
       ])
     } else if (screen === 'rooms') {
-      this.title!.string = this.roomID ? '好友房间 · '+this.roomID : '房间大厅'
-      this.status!.string = this.online?.session.authenticated
-        ? '连接服务端，可创建或加入真实好友房间' : '登录后才能创建或加入真实房间'
-      this.roomInput=this.createRoomInput()
-      if(draft!==undefined)this.roomInput.string=draft
-      const actions:MenuAction[]=[
-        {name:'LoginEntry',caption:detectRuntimeTarget()==='web'?'账号登录':'微信登录',
-          action:()=>{if(detectRuntimeTarget()==='web')this.renderScreen('login');else void this.login()}},
-        {name:'ReconnectRoom',caption:'重连并同步',action:()=>void this.reconnect()},
-        {name:'CreateRoom',caption:'创建房间',action:()=>void this.createRoom()},
-        {name:'JoinRoom',caption:'加入房间',action:()=>void this.joinRoom()},
-        {name:'ReadyRoom',caption:'准备',action:()=>void this.readyRoom()},
-        {name:'LeaveRoom',caption:'退出当前房间',action:()=>void this.leaveRoom()},
-        {name:'StartHand',caption:'开始本局',action:()=>void this.startHand()},
-        {name:'RefreshRoom',caption:'刷新房间',action:()=>void this.refreshRoom()},
-        {name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.discoverMyRoomsSafely()}
-      ]
-      if(detectRuntimeTarget()==='wechat' && this.online?.session.authenticated) {
-        actions.push({name:'UnlinkWeChat',caption:'解绑当前微信身份',action:()=>this.renderScreen('wechat-unlink')})
-        actions.push({name:'RelinkWeChat',caption:'换绑微信至其他账号',action:()=>this.renderScreen('wechat-relink')})
+      const plan=roomPlan!
+      this.title!.string=plan.title
+      this.status!.string=plan.hint
+      if(plan.input!=='none'){
+        this.roomInput=this.createRoomInput()
+        if(draft!==undefined)this.roomInput.string=draft
       }
-      if(this.webHostListener){
-        // When embedded, Vue owns all account UI. The scene only renders
-        // game actions and revalidates the shared token with Go.
-        const loginIndex=actions.findIndex(item=>item.name==='LoginEntry')
-        if(loginIndex>=0)actions.splice(loginIndex,1)
-      }else if(detectRuntimeTarget()==='web'){
-        // Standalone Web exports still provide their own login fallback.
-        actions.splice(1,0,{name:'RestoreWebSession',caption:'恢复已登录网页会话',
-          action:()=>void this.login(true)})
-        actions.push({name:'LogoutWebSession',caption:'退出网页账号',action:()=>void this.logoutWeb()})
+      if(plan.seats.length===3){
+        for(const seat of plan.seats){
+          const label=this.createLabel('SeatBadge'+seat.position,
+            seat.occupied
+              ? seat.position+'号 · '+(seat.ready?'已准备':'未准备')
+              : seat.position+'号 · 空位',
+            22,seat.occupied?new Color(235,223,177,255):new Color(152,174,165,255))
+          this.roomSeatNodes.push(label.node)
+        }
       }
+      const actions:MenuAction[]=[]
+      const choices:Record<LobbyCommand,MenuAction>={
+        'create':{name:'CreateRoom',caption:'创建房间',action:()=>void this.createRoom()},
+        'join':{name:'JoinRoom',caption:'加入房间',action:()=>void this.joinRoom()},
+        'discover':{name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.discoverMyRoomsSafely()},
+        'sync-room':{name:'RefreshRoom',caption:'刷新房间状态',action:()=>void this.refreshRoom()},
+        'ready':{name:'ReadyRoom',caption:'准备',action:()=>void this.readyRoom()},
+        'start':{name:'StartHand',caption:'开始游戏',action:()=>void this.startHand()},
+        'contribute':{name:'SubmitOwnContribution',caption:'提交验证字符串',action:()=>void this.submitOwnContribution()},
+        'sync-fairness':{name:'RefreshFairness',caption:'查看准备进度',action:()=>void this.refreshFairness()},
+        'table':{name:'OpenTable',caption:'继续牌局',action:()=>this.renderScreen('table')},
+        'evidence':{name:'RoomEvidence',caption:'公平验证',action:()=>void this.showEvidence()},
+        'verify-own':{name:'VerifyOwnContribution',caption:'验证我的字符串',action:()=>void this.verifyMyPhrase()},
+        'retry-room':{name:'RetryUnknownRoom',caption:'核对未确认房间操作',action:()=>void this.reconnect()},
+        'retry-fairness':{name:'RetryUnknownFairness',caption:'核对未确认贡献',action:()=>void this.retryUnknownFairness()},
+        'more':{name:'ToggleRoomMore',caption:this.roomMoreExpanded?'收起更多':'更多操作',
+          action:()=>{this.roomMoreExpanded=!this.roomMoreExpanded;this.renderScreen('rooms')}}
+      }
+      for(const command of [...plan.primary,...plan.secondary])actions.push(choices[command])
       this.roomRetryRendered=!!this.online?.rooms.needsReconciliation
-      if(this.roomRetryRendered)
-        actions.push({name:'RetryUnknownRoom',caption:'核对未确认房间命令',action:()=>void this.reconnect()})
-      for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
-        caption:(room.status==='HAND_ACTIVE'?'继续牌局 ':'恢复房间 ')+room.roomId,
-        action:()=>void this.resumeSelectedRoom(room.roomId)})
-      if(this.fairnessMode==='client-contributed-server-custodied-v1'){
-        actions.push(
-          {name:'SubmitOwnContribution',caption:'提交我的随机验证字符串',action:()=>void this.submitOwnContribution()},
-          {name:'VerifyOwnContribution',caption:'终局核验我的字符串',action:()=>void this.verifyMyPhrase()})
-      }else if(this.handID && this.fairnessMode===''){
-        // Only confirmed legacy hands expose recovery controls.
-        actions.push(
-          {name:'PrepareFairness',caption:'生成并备份恢复凭证（旧局）',action:()=>void this.prepareFairness()},
-          {name:'VerifyFairnessBackup',caption:'已备份并清空输入（旧局）',action:()=>this.beginFairnessBackupVerification()},
-          {name:'ImportFairness',caption:'导入恢复凭证（旧局）',action:()=>void this.importFairness()},
-          {name:'CommitFairness',caption:'提交承诺（旧局）',action:()=>void this.commitFairness()},
-          {name:'RevealFairness',caption:'揭示贡献（旧局）',action:()=>void this.revealFairness()})
+      this.fairnessRetryRendered=!!this.online?.fairness.needsReconciliation
+      if(!this.roomID && this.online?.session.authenticated && !this.roomRetryRendered){
+        for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
+          caption:(room.status==='HAND_ACTIVE'?'继续牌局 ':'恢复房间 ')+room.roomId,
+          action:()=>void this.resumeSelectedRoom(room.roomId)})
       }
-      actions.push(
-        {name:'RetryUnknownFairness',caption:'核对上一次未确认提交',action:()=>void this.retryUnknownFairness()},
-        {name:'RefreshFairness',caption:'刷新洗牌阶段',action:()=>void this.refreshFairness()},
-        {name:'RoomEvidence',caption:'查看结算证据',action:()=>void this.showEvidence()},
-        {name:'OpenTable',caption:'查看牌桌',action:()=>this.renderScreen('table')},
-        {name:'BackHome',caption:'返回首页',action:()=>this.renderScreen('home')})
+      // Keep legacy and failure-recovery tools, but do not put them in the
+      // primary user journey. UNKNOWN never permits fresh room mutations.
+      if(this.roomMoreExpanded && plan.stage!=='reconcile'){
+        actions.push({name:'ReconnectRoom',caption:'重连并同步',action:()=>void this.reconnect()})
+        if(this.roomID)
+          actions.push({name:'LeaveRoom',caption:'退出当前房间',action:()=>void this.leaveRoom()})
+        if(this.handID && !plan.primary.includes('evidence') && !plan.secondary.includes('evidence'))
+          actions.push(choices['evidence'])
+        if(this.fairnessMode==='client-contributed-server-custodied-v1'){
+          if(this.handID && !this.roomView?.activeHandId && !plan.secondary.includes('verify-own'))
+            actions.push(choices['verify-own'])
+        }else if(this.handID && this.fairnessMode===''){
+          actions.push(
+            {name:'PrepareFairness',caption:'旧局：生成恢复凭证',action:()=>void this.prepareFairness()},
+            {name:'VerifyFairnessBackup',caption:'旧局：核对备份',action:()=>this.beginFairnessBackupVerification()},
+            {name:'ImportFairness',caption:'旧局：导入凭证',action:()=>void this.importFairness()},
+            {name:'CommitFairness',caption:'旧局：提交承诺',action:()=>void this.commitFairness()},
+            {name:'RevealFairness',caption:'旧局：揭示贡献',action:()=>void this.revealFairness()})
+        }
+        if(detectRuntimeTarget()==='wechat' && this.online?.session.authenticated){
+          actions.push({name:'UnlinkWeChat',caption:'账号：解绑微信',action:()=>this.renderScreen('wechat-unlink')})
+          actions.push({name:'RelinkWeChat',caption:'账号：换绑微信',action:()=>this.renderScreen('wechat-relink')})
+        }else if(detectRuntimeTarget()==='web' && !this.webHostListener){
+          actions.push({name:'LogoutWebSession',caption:'退出网页账号',action:()=>void this.logoutWeb()})
+        }
+        actions.push({name:'BackHome',caption:'返回首页',action:()=>this.renderScreen('home')})
+      }
+      if(!this.online?.session.authenticated && !this.webHostListener){
+        actions.push({name:'LoginEntry',caption:detectRuntimeTarget()==='web'?'账号登录':'微信登录',
+          action:()=>{if(detectRuntimeTarget()==='web')this.renderScreen('login');else void this.login()}})
+        if(detectRuntimeTarget()==='web')
+          actions.push({name:'RestoreWebSession',caption:'恢复网页会话',action:()=>void this.login(true)})
+      }
       this.addMenu(actions)
     } else if (screen === 'login') {
       this.title!.string='网页账号登录'
@@ -423,6 +453,17 @@ export class GameBootstrap extends Component {
     this.content!.addChild(node)
     return input
   }
+  private lobbyPlan():LobbyPlan {
+    const snapshot=this.online?.shell.hand.snapshot
+    return planLobby({
+      authenticated:!!this.online?.session.authenticated,roomId:this.roomID,
+      room:this.roomView,roomUnknown:!!this.online?.rooms.needsReconciliation,
+      fairnessUnknown:!!this.online?.fairness.needsReconciliation,
+      fairnessMode:this.fairnessMode,fairness:this.fairnessView,
+      handPhase:snapshot?.handId===this.handID?snapshot.phase:null,
+      recoverableRooms:this.recoverableRooms.length
+    })
+  }
   private createRoomInput(): EditBox {
     const custodied=this.fairnessMode==='client-contributed-server-custodied-v1'
     // The active new hand accepts only an ephemeral personal phrase. The
@@ -449,7 +490,8 @@ export class GameBootstrap extends Component {
     // changing the room snapshot. Rebuild only if the retry entry actually
     // changed, preserving whatever the user typed into the room field.
     if(this.screen==='rooms' && this.content?.isValid &&
-       this.roomRetryRendered!==!!this.online?.rooms.needsReconciliation){
+       (this.roomRetryRendered!==!!this.online?.rooms.needsReconciliation ||
+        this.fairnessRetryRendered!==!!this.online?.fairness.needsReconciliation)){
       this.renderScreen('rooms')
     }
     if(this.status?.isValid)this.status.string=message
@@ -1396,6 +1438,23 @@ export class GameBootstrap extends Component {
       sizeInput(node)
       node.setPosition(0,height*(linking?[0.17,0.075,-0.02,-0.115][index]??-0.115:(index===0?0.055:-0.035)),0)
     })
+    if(this.screen==='rooms' && this.roomSeatNodes.length===3){
+      this.title.node.setPosition(0,height*(portrait?0.34:0.40),0)
+      this.title.fontSize=portrait?60:36
+      this.status.node.setPosition(0,height*(portrait?0.13:0.11),0)
+      this.status.fontSize=portrait?32:19
+      this.status.lineHeight=this.status.fontSize+5
+      this.status.node.getComponent(UITransform)!.setContentSize(width,Math.min(64,height*0.13))
+      this.roomSeatNodes.forEach((node,index)=>{
+        const label=node.getComponent(Label)!
+        const cell=width/3
+        node.getComponent(UITransform)!.setContentSize(cell-8,portrait?54:34)
+        label.fontSize=portrait?30:19
+        label.lineHeight=label.fontSize+3
+        label.overflow=Label.Overflow.SHRINK
+        node.setPosition(-width/2+(index+0.5)*cell,height*(portrait?0.24:0.245),0)
+      })
+    }
     const window=menuWindow(this.menuActions.length,width,height,portrait,this.screen,this.menuPage)
     this.menuPage=window.page
     const visible=this.menuActions.slice(window.start,window.end)
@@ -1441,6 +1500,8 @@ export class GameBootstrap extends Component {
     for(const button of this.buttons)if(button.isValid)button.off(Node.EventType.TOUCH_END)
     this.buttons=[]
     this.menuActions=[]
+    for(const badge of this.roomSeatNodes)if(badge.isValid)badge.destroy()
+    this.roomSeatNodes=[]
     this.tableView?.destroy()
     this.tableView=null
     if(this.loginPassword)this.loginPassword.string=''
