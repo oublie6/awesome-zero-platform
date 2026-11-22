@@ -11,3 +11,33 @@
 .lobby-entry p{font-size:15px;line-height:1.8;color:#9db7a6;max-width:380px;margin:0 auto 28px}
 .lobby-entry-action{min-width:225px}
 @media(max-width:600px){.lobby-entry{padding:32px 20px}.lobby-entry-symbol{width:72px;height:72px;font-size:45px}}
+
+
+/* One same-session Cocos iframe stays mounted while the player browses the website.
+   The overlay is rendered by Vue before the iframe/engine paints. */
+.game-frame-shell{position:relative}
+.game-loading-cover{position:absolute;z-index:5;inset:0 0 37px;
+ display:flex;align-items:center;justify-content:center;padding:26px;
+ background:radial-gradient(circle at 50% 28%,#27513a 0,#12271e 48%,#0a1815 100%);
+ color:#f4e5bc;text-align:center}
+.game-loading-content{width:min(440px,100%);max-height:100%;overflow:auto}
+.game-loading-suit{width:82px;height:82px;border-radius:23px;margin:0 auto 16px;
+ display:grid;place-items:center;background:#d5e5bc;color:#1d4431;font-size:58px;
+ box-shadow:0 16px 48px #0004;animation:game-boot-pulse 1.8s ease-in-out infinite}
+.game-loading-content h3{font-size:clamp(22px,4vw,32px);font-weight:650;letter-spacing:2px;margin:0 0 16px}
+.game-loading-status{font-size:14px;line-height:1.6;color:#d6e5d5;margin:0 0 18px}
+.game-loading-track{height:9px;border-radius:999px;overflow:hidden;background:#315243;
+ box-shadow:inset 0 1px 4px #0006}
+.game-loading-fill{height:100%;border-radius:inherit;width:0;
+ background:linear-gradient(90deg,#9bc5a6,#e9c37e);
+ transition:width .32s ease;box-shadow:0 0 13px #f6d69d66}
+.game-loading-step,.game-loading-footnote{font-size:11px;line-height:1.6;color:#9ebba8}
+.game-loading-step{margin:10px 0 0}
+.game-loading-footnote{margin:23px 0 0}
+.game-loading-note{font-size:12px;line-height:1.5;color:#eac78a;margin:15px 0 0}
+.game-loading-error{font-size:12px;line-height:1.5;color:#f8b0a0;margin:14px 0 0}
+.game-loading-actions{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;margin-top:20px}
+.game-loading-actions .primary-button,.game-loading-actions .ghost-button{font-size:13px;padding:11px 16px}
+@keyframes game-boot-pulse{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(-6px);opacity:.83}}
+@media(max-width:600px){.game-loading-cover{padding:18px}.game-loading-suit{width:64px;height:64px;font-size:45px;margin-bottom:12px}.game-loading-footnote{margin-top:12px}}
+@media(prefers-reduced-motion:reduce){.game-loading-suit{animation:none}.game-loading-fill{transition:none}}
