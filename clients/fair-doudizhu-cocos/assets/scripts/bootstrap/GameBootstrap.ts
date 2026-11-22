@@ -1531,7 +1531,7 @@ export class GameBootstrap extends Component {
       node.setPosition(0,height*(linking?[0.17,0.075,-0.02,-0.115][index]??-0.115:(index===0?0.055:-0.035)),0)
     })
     if(this.screen==='rooms' && this.roomSeatNodes.length===3){
-      this.title.node.setPosition(0,height*(portrait?0.38:0.42),0)
+      this.title.node.setPosition(0,height*(portrait?0.38:0.44),0)
       this.title.fontSize=portrait?66:40
       this.status.node.setPosition(0,height*0.11,0)
       this.status.fontSize=portrait?52:28
@@ -1544,7 +1544,7 @@ export class GameBootstrap extends Component {
         this.roomCodeLabel.fontSize=portrait?50:30
         this.roomCodeLabel.lineHeight=this.roomCodeLabel.fontSize+6
         this.roomCodeLabel.node.getComponent(UITransform)!.setContentSize(width,portrait?230:54)
-        this.roomCodeLabel.node.setPosition(0,height*(portrait?0.295:0.325),0)
+        this.roomCodeLabel.node.setPosition(0,height*(portrait?0.295:0.315),0)
       }
       this.roomSeatNodes.forEach((node,index)=>{
         const cell=width/3
