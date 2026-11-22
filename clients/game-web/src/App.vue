@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed,onMounted,onUnmounted,ref} from 'vue'
+import {computed,onMounted,onUnmounted,ref,watch} from 'vue'
 import {createWebAuth,runtimeConfig,type UserAccount} from './auth.ts'
 
 type Page='home'|'login'|'register'|'lobby'|'game'
@@ -94,7 +94,7 @@ function onGameMessage(event:MessageEvent){
       const stageLabels={document:'正在读取游戏页面',
         engine:'游戏引擎初始化完成',scene:'游戏场景已准备'}
       gameStatus.value=stageLabels[stage as keyof typeof stageLabels]
-      armLoadWatchdog()
+      if(page.value==='game')armLoadWatchdog()
     }
   }else if(message.type==='BOOT_FAILED' && !isReady.value){
     failGameLoad('游戏资源或引擎启动失败，请重新加载。')
@@ -105,7 +105,7 @@ function onGameMessage(event:MessageEvent){
       if(!isReady.value){
         gamePhase.value='session'
         gameStatus.value='正在验证服务器会话并恢复房间'
-        armLoadWatchdog()
+        if(page.value==='game')armLoadWatchdog()
       }
       communicate('SESSION_AVAILABLE')
     }else {
@@ -189,6 +189,13 @@ function openGame(){
   page.value='game'
 }
 
+// A hidden iframe may be throttled by the browser; do not misclassify it as
+// timed out or force a download on the next normal visit.
+watch(page,next=>{
+  if(next!=='game')clearLoadWatchdog()
+  else if(gameMounted.value && !isReady.value && gamePhase.value!=='failed')
+    armLoadWatchdog()
+})
 onMounted(()=>{
   window.addEventListener('message',onGameMessage)
   void initialize()
