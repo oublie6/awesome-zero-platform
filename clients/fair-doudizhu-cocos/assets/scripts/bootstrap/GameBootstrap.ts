@@ -1111,7 +1111,7 @@ export class GameBootstrap extends Component {
       if(!this.handID)throw new Error('尚未开始牌局，请刷新房间')
       const view=await online.api.fairness(handID)
       if(!this.currentRoom(owner,epoch,roomID,generation,selection) || handID!==this.handID)return
-      this.fairnessView={handId,phase:view.phase,revealed:view.revealed}
+      this.fairnessView={handId:handID,phase:view.phase,revealed:view.revealed}
       if(this.fairnessMode !== (view.fairnessMode||'')){
         this.fairnessMode=view.fairnessMode||''
         if(this.screen==='rooms')this.renderScreen('rooms')
