@@ -67,6 +67,8 @@ function reloadGame(){
   gameLoadError.value=''
   gameLoadSlow.value=false
   gameMounted.value=true
+  // Ignore messages from an old iframe before Vue replaces the keyed node.
+  gameFrame.value=null
   gameInstance.value++
   armLoadWatchdog()
 }
