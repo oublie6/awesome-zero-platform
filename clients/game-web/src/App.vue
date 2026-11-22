@@ -25,13 +25,13 @@ const gameStatus=ref('等待加载游戏资源')
 const gameFrame=ref<HTMLIFrameElement|null>(null)
 const gameInstance=ref(0)
 const gamePhase=ref<BootPhase>('waiting')
+const gameStage=ref(0)
 const gameLoadSlow=ref(false)
 const gameLoadError=ref('')
 const loggedIn=computed(()=>!!account.value)
 const isReady=computed(()=>gamePhase.value==='ready')
-const confirmedStages=computed(()=>({
-  waiting:0,document:1,engine:2,scene:3,session:3,ready:4,failed:0
-})[gamePhase.value])
+// Keep previously confirmed milestones visible after a later failure.
+const confirmedStages=computed(()=>gameStage.value)
 const stageWidth=computed(()=>confirmedStages.value*25+'%')
 const protocol='azp-doudizhu-frame-v1'
 let slowTimer:ReturnType<typeof setTimeout>|null=null
@@ -63,6 +63,7 @@ function reloadGame(){
   if(!account.value || !client?.authenticated)return
   clearLoadWatchdog()
   gamePhase.value='waiting'
+  gameStage.value=0
   gameStatus.value='等待游戏页面响应'
   gameLoadError.value=''
   gameLoadSlow.value=false
@@ -91,6 +92,7 @@ function onGameMessage(event:MessageEvent){
     const ranks:Record<string,number>={waiting:0,document:1,engine:2,scene:3,session:4}
     if((ranks[stage]??0)>(ranks[gamePhase.value]??0)){
       gamePhase.value=stage
+      gameStage.value=ranks[stage] ?? gameStage.value
       const stageLabels={document:'正在读取游戏页面',
         engine:'游戏引擎初始化完成',scene:'游戏场景已准备'}
       gameStatus.value=stageLabels[stage as keyof typeof stageLabels]
@@ -116,6 +118,7 @@ function onGameMessage(event:MessageEvent){
   }else if(message.type==='SESSION_ACTIVE'){
     clearLoadWatchdog()
     gamePhase.value='ready'
+    gameStage.value=4
     gameLoadError.value=''
     gameStatus.value='游戏就绪'
     communicate('OPEN_ROOMS')
@@ -174,6 +177,7 @@ async function logout(){
   clearLoadWatchdog()
   gameMounted.value=false
   gamePhase.value='waiting'
+  gameStage.value=0
   page.value='home'
   account.value=null
   password.value=''
