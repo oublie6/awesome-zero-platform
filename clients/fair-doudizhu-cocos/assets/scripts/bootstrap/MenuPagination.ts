@@ -9,11 +9,12 @@ export interface RoomInputContext {
   roomID: string
   handID: string
   fairnessMode: string | null
+  purpose?: 'none'|'join'|'contribute'|'verify'
 }
 export function sameRoomInputContext(previous: RoomInputContext | null, next: RoomInputContext): boolean {
   return previous !== null && previous.owner === next.owner &&
     previous.roomID === next.roomID && previous.handID === next.handID &&
-    previous.fairnessMode === next.fairnessMode
+    previous.fairnessMode === next.fairnessMode && previous.purpose === next.purpose
 }
 export interface MenuWindow {
   columns:number

@@ -72,3 +72,11 @@ test('state projection never exposes full AccountID in seat labels',()=>{
  assert.deepEqual(p.seats[0],{position:1,occupied:true,ready:false})
  assert.doesNotMatch(JSON.stringify(p.seats),/account-/)
 })
+
+test('terminal last hand retains its own-phrase fairness verification',()=>{
+ const p=planLobby(context({roomId:'room-1',room:room({lastHandId:'hand-final'}),
+   fairnessMode:'client-contributed-server-custodied-v1'}))
+ assert.equal(p.input,'verify')
+ assert.ok(p.secondary.includes('evidence'))
+ assert.ok(p.secondary.includes('verify-own'))
+})

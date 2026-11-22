@@ -101,3 +101,10 @@ test('all room rerenders use the same scoped draft protection, including create 
  assert.doesNotMatch(create,/if\(this\.online\?\.rooms\.needsReconciliation[^\n]*renderScreen/)
  assert.match(create,/this\.notice\('建房失败：'/)
 })
+
+test('room inputs cannot reuse a personal phrase for a different purpose',async()=>{
+ const {sameRoomInputContext}=await import('../dist/bootstrap/MenuPagination.js')
+ const base={owner:{},roomID:'room-1',handID:'hand-1',fairnessMode:'client-contributed-server-custodied-v1'}
+ assert.equal(sameRoomInputContext({...base,purpose:'contribute'},{...base,purpose:'verify'}),false)
+ assert.equal(sameRoomInputContext({...base,purpose:'verify'},{...base,purpose:'verify'}),true)
+})

@@ -146,6 +146,8 @@ export class GameBootstrap extends Component {
         ++this.roomGeneration
         this.roomID=''
         this.handID=''
+        this.roomView=null
+        this.fairnessView=null
         this.fairnessMode=null
         this.recoverableRooms=[]
         this.selectedCards.clear()
@@ -539,9 +541,13 @@ export class GameBootstrap extends Component {
       this.sceneRecovery=null
       this.online?.dispose()
       this.online=online
+      this.roomView=null
+      this.fairnessView=null
       this.roomGeneration++
       this.roomID=''
       this.handID=''
+      this.roomView=null
+      this.fairnessView=null
       this.fairnessMode=null
       this.recoverableRooms=[]
       this.selectedCards.clear()
@@ -560,6 +566,7 @@ export class GameBootstrap extends Component {
       if(!this.currentAccount(online,generation))return
       online.shell.events.on('doudizhu.hand.snapshot',()=>{
         if(this.currentAccount(online,generation) && this.screen==='table')this.renderScreen('table')
+        else if(this.currentAccount(online,generation) && this.screen==='rooms')this.renderScreen('rooms')
       })
       online.shell.events.on('doudizhu.hand.evidence',payload=>{
         const id=(payload as {handId?: string})?.handId
@@ -654,6 +661,8 @@ export class GameBootstrap extends Component {
     this.roomGeneration++
     this.roomID=''
     this.handID=''
+    this.roomView=null
+    this.fairnessView=null
     this.fairnessMode=null
     this.recoverableRooms=[]
     this.selectedCards.clear()
@@ -700,6 +709,8 @@ export class GameBootstrap extends Component {
     this.roomGeneration++
     this.roomID=''
     this.handID=''
+    this.roomView=null
+    this.fairnessView=null
     this.fairnessMode=null
     this.recoverableRooms=[]
     this.selectedCards.clear()
@@ -788,6 +799,8 @@ export class GameBootstrap extends Component {
       }
       this.roomID=room.roomId
       this.handID=handID
+      this.roomView=null
+      this.fairnessView=null
       this.recoverableRooms=[]
       this.renderScreen('rooms')
       // The normal screen refresh is best-effort. NEVER infer recovery
@@ -827,6 +840,8 @@ export class GameBootstrap extends Component {
     this.roomGeneration++
     this.roomID=''
     this.handID=''
+    this.roomView=null
+    this.fairnessView=null
     this.fairnessMode=null
     this.recoverableRooms=[]
     this.selectedCards.clear()
@@ -853,6 +868,8 @@ export class GameBootstrap extends Component {
           this.roomGeneration++
           this.roomID=''
           this.handID=''
+          this.roomView=null
+          this.fairnessView=null
           this.fairnessMode=null
           this.selectedCards.clear()
         }
@@ -901,6 +918,8 @@ export class GameBootstrap extends Component {
       this.roomGeneration++
       this.roomID=room.roomId
       this.handID=''
+      this.roomView=null
+      this.fairnessView=null
       this.fairnessMode=null
       this.recoverableRooms=[]
       this.selectedCards.clear()
@@ -927,6 +946,8 @@ export class GameBootstrap extends Component {
       this.roomGeneration++
       this.roomID=room.roomId
       this.handID=''
+      this.roomView=null
+      this.fairnessView=null
       this.fairnessMode=null
       this.recoverableRooms=[]
       this.selectedCards.clear()
@@ -954,6 +975,8 @@ export class GameBootstrap extends Component {
       this.roomGeneration++
       this.roomID=''
       this.handID=''
+      this.roomView=null
+      this.fairnessView=null
       this.fairnessMode=null
       this.recoverableRooms=[]
       this.selectedCards.clear()
@@ -999,6 +1022,8 @@ export class GameBootstrap extends Component {
       // Later HTTP refresh failures must not turn the accepted start into FAIL.
       this.roomGeneration++
       this.handID=handID
+      this.roomView=null
+      this.fairnessView=null
       this.fairnessMode='client-contributed-server-custodied-v1'
       this.selectedCards.clear()
       await this.refreshRoom()
@@ -1027,12 +1052,14 @@ export class GameBootstrap extends Component {
       // that still owns an in-flight command. startHand() will refresh on ACK.
       if(online.handStartInProgress)return
       online.adoptAuthorizedRoomRefresh(info,commandGeneration)
+      this.roomView=info
       const authorizedHand=info.activeHandId || info.lastHandId || ''
       if(authorizedHand!==this.handID){
         this.roomGeneration++
         generation=this.roomGeneration // Our own adopted hand remains eligible for error feedback.
         this.handID=authorizedHand
         this.fairnessMode=null
+        this.fairnessView=null
         this.selectedCards.clear()
       }
       // Adopt new hand as UNKNOWN before rendering. The authenticated mode
@@ -1045,6 +1072,7 @@ export class GameBootstrap extends Component {
         const fairness=await online.api.fairness(info.activeHandId)
         if(handGeneration!==this.roomGeneration || info.activeHandId!==this.handID ||
            selection!==this.recoveryAttempt || !this.currentAccount(owner,epoch))return
+        this.fairnessView={handId:info.activeHandId,phase:fairness.phase,revealed:fairness.revealed}
         if(this.fairnessMode !== (fairness.fairnessMode||'')){
           this.fairnessMode=fairness.fairnessMode||''
           if(this.screen==='rooms')this.renderScreen('rooms')
@@ -1068,6 +1096,7 @@ export class GameBootstrap extends Component {
         }
         if(this.screen==='table')this.renderScreen('table')
       }
+      if(this.screen==='rooms')this.renderScreen('rooms')
     }catch(error){
       if(this.currentRoom(owner,epoch,roomID,generation,selection))
         this.notice('刷新失败：'+this.message(error))
@@ -1082,10 +1111,12 @@ export class GameBootstrap extends Component {
       if(!this.handID)throw new Error('尚未开始牌局，请刷新房间')
       const view=await online.api.fairness(handID)
       if(!this.currentRoom(owner,epoch,roomID,generation,selection) || handID!==this.handID)return
+      this.fairnessView={handId,phase:view.phase,revealed:view.revealed}
       if(this.fairnessMode !== (view.fairnessMode||'')){
         this.fairnessMode=view.fairnessMode||''
         if(this.screen==='rooms')this.renderScreen('rooms')
       }
+      if(this.screen==='rooms')this.renderScreen('rooms')
       const remaining=view.beaconReleaseAt ? Math.max(0,Math.ceil((Date.parse(view.beaconReleaseAt)-Date.now())/1000)) : null
       const cutoff=remaining!==null ? ` · 公共随机数公布前剩余 ${remaining} 秒` : ''
       this.notice(view.fairnessMode==='client-contributed-server-custodied-v1'

@@ -80,11 +80,16 @@ export function planLobby(ctx:LobbyContext):LobbyPlan {
   const canReady=room.status==='WAITING_PLAYERS' && someoneNotReady
   const primary:LobbyCommand[]=allReady?['start']:canReady?['ready']:['sync-room']
   const secondary:LobbyCommand[]=[]
-  if(room.lastHandId)secondary.push('evidence')
+  if(room.lastHandId){
+    secondary.push('evidence')
+    if(ctx.fairnessMode==='client-contributed-server-custodied-v1')
+      secondary.push('verify-own')
+  }
   secondary.push('sync-room','more')
   return base(room.lastHandId?'settled':'waiting',roomTitle,
     allReady?'全员准备就绪，可以开始本局':
       room.occupied<3?'等待好友加入，已到场 '+room.occupied+'/3':
         '等待成员准备，已到场 '+room.occupied+'/3',
-    'none',primary,secondary,seats)
+    room.lastHandId&&ctx.fairnessMode==='client-contributed-server-custodied-v1'?'verify':'none',
+    primary,secondary,seats)
 }

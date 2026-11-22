@@ -279,7 +279,7 @@ export class GameTableView {
     }
     if((final || data.phase==='COMPLETED') && !data.needsReconciliation){
       const bw=Math.min(136*u,w*.27)
-      this.button('VerifyFinalEvidence','核验结算',0,controlsY,2*bw,38*u,
+      this.button('VerifyFinalEvidence','公平验证',0,controlsY,2*bw,38*u,
         !!data.handID,this.callbacks.evidence)
     }
     if(!view && data.handID && !final && !this.noticeText){
