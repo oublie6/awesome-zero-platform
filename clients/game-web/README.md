@@ -7,7 +7,7 @@ AccountID as WeChat; registration remains administrator-controlled.
 
 ## Boundaries
 
-- Vue 3 owns login, navigation, presentation and the game iframe.
+- Vue 3 owns login/registration, website navigation and a **single** enter-game action; all create/join/recover room choices happen in the Cocos lobby. See `docs/architecture/doudizhu-player-journey-v1.md`.
 - Cocos4 owns the interactive cards/room/hand scene under `/game/index.html`.
 - Only the Go backend authorizes rooms, deals, moves, replay and recovery.
 - A Vue login stores the *server-issued access token only* in per-tab
