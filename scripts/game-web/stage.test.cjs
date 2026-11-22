@@ -37,3 +37,16 @@ test('staging rejects missing game exporter, symlinks and fake HTML',t=>{
  fs.symlinkSync(path.join(web,'index.html'),path.join(cocos,'escape.html'))
  assert.throws(()=>stage(cocos,web,{}),/Symlink forbidden/)
 })
+
+test('Goal0065 cache policy revalidates mutable game and excludes runtime/session data',()=>{
+ const policy=fs.readFileSync(path.join(__dirname,
+  '../../deploy/game-web/cache-policy.nginx.conf'),'utf8');
+ assert.match(policy,/map \$uri \$azp_web_cache_control/);
+ assert.match(policy,/\/game\/index\.html\s+"no-cache, must-revalidate"/);
+ assert.match(policy,/\/game-config\.js\s+"no-store"/);
+ assert.match(policy,/\/game\/game-config\.js\s+"no-store"/);
+ assert.match(policy,/immutable/);
+ assert.match(policy,/\/game\/\s+"public, max-age=0, must-revalidate"/);
+ assert.match(policy,/default "no-store"/);
+ assert.doesNotMatch(policy,/accessToken|Authorization:|localStorage|Cache API/);
+})

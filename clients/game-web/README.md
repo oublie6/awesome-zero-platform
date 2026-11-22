@@ -67,3 +67,30 @@ by Web integration. Goal0045/0046 and E03 stay in_progress; C09/C10 DEFERRED.
 ## Registration v1
 
 A gated test-only `POST /auth/register` accepts username, email, display name and password and creates the same platform AccountID as the administrator path; it does not create a separate Web identity or a login session. Set `APP_PUBLIC_REGISTRATION_ENABLED=true` explicitly in the **isolated test API** to enable it. The default is disabled; existing deployed API images have not been rebuilt. Email is mandatory but **unverified** and must not be used as a recovery/ownership proof. Before public exposure, implement distributed abuse controls and verified-email registration; see `docs/architecture/unified-account-registration.md`.
+
+## Goal0065: startup and cache behavior
+
+The Web host keeps **one** authenticated Cocos iframe mounted when navigating between
+its website lobby and game; returning to the website does not recreate the WebGL
+engine, discard in-memory render assets or start a second room command.
+Explicit Reload rebuilds the iframe; logout/session removal destroys it immediately,
+so nothing private is reused across accounts. A full browser reload still restarts
+the JavaScript runtime, but unchanged assets may be reused by normal HTTP caching.
+
+Vue shows a themed overlay immediately and the Cocos Web HTML template shows its
+own splash *before* engine scripts. The 0/4–4/4 display counts confirmed startup
+**milestones**, not fabricated byte-download percentages. On stalled or failed
+loads, users can retry or return to the website; the Cocos page works standalone.
+
+For deployment, use the version-aware HTTP cache contract in
+`deploy/game-web/cache-policy.nginx.conf` **only on the static Web server**.
+Hashed Vue/Vite assets may be immutable; unversioned Cocos engine/resources use
+ETag/Last-Modified revalidation; HTML is revalidated, and runtime config and
+asset manifests must not be stored. The cache-map is an operator integration
+example, **not automatically installed by stage.cjs**. Preserve the current
+HTTPS/WSS/CSP headers, calculate updated inline script/style hashes after a
+real Cocos export, and do not apply public cache directives to authenticated
+Go endpoints or responses. Do not introduce a Service Worker to cache
+session tokens, room state, private hands or contributions. Test the actual
+response headers, transferSize, and repeated entry/reload in browser acceptance.
+

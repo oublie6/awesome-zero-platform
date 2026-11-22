@@ -158,3 +158,22 @@ test('G60-N01: credential input mode is set before native scene activation',()=>
  assert.match(smoke,/native\.tag,'INPUT'/);
  assert.match(smoke,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(resolve\)\)/);
 });
+
+test('Goal0065 independent Cocos HTML renders splash before engine scripts and reports actual events',()=>{
+ const template=fs.readFileSync(path.join(__dirname,
+  '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
+ const splash=template.indexOf('id="azp-boot"');
+ const engine=template.indexOf('<%- include(cocosTemplate, {}) %>');
+ assert.ok(splash>0 && engine>splash,'splash must exist before the Cocos engine bootstrap');
+ assert.match(template,/window\.__AZP_BOOT__ = \{ stage, done, fail \}/);
+ assert.match(template,/window\.__AZP_BOOT__\?\.stage\('engine'\)/);
+ assert.match(template,/message\('BOOT_STAGE', name\)/);
+ assert.match(template,/message\('BOOT_FAILED'\)/);
+ assert.match(template,/message\('BOOT_RETRY_REQUESTED'\)/);
+ const bootstrap=fs.readFileSync(path.join(__dirname,
+  '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
+ assert.match(bootstrap,/this\.reportNativeBoot\('stage','scene'\)/);
+ assert.match(bootstrap,/this\.reportNativeBoot\(active\?'done':'fail'\)/);
+ assert.ok(bootstrap.indexOf("if(active)this.renderScreen('rooms')")<
+   bootstrap.indexOf("this.notifyWebHost(active?'SESSION_ACTIVE':'SESSION_FAILED')"));
+})
