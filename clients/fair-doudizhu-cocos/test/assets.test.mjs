@@ -170,7 +170,7 @@ test('G47-N01: scene join shares latest room selection token',async()=>{
 
 test('G48-N03: online join rejects stale results after logout',async()=>{
  const source=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
- const join=source.split('async joinRoom(roomId: string):')[1].split('async reconcileRoom(')[0]
+ const join=source.split('joinRoom(roomId: string):')[1].split('async reconcileRoom(')[0]
  assert.ok(join.includes('this.session.authenticated'))
  const logout=source.split('async logout(): Promise<void> {')[1].split('dispose(): void')[0]
  assert.ok(logout.indexOf('this.disposed = true')<logout.indexOf('await this.session.logout()'))
@@ -192,7 +192,7 @@ test('audit: Scene refresh does not bypass command generation or preflight barri
  assert.match(refresh,/const commandGeneration=online\.rooms\.commandGeneration/)
  assert.match(refresh,/online\.adoptAuthorizedRoomRefresh\(info,commandGeneration\)/)
  assert.doesNotMatch(refresh,/online\.rooms\.restoreTrustedRoom\(/)
- const member=controller.split('async joinRoom(roomId: string):')[1].split('async retryUnknownRoom(')[0]
+ const member=controller.split('joinRoom(roomId: string):')[1].split('async retryUnknownRoom(')[0]
  assert.match(member,/const readCurrent/)
  assert.match(member,/commands === this\.rooms\.commandGeneration/)
 })
@@ -331,7 +331,7 @@ test('paged Cocos UI does not depend on downlevel Array.entries iterator',async(
  const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
  assert.match(source,/for\(let index=0;index<visible\.length;index\+\+\)/)
  assert.doesNotMatch(source,/visible\.entries\(\)/)
- assert.match(source,/this\.menuActions\.push\(\.\.\.actions\)/)
+ assert.match(source,/this\.menuActions\.push\(action\)/)
 })
 
 test('G55-N01/N02: exported Mini Game syntax target and preview settings preserve native BigInt',async()=>{
@@ -451,4 +451,18 @@ test('G59-N01: Cocos EditBox label origin and responsive hit region are aligned'
  assert.match(factory,/input\.inputMode=singleLine\?EditBox\.InputMode\.SINGLE_LINE:EditBox\.InputMode\.ANY/)
  assert.ok(factory.indexOf('input.inputMode=singleLine?')<factory.indexOf('this.content!.addChild(node)'))
  assert.match(src,/\? '请先完成微信登录' : '请先登录平台账号'/)
+})
+
+test('Goal0064 scene prevents double taps before async room writes and gives room codes dedicated labels',async()=>{
+ const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ for(const name of ['createRoom','joinRoom','leaveRoom','readyRoom','startHand']){
+  const code=source.split('private async '+name+'():Promise<void> {')[1]?.split('\n  private async ')[0]
+  assert.ok(code,'expected scene action '+name)
+  assert.match(code,/if\(this\.roomMutation\?\.owner===/,'missing guard '+name)
+  assert.match(code,/this\.roomMutation=mutation/,'missing reservation '+name)
+  assert.match(code,/if\(this\.roomMutation===mutation\)this\.roomMutation=null/,'missing cleanup '+name)
+ }
+ assert.match(source,/this\.roomCodeLabel\.string=portrait/)
+ assert.match(source,/label\.fontSize=this\.screen==='rooms' && portrait && width>=800/)
+ assert.match(source,/const seen=new Set\(this\.menuActions\.map/)
 })
