@@ -80,3 +80,15 @@ test('terminal last hand retains its own-phrase fairness verification',()=>{
  assert.ok(p.secondary.includes('evidence'))
  assert.ok(p.secondary.includes('verify-own'))
 })
+
+test('only owner at authoritative seat 1 is offered start, ready players are not prompted again',()=>{
+ const all=seats.map(s=>({...s,ready:true,accountId:s.accountId||'account-C'}))
+ const base=context({roomId:'room-1',room:room({status:'READY',occupied:3,seats:all})})
+ assert.deepEqual(planLobby({...base,viewerAccountID:'account-A'}).primary,['start'])
+ assert.deepEqual(planLobby({...base,viewerAccountID:'account-B'}).primary,['sync-room'])
+ assert.match(planLobby({...base,viewerAccountID:'account-B'}).hint,/等待房主/)
+ const waiting=context({roomId:'room-1',room:room()})
+ assert.deepEqual(planLobby({...waiting,viewerAccountID:'account-A'}).primary,['ready'])
+ assert.deepEqual(planLobby({...waiting,viewerAccountID:'account-B'}).primary,['sync-room'])
+ assert.equal(planLobby({...waiting,viewerAccountID:'not-a-member'}).stage,'syncing')
+})

@@ -24,6 +24,8 @@ export interface LobbyContext {
   fairness:{handId:string;phase:string;revealed:boolean}|null
   handPhase:string|null
   recoverableRooms:number
+  /** Server-validated session identity for display-only owner/ready gates. */
+  viewerAccountID?:string|null
 }
 export interface LobbyPlan {
   stage:LobbyStage
@@ -53,7 +55,12 @@ export function planLobby(ctx:LobbyContext):LobbyPlan {
   const room=ctx.room
   if(!room || room.roomId!==ctx.roomId || !room.member || room.status==='CLOSED')
     return base('syncing','正在确认房间','需要先通过服务器确认成员与房间状态','none',['sync-room'])
-  const seats=(room.seats||[]).slice(0,3).map(seat=>({
+  const roomSeats=(room.seats||[]).slice(0,3).sort((a,b)=>a.position-b.position)
+  const viewer=ctx.viewerAccountID
+    ? roomSeats.find(seat=>seat.accountId===ctx.viewerAccountID):undefined
+  if(ctx.viewerAccountID && !viewer)
+    return base('syncing','正在确认房间','账号与房间成员信息不一致，请重新同步','none',['sync-room'])
+  const seats=roomSeats.map(seat=>({
     position:seat.position,occupied:!!seat.accountId,ready:!!seat.accountId&&seat.ready
   }))
   const roomTitle='好友房间 · '+room.roomId
@@ -77,8 +84,12 @@ export function planLobby(ctx:LobbyContext):LobbyPlan {
   }
   const allReady=room.status==='READY'
   const someoneNotReady=seats.some(seat=>seat.occupied&&!seat.ready)
-  const canReady=room.status==='WAITING_PLAYERS' && someoneNotReady
-  const primary:LobbyCommand[]=allReady?['start']:canReady?['ready']:['sync-room']
+  // Room creation permanently binds the owner to seat 1; Room.StartHand
+  // authorizes only that owner. The backend remains the final authority.
+  const canStart=allReady && (!viewer || viewer.position===1)
+  const canReady=room.status==='WAITING_PLAYERS' &&
+    (viewer?!viewer.ready:someoneNotReady)
+  const primary:LobbyCommand[]=canStart?['start']:canReady?['ready']:['sync-room']
   const secondary:LobbyCommand[]=[]
   if(room.lastHandId){
     secondary.push('evidence')
@@ -87,7 +98,7 @@ export function planLobby(ctx:LobbyContext):LobbyPlan {
   }
   secondary.push('sync-room','more')
   return base(room.lastHandId?'settled':'waiting',roomTitle,
-    allReady?'全员准备就绪，可以开始本局':
+    allReady?(viewer&&viewer.position!==1?'等待房主开始本局':'全员准备就绪，可以开始本局'):
       room.occupied<3?'等待好友加入，已到场 '+room.occupied+'/3':
         '等待成员准备，已到场 '+room.occupied+'/3',
     room.lastHandId&&ctx.fairnessMode==='client-contributed-server-custodied-v1'?'verify':'none',

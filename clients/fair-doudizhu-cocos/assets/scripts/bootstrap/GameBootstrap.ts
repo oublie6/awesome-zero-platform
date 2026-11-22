@@ -1,4 +1,4 @@
-import { _decorator, Color, Component, Label, Layers, Node, SafeArea, UITransform, view, EventTouch, EditBox } from 'cc'
+import { _decorator, Color, Component, Label, Layers, Node, SafeArea, UITransform, view, EventTouch, EditBox, Graphics } from 'cc'
 import { GameClientShell } from '../game/GameClientShell.ts'
 import { GameOnlineController } from '../game/GameOnlineController.ts'
 import { verifyOwnContribution } from '../game/GameFairnessActions.ts'
@@ -62,6 +62,7 @@ export class GameBootstrap extends Component {
   // destroying an in-progress room-code or personal-phrase input on notices.
   private roomRetryRendered = false
   private fairnessRetryRendered = false
+  private viewerAccountID:string|null=null
   private roomView: RoomRead | null = null
   private fairnessView: {handId:string;phase:string;revealed:boolean}|null = null
   private roomSeatNodes: Node[] = []
@@ -248,12 +249,22 @@ export class GameBootstrap extends Component {
       }
       if(plan.seats.length===3){
         for(const seat of plan.seats){
-          const label=this.createLabel('SeatBadge'+seat.position,
-            seat.occupied
-              ? seat.position+'号 · '+(seat.ready?'已准备':'未准备')
-              : seat.position+'号 · 空位',
-            22,seat.occupied?new Color(235,223,177,255):new Color(152,174,165,255))
-          this.roomSeatNodes.push(label.node)
+          const tile=new Node('SeatBadge'+seat.position)
+          tile.layer=Layers.Enum.UI_2D
+          tile.addComponent(UITransform)
+          tile.addComponent(Graphics)
+          const caption=new Node('SeatCaption')
+          caption.layer=Layers.Enum.UI_2D
+          caption.addComponent(UITransform)
+          tile.addChild(caption)
+          const label=caption.addComponent(Label)
+          label.string=seat.occupied
+            ? seat.position+'号 · '+(seat.ready?'已准备':'未准备')
+            : seat.position+'号 · 空位'
+          label.color=seat.occupied?new Color(235,223,177,255):new Color(152,174,165,255)
+          label.overflow=Label.Overflow.SHRINK
+          this.content!.addChild(tile)
+          this.roomSeatNodes.push(tile)
         }
       }
       const actions:MenuAction[]=[]
@@ -286,9 +297,10 @@ export class GameBootstrap extends Component {
       // primary user journey. UNKNOWN never permits fresh room mutations.
       if(this.roomMoreExpanded && plan.stage!=='reconcile'){
         actions.push({name:'ReconnectRoom',caption:'重连并同步',action:()=>void this.reconnect()})
-        if(this.roomID)
+        if(this.roomID && this.roomView?.status!=='HAND_ACTIVE')
           actions.push({name:'LeaveRoom',caption:'退出当前房间',action:()=>void this.leaveRoom()})
-        if(this.handID && !plan.primary.includes('evidence') && !plan.secondary.includes('evidence'))
+        if(this.roomView?.lastHandId && !this.roomView.activeHandId &&
+          !plan.primary.includes('evidence') && !plan.secondary.includes('evidence'))
           actions.push(choices['evidence'])
         if(this.fairnessMode==='client-contributed-server-custodied-v1'){
           if(this.handID && !this.roomView?.activeHandId && !plan.secondary.includes('verify-own'))
@@ -463,7 +475,8 @@ export class GameBootstrap extends Component {
       fairnessUnknown:!!this.online?.fairness.needsReconciliation,
       fairnessMode:this.fairnessMode,fairness:this.fairnessView,
       handPhase:snapshot?.handId===this.handID?snapshot.phase:null,
-      recoverableRooms:this.recoverableRooms.length
+      recoverableRooms:this.recoverableRooms.length,
+      viewerAccountID:this.viewerAccountID
     })
   }
   private createRoomInput(): EditBox {
@@ -543,6 +556,7 @@ export class GameBootstrap extends Component {
       this.online=online
       this.roomView=null
       this.fairnessView=null
+      this.viewerAccountID=null
       this.roomGeneration++
       this.roomID=''
       this.handID=''
@@ -564,6 +578,9 @@ export class GameBootstrap extends Component {
         if(!restored)await online.loginAndConnect()
       }
       if(!this.currentAccount(online,generation))return
+      // Profile is a verified server read used for lobby presentation only.
+      // Never infer an AccountID from a token or a room code.
+      void this.resolveViewerAccount(online,platform,generation)
       online.shell.events.on('doudizhu.hand.snapshot',()=>{
         if(this.currentAccount(online,generation) && this.screen==='table')this.renderScreen('table')
         else if(this.currentAccount(online,generation) && this.screen==='rooms')this.renderScreen('rooms')
@@ -586,6 +603,23 @@ export class GameBootstrap extends Component {
       }else if(generation===this.requestGeneration && this.content?.isValid){
         this.notice('登录失败：'+this.message(error))
       }
+    }
+  }
+  private async resolveViewerAccount(online:GameOnlineController,platform:GamePlatform,
+    generation:number):Promise<void>{
+    try{
+      const raw=await platform.http.request<unknown>('/auth/session',{
+        accessToken:online.session.token,timeoutMs:5000
+      })
+      const envelope=raw as {code?:unknown;data?:{account?:{id?:unknown}}}|null
+      const accountID=envelope?.code==='OK'?envelope.data?.account?.id:null
+      if(typeof accountID!=='string'||!accountID||accountID.length>128)return
+      if(!this.currentAccount(online,generation))return
+      this.viewerAccountID=accountID
+      if(this.screen==='rooms')this.renderScreen('rooms')
+    }catch{
+      // Keep the existing room query and server command authorization usable
+      // if this extra display-only profile request cannot finish.
     }
   }
   private async completeWeChatBinding(create:boolean):Promise<void>{
@@ -1477,9 +1511,17 @@ export class GameBootstrap extends Component {
       this.status.lineHeight=this.status.fontSize+5
       this.status.node.getComponent(UITransform)!.setContentSize(width,Math.min(64,height*0.13))
       this.roomSeatNodes.forEach((node,index)=>{
-        const label=node.getComponent(Label)!
         const cell=width/3
-        node.getComponent(UITransform)!.setContentSize(cell-8,portrait?54:34)
+        const tileWidth=Math.max(20,cell-8),tileHeight=portrait?58:38
+        node.getComponent(UITransform)!.setContentSize(tileWidth,tileHeight)
+        const graphic=node.getComponent(Graphics)!
+        graphic.clear()
+        graphic.fillColor=new Color(29,56,46,230)
+        graphic.roundRect(-tileWidth/2,-tileHeight/2,tileWidth,tileHeight,Math.min(14,tileHeight/4))
+        graphic.fill()
+        const caption=node.getChildByName('SeatCaption')!
+        caption.getComponent(UITransform)!.setContentSize(tileWidth-8,tileHeight-4)
+        const label=caption.getComponent(Label)!
         label.fontSize=portrait?30:19
         label.lineHeight=label.fontSize+3
         label.overflow=Label.Overflow.SHRINK
