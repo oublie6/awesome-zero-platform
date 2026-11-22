@@ -80,6 +80,18 @@ function communicate(type:'SESSION_AVAILABLE'|'SESSION_REVOKED'|'OPEN_ROOMS'){
   // Room IDs are non-secret user intentions, never client-authoritative state.
   frame.postMessage({protocol,type},window.location.origin)
 }
+function onFrameLoad(){
+  const frame=gameFrame.value
+  if(!gameMounted.value || !frame || isReady.value)return
+  // A missing Cocos artifact often produces a 404 or a Vue SPA fallback.
+  // Detect that immediately instead of showing an unchanging dark iframe.
+  try{
+    if(!frame.contentDocument?.getElementById('GameCanvas'))
+      failGameLoad('未找到游戏客户端资源，请检查部署或重新加载。')
+  }catch{
+    failGameLoad('游戏页面不满足同源要求，请检查部署配置。')
+  }
+}
 function onGameMessage(event:MessageEvent){
   if(!gameMounted.value || event.source!==gameFrame.value?.contentWindow ||
      event.origin!==window.location.origin)return
@@ -303,7 +315,7 @@ onUnmounted(()=>{
           </div>
           <div class="game-frame-shell">
             <iframe :key="gameInstance" ref="gameFrame" src="/game/index.html"
-              title="公平斗地主 Cocos4 互动牌桌" referrerpolicy="no-referrer" allow="fullscreen" />
+              title="公平斗地主 Cocos4 互动牌桌" referrerpolicy="no-referrer" allow="fullscreen" @load="onFrameLoad" />
             <div v-if="!isReady" class="game-loading-cover" role="status" aria-live="polite">
               <div class="game-loading-content">
                 <div class="game-loading-suit" aria-hidden="true">♠</div>
