@@ -89,10 +89,9 @@ function onGameMessage(event:MessageEvent){
     const ranks:Record<string,number>={waiting:0,document:1,engine:2,scene:3,session:4}
     if((ranks[stage]??0)>(ranks[gamePhase.value]??0)){
       gamePhase.value=stage
-      gameStatus.value={
-        document:'正在读取游戏页面',engine:'游戏引擎初始化完成',
-        scene:'游戏场景已准备'
-      }[stage]
+      const stageLabels={document:'正在读取游戏页面',
+        engine:'游戏引擎初始化完成',scene:'游戏场景已准备'}
+      gameStatus.value=stageLabels[stage as keyof typeof stageLabels]
       armLoadWatchdog()
     }
   }else if(message.type==='BOOT_FAILED' && !isReady.value){
@@ -279,17 +278,37 @@ onUnmounted(()=>{
           </div>
           <p class="lobby-footnote">所有牌局由服务端同步 · 结算后可查看公平验证</p>
         </section>
-        <section v-else-if="page==='game'" class="game-layout">
+        <section v-if="gameMounted" v-show="page==='game'" class="game-layout">
           <div class="game-toolbar">
             <div><div class="eyebrow">LIVE GAME</div><h2>好友牌桌</h2><p>{{gameStatus}}</p></div>
             <div class="game-toolbar-actions">
-              <button type="button" class="ghost-button compact" @click="gameInstance++;gameStatus='重新加载游戏中'">重新加载</button>
+              <button type="button" class="ghost-button compact" @click="reloadGame">重新加载</button>
               <button type="button" class="ghost-button compact" @click="page='lobby'">返回网站</button>
             </div>
           </div>
           <div class="game-frame-shell">
             <iframe :key="gameInstance" ref="gameFrame" src="/game/index.html"
               title="公平斗地主 Cocos4 互动牌桌" referrerpolicy="no-referrer" allow="fullscreen" />
+            <div v-if="!isReady" class="game-loading-cover" role="status" aria-live="polite">
+              <div class="game-loading-content">
+                <div class="game-loading-suit" aria-hidden="true">♠</div>
+                <h3>公平斗地主</h3>
+                <p class="game-loading-status">{{gameStatus}}</p>
+                <div class="game-loading-track" role="progressbar"
+                  :aria-valuenow="confirmedStages" aria-valuemin="0" aria-valuemax="4"
+                  aria-label="游戏启动阶段">
+                  <div class="game-loading-fill" :style="{width:stageWidth}"></div>
+                </div>
+                <p class="game-loading-step">已确认 {{confirmedStages}} / 4 个启动阶段 · 非下载百分比</p>
+                <p v-if="gameLoadSlow && gamePhase!=='failed'" class="game-loading-note">加载时间较长，可以继续等待或重新尝试。</p>
+                <p v-if="gameLoadError" class="game-loading-error" role="alert">{{gameLoadError}}</p>
+                <div v-if="gameLoadSlow || gamePhase==='failed'" class="game-loading-actions">
+                  <button type="button" class="primary-button" @click="reloadGame">重新加载游戏</button>
+                  <button type="button" class="ghost-button compact" @click="page='lobby'">返回网站</button>
+                </div>
+                <p class="game-loading-footnote">牌局进度由服务器保存 · 返回网站不会重新加载引擎</p>
+              </div>
+            </div>
             <div class="frame-footer"><span><span class="status-dot" :class="{ready:isReady}"></span> {{gameStatus}}</span><span>游戏进度由服务器保存</span></div>
           </div>
         </section>
