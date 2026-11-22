@@ -96,6 +96,8 @@ function onGameMessage(event:MessageEvent){
     }
   }else if(message.type==='BOOT_FAILED' && !isReady.value){
     failGameLoad('游戏资源或引擎启动失败，请重新加载。')
+  }else if(message.type==='BOOT_RETRY_REQUESTED'){
+    reloadGame()
   }else if(message.type==='GAME_READY'){
     if(account.value && client?.authenticated){
       if(!isReady.value){
