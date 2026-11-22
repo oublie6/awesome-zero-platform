@@ -1,0 +1,2781 @@
+{
+  "source": "61429bd67367b47bc7541a29f492a60708344e76",
+  "verdict": "FAIL",
+  "environment": {
+    "browser": "Chromium156 headless SwiftShader",
+    "frontend": "official Cocos4.0.0-beta.0 export + Vue3 over trusted local HTTPS30464",
+    "backend": "unchanged R9 test Kubernetes API/MySQL5.7/Redis/two Beanstalk/DQ, WSS proxy"
+  },
+  "build": {
+    "source": "61429bd67367b47bc7541a29f492a60708344e76",
+    "nativeExportExit": 0,
+    "realNativeTypesAndAST": true,
+    "vueBuildExit": 0,
+    "firstAttempt": "engine child512MiB heap OOM; preserved; sequential1024MiB retry passed",
+    "bootstrapSHA256": "6d2f77083c6abc624b2e0eb65ce1be3d6582978fc0203a74a97b48d3e39f925a"
+  },
+  "ci": [
+    {
+      "id": 45003628932,
+      "name": "Fair Doudizhu",
+      "source": "61429bd67367b47bc7541a29f492a60708344e76",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45003628932",
+      "jobs": [
+        {
+          "name": "mysql_integration",
+          "conclusion": "success"
+        },
+        {
+          "name": "manifest_client",
+          "conclusion": "success"
+        },
+        {
+          "name": "application",
+          "conclusion": "success"
+        },
+        {
+          "name": "client_foundation",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 45003628952,
+      "name": "CI",
+      "source": "61429bd67367b47bc7541a29f492a60708344e76",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45003628952",
+      "jobs": [
+        {
+          "name": "integration",
+          "conclusion": "success"
+        },
+        {
+          "name": "unit",
+          "conclusion": "success"
+        },
+        {
+          "name": "admin_web",
+          "conclusion": "success"
+        },
+        {
+          "name": "secure_envelope",
+          "conclusion": "success"
+        },
+        {
+          "name": "runtime",
+          "conclusion": "success"
+        },
+        {
+          "name": "report",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 45003628937,
+      "name": "Cocos Linux Native Client",
+      "source": "61429bd67367b47bc7541a29f492a60708344e76",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45003628937",
+      "jobs": [
+        {
+          "name": "linux_source",
+          "conclusion": "success"
+        },
+        {
+          "name": "linux_native_export",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "id": 45003628951,
+      "name": "Fair Doudizhu Vue3 Web",
+      "source": "61429bd67367b47bc7541a29f492a60708344e76",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45003628951",
+      "jobs": [
+        {
+          "name": "vue_build",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "lobby": [
+    {
+      "step": "login-entry",
+      "player": 0,
+      "state": {
+        "screen": "rooms",
+        "status": "和好友开一桌，或输入房间号加入",
+        "roomId": "",
+        "handId": "",
+        "room": null,
+        "plan": {
+          "stage": "entry",
+          "title": "游戏大厅",
+          "hint": "和好友开一桌，或输入房间号加入",
+          "input": "join",
+          "primary": [
+            "create",
+            "join"
+          ],
+          "secondary": [
+            "discover",
+            "more"
+          ],
+          "seats": []
+        },
+        "seats": [],
+        "buttons": [
+          "CreateRoom",
+          "JoinRoom",
+          "DiscoverMyRooms",
+          "ToggleRoomMore"
+        ],
+        "inputLength": 0,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": "login-entry",
+      "player": 1,
+      "state": {
+        "screen": "rooms",
+        "status": "和好友开一桌，或输入房间号加入",
+        "roomId": "",
+        "handId": "",
+        "room": null,
+        "plan": {
+          "stage": "entry",
+          "title": "游戏大厅",
+          "hint": "和好友开一桌，或输入房间号加入",
+          "input": "join",
+          "primary": [
+            "create",
+            "join"
+          ],
+          "secondary": [
+            "discover",
+            "more"
+          ],
+          "seats": []
+        },
+        "seats": [],
+        "buttons": [
+          "CreateRoom",
+          "JoinRoom",
+          "DiscoverMyRooms",
+          "ToggleRoomMore"
+        ],
+        "inputLength": 0,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": "login-entry",
+      "player": 2,
+      "state": {
+        "screen": "rooms",
+        "status": "和好友开一桌，或输入房间号加入",
+        "roomId": "",
+        "handId": "",
+        "room": null,
+        "plan": {
+          "stage": "entry",
+          "title": "游戏大厅",
+          "hint": "和好友开一桌，或输入房间号加入",
+          "input": "join",
+          "primary": [
+            "create",
+            "join"
+          ],
+          "secondary": [
+            "discover",
+            "more"
+          ],
+          "seats": []
+        },
+        "seats": [],
+        "buttons": [
+          "CreateRoom",
+          "JoinRoom",
+          "DiscoverMyRooms",
+          "ToggleRoomMore"
+        ],
+        "inputLength": 0,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": "three-seats",
+      "player": 0,
+      "state": {
+        "screen": "rooms",
+        "status": "等待成员准备，已到场 3/3",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 3
+        },
+        "plan": {
+          "stage": "waiting",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "等待成员准备，已到场 3/3",
+          "input": "none",
+          "primary": [
+            "ready"
+          ],
+          "secondary": [
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": false
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": false
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": false
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 未准备",
+          "2号 · 未准备",
+          "3号 · 未准备"
+        ],
+        "buttons": [
+          "ReadyRoom",
+          "RefreshRoom",
+          "ToggleRoomMore"
+        ],
+        "inputLength": null,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": "three-seats",
+      "player": 1,
+      "state": {
+        "screen": "rooms",
+        "status": "等待成员准备，已到场 3/3",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 4
+        },
+        "plan": {
+          "stage": "waiting",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "等待成员准备，已到场 3/3",
+          "input": "none",
+          "primary": [
+            "ready"
+          ],
+          "secondary": [
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": false
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": false
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 已准备",
+          "2号 · 未准备",
+          "3号 · 未准备"
+        ],
+        "buttons": [
+          "ReadyRoom",
+          "RefreshRoom",
+          "ToggleRoomMore"
+        ],
+        "inputLength": null,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": "three-seats",
+      "player": 2,
+      "state": {
+        "screen": "rooms",
+        "status": "等待成员准备，已到场 3/3",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 5
+        },
+        "plan": {
+          "stage": "waiting",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "等待成员准备，已到场 3/3",
+          "input": "none",
+          "primary": [
+            "ready"
+          ],
+          "secondary": [
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": false
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 已准备",
+          "2号 · 已准备",
+          "3号 · 未准备"
+        ],
+        "buttons": [
+          "ReadyRoom",
+          "RefreshRoom",
+          "ToggleRoomMore"
+        ],
+        "inputLength": null,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": "all-ready",
+      "player": 0,
+      "state": {
+        "screen": "rooms",
+        "status": "全员准备就绪，可以开始本局",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 6
+        },
+        "plan": {
+          "stage": "waiting",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "全员准备就绪，可以开始本局",
+          "input": "none",
+          "primary": [
+            "start"
+          ],
+          "secondary": [
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": true
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 已准备",
+          "2号 · 已准备",
+          "3号 · 已准备"
+        ],
+        "buttons": [
+          "StartHand",
+          "RefreshRoom",
+          "ToggleRoomMore"
+        ],
+        "inputLength": null,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": "all-ready",
+      "player": 1,
+      "state": {
+        "screen": "rooms",
+        "status": "等待房主开始本局",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 6
+        },
+        "plan": {
+          "stage": "waiting",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "等待房主开始本局",
+          "input": "none",
+          "primary": [
+            "sync-room"
+          ],
+          "secondary": [
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": true
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 已准备",
+          "2号 · 已准备",
+          "3号 · 已准备"
+        ],
+        "buttons": [
+          "RefreshRoom",
+          "RefreshRoom",
+          "ToggleRoomMore"
+        ],
+        "inputLength": null,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    },
+    {
+      "step": "all-ready",
+      "player": 2,
+      "state": {
+        "screen": "rooms",
+        "status": "等待房主开始本局",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 6
+        },
+        "plan": {
+          "stage": "waiting",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "等待房主开始本局",
+          "input": "none",
+          "primary": [
+            "sync-room"
+          ],
+          "secondary": [
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": true
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 已准备",
+          "2号 · 已准备",
+          "3号 · 已准备"
+        ],
+        "buttons": [
+          "RefreshRoom",
+          "RefreshRoom",
+          "ToggleRoomMore"
+        ],
+        "inputLength": null,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      }
+    }
+  ],
+  "initialPageErrors": [],
+  "layout": [
+    {
+      "width": 760,
+      "height": 390,
+      "geometry": {
+        "status": {
+          "name": "GameStatus",
+          "text": "牌局进行中，点击继续牌局",
+          "font": 20,
+          "cssFont": 10.734375000000007
+        },
+        "title": {
+          "name": "GameTitle",
+          "text": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "font": 25,
+          "cssFont": 13.41796875000002
+        },
+        "seats": [
+          {
+            "name": "SeatCaption",
+            "text": "1号 · 未准备",
+            "font": 20,
+            "cssFont": 10.73437499999998
+          },
+          {
+            "name": "SeatCaption",
+            "text": "2号 · 未准备",
+            "font": 20,
+            "cssFont": 10.73437499999998
+          },
+          {
+            "name": "SeatCaption",
+            "text": "3号 · 未准备",
+            "font": 20,
+            "cssFont": 10.73437499999998
+          }
+        ],
+        "buttons": [
+          {
+            "name": "OpenTable",
+            "labels": []
+          },
+          {
+            "name": "RefreshRoom",
+            "labels": []
+          },
+          {
+            "name": "ToggleRoomMore",
+            "labels": []
+          }
+        ]
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "status": {
+          "name": "GameStatus",
+          "text": "牌局进行中，点击继续牌局",
+          "font": 33,
+          "cssFont": 8.842968750000018
+        },
+        "title": {
+          "name": "GameTitle",
+          "text": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "font": 40,
+          "cssFont": 10.71875
+        },
+        "seats": [
+          {
+            "name": "SeatCaption",
+            "text": "1号 · 未准备",
+            "font": 31,
+            "cssFont": 8.307031249999987
+          },
+          {
+            "name": "SeatCaption",
+            "text": "2号 · 未准备",
+            "font": 31,
+            "cssFont": 8.307031249999987
+          },
+          {
+            "name": "SeatCaption",
+            "text": "3号 · 未准备",
+            "font": 31,
+            "cssFont": 8.307031249999987
+          }
+        ],
+        "buttons": [
+          {
+            "name": "OpenTable",
+            "labels": []
+          },
+          {
+            "name": "RefreshRoom",
+            "labels": []
+          },
+          {
+            "name": "ToggleRoomMore",
+            "labels": []
+          }
+        ]
+      }
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "geometry": {
+        "status": {
+          "name": "GameStatus",
+          "text": "牌局进行中，点击继续牌局",
+          "font": 20,
+          "cssFont": 18.85937499999999
+        },
+        "title": {
+          "name": "GameTitle",
+          "text": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "font": 25,
+          "cssFont": 23.57421875000004
+        },
+        "seats": [
+          {
+            "name": "SeatCaption",
+            "text": "1号 · 未准备",
+            "font": 20,
+            "cssFont": 18.859374999999947
+          },
+          {
+            "name": "SeatCaption",
+            "text": "2号 · 未准备",
+            "font": 20,
+            "cssFont": 18.859374999999947
+          },
+          {
+            "name": "SeatCaption",
+            "text": "3号 · 未准备",
+            "font": 20,
+            "cssFont": 18.859374999999947
+          }
+        ],
+        "buttons": [
+          {
+            "name": "OpenTable",
+            "labels": []
+          },
+          {
+            "name": "RefreshRoom",
+            "labels": []
+          },
+          {
+            "name": "ToggleRoomMore",
+            "labels": []
+          }
+        ]
+      }
+    }
+  ],
+  "game": {
+    "room": "room-cmd-bf9e892a998d061443d43401e105deeb",
+    "hand": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+    "automaticNoBid": {
+      "beforeVersion": 1,
+      "afterVersion": 2,
+      "originalDeadline": 1795351435008,
+      "bidding": {
+        "v": "doudizhu-score-bidding-v1",
+        "firstBidder": 1,
+        "currentBidder": 2,
+        "highestScore": 0,
+        "highestBidder": 0,
+        "actions": [
+          {
+            "position": 1,
+            "score": 0
+          }
+        ],
+        "complete": false,
+        "noLandlord": false,
+        "landlord": 0
+      }
+    },
+    "freshSessionRecovery": [
+      {
+        "player": 0,
+        "state": {
+          "screen": "table",
+          "status": "牌局进行中，点击继续牌局",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "playing",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "牌局进行中，点击继续牌局",
+            "input": "none",
+            "primary": [
+              "table"
+            ],
+            "secondary": [
+              "sync-room",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [],
+          "buttons": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordBack0",
+            "LandlordBack0Inner",
+            "LandlordBack0BackMark",
+            "LandlordBack1",
+            "LandlordBack1Inner",
+            "LandlordBack1BackMark",
+            "LandlordBack2",
+            "LandlordBack2Inner",
+            "LandlordBack2BackMark",
+            "KittyLabel",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "Seat2",
+            "Name2",
+            "Remaining2",
+            "OppBack2-0",
+            "OppBack2-0Inner",
+            "OppBack2-0BackMark",
+            "OppBack2-1",
+            "OppBack2-1Inner",
+            "OppBack2-1BackMark",
+            "OppBack2-2",
+            "OppBack2-2Inner",
+            "OppBack2-2BackMark",
+            "EmptyTrick",
+            "Bid0",
+            "Bid1",
+            "Bid2",
+            "Bid3",
+            "HandCard_XJ",
+            "HandCard_H2",
+            "HandCard_C2",
+            "HandCard_D2",
+            "HandCard_CA",
+            "HandCard_DA",
+            "HandCard_SK",
+            "HandCard_SQ",
+            "HandCard_CJ",
+            "HandCard_DJ",
+            "HandCard_S10",
+            "HandCard_S9",
+            "HandCard_S8",
+            "HandCard_D8",
+            "HandCard_C7",
+            "HandCard_D7",
+            "HandCard_H4",
+            "OwnSeatInfo"
+          ],
+          "inputLength": null,
+          "handPhase": "BIDDING",
+          "handVersion": 1,
+          "deadline": 1795351435008
+        }
+      },
+      {
+        "player": 1,
+        "state": {
+          "screen": "table",
+          "status": "牌局进行中，点击继续牌局",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "playing",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "牌局进行中，点击继续牌局",
+            "input": "none",
+            "primary": [
+              "table"
+            ],
+            "secondary": [
+              "sync-room",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [],
+          "buttons": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordBack0",
+            "LandlordBack0Inner",
+            "LandlordBack0BackMark",
+            "LandlordBack1",
+            "LandlordBack1Inner",
+            "LandlordBack1BackMark",
+            "LandlordBack2",
+            "LandlordBack2Inner",
+            "LandlordBack2BackMark",
+            "KittyLabel",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "Seat3",
+            "Name3",
+            "Remaining3",
+            "OppBack3-0",
+            "OppBack3-0Inner",
+            "OppBack3-0BackMark",
+            "OppBack3-1",
+            "OppBack3-1Inner",
+            "OppBack3-1BackMark",
+            "OppBack3-2",
+            "OppBack3-2Inner",
+            "OppBack3-2BackMark",
+            "EmptyTrick",
+            "Bid0",
+            "Bid1",
+            "Bid2",
+            "Bid3",
+            "HandCard_YJ",
+            "HandCard_S2",
+            "HandCard_HA",
+            "HandCard_SJ",
+            "HandCard_H10",
+            "HandCard_C10",
+            "HandCard_D10",
+            "HandCard_C9",
+            "HandCard_D9",
+            "HandCard_H8",
+            "HandCard_S7",
+            "HandCard_H7",
+            "HandCard_S6",
+            "HandCard_D6",
+            "HandCard_S5",
+            "HandCard_D5",
+            "HandCard_C3",
+            "OwnSeatInfo"
+          ],
+          "inputLength": null,
+          "handPhase": "BIDDING",
+          "handVersion": 1,
+          "deadline": 1795351435008
+        }
+      },
+      {
+        "player": 2,
+        "state": {
+          "screen": "table",
+          "status": "牌局进行中，点击继续牌局",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "playing",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "牌局进行中，点击继续牌局",
+            "input": "none",
+            "primary": [
+              "table"
+            ],
+            "secondary": [
+              "sync-room",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [],
+          "buttons": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordBack0",
+            "LandlordBack0Inner",
+            "LandlordBack0BackMark",
+            "LandlordBack1",
+            "LandlordBack1Inner",
+            "LandlordBack1BackMark",
+            "LandlordBack2",
+            "LandlordBack2Inner",
+            "LandlordBack2BackMark",
+            "KittyLabel",
+            "Seat2",
+            "Name2",
+            "Remaining2",
+            "OppBack2-0",
+            "OppBack2-0Inner",
+            "OppBack2-0BackMark",
+            "OppBack2-1",
+            "OppBack2-1Inner",
+            "OppBack2-1BackMark",
+            "OppBack2-2",
+            "OppBack2-2Inner",
+            "OppBack2-2BackMark",
+            "Seat1",
+            "Name1",
+            "Remaining1",
+            "OppBack1-0",
+            "OppBack1-0Inner",
+            "OppBack1-0BackMark",
+            "OppBack1-1",
+            "OppBack1-1Inner",
+            "OppBack1-1BackMark",
+            "OppBack1-2",
+            "OppBack1-2Inner",
+            "OppBack1-2BackMark",
+            "EmptyTrick",
+            "Bid0",
+            "Bid1",
+            "Bid2",
+            "Bid3",
+            "HandCard_HK",
+            "HandCard_CK",
+            "HandCard_DK",
+            "HandCard_HQ",
+            "HandCard_CQ",
+            "HandCard_DQ",
+            "HandCard_HJ",
+            "HandCard_H9",
+            "HandCard_C8",
+            "HandCard_H6",
+            "HandCard_C6",
+            "HandCard_H5",
+            "HandCard_C4",
+            "HandCard_D4",
+            "HandCard_S3",
+            "HandCard_H3",
+            "HandCard_D3",
+            "OwnSeatInfo"
+          ],
+          "inputLength": null,
+          "handPhase": "BIDDING",
+          "handVersion": 1,
+          "deadline": 1795351435008
+        }
+      }
+    ],
+    "realUICommands": 59,
+    "renderedCardSort": [
+      {
+        "position": 1,
+        "version": 53,
+        "cardCount": 17,
+        "sortedAndComplete": true
+      },
+      {
+        "position": 2,
+        "version": 53,
+        "cardCount": 3,
+        "sortedAndComplete": true
+      },
+      {
+        "position": 3,
+        "version": 53,
+        "cardCount": 17,
+        "sortedAndComplete": true
+      }
+    ],
+    "terminal": [
+      {
+        "step": "terminal",
+        "player": 0,
+        "state": {
+          "screen": "table",
+          "status": "已核验归档 · 获胜座位2 · 积分-6/12/-6 · 版本61\n校验摘要：d5b357029edf14546a9a0c2d…",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [],
+          "buttons": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordBack0",
+            "LandlordBack0Inner",
+            "LandlordBack0BackMark",
+            "LandlordBack1",
+            "LandlordBack1Inner",
+            "LandlordBack1BackMark",
+            "LandlordBack2",
+            "LandlordBack2Inner",
+            "LandlordBack2BackMark",
+            "KittyLabel",
+            "EmptyTrick",
+            "TableNotice",
+            "VerifyFinalEvidence"
+          ],
+          "inputLength": null,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "return-lobby",
+        "player": 0,
+        "state": {
+          "screen": "rooms",
+          "status": "本局已结束，可以查看归档证明",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "evidence",
+        "player": 0,
+        "state": {
+          "screen": "rooms",
+          "status": "已核验归档 · 获胜座位2 · 积分-6/12/-6 · 版本61\n校验摘要：d5b357029edf14546a9a0c2d…",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "phrase-positive",
+        "player": 0,
+        "state": {
+          "screen": "rooms",
+          "status": "个人字符串与服务器归档承诺匹配，终局记录校验摘要：d5b357029edf14546a9a0c2d…（可另行核验公开信标和牌序）",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "phrase-negative",
+        "player": 0,
+        "state": {
+          "screen": "rooms",
+          "status": "个人字符串校验失败：个人字符串与本局已归档的承诺不一致",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "resync-settled",
+        "player": 0,
+        "state": {
+          "screen": "rooms",
+          "status": "已通过服务器恢复本人房间和牌局",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 8
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "等待成员准备，已到场 3/3",
+            "input": "verify",
+            "primary": [
+              "ready"
+            ],
+            "secondary": [
+              "evidence",
+              "verify-own",
+              "sync-room",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "ReadyRoom",
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "RefreshRoom",
+            "ToggleRoomMore",
+            "ReconnectRoom",
+            "LeaveRoom",
+            "BackHome"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "terminal",
+        "player": 1,
+        "state": {
+          "screen": "table",
+          "status": "已核验归档 · 获胜座位2 · 积分-6/12/-6 · 版本61\n校验摘要：d5b357029edf14546a9a0c2d…",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [],
+          "buttons": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordBack0",
+            "LandlordBack0Inner",
+            "LandlordBack0BackMark",
+            "LandlordBack1",
+            "LandlordBack1Inner",
+            "LandlordBack1BackMark",
+            "LandlordBack2",
+            "LandlordBack2Inner",
+            "LandlordBack2BackMark",
+            "KittyLabel",
+            "EmptyTrick",
+            "TableNotice",
+            "VerifyFinalEvidence"
+          ],
+          "inputLength": null,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "return-lobby",
+        "player": 1,
+        "state": {
+          "screen": "rooms",
+          "status": "本局已结束，可以查看归档证明",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "evidence",
+        "player": 1,
+        "state": {
+          "screen": "rooms",
+          "status": "已核验归档 · 获胜座位2 · 积分-6/12/-6 · 版本61\n校验摘要：d5b357029edf14546a9a0c2d…",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "phrase-positive",
+        "player": 1,
+        "state": {
+          "screen": "rooms",
+          "status": "个人字符串与服务器归档承诺匹配，终局记录校验摘要：d5b357029edf14546a9a0c2d…（可另行核验公开信标和牌序）",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "phrase-negative",
+        "player": 1,
+        "state": {
+          "screen": "rooms",
+          "status": "个人字符串校验失败：个人字符串与本局已归档的承诺不一致",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "resync-settled",
+        "player": 1,
+        "state": {
+          "screen": "rooms",
+          "status": "已通过服务器恢复本人房间和牌局",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 8
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "等待成员准备，已到场 3/3",
+            "input": "verify",
+            "primary": [
+              "ready"
+            ],
+            "secondary": [
+              "evidence",
+              "verify-own",
+              "sync-room",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "ReadyRoom",
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "RefreshRoom",
+            "ToggleRoomMore",
+            "ReconnectRoom",
+            "LeaveRoom",
+            "BackHome"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "terminal",
+        "player": 2,
+        "state": {
+          "screen": "table",
+          "status": "已核验归档 · 获胜座位2 · 积分-6/12/-6 · 版本61\n校验摘要：d5b357029edf14546a9a0c2d…",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [],
+          "buttons": [
+            "TableFelt",
+            "FeltInset",
+            "FeltCentre",
+            "TableWatermark",
+            "TableBrand",
+            "RoomVersion",
+            "BackToRoom",
+            "UpdateHand",
+            "AuthoritativeTurnClock",
+            "LandlordBack0",
+            "LandlordBack0Inner",
+            "LandlordBack0BackMark",
+            "LandlordBack1",
+            "LandlordBack1Inner",
+            "LandlordBack1BackMark",
+            "LandlordBack2",
+            "LandlordBack2Inner",
+            "LandlordBack2BackMark",
+            "KittyLabel",
+            "EmptyTrick",
+            "TableNotice",
+            "VerifyFinalEvidence"
+          ],
+          "inputLength": null,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "return-lobby",
+        "player": 2,
+        "state": {
+          "screen": "rooms",
+          "status": "本局已结束，可以查看归档证明",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "evidence",
+        "player": 2,
+        "state": {
+          "screen": "rooms",
+          "status": "已核验归档 · 获胜座位2 · 积分-6/12/-6 · 版本61\n校验摘要：d5b357029edf14546a9a0c2d…",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "phrase-positive",
+        "player": 2,
+        "state": {
+          "screen": "rooms",
+          "status": "个人字符串与服务器归档承诺匹配，终局记录校验摘要：d5b357029edf14546a9a0c2d…（可另行核验公开信标和牌序）",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "phrase-negative",
+        "player": 2,
+        "state": {
+          "screen": "rooms",
+          "status": "个人字符串校验失败：个人字符串与本局已归档的承诺不一致",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 7
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "本局已结束，可以查看归档证明",
+            "input": "verify",
+            "primary": [
+              "evidence"
+            ],
+            "secondary": [
+              "verify-own",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "ToggleRoomMore"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      },
+      {
+        "step": "resync-settled",
+        "player": 2,
+        "state": {
+          "screen": "rooms",
+          "status": "已通过服务器恢复本人房间和牌局",
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+          "room": {
+            "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "version": 8
+          },
+          "plan": {
+            "stage": "settled",
+            "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+            "hint": "等待成员准备，已到场 3/3",
+            "input": "verify",
+            "primary": [
+              "ready"
+            ],
+            "secondary": [
+              "evidence",
+              "verify-own",
+              "sync-room",
+              "more"
+            ],
+            "seats": [
+              {
+                "position": 1,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 2,
+                "occupied": true,
+                "ready": false
+              },
+              {
+                "position": 3,
+                "occupied": true,
+                "ready": false
+              }
+            ]
+          },
+          "seats": [
+            "1号 · 未准备",
+            "2号 · 未准备",
+            "3号 · 未准备"
+          ],
+          "buttons": [
+            "ReadyRoom",
+            "RoomEvidence",
+            "VerifyOwnContribution",
+            "RefreshRoom",
+            "ToggleRoomMore",
+            "ReconnectRoom",
+            "LeaveRoom",
+            "BackHome"
+          ],
+          "inputLength": 0,
+          "handPhase": "COMPLETED",
+          "handVersion": 61,
+          "deadline": null
+        }
+      }
+    ]
+  },
+  "roomUnknown": [
+    {
+      "step": "room-ready-ack-loss",
+      "sameIdentity": null,
+      "state": {
+        "screen": "rooms",
+        "status": "准备失败：command timeout; outcome unknown, retry with same requestId",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 8
+        },
+        "plan": {
+          "stage": "reconcile",
+          "title": "房间操作待确认",
+          "hint": "先核对原操作，不要重复创建或加入",
+          "input": "none",
+          "primary": [
+            "retry-room"
+          ],
+          "secondary": [],
+          "seats": []
+        },
+        "seats": [],
+        "buttons": [
+          "RetryUnknownRoom"
+        ],
+        "inputLength": null,
+        "handPhase": "COMPLETED",
+        "handVersion": 61,
+        "deadline": null
+      }
+    },
+    {
+      "step": "room-exact-retry",
+      "sameIdentity": true,
+      "state": {
+        "screen": "rooms",
+        "status": "已连接，等待房间或牌局状态同步",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 9
+        },
+        "plan": {
+          "stage": "settled",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "等待成员准备，已到场 3/3",
+          "input": "verify",
+          "primary": [
+            "ready"
+          ],
+          "secondary": [
+            "evidence",
+            "verify-own",
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": false
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": false
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": false
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 未准备",
+          "2号 · 未准备",
+          "3号 · 未准备"
+        ],
+        "buttons": [
+          "ReadyRoom",
+          "RoomEvidence",
+          "VerifyOwnContribution",
+          "RefreshRoom",
+          "ToggleRoomMore",
+          "ReconnectRoom",
+          "LeaveRoom",
+          "BackHome"
+        ],
+        "inputLength": 0,
+        "handPhase": "COMPLETED",
+        "handVersion": 61,
+        "deadline": null
+      }
+    }
+  ],
+  "doubleJoin": [
+    {
+      "step": "restored",
+      "state": {
+        "screen": "rooms",
+        "status": "等待成员准备，已到场 3/3",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 11
+        },
+        "plan": {
+          "stage": "settled",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "等待成员准备，已到场 3/3",
+          "input": "verify",
+          "primary": [
+            "ready"
+          ],
+          "secondary": [
+            "evidence",
+            "verify-own",
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": false
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": false
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 已准备",
+          "2号 · 未准备",
+          "3号 · 未准备"
+        ],
+        "buttons": [
+          "ReadyRoom",
+          "RoomEvidence",
+          "VerifyOwnContribution",
+          "RefreshRoom",
+          "ToggleRoomMore"
+        ],
+        "inputLength": 0,
+        "handPhase": "COMPLETED",
+        "handVersion": 61,
+        "deadline": null
+      },
+      "commands": null,
+      "received": null
+    },
+    {
+      "step": "leave-touch",
+      "state": {
+        "screen": "rooms",
+        "status": "已退出房间，可重新创建或加入其他房间",
+        "roomId": "",
+        "handId": "",
+        "room": null,
+        "plan": {
+          "stage": "entry",
+          "title": "游戏大厅",
+          "hint": "和好友开一桌，或输入房间号加入",
+          "input": "join",
+          "primary": [
+            "create",
+            "join"
+          ],
+          "secondary": [
+            "discover",
+            "more"
+          ],
+          "seats": []
+        },
+        "seats": [],
+        "buttons": [
+          "CreateRoom",
+          "JoinRoom",
+          "DiscoverMyRooms",
+          "ToggleRoomMore",
+          "ReconnectRoom",
+          "BackHome"
+        ],
+        "inputLength": 0,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      },
+      "commands": null,
+      "received": null
+    },
+    {
+      "step": "double-click-join",
+      "state": {
+        "screen": "rooms",
+        "status": "已退出房间，可重新创建或加入其他房间",
+        "roomId": "",
+        "handId": "",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 13
+        },
+        "plan": {
+          "stage": "entry",
+          "title": "游戏大厅",
+          "hint": "和好友开一桌，或输入房间号加入",
+          "input": "join",
+          "primary": [
+            "create",
+            "join"
+          ],
+          "secondary": [
+            "discover",
+            "more"
+          ],
+          "seats": []
+        },
+        "seats": [],
+        "buttons": [
+          "CreateRoom",
+          "JoinRoom",
+          "DiscoverMyRooms",
+          "ToggleRoomMore",
+          "ReconnectRoom",
+          "BackHome"
+        ],
+        "inputLength": 41,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      },
+      "commands": [
+        {
+          "type": "room.leave",
+          "requestId": "cmd-1ff3771ce575a8aa348d5caf971f9e76",
+          "clientSeq": 6
+        },
+        {
+          "type": "room.join",
+          "requestId": "cmd-62c6ddaeed5533e335422a7e8156e84c",
+          "clientSeq": 7
+        }
+      ],
+      "received": null
+    },
+    {
+      "step": "after-double-join",
+      "state": {
+        "screen": "rooms",
+        "status": "已退出房间，可重新创建或加入其他房间",
+        "roomId": "",
+        "handId": "",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 13
+        },
+        "plan": {
+          "stage": "entry",
+          "title": "游戏大厅",
+          "hint": "和好友开一桌，或输入房间号加入",
+          "input": "join",
+          "primary": [
+            "create",
+            "join"
+          ],
+          "secondary": [
+            "discover",
+            "more"
+          ],
+          "seats": []
+        },
+        "seats": [],
+        "buttons": [
+          "CreateRoom",
+          "JoinRoom",
+          "DiscoverMyRooms",
+          "ToggleRoomMore",
+          "ReconnectRoom",
+          "BackHome"
+        ],
+        "inputLength": 41,
+        "handPhase": null,
+        "handVersion": null,
+        "deadline": null
+      },
+      "commands": null,
+      "received": [
+        {
+          "id": "cmd-1ff3771ce575a8aa348d5caf971f9e76",
+          "durable": {
+            "v": "fair-doudizhu-command-result-v1",
+            "commandId": "cmd-1ff3771ce575a8aa348d5caf971f9e76",
+            "accepted": true,
+            "duplicate": false,
+            "aggregateType": "room",
+            "aggregateId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "aggregateVersion": 12,
+            "events": [
+              {
+                "aggregateType": "room",
+                "aggregateId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+                "name": "doudizhu.room.player-left.v1",
+                "version": 12
+              }
+            ]
+          }
+        },
+        {
+          "id": "cmd-62c6ddaeed5533e335422a7e8156e84c",
+          "durable": {
+            "v": "fair-doudizhu-command-result-v1",
+            "commandId": "cmd-62c6ddaeed5533e335422a7e8156e84c",
+            "accepted": true,
+            "duplicate": false,
+            "aggregateType": "room",
+            "aggregateId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+            "aggregateVersion": 13,
+            "events": [
+              {
+                "aggregateType": "room",
+                "aggregateId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+                "name": "doudizhu.room.player-joined.v1",
+                "version": 13
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "step": "discover-recovery",
+      "state": {
+        "screen": "rooms",
+        "status": "房间版本 13 · 座位1 已准备 / 座位2 未准备 / 座位3 未准备",
+        "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+        "handId": "hand-cmd-343e09a067908d8bf49fb1979abd2577",
+        "room": {
+          "roomId": "room-cmd-bf9e892a998d061443d43401e105deeb",
+          "version": 13
+        },
+        "plan": {
+          "stage": "settled",
+          "title": "好友房间 · room-cmd-bf9e892a998d061443d43401e105deeb",
+          "hint": "等待成员准备，已到场 3/3",
+          "input": "none",
+          "primary": [
+            "ready"
+          ],
+          "secondary": [
+            "evidence",
+            "sync-room",
+            "more"
+          ],
+          "seats": [
+            {
+              "position": 1,
+              "occupied": true,
+              "ready": true
+            },
+            {
+              "position": 2,
+              "occupied": true,
+              "ready": false
+            },
+            {
+              "position": 3,
+              "occupied": true,
+              "ready": false
+            }
+          ]
+        },
+        "seats": [
+          "1号 · 已准备",
+          "2号 · 未准备",
+          "3号 · 未准备"
+        ],
+        "buttons": [
+          "ReadyRoom",
+          "RoomEvidence",
+          "RefreshRoom",
+          "ToggleRoomMore",
+          "ReconnectRoom",
+          "LeaveRoom",
+          "BackHome"
+        ],
+        "inputLength": null,
+        "handPhase": "COMPLETED",
+        "handVersion": 61,
+        "deadline": null
+      },
+      "commands": null,
+      "received": null
+    }
+  ],
+  "existingCluster": {
+    "pods": {
+      "unchanged": true,
+      "current": {
+        "app-api-99f88b95-dxrwx": {
+          "uid": "db8d2573-ed36-4ade-8039-35126370a9b3",
+          "phase": "Running",
+          "containers": [
+            [
+              "app-api",
+              true,
+              0,
+              "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f"
+            ]
+          ]
+        },
+        "beanstalkd-a-0": {
+          "uid": "37184b34-e579-4102-a7c1-604333cd30f5",
+          "phase": "Running",
+          "containers": [
+            [
+              "beanstalkd",
+              true,
+              0,
+              "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+            ]
+          ]
+        },
+        "beanstalkd-b-0": {
+          "uid": "c3cc5fcf-875b-4be4-af9a-d874ff72cd7b",
+          "phase": "Running",
+          "containers": [
+            [
+              "beanstalkd",
+              true,
+              0,
+              "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+            ]
+          ]
+        },
+        "game-web-7f596dc6d6-6jgcq": {
+          "uid": "901d993a-5d64-45d0-8a6c-a06f06f7fd40",
+          "phase": "Running",
+          "containers": [
+            [
+              "game-web",
+              true,
+              0,
+              "docker.io/awesome-zero-platform/goal0063-web@sha256:990da69543f3501283a0958fe26919ba93eb289ad139924791e6988421ed4e12"
+            ]
+          ]
+        },
+        "mysql-5cc48fd9b4-5hz6j": {
+          "uid": "bd7574dd-1fb4-4010-b392-cc5e3f326f9d",
+          "phase": "Running",
+          "containers": [
+            [
+              "mysql",
+              true,
+              2,
+              "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+            ]
+          ]
+        },
+        "redis-67bdd89687-krvb4": {
+          "uid": "c1f0b042-43a9-4ffe-8da1-4031331a200a",
+          "phase": "Running",
+          "containers": [
+            [
+              "redis",
+              true,
+              2,
+              "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+            ]
+          ]
+        }
+      }
+    },
+    "deployments": {
+      "unchanged": true,
+      "current": {
+        "app-api": {
+          "uid": "54465c20-eec9-438e-a14f-ec498662c599",
+          "image": [
+            "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f"
+          ],
+          "ready": 1
+        },
+        "game-web": {
+          "uid": "de71ab7a-5c51-41c1-a14f-f65d00422d87",
+          "image": [
+            "docker.io/awesome-zero-platform/goal0063-web@sha256:990da69543f3501283a0958fe26919ba93eb289ad139924791e6988421ed4e12"
+          ],
+          "ready": 1
+        },
+        "mysql": {
+          "uid": "7a0304bb-8cd0-4d56-8648-87ade413c5eb",
+          "image": [
+            "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+          ],
+          "ready": 1
+        },
+        "redis": {
+          "uid": "f520d6a7-e82a-4eda-8048-6dba8ffc3bd6",
+          "image": [
+            "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+          ],
+          "ready": 1
+        }
+      }
+    },
+    "pvc": {
+      "unchanged": true,
+      "current": {
+        "journal-beanstalkd-a-0": {
+          "uid": "4b67b500-b47d-426a-bd64-f8442940b9ac",
+          "phase": "Bound"
+        },
+        "journal-beanstalkd-b-0": {
+          "uid": "02d90f11-43f6-42ec-bbf2-1dccd796a94d",
+          "phase": "Bound"
+        }
+      }
+    }
+  },
+  "dbAfter": "\"ABORTED\\t6\\nCOMPLETED\\t4\\nhand-cmd-343e09a067908d8bf49fb1979abd2577\\tCOMPLETED\\n0\\n\"",
+  "notExecuted": [
+    "candidate Kubernetes rollout blocked by independent FAIL",
+    "new invalid-pattern hint runtime case",
+    "continuous full-game browser console capture",
+    "real WeChat/mobile qualification (outside this Web acceptance)"
+  ],
+  "observerCorrections": [
+    "512MiB engine V8 heap failure; sequential1024MiB export passed",
+    "Menu-only bind wait was unsuitable for table; corrected to GameBootstrap existence",
+    "Concurrent reload detached a frame during polling; recreated browser sessions and recovered the SAME hand, unchanged original deadline",
+    "Stale-version Leave after another player Ready was rejected; fresh authorized room lookup then real touch Leave succeeded",
+    "First duplicate Join timeout was retained; targeted real double-click reproduced accepted durable v13 with UI roomId empty, discovery recovered"
+  ]
+}
