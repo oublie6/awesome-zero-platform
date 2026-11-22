@@ -8,9 +8,103 @@
   <style>
     html, body { width: 100%; height: 100%; overflow: hidden; background: #0b181b; }
     #GameDiv { width: 100vw; height: 100vh; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+    #azp-boot { position: fixed; z-index: 2147483647; inset: 0; display: flex; align-items: center;
+      justify-content: center; background: radial-gradient(circle at 50% 30%,#244b36,#0a1815 70%);
+      font-family: system-ui, sans-serif; color: #f3e4be; text-align: center; padding: 20px; }
+    #azp-boot.gone { opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+    .azp-boot-panel { width: min(420px, 94vw); }
+    .azp-boot-suit { margin: 0 auto 18px; width: 76px; height: 76px; border-radius: 22px;
+      background: #d6e3b7; color: #1f4835; font-size: 55px; display: grid; place-items: center; }
+    .azp-boot-title { font-size: 29px; font-weight: 650; letter-spacing: 2px; margin: 0 0 13px; }
+    #azp-boot-status { font-size: 14px; color: #d5e4d4; margin-bottom: 16px; }
+    .azp-boot-track { width: 100%; height: 9px; overflow: hidden; border-radius: 99px; background: #345443; }
+    #azp-boot-fill { height: 100%; width: 0; border-radius: 99px;
+      background: linear-gradient(90deg,#91c8a3,#e6c17d); transition: width .3s ease; }
+    #azp-boot-step { color: #a4bda9; font-size: 11px; margin-top: 12px; }
+    #azp-boot-retry { display: none; margin: 20px auto 0; color: #203b2b; background: #d5e3b7;
+      border: 0; border-radius: 10px; font: inherit; font-size: 14px; padding: 12px 20px; cursor: pointer; }
+    #azp-boot.slow #azp-boot-retry,#azp-boot.failed #azp-boot-retry { display: block; }
+    @media (prefers-reduced-motion: reduce) { #azp-boot.gone,#azp-boot-fill { transition: none; } }
   </style>
 </head>
 <body>
+  <div id="azp-boot" role="status" aria-live="polite">
+    <div class="azp-boot-panel">
+      <div class="azp-boot-suit" aria-hidden="true">♠</div>
+      <h1 class="azp-boot-title">公平斗地主</h1>
+      <p id="azp-boot-status">正在准备游戏页面…</p>
+      <div class="azp-boot-track" role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0" aria-label="启动阶段">
+        <div id="azp-boot-fill"></div>
+      </div>
+      <p id="azp-boot-step">启动阶段加载中 · 非资源下载百分比</p>
+      <button id="azp-boot-retry" type="button">重新加载</button>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const root = document.getElementById('azp-boot');
+      const bar = document.getElementById('azp-boot-fill');
+      const track = root.querySelector('[role="progressbar"]');
+      const status = document.getElementById('azp-boot-status');
+      const step = document.getElementById('azp-boot-step');
+      const phases = {
+        document: [1, '正在读取游戏页面'],
+        engine: [2, '游戏引擎初始化完成'],
+        scene: [3, '正在准备游戏大厅']
+      };
+      let current = 0, complete = false, slow = 0, deadline = 0;
+      function message(type, stage) {
+        if (window.parent !== window)
+          window.parent.postMessage({ protocol: 'azp-doudizhu-frame-v1', type, stage }, window.location.origin);
+      }
+      function stop() { clearTimeout(slow); clearTimeout(deadline); }
+      function arm() {
+        stop();
+        slow = setTimeout(() => { if (!complete) root.classList.add('slow'); }, 15000);
+        deadline = setTimeout(() => { if (!complete) fail(); }, 60000);
+      }
+      function stage(name) {
+        const item = phases[name];
+        if (!item || complete || root.classList.contains('failed') || item[0] <= current) return;
+        current = item[0];
+        status.textContent = item[1];
+        bar.style.width = current * 25 + '%';
+        track.setAttribute('aria-valuenow', String(current));
+        step.textContent = '已确认 ' + current + ' / 4 个启动阶段 · 非下载百分比';
+        root.classList.remove('slow');
+        arm();
+        message('BOOT_STAGE', name);
+      }
+      function fail() {
+        if (complete) return;
+        stop();
+        root.classList.add('failed');
+        status.textContent = '游戏资源或引擎启动失败';
+        step.textContent = '请检查网络连接，或重新加载游戏';
+        message('BOOT_FAILED');
+      }
+      function done() {
+        if (complete) return;
+        complete = true;
+        stop();
+        bar.style.width = '100%';
+        track.setAttribute('aria-valuenow', '4');
+        root.classList.add('gone');
+        setTimeout(() => root.remove(), 350);
+      }
+      document.getElementById('azp-boot-retry').addEventListener('click', () => {
+        if (window.parent === window) window.location.reload();
+        else message('BOOT_RETRY_REQUESTED');
+      });
+      // Report failed engine scripts without logging URLs or credential material.
+      window.addEventListener('error', (event) => {
+        if (!complete && (event.target instanceof HTMLScriptElement ||
+            event.target instanceof HTMLLinkElement)) fail();
+      }, true);
+      window.__AZP_BOOT__ = { stage, done, fail };
+      stage('document');
+    })();
+  </script>
   <div id="GameDiv" cc_exact_fit_screen="false">
     <div id="Cocos3dGameContainer"><canvas id="GameCanvas" tabindex="0"></canvas></div>
   </div>
@@ -25,12 +119,13 @@
           engine.screen.windowSize = new engine.Size(window.innerWidth * dpr, window.innerHeight * dpr);
         };
         resize();
+        window.__AZP_BOOT__?.stage('engine');
         window.addEventListener('resize', resize);
         window.addEventListener('pagehide', (event) => {
           if (!event.persisted) window.removeEventListener('resize', resize);
         });
       });
-    }).catch((error) => console.error(error));
+    }).catch((error) => { window.__AZP_BOOT__?.fail(); console.error(error); });
   </script>
 </body>
 </html>
