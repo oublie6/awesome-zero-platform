@@ -98,8 +98,8 @@
       });
       // Report failed engine scripts without logging URLs or credential material.
       window.addEventListener('error', (event) => {
-        if (!complete && (event.target instanceof HTMLScriptElement ||
-            event.target instanceof HTMLLinkElement)) fail();
+        if (!complete && current < 3 && (event.target instanceof HTMLScriptElement ||
+            (event.target instanceof HTMLLinkElement && event.target.rel === 'stylesheet'))) fail();
       }, true);
       window.__AZP_BOOT__ = { stage, done, fail };
       stage('document');

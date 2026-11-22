@@ -86,6 +86,8 @@ function onFrameLoad(){
   // A missing Cocos artifact often produces a 404 or a Vue SPA fallback.
   // Detect that immediately instead of showing an unchanging dark iframe.
   try{
+    // Ignore the initial empty browsing context on engines that emit its load.
+    if(frame.contentWindow?.location.href==='about:blank')return
     if(!frame.contentDocument?.getElementById('GameCanvas'))
       failGameLoad('未找到游戏客户端资源，请检查部署或重新加载。')
   }catch{

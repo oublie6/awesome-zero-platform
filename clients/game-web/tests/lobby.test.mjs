@@ -5,7 +5,7 @@ import {readFile} from 'node:fs/promises'
 test('Vue is an account entry, not a second room lobby',async()=>{
  const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
  const lobby=source.split('<section v-else-if="page===\'lobby\'"')[1]
-   .split('<section v-else-if="page===\'game\'"')[0]
+   .split('<section v-if="gameMounted"')[0]
  assert.equal((lobby.match(/@click="openGame\(\)"/g)||[]).length,1)
  assert.match(lobby,/进入游戏大厅/)
  assert.doesNotMatch(lobby,/openGame\('(CREATE_ROOM|JOIN_ROOM)'\)/)
