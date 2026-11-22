@@ -39,7 +39,7 @@ export interface LobbyPlan {
 
 export function planLobby(ctx:LobbyContext):LobbyPlan {
   const base=(stage:LobbyStage,title:string,hint:string,input:RoomInputPurpose,
-    primary:LobbyCommand[],secondary:LobbyCommand[]=[],seats:LobbyPlan=>{
+    primary:LobbyCommand[],secondary:LobbyCommand[]=[],seats:LobbyPlan['seats']=[]):LobbyPlan=>{
     // Prefer primary controls and never duplicate an action on screen.
     const uniquePrimary=[...new Set(primary)]
     const selected=new Set(uniquePrimary)
