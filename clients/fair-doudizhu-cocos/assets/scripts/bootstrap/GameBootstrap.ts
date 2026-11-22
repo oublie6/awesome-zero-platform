@@ -144,6 +144,7 @@ export class GameBootstrap extends Component {
         this.online?.dispose()
         this.online=null
         this.platform=null
+        this.viewerAccountID=null
         ++this.roomGeneration
         this.roomID=''
         this.handID=''
@@ -273,8 +274,8 @@ export class GameBootstrap extends Component {
         'join':{name:'JoinRoom',caption:'加入房间',action:()=>void this.joinRoom()},
         'discover':{name:'DiscoverMyRooms',caption:'查询我的房间',action:()=>void this.discoverMyRoomsSafely()},
         'sync-room':{name:'RefreshRoom',caption:'刷新房间状态',action:()=>void this.refreshRoom()},
-        'ready':{name:'ReadyRoom',caption:'准备',action:()=>void this.readyRoom()},
-        'start':{name:'StartHand',caption:'开始游戏',action:()=>void this.startHand()},
+        'ready':{name:'ReadyRoom',caption:this.roomView?.lastHandId?'再来一局 · 准备':'准备',action:()=>void this.readyRoom()},
+        'start':{name:'StartHand',caption:this.roomView?.lastHandId?'再来一局':'开始游戏',action:()=>void this.startHand()},
         'contribute':{name:'SubmitOwnContribution',caption:'提交验证字符串',action:()=>void this.submitOwnContribution()},
         'sync-fairness':{name:'RefreshFairness',caption:'查看准备进度',action:()=>void this.refreshFairness()},
         'table':{name:'OpenTable',caption:'继续牌局',action:()=>this.renderScreen('table')},
@@ -616,7 +617,7 @@ export class GameBootstrap extends Component {
       if(typeof accountID!=='string'||!accountID||accountID.length>128)return
       if(!this.currentAccount(online,generation))return
       this.viewerAccountID=accountID
-      if(this.screen==='rooms')this.renderScreen('rooms')
+      if(this.screen==='rooms' && this.roomID)this.renderScreen('rooms')
     }catch{
       // Keep the existing room query and server command authorization usable
       // if this extra display-only profile request cannot finish.
@@ -692,6 +693,7 @@ export class GameBootstrap extends Component {
     this.sceneRecovery=null
     this.online=null
     this.platform=null
+    this.viewerAccountID=null
     this.roomGeneration++
     this.roomID=''
     this.handID=''
@@ -740,6 +742,7 @@ export class GameBootstrap extends Component {
     this.sceneRecovery=null
     this.online=null
     this.platform=null
+    this.viewerAccountID=null
     this.roomGeneration++
     this.roomID=''
     this.handID=''
