@@ -1,0 +1,23 @@
+{
+  "source": "52fd6d76317d7023e0e3cc134dbe67a21afcf70f",
+  "exportedStyleRule": "margin: 0 auto;\n    position:relative;\n    border:5px solid black;\n    border-radius: 10px;\n    box-shadow: 0 5px 50px #333",
+  "stylesheetSHA256": "48cc43329be1a113d6f0df5871fa55ba9ad9b7875d725104eb5578fd70bd079d",
+  "nativeCriticalBorder": "0",
+  "dynamicStylesheetAppendedAfterCriticalStyle": true,
+  "runtime": {
+    "width": 343,
+    "height": 526,
+    "css": {
+      "x": 5,
+      "y": 0,
+      "width": 343,
+      "height": 526
+    },
+    "viewport": {
+      "width": 343,
+      "height": 526
+    }
+  },
+  "rightOverflowCSSPx": 5,
+  "cascadeCauseIsSourceAndBoundsInference": true
+}

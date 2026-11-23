@@ -1,0 +1,62 @@
+{
+  "slowAt16s": {
+    "visible": true,
+    "hint": "加载时间较长，可以继续等待或重新尝试。",
+    "progress": "1"
+  },
+  "slow": {
+    "elapsed": 40808,
+    "bytes": 16667459,
+    "events": [
+      {
+        "at": 1795427538184,
+        "type": "BOOT_STAGE",
+        "stage": "document"
+      },
+      {
+        "at": 1795427573359,
+        "type": "BOOT_STAGE",
+        "stage": "engine"
+      },
+      {
+        "at": 1795427577557,
+        "type": "BOOT_STAGE",
+        "stage": "scene"
+      },
+      {
+        "at": 1795427577558,
+        "type": "BOOT_STAGE",
+        "stage": "session"
+      },
+      {
+        "at": 1795427577559,
+        "type": "GAME_READY"
+      },
+      {
+        "at": 1795427578013,
+        "type": "SESSION_ACTIVE"
+      }
+    ],
+    "canvas": {
+      "width": 343,
+      "height": 526,
+      "css": {
+        "x": 5,
+        "y": 0,
+        "width": 343,
+        "height": 526
+      },
+      "viewport": {
+        "width": 343,
+        "height": 526
+      }
+    }
+  },
+  "revokeHTTP": 200,
+  "revoked": {
+    "error": "游戏资源或引擎启动失败，请重新加载。",
+    "status": "游戏资源或引擎启动失败，请重新加载。",
+    "cover": true
+  },
+  "reloginRecovered": true
+}

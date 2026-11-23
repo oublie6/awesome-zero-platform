@@ -1,0 +1,58 @@
+{
+  "deploymentsUnchanged": true,
+  "podsUnchanged": true,
+  "pods": [
+    {
+      "name": "app-api-99f88b95-dxrwx",
+      "ready": true,
+      "restarts": [
+        0
+      ]
+    },
+    {
+      "name": "beanstalkd-a-0",
+      "ready": true,
+      "restarts": [
+        0
+      ]
+    },
+    {
+      "name": "beanstalkd-b-0",
+      "ready": true,
+      "restarts": [
+        0
+      ]
+    },
+    {
+      "name": "game-web-5657f979dd-lhhxk",
+      "ready": true,
+      "restarts": [
+        0
+      ]
+    },
+    {
+      "name": "mysql-5cc48fd9b4-5hz6j",
+      "ready": true,
+      "restarts": [
+        2
+      ]
+    },
+    {
+      "name": "redis-67bdd89687-krvb4",
+      "ready": true,
+      "restarts": [
+        2
+      ]
+    }
+  ],
+  "configmapsUnchanged": true,
+  "servicesUnchanged": true,
+  "pvcUnchanged": true,
+  "statefulsetsUnchanged": true,
+  "db": "ABORTED\t9\nCOMPLETED\t8\n0\n",
+  "deadlineRows": 0,
+  "readyNodes": 2,
+  "criticalLogMarkers": 0,
+  "ownedBrowserAndFixtureStopped": true,
+  "userForwardRetained": true
+}

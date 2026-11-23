@@ -1,0 +1,23 @@
+{
+  "authHTTP": [
+    200,
+    200,
+    200,
+    200,
+    200
+  ],
+  "handshakes": [
+    101
+  ],
+  "socketErrors": [
+    "Error during WebSocket handshake: Unexpected response code: 502",
+    "Error during WebSocket handshake: Unexpected response code: 502"
+  ],
+  "failed": {
+    "authenticated": true,
+    "transportReady": false,
+    "cover": 1,
+    "status": "游戏资源或引擎启动失败，请重新加载。"
+  },
+  "recovered": true
+}

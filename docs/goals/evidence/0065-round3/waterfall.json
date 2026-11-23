@@ -1,0 +1,326 @@
+{
+  "requests": [
+    {
+      "path": "/game/index.html",
+      "startMs": 80,
+      "status": 200,
+      "endMs": 116
+    },
+    {
+      "path": "/game/src/polyfills.bundle.js",
+      "startMs": 115,
+      "status": 200,
+      "endMs": 181
+    },
+    {
+      "path": "/game/src/system.bundle.js",
+      "startMs": 143,
+      "status": 200,
+      "endMs": 188
+    },
+    {
+      "path": "/game/game-config.js",
+      "startMs": 155,
+      "status": 200,
+      "endMs": 220
+    },
+    {
+      "path": "/game/style.css",
+      "startMs": 157,
+      "status": 200,
+      "endMs": 8493
+    },
+    {
+      "path": "/game/src/import-map.json",
+      "startMs": 195,
+      "status": 200,
+      "endMs": 224
+    },
+    {
+      "path": "/game/index.js",
+      "startMs": 229,
+      "status": 200,
+      "endMs": 273
+    },
+    {
+      "path": "/game/cocos-js/cc.js",
+      "startMs": 231,
+      "status": 200,
+      "endMs": 938
+    },
+    {
+      "path": "/game/application.js",
+      "startMs": 277,
+      "status": 200,
+      "endMs": 296
+    },
+    {
+      "path": "/game/src/settings.json",
+      "startMs": 1282,
+      "status": 200,
+      "endMs": 1959
+    },
+    {
+      "path": "/game/src/effect.bin",
+      "startMs": 1956,
+      "status": 200,
+      "endMs": 2033
+    },
+    {
+      "path": "/game/src/chunks/bundle.js",
+      "startMs": 2034,
+      "status": 200,
+      "endMs": 2164
+    },
+    {
+      "path": "/game/assets/internal/config.json",
+      "startMs": 2272,
+      "status": 200,
+      "endMs": 2290
+    },
+    {
+      "path": "/game/assets/internal/index.js",
+      "startMs": 2276,
+      "status": 200,
+      "endMs": 2307
+    },
+    {
+      "path": "/game/assets/internal/import/07/078d1fd7a.json",
+      "startMs": 2343,
+      "status": 200,
+      "endMs": 2437
+    },
+    {
+      "path": "/game/assets/internal/native/08/0835f102-5471-47a3-9a76-01c07ac9cdb2/OpenSans-Regular.ttf",
+      "startMs": 2422,
+      "status": 200,
+      "endMs": 2465
+    },
+    {
+      "path": "/game/assets/internal/native/b5/b5475517-23b9-4873-bc1a-968d96616081/OpenSans-Bold.ttf",
+      "startMs": 2425,
+      "status": 200,
+      "endMs": 2472
+    },
+    {
+      "path": "/game/assets/internal/native/0e/0ed97c56-390e-4dd1-96b7-e7f2d93a98ed/OpenSans-Italic.ttf",
+      "startMs": 2427,
+      "status": 200,
+      "endMs": 2474
+    },
+    {
+      "path": "/game/assets/internal/native/b2/b23391b6-52eb-46a6-8da1-6244d9d315fb/OpenSans-BoldItalic.ttf",
+      "startMs": 2430,
+      "status": 200,
+      "endMs": 2476
+    },
+    {
+      "path": "/game/assets/main/config.json",
+      "startMs": 2608,
+      "status": 200,
+      "endMs": 2643
+    },
+    {
+      "path": "/game/assets/main/index.js",
+      "startMs": 2610,
+      "status": 200,
+      "endMs": 2661
+    },
+    {
+      "path": "/game/assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+      "startMs": 5073,
+      "status": 200,
+      "endMs": 5092
+    }
+  ],
+  "errors": [],
+  "console": [],
+  "pending": {
+    "body": true,
+    "overlay": true,
+    "media": "print",
+    "styleLoaded": false,
+    "paint": [
+      {
+        "name": "first-paint",
+        "startTime": 536
+      },
+      {
+        "name": "first-contentful-paint",
+        "startTime": 536
+      }
+    ]
+  },
+  "realMenuClicked": true,
+  "resources": [
+    {
+      "path": "/game/src/polyfills.bundle.js",
+      "startTime": 35.80000001192093,
+      "responseStart": 73,
+      "duration": 41.79999998211861,
+      "transferSize": 383
+    },
+    {
+      "path": "/game/src/system.bundle.js",
+      "startTime": 36.30000001192093,
+      "responseStart": 86.69999998807907,
+      "duration": 53.79999998211861,
+      "transferSize": 97582
+    },
+    {
+      "path": "/game/game-config.js",
+      "startTime": 40.69999998807907,
+      "responseStart": 121.40000000596046,
+      "duration": 82.40000000596046,
+      "transferSize": 502
+    },
+    {
+      "path": "/game/style.css",
+      "startTime": 46.80000001192093,
+      "responseStart": 8408.40000000596,
+      "duration": 8364.5,
+      "transferSize": 1391
+    },
+    {
+      "path": "/game/src/import-map.json",
+      "startTime": 101.40000000596046,
+      "responseStart": 134.59999999403954,
+      "duration": 34.400000005960464,
+      "transferSize": 340
+    },
+    {
+      "path": "/game/index.js",
+      "startTime": 156.90000000596046,
+      "responseStart": 170.90000000596046,
+      "duration": 32.599999994039536,
+      "transferSize": 915
+    },
+    {
+      "path": "/game/cocos-js/cc.js",
+      "startTime": 157.30000001192093,
+      "responseStart": 188.80000001192093,
+      "duration": 385,
+      "transferSize": 12623264
+    },
+    {
+      "path": "/game/application.js",
+      "startTime": 195.90000000596046,
+      "responseStart": 216,
+      "duration": 23.099999994039536,
+      "transferSize": 1569
+    },
+    {
+      "path": "/game/src/settings.json",
+      "startTime": 1189.4000000059605,
+      "responseStart": 1223.0999999940395,
+      "duration": 39.69999998807907,
+      "transferSize": 206543
+    },
+    {
+      "path": "/game/src/effect.bin",
+      "startTime": 1876.5999999940395,
+      "responseStart": 1894.4000000059605,
+      "duration": 19.900000005960464,
+      "transferSize": 6055
+    },
+    {
+      "path": "/game/src/chunks/bundle.js",
+      "startTime": 1941,
+      "responseStart": 1976.199999988079,
+      "duration": 63.599999994039536,
+      "transferSize": 1794484
+    },
+    {
+      "path": "/game/assets/internal/config.json",
+      "startTime": 2201.800000011921,
+      "responseStart": 2212.5999999940395,
+      "duration": 17.299999982118607,
+      "transferSize": 2739
+    },
+    {
+      "path": "/game/assets/internal/index.js",
+      "startTime": 2203,
+      "responseStart": 2222.0999999940395,
+      "duration": 23.599999994039536,
+      "transferSize": 259986
+    },
+    {
+      "path": "/game/assets/internal/import/07/078d1fd7a.json",
+      "startTime": 2271.4000000059605,
+      "responseStart": 2283.9000000059605,
+      "duration": 17.19999998807907,
+      "transferSize": 198230
+    },
+    {
+      "path": "/game/assets/internal/native/08/0835f102-5471-47a3-9a76-01c07ac9cdb2/OpenSans-Regular.ttf",
+      "startTime": 2344.699999988079,
+      "responseStart": 2362.5999999940395,
+      "duration": 34,
+      "transferSize": 217660
+    },
+    {
+      "path": "/game/assets/internal/native/b5/b5475517-23b9-4873-bc1a-968d96616081/OpenSans-Bold.ttf",
+      "startTime": 2346.5999999940395,
+      "responseStart": 2372.5,
+      "duration": 39.20000001788139,
+      "transferSize": 224892
+    },
+    {
+      "path": "/game/assets/internal/native/0e/0ed97c56-390e-4dd1-96b7-e7f2d93a98ed/OpenSans-Italic.ttf",
+      "startTime": 2348.0999999940395,
+      "responseStart": 2377.199999988079,
+      "duration": 41.30000001192093,
+      "transferSize": 213196
+    },
+    {
+      "path": "/game/assets/internal/native/b2/b23391b6-52eb-46a6-8da1-6244d9d315fb/OpenSans-BoldItalic.ttf",
+      "startTime": 2349.5,
+      "responseStart": 2394.5,
+      "duration": 50.5,
+      "transferSize": 213592
+    },
+    {
+      "path": "/game/assets/main/config.json",
+      "startTime": 2535.9000000059605,
+      "responseStart": 2552,
+      "duration": 34.5,
+      "transferSize": 882
+    },
+    {
+      "path": "/game/assets/main/index.js",
+      "startTime": 2536.5,
+      "responseStart": 2552.800000011921,
+      "duration": 40.900000005960464,
+      "transferSize": 570607
+    },
+    {
+      "path": "/game/assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+      "startTime": 5000.5999999940395,
+      "responseStart": 5012.0999999940395,
+      "duration": 13.099999994039536,
+      "transferSize": 1650
+    },
+    {
+      "path": "/auth/session",
+      "startTime": 8448.300000011921,
+      "responseStart": 8458.300000011921,
+      "duration": 11.199999988079071,
+      "transferSize": 558
+    },
+    {
+      "path": "/auth/session",
+      "startTime": 8495.699999988079,
+      "responseStart": 8505.40000000596,
+      "duration": 11.5,
+      "transferSize": 558
+    },
+    {
+      "path": "/v1/doudizhu/me/rooms",
+      "startTime": 8497.59999999404,
+      "responseStart": 8506.59999999404,
+      "duration": 10,
+      "transferSize": 394
+    }
+  ],
+  "result": "PASS"
+}

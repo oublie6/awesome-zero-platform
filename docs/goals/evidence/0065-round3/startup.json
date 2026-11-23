@@ -1,0 +1,225 @@
+{
+  "cases": [
+    {
+      "label": "cold-1280",
+      "elapsed": 9927,
+      "coverDelay": 49.19999998807907,
+      "networkBytes": 16663922,
+      "heapUsed": 29317468,
+      "newSockets": 1,
+      "durableCommands": 0,
+      "requests": 26,
+      "staticRequests": 22,
+      "http304": 0,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "sinceDocumentMs": 0
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "sinceDocumentMs": 4288
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "sinceDocumentMs": 7807
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "sinceDocumentMs": 7808
+        },
+        {
+          "type": "GAME_READY",
+          "sinceDocumentMs": 7808
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "sinceDocumentMs": 7988
+        }
+      ]
+    },
+    {
+      "label": "refresh-warm",
+      "elapsed": 7827,
+      "coverDelay": 23.599999994039536,
+      "networkBytes": 12641239,
+      "heapUsed": 33576116,
+      "newSockets": 1,
+      "durableCommands": 0,
+      "requests": 26,
+      "staticRequests": 22,
+      "http304": 20,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "sinceDocumentMs": 0
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "sinceDocumentMs": 3932
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "sinceDocumentMs": 6675
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "sinceDocumentMs": 6676
+        },
+        {
+          "type": "GAME_READY",
+          "sinceDocumentMs": 6676
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "sinceDocumentMs": 6792
+        }
+      ]
+    },
+    {
+      "label": "new-tab-warm",
+      "elapsed": 10201,
+      "coverDelay": 60.599999994039536,
+      "networkBytes": 12641239,
+      "heapUsed": 27848020,
+      "newSockets": 1,
+      "durableCommands": 0,
+      "requests": 26,
+      "staticRequests": 22,
+      "http304": 20,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "sinceDocumentMs": 0
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "sinceDocumentMs": 4960
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "sinceDocumentMs": 8303
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "sinceDocumentMs": 8305
+        },
+        {
+          "type": "GAME_READY",
+          "sinceDocumentMs": 8305
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "sinceDocumentMs": 8438
+        }
+      ]
+    },
+    {
+      "label": "cold-760",
+      "elapsed": 6970,
+      "coverDelay": 60.89999997615814,
+      "networkBytes": 16663922,
+      "heapUsed": 28748608,
+      "newSockets": 1,
+      "durableCommands": 0,
+      "requests": 26,
+      "staticRequests": 22,
+      "http304": 0,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "sinceDocumentMs": 0
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "sinceDocumentMs": 2567
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "sinceDocumentMs": 5555
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "sinceDocumentMs": 5556
+        },
+        {
+          "type": "GAME_READY",
+          "sinceDocumentMs": 5556
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "sinceDocumentMs": 5739
+        }
+      ]
+    },
+    {
+      "label": "cold-390",
+      "elapsed": 6630,
+      "coverDelay": 37.900000005960464,
+      "networkBytes": 16663922,
+      "heapUsed": 27042760,
+      "newSockets": 1,
+      "durableCommands": 0,
+      "requests": 26,
+      "staticRequests": 22,
+      "http304": 0,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "sinceDocumentMs": 0
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "sinceDocumentMs": 2466
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "sinceDocumentMs": 5459
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "sinceDocumentMs": 5460
+        },
+        {
+          "type": "GAME_READY",
+          "sinceDocumentMs": 5460
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "sinceDocumentMs": 5653
+        }
+      ]
+    }
+  ],
+  "reuse": {
+    "sameIframe": true,
+    "sameEngine": true,
+    "elapsed": 1127,
+    "resourceRequestDelta": 0,
+    "newSocketDelta": 0,
+    "commandDelta": 0
+  },
+  "pageerror": [],
+  "console": [],
+  "observerFailure": null
+}

@@ -1,0 +1,126 @@
+{
+  "headers": [
+    {
+      "path": "/index.html",
+      "status": 200,
+      "cache": "no-cache, must-revalidate",
+      "etag": "\"6b0407de-232\"",
+      "modified": "Mon, 23 Nov 2026 09:31:10 GMT"
+    },
+    {
+      "path": "/game/index.html",
+      "status": 200,
+      "cache": "no-cache, must-revalidate",
+      "etag": "\"6b0407de-3755\"",
+      "modified": "Mon, 23 Nov 2026 09:31:10 GMT"
+    },
+    {
+      "path": "/game-config.js",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b0407de-ca\"",
+      "modified": "Mon, 23 Nov 2026 09:31:10 GMT"
+    },
+    {
+      "path": "/game/game-config.js",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b0407de-ca\"",
+      "modified": "Mon, 23 Nov 2026 09:31:10 GMT"
+    },
+    {
+      "path": "/game-web-assets.json",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b0407de-13c4\"",
+      "modified": "Mon, 23 Nov 2026 09:31:10 GMT"
+    },
+    {
+      "path": "/assets/index-BGIO9_9i.js",
+      "status": 200,
+      "cache": "public, max-age=31536000, immutable",
+      "etag": "\"6b0407de-142d8\"",
+      "modified": "Mon, 23 Nov 2026 09:31:10 GMT"
+    },
+    {
+      "path": "/game/cocos-js/cc.js",
+      "status": 200,
+      "cache": "public, max-age=0, must-revalidate",
+      "etag": "\"6b0407de-c09c74\"",
+      "modified": "Mon, 23 Nov 2026 09:31:10 GMT"
+    }
+  ],
+  "authRepeated": [
+    {
+      "path": "/auth/session",
+      "status": 200,
+      "cache": "no-store",
+      "etag": null,
+      "modified": null
+    },
+    {
+      "path": "/auth/session",
+      "status": 200,
+      "cache": "no-store",
+      "etag": null,
+      "modified": null
+    }
+  ],
+  "settingsBefore": {
+    "path": "/game/src/settings.json",
+    "status": 200,
+    "cache": "public, max-age=0, must-revalidate",
+    "etag": "\"6b0407de-325a3\"",
+    "modified": "Mon, 23 Nov 2026 09:31:10 GMT"
+  },
+  "settingsChanged": {
+    "path": "/game/src/settings.json",
+    "status": 200,
+    "cache": "public, max-age=0, must-revalidate",
+    "etag": "\"6b040cbb-325a5\"",
+    "modified": "Mon, 23 Nov 2026 09:51:55 GMT"
+  },
+  "settingsUpdateObserved": true,
+  "storage": {
+    "serviceWorkers": 0,
+    "cacheAPIKeys": []
+  },
+  "memoryBefore": {
+    "heap": 24282176,
+    "dom": {
+      "documents": 3,
+      "nodes": 294,
+      "jsEventListeners": 101
+    }
+  },
+  "memoryAfter": {
+    "heap": 25617712,
+    "dom": {
+      "documents": 3,
+      "nodes": 300,
+      "jsEventListeners": 114
+    }
+  },
+  "afterCycles": {
+    "sameFrame": true,
+    "iframeCount": 1
+  },
+  "logout": {
+    "iframeCount": 0,
+    "oldFrameConnected": false,
+    "revokedHTTP": 401
+  },
+  "switchedFrame": true,
+  "switchedRoomEmpty": true,
+  "switchedTransportReady": true,
+  "roomRepeated": [
+    {
+      "status": 200,
+      "cache": "no-store"
+    },
+    {
+      "status": 200,
+      "cache": "no-store"
+    }
+  ]
+}

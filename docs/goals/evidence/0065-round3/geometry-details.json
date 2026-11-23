@@ -1,0 +1,187 @@
+[
+  {
+    "hiddenStartup": true,
+    "errors": [],
+    "console": [
+      "WebGL: INVALID_VALUE: texSubImage2D: no canvas"
+    ],
+    "parent": {
+      "status": "游戏就绪",
+      "cover": false,
+      "sameFrame": true
+    },
+    "connection": {
+      "authenticated": true,
+      "transportReady": true,
+      "screen": "rooms",
+      "buttons": [
+        "ReadyRoom",
+        "RefreshRoom",
+        "ToggleRoomMore"
+      ]
+    },
+    "geometry": {
+      "engineInited": true,
+      "scene": true,
+      "geometryReady": true,
+      "styleReady": true,
+      "configReady": true,
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "visibleSize": {
+        "width": 1280,
+        "height": 743.3968516984258
+      },
+      "cameraWindow": {
+        "width": 1207,
+        "height": 701
+      },
+      "nativeOverlay": false
+    },
+    "details": {
+      "canvas": {
+        "position": {
+          "x": 640,
+          "y": 371.6984258492129,
+          "z": 0
+        },
+        "worldPosition": {
+          "x": 640,
+          "y": 371.6984258492129,
+          "z": 0
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        },
+        "size": {
+          "width": 1280,
+          "height": 743.3968516984258
+        }
+      },
+      "content": {
+        "position": {
+          "x": -640,
+          "y": -371.6984258492129,
+          "z": 0
+        },
+        "worldPosition": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        },
+        "size": {
+          "width": 1280,
+          "height": 743.3968516984258
+        }
+      },
+      "button": {
+        "position": {
+          "x": 253.33333333333337,
+          "y": -76.56987572493786,
+          "z": 0
+        },
+        "worldPosition": {
+          "x": null,
+          "y": null,
+          "z": null
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        },
+        "size": {
+          "width": 245.33333333333334,
+          "height": 52
+        }
+      },
+      "cameraNode": {
+        "position": {
+          "x": null,
+          "y": null,
+          "z": null
+        },
+        "worldPosition": {
+          "x": null,
+          "y": null,
+          "z": null
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "camera": {
+        "aspect": 1.7218259629101285,
+        "orthoHeight": 371.6984258492129,
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "width": 1,
+          "height": 1
+        },
+        "badView": [
+          "m00",
+          "m01",
+          "m02",
+          "m03",
+          "m04",
+          "m05",
+          "m06",
+          "m07",
+          "m08",
+          "m09",
+          "m10",
+          "m11",
+          "m12",
+          "m13",
+          "m14",
+          "m15"
+        ],
+        "badProjection": [],
+        "badViewProjection": [
+          "m00",
+          "m01",
+          "m02",
+          "m03",
+          "m04",
+          "m05",
+          "m06",
+          "m07",
+          "m08",
+          "m09",
+          "m10",
+          "m11",
+          "m12",
+          "m13",
+          "m14",
+          "m15"
+        ]
+      }
+    },
+    "point": {
+      "x": null,
+      "y": null
+    },
+    "finitePoint": false,
+    "pointAfterRotation": {
+      "x": null,
+      "y": null
+    },
+    "rotationRecovered": false
+  }
+]

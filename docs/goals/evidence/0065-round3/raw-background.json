@@ -1,0 +1,22 @@
+{
+  "method": "raw CDP without Playwright focus override",
+  "hidden": true,
+  "resourceReleasedWhileHidden": true,
+  "after62": {
+    "hidden": true,
+    "sameFrame": true,
+    "nativeFailed": false,
+    "nativeStatus": "正在读取游戏页面"
+  },
+  "afterResume": {
+    "hidden": false,
+    "sameFrame": true,
+    "status": "游戏就绪"
+  },
+  "point": {
+    "x": 398.61458333333337,
+    "y": 508.50925
+  },
+  "realMenuClicked": true,
+  "result": "PASS"
+}

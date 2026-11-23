@@ -1,0 +1,60 @@
+[
+  {
+    "id": 45145174650,
+    "name": "Fair Doudizhu",
+    "source": "52fd6d76317d7023e0e3cc134dbe67a21afcf70f",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45145174650",
+    "jobs": [
+      {
+        "name": "client_foundation",
+        "conclusion": "success"
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success"
+      },
+      {
+        "name": "application",
+        "conclusion": "success"
+      },
+      {
+        "name": "mysql_integration",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45145174722,
+    "name": "CI",
+    "source": "52fd6d76317d7023e0e3cc134dbe67a21afcf70f",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45145174722",
+    "jobs": [
+      {
+        "name": "unit",
+        "conclusion": "success"
+      },
+      {
+        "name": "admin_web",
+        "conclusion": "success"
+      },
+      {
+        "name": "integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "secure_envelope",
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "report",
+        "conclusion": "success"
+      }
+    ]
+  }
+]

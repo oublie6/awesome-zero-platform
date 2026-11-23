@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="341" viewBox="0 0 1000 341">
+<rect width="100%" height="100%" fill="white"/>
+<g font-family="sans-serif" font-size="12" fill="#173a2c">
+<text x="16" y="24" font-size="16">Goal0065 R3 — real browser request waterfall (CSS held)</text>
+<line x1="290.0" x2="290.0" y1="42" y2="316" stroke="#e1e7e2"/>
+<text x="290.0" y="334">0.0s</text>
+<line x1="418.0" x2="418.0" y1="42" y2="316" stroke="#e1e7e2"/>
+<text x="418.0" y="334">1.7s</text>
+<line x1="546.0" x2="546.0" y1="42" y2="316" stroke="#e1e7e2"/>
+<text x="546.0" y="334">3.4s</text>
+<line x1="674.0" x2="674.0" y1="42" y2="316" stroke="#e1e7e2"/>
+<text x="674.0" y="334">5.1s</text>
+<line x1="802.0" x2="802.0" y1="42" y2="316" stroke="#e1e7e2"/>
+<text x="802.0" y="334">6.8s</text>
+<line x1="930.0" x2="930.0" y1="42" y2="316" stroke="#e1e7e2"/>
+<text x="930.0" y="334">8.5s</text>
+<text x="12" y="65">/game/index.html</text>
+<rect x="296.0" y="52" width="2.7" height="18" rx="2" fill="#398268"/>
+<text x="940" y="65">200</text>
+<text x="12" y="97">/game/src/system.bundle.js</text>
+<rect x="300.8" y="84" width="3.4" height="18" rx="2" fill="#398268"/>
+<text x="940" y="97">200</text>
+<text x="12" y="129">/game/game-config.js</text>
+<rect x="301.7" y="116" width="4.9" height="18" rx="2" fill="#398268"/>
+<text x="940" y="129">200</text>
+<text x="12" y="161">/game/style.css</text>
+<rect x="301.8" y="148" width="628.2" height="18" rx="2" fill="#ce852c"/>
+<text x="940" y="161">200</text>
+<text x="12" y="193">/game/index.js</text>
+<rect x="307.3" y="180" width="3.3" height="18" rx="2" fill="#398268"/>
+<text x="940" y="193">200</text>
+<text x="12" y="225">/game/cocos-js/cc.js</text>
+<rect x="307.4" y="212" width="53.3" height="18" rx="2" fill="#398268"/>
+<text x="940" y="225">200</text>
+<text x="12" y="257">/game/src/settings.json</text>
+<rect x="386.6" y="244" width="51.0" height="18" rx="2" fill="#398268"/>
+<text x="940" y="257">200</text>
+<text x="12" y="289">/game/assets/main/index.js</text>
+<rect x="486.7" y="276" width="3.8" height="18" rx="2" fill="#398268"/>
+<text x="940" y="289">200</text>
+</g></svg>

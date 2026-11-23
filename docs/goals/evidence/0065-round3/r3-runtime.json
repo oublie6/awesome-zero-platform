@@ -1,0 +1,464 @@
+[
+  {
+    "name": "R2-N02-real60-late-engine-standalone",
+    "errors": [],
+    "console": [],
+    "atFailure": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": true,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 300,
+        "height": 150
+      },
+      "css": {
+        "width": 1280,
+        "height": 900
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "failureElapsed": 60294,
+    "afterLate": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": true,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 1280,
+        "height": 900
+      },
+      "css": {
+        "width": 1280,
+        "height": 900
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "retry": {
+      "body": true,
+      "overlay": false,
+      "failed": false,
+      "slow": false,
+      "physical": {
+        "width": 1280,
+        "height": 900
+      },
+      "css": {
+        "width": 1280,
+        "height": 900
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "pass": true,
+    "completed": true
+  },
+  {
+    "name": "R2-N02-real60-late-engine-hosted",
+    "errors": [],
+    "console": [],
+    "atFailure": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": true,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 300,
+        "height": 150
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "failureElapsed": 62598,
+    "afterLate": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": true,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "hostAfter": {
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "messages": [
+        {
+          "at": 1795426465989,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795426525980,
+          "type": "BOOT_FAILED"
+        }
+      ]
+    },
+    "retry": {
+      "body": true,
+      "overlay": false,
+      "failed": false,
+      "slow": false,
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "pass": true,
+    "completed": true
+  },
+  {
+    "name": "R2-N03-engine-before-CSS-noRO",
+    "errors": [],
+    "console": [],
+    "before": {
+      "body": true,
+      "overlay": true,
+      "failed": false,
+      "slow": false,
+      "status": "正在准备游戏大厅",
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": false,
+      "RO": "undefined",
+      "media": "print",
+      "visibility": false,
+      "writes": []
+    },
+    "hostBefore": {
+      "status": "游戏场景已准备",
+      "cover": true,
+      "messages": [
+        {
+          "at": 1795426691253,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795426695566,
+          "type": "BOOT_STAGE",
+          "stage": "engine"
+        },
+        {
+          "at": 1795426699471,
+          "type": "BOOT_STAGE",
+          "stage": "scene"
+        }
+      ]
+    },
+    "after": {
+      "body": true,
+      "overlay": false,
+      "failed": false,
+      "slow": false,
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": true,
+      "RO": "undefined",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "pass": true,
+    "completed": true
+  },
+  {
+    "name": "R2-N03-real-CSS60-late-success",
+    "errors": [],
+    "console": [],
+    "slow": {
+      "body": true,
+      "overlay": true,
+      "failed": false,
+      "slow": true,
+      "status": "正在准备游戏大厅",
+      "physical": {
+        "width": 1280,
+        "height": 900
+      },
+      "css": {
+        "width": 1280,
+        "height": 900
+      },
+      "styleLoaded": false,
+      "RO": "function",
+      "media": "print",
+      "visibility": false,
+      "writes": []
+    },
+    "slowElapsed": 21616,
+    "failure": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": true,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 1280,
+        "height": 900
+      },
+      "css": {
+        "width": 1280,
+        "height": 900
+      },
+      "styleLoaded": false,
+      "RO": "function",
+      "media": "print",
+      "visibility": false,
+      "writes": []
+    },
+    "failureElapsed": 66661,
+    "late": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": true,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 1280,
+        "height": 900
+      },
+      "css": {
+        "width": 1280,
+        "height": 900
+      },
+      "styleLoaded": false,
+      "RO": "function",
+      "media": "print",
+      "visibility": false,
+      "writes": []
+    },
+    "retry": {
+      "body": true,
+      "overlay": false,
+      "failed": false,
+      "slow": false,
+      "physical": {
+        "width": 1280,
+        "height": 900
+      },
+      "css": {
+        "width": 1280,
+        "height": 900
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "pass": true,
+    "completed": true
+  },
+  {
+    "name": "CSS-fault-404",
+    "errors": [],
+    "console": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "failed": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": false,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 300,
+        "height": 150
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": false,
+      "RO": "function",
+      "media": "print",
+      "visibility": false,
+      "writes": []
+    },
+    "retry": {
+      "body": true,
+      "overlay": false,
+      "failed": false,
+      "slow": false,
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "pass": true,
+    "completed": true
+  },
+  {
+    "name": "CSS-fault-network",
+    "errors": [],
+    "console": [
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "failed": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": false,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 300,
+        "height": 150
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": false,
+      "RO": "function",
+      "media": "print",
+      "visibility": false,
+      "writes": []
+    },
+    "retry": {
+      "body": true,
+      "overlay": false,
+      "failed": false,
+      "slow": false,
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "pass": true,
+    "completed": true
+  },
+  {
+    "name": "CSS-fault-hidden404",
+    "errors": [],
+    "console": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "WebGL: INVALID_VALUE: texSubImage2D: no canvas"
+    ],
+    "hidden": {
+      "status": "正在读取游戏页面",
+      "cover": true,
+      "messages": [
+        {
+          "at": 1795426807011,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        }
+      ]
+    },
+    "sameFrame": true,
+    "failed": {
+      "body": true,
+      "overlay": true,
+      "failed": true,
+      "slow": false,
+      "status": "游戏资源或引擎启动失败",
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": false,
+      "RO": "function",
+      "media": "print",
+      "visibility": false,
+      "writes": []
+    },
+    "retry": {
+      "body": true,
+      "overlay": false,
+      "failed": false,
+      "slow": false,
+      "physical": {
+        "width": 1207,
+        "height": 701
+      },
+      "css": {
+        "width": 1207,
+        "height": 701
+      },
+      "styleLoaded": true,
+      "RO": "function",
+      "media": "all",
+      "visibility": false,
+      "writes": []
+    },
+    "pass": true,
+    "completed": true
+  }
+]

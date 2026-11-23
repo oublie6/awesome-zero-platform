@@ -1,0 +1,32 @@
+[
+  {
+    "id": 45145038424,
+    "name": "Fair Doudizhu Vue3 Web",
+    "source": "b4f34e07c25d9acb2e534ff61639301b338dc75f",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45145038424",
+    "jobs": [
+      {
+        "name": "vue_build",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45145038641,
+    "name": "Cocos Linux Native Client",
+    "source": "b4f34e07c25d9acb2e534ff61639301b338dc75f",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45145038641",
+    "jobs": [
+      {
+        "name": "linux_source",
+        "conclusion": "success"
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped"
+      }
+    ]
+  }
+]
