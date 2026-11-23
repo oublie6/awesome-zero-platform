@@ -1,0 +1,11 @@
+{
+  "artifact-manifest.json": "85ee6cd8619cf6bd13b8a93043f32a14c3776a3236c4857ea1e43c1516efb758",
+  "build-proof.json": "a8a8c1cde43fd546590b4fb38e917b8cc8e0003ac57aadbbbb9b836145ef69b0",
+  "ci.json": "c589f0d6dd6a832ab2be3619e00c37444ee4b56a97c10fc669675fd515ec49e3",
+  "final-audit.json": "6360074898bb34f6d2c0de18b47f19d2a00e88ff923dc2ecd83ac849d1752b40",
+  "first-fail.json": "54959a574185a075c9b15362536b4954d594b874c1bd20d170638ab1b60169c8",
+  "fixture-proof.json": "8812b272c4442e9a626833f9975c12386ad7cf7e3d515534be302b59e5efdefe",
+  "native-export-hashes.json": "46d8a6cff5082f2e3aadfa36920bd24c3f30bd7912c69a5177a275ff98b55ea8",
+  "room-restore-control.png": "a1893374b663266e421db3b9402d0c241c2c857bbfecbfe431b895f73be6b3aa",
+  "room-restore-failed-ready.png": "f26fd6eea742ffcb340422e6ee69ca467c02160172178536380a6080c943dfb3"
+}

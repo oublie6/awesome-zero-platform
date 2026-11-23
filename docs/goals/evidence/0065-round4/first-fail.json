@@ -1,0 +1,78 @@
+{
+  "source": "5564253ae3d4e6296c846cdd1133a72bb50a2d6a",
+  "authHTTP": [
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200
+  ],
+  "faultHits": 1,
+  "events": [],
+  "console": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "pageErrors": [],
+  "knownRoom": "room-cmd-94b10a02027fdfa28b1fe8e570d8ca22",
+  "control": {
+    "roomRecovered": true,
+    "authenticated": true,
+    "transportReady": true
+  },
+  "failedRestore": {
+    "authenticated": true,
+    "transportReady": true,
+    "roomId": "",
+    "status": "和好友开一桌，或输入房间号加入",
+    "buttons": [
+      "CreateRoom",
+      "JoinRoom",
+      "DiscoverMyRooms",
+      "ToggleRoomMore"
+    ],
+    "host": {
+      "status": "游戏就绪",
+      "cover": false,
+      "messages": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795430712975
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795430718145
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795430723551
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795430723552
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795430723552
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795430723776
+        }
+      ]
+    },
+    "nativeOverlay": 0
+  },
+  "findingConfirmed": true,
+  "recovery": {
+    "sameRoom": true,
+    "transportReady": true
+  }
+}
