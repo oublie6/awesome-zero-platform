@@ -25,7 +25,9 @@ test('Goal0065 same-session site navigation retains iframe while logout destroys
  assert.doesNotMatch(open,/gameInstance\.value\+\+/)
  const logout=src.split('async function logout(){')[1].split('function openGame(){')[0]
  assert.ok(logout.indexOf('gameMounted.value=false')<logout.indexOf('account.value=null'))
- assert.match(src,/v-if="gameMounted" v-show="page==='game'"/)
+ assert.match(src,/v-if="gameMounted"[\s\S]*?:class="\['game-layout'/)
+ assert.match(src,/:aria-hidden="page!=='game'" :inert="page!=='game'"/)
+ assert.doesNotMatch(src,/v-show="page==='game'"/)
  assert.match(src,/:key="gameInstance"/)
  assert.match(src,/event\.source!==gameFrame\.value\?\.contentWindow/)
  assert.match(src,/event\.origin!==window\.location\.origin/)
@@ -71,4 +73,20 @@ test('Goal0065 Round2: native CSS/session failure stays deferred in retained bac
  assert.match(boot,/page\.value==='game' && !document\.hidden/)
  assert.match(session,/page\.value==='game' && !document\.hidden/)
  assert.match(source,/if\(gamePhase\.value!=='session' \|\| !account\.value \|\| !client\?\.authenticated\)return/)
+})
+
+test('Goal0065 R3: parked iframe keeps its geometry but cannot receive interaction',async()=>{
+ const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
+ const css=await readFile(new URL('../src/styles.css',import.meta.url),'utf8')
+ assert.match(source,/:class="\['game-layout',\{'game-layout-parked':page!=='game'\}\]"/)
+ assert.match(source,/:aria-hidden="page!=='game'" :inert="page!=='game'"/)
+ assert.doesNotMatch(source,/v-show="page==='game'"/)
+ assert.match(css,/\.page-body\{position:relative\}/)
+ const parked=css.split('.game-layout.game-layout-parked{')[1].split('}')[0]
+ assert.match(parked,/position:absolute/)
+ assert.match(parked,/left:-200vw/)
+ assert.match(parked,/width:100%/)
+ assert.match(parked,/pointer-events:none/)
+ assert.doesNotMatch(parked,/display\s*:\s*none|visibility\s*:\s*hidden|width\s*:\s*0/)
+ assert.match(source,/if\(gamePhase\.value==='session' && !document\.hidden\)/)
 })

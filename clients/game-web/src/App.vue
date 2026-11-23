@@ -127,7 +127,9 @@ function onGameMessage(event:MessageEvent){
         gameStatus.value='正在验证服务器会话并恢复房间'
         if(page.value==='game')armLoadWatchdog()
       }
-      communicate('SESSION_AVAILABLE')
+      // A parked iframe may finish loading, but must not initiate an
+      // authenticated session while the player is on another website page.
+      if(page.value==='game' && !document.hidden)communicate('SESSION_AVAILABLE')
     }else {
       failGameLoad('平台会话已过期，请重新登录。')
       gameMounted.value=false
@@ -224,6 +226,8 @@ watch(page,next=>{
     communicate('BOOT_PAUSE')
   }else if(gameMounted.value){
     communicate('BOOT_RESUME')
+    if(gamePhase.value==='session' && !document.hidden)
+      communicate('SESSION_AVAILABLE')
     if(!isReady.value && gamePhase.value!=='failed')armLoadWatchdog()
   }
 },{flush:'post'})
@@ -233,6 +237,7 @@ function onVisibilityChange(){
     communicate('BOOT_PAUSE')
   }else if(page.value==='game' && gameMounted.value){
     communicate('BOOT_RESUME')
+    if(gamePhase.value==='session')communicate('SESSION_AVAILABLE')
     if(!isReady.value && gamePhase.value!=='failed')armLoadWatchdog()
   }
 }
@@ -331,7 +336,11 @@ onUnmounted(()=>{
           </div>
           <p class="lobby-footnote">所有牌局由服务端同步 · 结算后可查看公平验证</p>
         </section>
-        <section v-if="gameMounted" v-show="page==='game'" class="game-layout">
+        <!-- Preserve Cocos viewport geometry even while navigating the site.
+             display:none can initialize Cocos4 camera/UI world matrices to NaN. -->
+        <section v-if="gameMounted"
+          :class="['game-layout',{'game-layout-parked':page!=='game'}]"
+          :aria-hidden="page!=='game'" :inert="page!=='game'">
           <div class="game-toolbar">
             <div><div class="eyebrow">LIVE GAME</div><h2>好友牌桌</h2><p>{{gameStatus}}</p></div>
             <div class="game-toolbar-actions">

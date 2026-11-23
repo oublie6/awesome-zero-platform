@@ -41,3 +41,15 @@
 @keyframes game-boot-pulse{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(-6px);opacity:.83}}
 @media(max-width:600px){.game-loading-cover{padding:18px}.game-loading-suit{width:64px;height:64px;font-size:45px;margin-bottom:12px}.game-loading-footnote{margin-top:12px}}
 @media(prefers-reduced-motion:reduce){.game-loading-suit{animation:none}.game-loading-fill{transition:none}}
+
+/* Keep the game in a real-sized layout when not selected. Vue v-show
+   display:none poisoned Cocos4 camera and UI transforms during cc.js load.
+   Parking preserves physical geometry and removes the iframe from navigation. */
+.page-body{position:relative}
+.game-layout.game-layout-parked{
+ position:absolute;
+ left:-200vw;
+ top:0;
+ width:100%;
+ pointer-events:none;
+}
