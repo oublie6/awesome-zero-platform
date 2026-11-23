@@ -124,8 +124,10 @@ export class GameBootstrap extends Component {
     this.reportNativeBoot('stage','scene')
     this.bindWebHost()
     if(detectRuntimeTarget()==='web' && typeof window!=='undefined' && window.parent===window){
-      const ready=(window as typeof window & {__AZP_CONFIG_READY__?:Promise<boolean>}).__AZP_CONFIG_READY__
-      void (ready ?? Promise.resolve(false)).then(ok=>{
+      const style=(window as typeof window & {__AZP_STYLE_READY__?:Promise<boolean>}).__AZP_STYLE_READY__
+      // Standalone guest scene may render before the stylesheet arrives. Keep
+      // its native splash until real CSS readiness, never hide a failed loader.
+      void (style ?? Promise.resolve(false)).then(ok=>{
         if(this.content?.isValid)this.reportNativeBoot(ok?'done':'fail')
       }).catch(()=>this.reportNativeBoot('fail'))
     }
@@ -203,23 +205,25 @@ export class GameBootstrap extends Component {
     // A ready handshake avoids losing SESSION_AVAILABLE while the engine boots.
     // Configuration is loaded asynchronously so its stalled request cannot
     // block the splash/timeout. Never initiate session restore before it loads.
-    const ready=(window as typeof window & {__AZP_CONFIG_READY__?:Promise<boolean>}).__AZP_CONFIG_READY__
-    void (ready ?? Promise.resolve(false)).then(ok=>{
-      if(!this.content?.isValid || !this.webHostListener)return
-      if(ok){
-        // Reset native watchdog at the real session-restore boundary;
-        // otherwise slow HTTPS/WSS restore can time out from scene creation.
-        this.reportNativeBoot('stage','session')
-        this.notifyWebHost('GAME_READY')
-      }else {
+    const config=(window as typeof window & {__AZP_CONFIG_READY__?:Promise<boolean>}).__AZP_CONFIG_READY__
+    const style=(window as typeof window & {__AZP_STYLE_READY__?:Promise<boolean>}).__AZP_STYLE_READY__
+    void Promise.all([config ?? Promise.resolve(false),style ?? Promise.resolve(false)])
+      .then(([configOK,styleOK])=>{
+        if(!this.content?.isValid || !this.webHostListener)return
+        if(configOK && styleOK){
+          // Never advertise an unstyled scene as interactive; reset the
+          // native watchdog only at the actual server-restore boundary.
+          this.reportNativeBoot('stage','session')
+          this.notifyWebHost('GAME_READY')
+        }else {
+          this.notifyWebHost('SESSION_FAILED')
+          this.reportNativeBoot('fail')
+        }
+      }).catch(()=>{
+        if(!this.content?.isValid || !this.webHostListener)return
         this.notifyWebHost('SESSION_FAILED')
         this.reportNativeBoot('fail')
-      }
-    }).catch(()=>{
-      if(!this.content?.isValid || !this.webHostListener)return
-      this.notifyWebHost('SESSION_FAILED')
-      this.reportNativeBoot('fail')
-    })
+      })
   }
   private notifyWebHost(type:'GAME_READY'|'SESSION_ACTIVE'|'SESSION_FAILED'):void {
     if(this.webHostListener && typeof window!=='undefined' && window.parent!==window)
