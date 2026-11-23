@@ -55,3 +55,11 @@ test('Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifec
  assert.match(source,/event\.source!==gameFrame\.value\?\.contentWindow/)
  assert.match(source,/event\.origin!==window\.location\.origin/)
 })
+
+test('Goal0065 R1: background tabs also suspend Vue watchdog',async()=>{
+ const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
+ assert.match(source,/if\(isReady\.value \|\| document\.hidden \|\| page\.value!=='game'\)return/)
+ assert.match(source,/document\.addEventListener\('visibilitychange',onVisibilityChange\)/)
+ assert.match(source,/document\.removeEventListener\('visibilitychange',onVisibilityChange\)/)
+ assert.match(source,/if\(document\.hidden\)\{\s*clearLoadWatchdog\(\)/)
+})

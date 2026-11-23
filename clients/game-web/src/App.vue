@@ -44,7 +44,7 @@ function clearLoadWatchdog(){
 function armLoadWatchdog(){
   clearLoadWatchdog()
   gameLoadSlow.value=false
-  if(isReady.value)return
+  if(isReady.value || document.hidden || page.value!=='game')return
   slowTimer=setTimeout(()=>{if(!isReady.value)gameLoadSlow.value=true},15000)
   loadDeadline=setTimeout(()=>{
     if(isReady.value)return
@@ -223,12 +223,23 @@ watch(page,next=>{
     if(!isReady.value && gamePhase.value!=='failed')armLoadWatchdog()
   }
 },{flush:'post'})
+function onVisibilityChange(){
+  if(document.hidden){
+    clearLoadWatchdog()
+    communicate('BOOT_PAUSE')
+  }else if(page.value==='game' && gameMounted.value){
+    communicate('BOOT_RESUME')
+    if(!isReady.value && gamePhase.value!=='failed')armLoadWatchdog()
+  }
+}
 onMounted(()=>{
   window.addEventListener('message',onGameMessage)
+  document.addEventListener('visibilitychange',onVisibilityChange)
   void initialize()
 })
 onUnmounted(()=>{
   window.removeEventListener('message',onGameMessage)
+  document.removeEventListener('visibilitychange',onVisibilityChange)
   clearLoadWatchdog()
 })
 </script>

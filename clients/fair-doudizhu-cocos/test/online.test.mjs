@@ -1079,3 +1079,13 @@ test('Goal0064 same-room UNKNOWN refuses new Join request rather than replacing 
  assert.equal(commands,1)
  online.dispose()
 })
+
+test('Goal0065 R1: HTTP identity success alone never means WSS can submit commands',async()=>{
+ const f=fixture()
+ f.platform.socket.connect=async()=>{throw new Error('controlled WSS handshake failure')}
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await assert.rejects(online.loginAndConnect(),/controlled WSS handshake failure/)
+ assert.equal(online.session.authenticated,true,'HTTP identity succeeded')
+ assert.equal(online.shell.commandTransportReady,false,'real socket must be connected')
+ online.dispose()
+})

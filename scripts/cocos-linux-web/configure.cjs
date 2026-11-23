@@ -43,6 +43,7 @@ function configure(root,settings={}){
       clearTimeout(timeout);
       node.onload = null;
       node.onerror = null;
+      if (!ok) node.remove();
       resolve(ok);
     }
     node.async = true;
