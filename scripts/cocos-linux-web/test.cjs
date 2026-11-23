@@ -187,8 +187,8 @@ test('Goal0065 independent Cocos HTML renders splash before engine scripts and r
 test('Goal0065 R1: socket must actually be connected before GAME_READY completion',()=>{
  const source=fs.readFileSync(path.join(__dirname,
    '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
- assert.match(source,/const active=!!this\.online\?\.session\.authenticated\s*&&\s*!!this\.online\?\.shell\.commandTransportReady/);
- assert.ok(source.indexOf("if(active)this.renderScreen('rooms')") <
+ assert.match(source,/const connected=restored && !!owner\?\.session\.authenticated\s*&&\s*!!owner\?\.shell\.commandTransportReady/);
+ assert.ok(source.indexOf("if(connected)this.renderScreen('rooms')") <
    source.indexOf("this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')"));
  assert.match(source,/__AZP_CONFIG_READY__\?:Promise<boolean>/);
  assert.match(source,/this\.reportNativeBoot\('stage','session'\)/);
@@ -437,7 +437,7 @@ test('Goal0065 Round3: finite camera/UI world transforms gate all web ready stag
  assert.match(guard,/mat\.m00[\s\S]*mat\.m15/);
  assert.match(guard,/this\.buttons\.every\(usableButton\)/);
  assert.match(code,/const sceneOK=configOK && styleOK && geometryOK && await this\.waitForWebScene\(\)/);
- assert.match(code,/const usable=active && await this\.waitForWebScene\(\)/);
+ assert.match(code,/const usable=connected && await this\.waitForWebScene\(\)/);
  assert.match(code,/this\.notifyWebHost\(ready\?'SESSION_ACTIVE':'SESSION_FAILED'\)/);
  assert.match(code,/this\.reportNativeBoot\(sceneOK\?'done':'fail'\)/);
 });

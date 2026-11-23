@@ -697,7 +697,7 @@ export class GameBootstrap extends Component {
         const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
         if(!restored)await online.loginAndConnect()
       }
-      if(!this.currentAccount(online,generation))return
+      if(!this.currentAccount(online,generation))return false
       // Profile is a verified server read used for lobby presentation only.
       // Never infer an AccountID from a token or a room code.
       void this.resolveViewerAccount(online,platform,generation)
