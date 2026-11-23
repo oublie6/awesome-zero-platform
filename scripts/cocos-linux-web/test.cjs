@@ -191,7 +191,9 @@ test('Goal0065 R1: socket must actually be connected before GAME_READY completio
  assert.ok(source.indexOf("if(active)this.renderScreen('rooms')") <
    source.indexOf("this.notifyWebHost(active?'SESSION_ACTIVE':'SESSION_FAILED')"));
  assert.match(source,/__AZP_CONFIG_READY__\?:Promise<boolean>/);
- assert.match(source,/if\(ok\)this\.notifyWebHost\('GAME_READY'\)/);
+ assert.match(source,/this\.reportNativeBoot\('stage','session'\)/);
+ assert.ok(source.indexOf("this.reportNativeBoot('stage','session')") <
+   source.indexOf("this.notifyWebHost('GAME_READY')"));
 });
 test('Goal0065 R1: Cocos watchdog really pauses while hidden and resumes',()=>{
  const template=fs.readFileSync(path.join(__dirname,
@@ -256,6 +258,8 @@ test('Goal0065 R1: visible suspended loader re-arms and stale origin cannot resu
  assert.match(html,/if \(suspended \|\| !visible\(\)\)/);
  assert.match(html,/deferredFailure = true/);
  assert.match(html,/document\.addEventListener\('visibilitychange'/);
+ assert.match(html,/session: \[3, '正在验证服务器会话并恢复房间'\]/);
+ assert.match(html,/name !== 'session'/);
 });
 test('Goal0065 R1: public config is async without exposing startup to a sync head stall',async t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'azp-config-async-'));

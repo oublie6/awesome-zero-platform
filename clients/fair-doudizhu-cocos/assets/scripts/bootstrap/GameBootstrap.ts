@@ -131,10 +131,10 @@ export class GameBootstrap extends Component {
     }
     void this.shell.initialize()
   }
-  private reportNativeBoot(action:'stage'|'done'|'fail',stage?:'scene'):void{
+  private reportNativeBoot(action:'stage'|'done'|'fail',stage?:'scene'|'session'):void{
     if(typeof window==='undefined')return
     const boot=(window as typeof window & {__AZP_BOOT__?:{
-      stage:(name:'scene')=>void;done:()=>void;fail:()=>void
+      stage:(name:'scene'|'session')=>void;done:()=>void;fail:()=>void
     }}).__AZP_BOOT__
     if(action==='stage' && stage)boot?.stage(stage)
     else if(action==='done')boot?.done()
@@ -206,8 +206,12 @@ export class GameBootstrap extends Component {
     const ready=(window as typeof window & {__AZP_CONFIG_READY__?:Promise<boolean>}).__AZP_CONFIG_READY__
     void (ready ?? Promise.resolve(false)).then(ok=>{
       if(!this.content?.isValid || !this.webHostListener)return
-      if(ok)this.notifyWebHost('GAME_READY')
-      else {
+      if(ok){
+        // Reset native watchdog at the real session-restore boundary;
+        // otherwise slow HTTPS/WSS restore can time out from scene creation.
+        this.reportNativeBoot('stage','session')
+        this.notifyWebHost('GAME_READY')
+      }else {
         this.notifyWebHost('SESSION_FAILED')
         this.reportNativeBoot('fail')
       }

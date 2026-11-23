@@ -50,7 +50,8 @@
       const phases = {
         document: [1, '正在读取游戏页面'],
         engine: [2, '游戏引擎初始化完成'],
-        scene: [3, '正在准备游戏大厅']
+        scene: [3, '正在准备游戏大厅'],
+        session: [3, '正在验证服务器会话并恢复房间']
       };
       let current = 0, complete = false, slow = 0, deadline = 0;
       let suspended = false, deferredFailure = false;
@@ -84,7 +85,8 @@
       }
       function stage(name) {
         const item = phases[name];
-        if (!item || complete || root.classList.contains('failed') || item[0] <= current) return;
+        if (!item || complete || root.classList.contains('failed') ||
+            (item[0] <= current && name !== 'session')) return;
         current = item[0];
         status.textContent = item[1];
         bar.style.width = current * 25 + '%';
