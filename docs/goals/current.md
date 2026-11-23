@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-23 ChatGPT **Goal0065 Round4 恢复顺序集中修复 — 待独立验收**：修复身份/WSS 已成功但房间发现/自动恢复失败仍发布 SESSION_ACTIVE；登录恢复引入显式结果，必要房间/公平/终局/实时同步严格传播错误，缺失目标房间数据不得判为成功；启动 epoch+controller+selection 栅栏拒绝注销/换号/新选择后的迟到成功。补充定向回归；未部署，Goal0065 仍 in_progress。详见 [Goal0065](0065-web-startup-cache.md)。
+
 - 2026-11-23 Codex **Goal0065 Round4 prioritized failure report — FAIL**, fixed candidate `5564253ae3d4e6296c846cdd1133a72bb50a2d6a`. Per user “先报告失败情况吧”, confirmed P2: valid identity/WSS plus failed room-discovery503 still sends SESSION_ACTIVE/removes covers and loses the existing room view; removing fault restores the same room. Real Cocos4 export/203 tests pass. [Prioritized failure report](0065-round4-independent-acceptance.md) explicitly leaves R3 fixes, full Round4 browser/business/cache/deployment acceptance unverified. No candidate rollout, no new hand, six unchanged Ready Pods and user29457 retained. Goal0065 remains in_progress; this is not full Round4 completion.
 
 - 2026-11-23 ChatGPT **Goal0065 Round3 FAIL 集中修复 — 待 Round4 独立验收**：Vue 以保持真实布局但不可交互的屏外 parked iframe 替换 v-show/display:none，避免隐藏加载 Cocos 场景产生非有限 Camera/UI 世界矩阵；新增从场景到服务器会话的实际可渲染门禁、CSS 动态加载后无边框优先级与回归测试。仍未部署，详见 [Goal0065](0065-web-startup-cache.md)，保持 in_progress。

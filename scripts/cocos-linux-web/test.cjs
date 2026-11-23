@@ -451,3 +451,44 @@ test('Goal0065 Round3: late exported CSS cannot restore portrait canvas borders'
    assert.ok(template.includes(rule),'missing highest priority rule '+rule);
  assert.match(template,/css\.media = 'all'/);
 });
+
+test('Goal0065 Round4: required room restoration is a startup completion gate',()=>{
+ const source=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
+ const login=source.split('private async login(restoreOnly=false):Promise<boolean>')[1]
+   .split('private async resolveViewerAccount')[0];
+ const handler=source.split("if(data.type==='SESSION_AVAILABLE')")[1]
+   .split("}else if(data.type==='SESSION_REVOKED')")[0];
+ assert.match(login,/await this\.recoverMyRooms\(token=>\{selection=token\}\)/);
+ assert.match(login,/catch\(error\)\{[\s\S]*?房间或牌局恢复失败，请重试[\s\S]*?return false/);
+ assert.match(login,/return this\.currentAccount\(online,generation\) &&\s*selection===this\.recoveryAttempt &&/);
+ assert.match(login,/online\.session\.authenticated && online\.shell\.commandTransportReady/);
+ assert.match(login,/\}\s*catch\(error\)\s*\{[\s\S]*return false\s*\}/);
+ assert.match(handler,/const pending=this\.login\(true\)/);
+ assert.match(handler,/const owner=this\.online,epoch=this\.requestGeneration/);
+ assert.match(handler,/pending\.then\(async restored=>/);
+ assert.match(handler,/const connected=restored && !!owner\?\.session\.authenticated &&\s*!!owner\?\.shell\.commandTransportReady/);
+ assert.match(handler,/if\(connected\)this\.renderScreen\('rooms'\)/);
+ assert.match(handler,/if\(!this\.currentAccount\(owner,epoch\) \|\| selection!==this\.recoveryAttempt\)return/);
+ assert.match(handler,/const ready=usable && !!owner\?\.session\.authenticated &&/);
+ assert.match(handler,/this\.notifyWebHost\(ready\?'SESSION_ACTIVE':'SESSION_FAILED'\)/);
+ assert.doesNotMatch(handler,/const active=!!this\.online\?\.session\.authenticated/);
+});
+test('Goal0065 Round4: strict room/hand reads cannot be swallowed by startup',()=>{
+ const source=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
+ const recovery=source.split('private async performAuthorizedRoomRecovery(')[1]
+   .split('private recoveryAuthorityRevoked(')[0];
+ const refresh=source.split('private async refreshRoom(requiredForStartup=false):Promise<void>')[1]
+   .split('private async refreshFairness(')[0];
+ assert.match(recovery,/if\(!room\)throw new Error/);
+ assert.match(recovery,/await this\.refreshRoom\(true\)/);
+ assert.match(recovery,/if\(this\.roomView\?\.roomId!==roomID\)\s*throw new Error/);
+ assert.ok(recovery.indexOf('await this.refreshRoom(true)')<
+   recovery.indexOf('const verified=await online.roomInfo(roomID)'));
+ assert.match(refresh,/if\(requiredForStartup\)throw new Error/);
+ assert.match(refresh,/if\(requiredForStartup\)throw error/);
+ assert.match(refresh,/await online\.api\.fairness\(info\.activeHandId\)/);
+ assert.match(refresh,/await online\.api\.finalEvidence\(info\.lastHandId\)/);
+ assert.match(refresh,/await online\.shell\.syncHand\(info\.activeHandId\)/);
+});

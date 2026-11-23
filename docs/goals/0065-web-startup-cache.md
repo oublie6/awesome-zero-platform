@@ -69,3 +69,10 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
 - 后台加载协调：隐藏期间可能已完成资源和 scene，Vue 暂缓发送 `SESSION_AVAILABLE`，直到返回游戏或后台标签恢复前台才启动 Web 会话验证，避免重复连线或无意义的后台业务初始化。
 - R3-N02 / P3：Cocos 生成样式在动态加载后会覆盖内联的 `#GameDiv` margin/border/radius/shadow，导致 5px 左偏与画布溢出。内联的视口关键样式加最高优先级 `!important`，保持三个视口无偏移。
 - 回归测试：修正源断言为双重（authenticated+transport+render）就绪验证；新增 parked iframe 布局/输入隔离与 Cocos 相机、按钮矩阵及 CSS 边框的定向约束。实际 `cc.js` 隐藏完成、横竖屏、菜单真点击、CSS 慢加载与三人牌局仍需由 Codex 在 Round 4 独立验收后才能部署测试环境。本轮没有修改测试集群。
+
+## Round 4 P2 启动顺序与关联竞态集中修复（待下一轮独立验收）
+
+- 启动闭环由 **身份验证→WSS 连接→房间发现→授权恢复→必要公平/牌局数据同步→有效场景→SESSION_ACTIVE** 组成。过去 `login(true)` 即使 `recoverMyRooms()` 发生 HTTP 503 或自动恢复失败也正常返回，导致 Vue 错报“游戏就绪”；现在 `login(): Promise<boolean>` 只有完整验证才返回 true，错误/陈旧请求返回 false，保留已验证的账号身份但将本次启动判为失败。
+- 关联修复：`performAuthorizedRoomRecovery` 对明确目标返回 null 视为失败；调用 `refreshRoom(true)` 不允许吞掉房间/公平阶段/终局证据/实时同步错误，并在最终读取成员资格前验证 `roomView` 已经同步到目标房间。用户主动刷新仍采用原 best-effort 行为，不改变一般操作体验。
+- 同源启动握手保存所属 controller/epoch/selection；注销、换号、关闭 iframe 或新选房间使迟到的登录/恢复成功失效，防止旧请求错误发送 `SESSION_ACTIVE`。恢复失败不会再被一次普通 `renderScreen('rooms')` 覆盖提示；展示原生错误界面，由用户明确重试重新进行只读房间查询，不用新建持久化房间命令掩盖失败。
+- 已增加两组启动门禁/必需读失败/时序测试。仍需 Codex 在真实 Cocos Web 环境注入 /me/rooms、/room、/fairness、/evidence 的 HTTP 503，验证现有房间可恢复、无房间正常成功、401/403/超时以及中途注销、重试、UNKNOWN 时序；后续完成上一轮未执行的 R3-N01/R3-N02 及部署验收。

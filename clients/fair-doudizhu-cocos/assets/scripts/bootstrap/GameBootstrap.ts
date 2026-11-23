@@ -195,20 +195,30 @@ export class GameBootstrap extends Component {
       if(data.type==='SESSION_AVAILABLE'){
         if(this.hostRestoring || this.online?.session.authenticated)return
         this.hostRestoring=true
-        void this.login(true).then(async ()=>{
-          if(!this.content?.isValid)return
-          // HTTP authentication is not proof of connected WSS transport.
-          const active=!!this.online?.session.authenticated &&
-            !!this.online?.shell.commandTransportReady
-          if(active)this.renderScreen('rooms')
-          const owner=this.online
-          const usable=active && await this.waitForWebScene()
-          if(!this.content?.isValid || this.online!==owner)return
+        // login() increments the controller epoch synchronously before its
+        // first await. Snapshot ownership to fence late completions after
+        // SESSION_REVOKED, a replacement identity or iframe destruction.
+        const pending=this.login(true)
+        const owner=this.online,epoch=this.requestGeneration
+        void pending.then(async restored=>{
+          if(!this.currentAccount(owner,epoch))return
+          const connected=restored && !!owner?.session.authenticated &&
+            !!owner?.shell.commandTransportReady
+          // Login has already finished authoritative room/hand restoration.
+          // Do not redraw a generic empty lobby after a failed recovery.
+          if(connected)this.renderScreen('rooms')
+          const selection=this.recoveryAttempt
+          const usable=connected && await this.waitForWebScene()
+          if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
           const ready=usable && !!owner?.session.authenticated &&
             !!owner?.shell.commandTransportReady
-          // Never remove the splash for a blank/unusable scene.
           this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')
           this.reportNativeBoot(ready?'done':'fail')
+        }).catch(error=>{
+          if(!this.currentAccount(owner,epoch))return
+          this.notice('启动恢复失败：'+this.message(error))
+          this.notifyWebHost('SESSION_FAILED')
+          this.reportNativeBoot('fail')
         }).finally(()=>{this.hostRestoring=false})
       }else if(data.type==='SESSION_REVOKED'){
         ++this.requestGeneration
@@ -631,7 +641,10 @@ export class GameBootstrap extends Component {
       generation===this.roomGeneration &&
       (selection===undefined || selection===this.recoveryAttempt)
   }
-  private async login(restoreOnly=false):Promise<void> {
+  /** Resolve true only after verified identity, live WSS and all required
+   * read-only room/hand restoration have completed. Suppressed errors and
+   * superseded selections must never be interpreted as startup success. */
+  private async login(restoreOnly=false):Promise<boolean> {
     // Failed preflight/login construction must not invalidate notifications
     // from the still-active prior authenticated controller.
     let generation=this.requestGeneration
@@ -699,9 +712,18 @@ export class GameBootstrap extends Component {
       if(target==='web' && this.screen==='login')this.renderScreen('rooms')
       this.notice(target==='web'?'已验证网页账号并连接游戏服务':'已验证微信账号并连接游戏服务')
       let selection=this.recoveryAttempt
-      try{await this.recoverMyRooms(token=>{selection=token})}
-      catch(error){if(this.currentAccount(online,generation) && selection===this.recoveryAttempt)
-        this.notice('已登录，自动发现暂不可用：'+this.message(error))}
+      try {
+        await this.recoverMyRooms(token=>{selection=token})
+      }catch(error){
+        if(this.currentAccount(online,generation) && selection===this.recoveryAttempt)
+          this.notice('房间或牌局恢复失败，请重试：'+this.message(error))
+        return false
+      }
+      // A read may have been superseded by an explicit room selection or a
+      // logout during await; neither should authorize a completed startup.
+      return this.currentAccount(online,generation) &&
+        selection===this.recoveryAttempt &&
+        online.session.authenticated && online.shell.commandTransportReady
     } catch(error) {
       if(error instanceof WeChatBindingRequiredError && generation===this.requestGeneration &&
          this.content?.isValid){
@@ -710,6 +732,7 @@ export class GameBootstrap extends Component {
       }else if(generation===this.requestGeneration && this.content?.isValid){
         this.notice('登录失败：'+this.message(error))
       }
+      return false
     }
   }
   private async resolveViewerAccount(online:GameOnlineController,platform:GamePlatform,
@@ -933,7 +956,10 @@ export class GameBootstrap extends Component {
     const current=()=>online===this.online && token===this.recoveryAttempt && !!this.content?.isValid
     try{
       const room=await online.reconnectAndResync(roomID)
-      if(!current()||!room)return
+      if(!current())return
+      // An explicit room locator requires a concrete verified result. A
+      // silent null is not the same as "account has no recoverable rooms".
+      if(!room)throw new Error('服务器未确认房间恢复结果，请重新核对')
       const handID=room.activeHandId||room.lastHandId||''
       if(this.roomID!==room.roomId || this.handID!==handID){
         this.roomGeneration++
@@ -946,10 +972,13 @@ export class GameBootstrap extends Component {
       this.fairnessView=null
       this.recoverableRooms=[]
       this.renderScreen('rooms')
-      // The normal screen refresh is best-effort. NEVER infer recovery
-      // success from its swallowed HTTP errors; verify membership again.
-      await this.refreshRoom()
+      // Ordinary manual refresh is best-effort; startup restoration is NOT.
+      // A failed fairness/hand snapshot must block SESSION_ACTIVE even if
+      // a later membership-only read succeeds.
+      await this.refreshRoom(true)
       if(!current())return
+      if(this.roomView?.roomId!==roomID)
+        throw new Error('权威房间界面尚未同步完成，请重新恢复')
       const verified=await online.roomInfo(roomID)
       if(!current())return
       if(!verified.member || verified.status==='CLOSED'){
@@ -1191,7 +1220,7 @@ export class GameBootstrap extends Component {
       if(this.roomMutation===mutation)this.roomMutation=null
     }
   }
-  private async refreshRoom():Promise<void> {
+  private async refreshRoom(requiredForStartup=false):Promise<void> {
     const owner=this.online,epoch=this.requestGeneration
     const roomID=this.roomID,selection=this.recoveryAttempt
     let generation=this.roomGeneration
@@ -1207,7 +1236,10 @@ export class GameBootstrap extends Component {
       // The HTTP read can see a newly accepted H2 while the WSS start ACK is
       // still withheld. Do not rebind fairness or restore a room coordinator
       // that still owns an in-flight command. startHand() will refresh on ACK.
-      if(online.handStartInProgress)return
+      if(online.handStartInProgress){
+        if(requiredForStartup)throw new Error('存在尚未确认的牌局启动，暂不能完成恢复')
+        return
+      }
       online.adoptAuthorizedRoomRefresh(info,commandGeneration)
       this.roomView=info
       const authorizedHand=info.activeHandId || info.lastHandId || ''
@@ -1255,6 +1287,7 @@ export class GameBootstrap extends Component {
       }
       if(this.screen==='rooms')this.renderScreen('rooms')
     }catch(error){
+      if(requiredForStartup)throw error
       if(this.currentRoom(owner,epoch,roomID,generation,selection))
         this.notice('刷新失败：'+this.message(error))
     }
