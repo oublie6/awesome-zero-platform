@@ -123,8 +123,12 @@ export class GameBootstrap extends Component {
     // transitions. Standalone Web can display the guest entry immediately.
     this.reportNativeBoot('stage','scene')
     this.bindWebHost()
-    if(detectRuntimeTarget()==='web' && typeof window!=='undefined' && window.parent===window)
-      this.reportNativeBoot('done')
+    if(detectRuntimeTarget()==='web' && typeof window!=='undefined' && window.parent===window){
+      const ready=(window as typeof window & {__AZP_CONFIG_READY__?:Promise<boolean>}).__AZP_CONFIG_READY__
+      void (ready ?? Promise.resolve(false)).then(ok=>{
+        if(this.content?.isValid)this.reportNativeBoot(ok?'done':'fail')
+      }).catch(()=>this.reportNativeBoot('fail'))
+    }
     void this.shell.initialize()
   }
   private reportNativeBoot(action:'stage'|'done'|'fail',stage?:'scene'):void{
@@ -149,7 +153,10 @@ export class GameBootstrap extends Component {
         this.hostRestoring=true
         void this.login(true).then(()=>{
           if(!this.content?.isValid)return
-          const active=!!this.online?.session.authenticated
+          // A successful HTTP session is not a usable game connection.
+          // In particular, a failed WSS constructor leaves authenticated=true.
+          const active=!!this.online?.session.authenticated &&
+            !!this.online?.shell.commandTransportReady
           if(active)this.renderScreen('rooms')
           // Never remove the startup splash before an actual room scene
           // has been rendered and the authenticated restore has completed.
@@ -194,7 +201,21 @@ export class GameBootstrap extends Component {
     }
     window.addEventListener('message',this.webHostListener)
     // A ready handshake avoids losing SESSION_AVAILABLE while the engine boots.
-    this.notifyWebHost('GAME_READY')
+    // Configuration is loaded asynchronously so its stalled request cannot
+    // block the splash/timeout. Never initiate session restore before it loads.
+    const ready=(window as typeof window & {__AZP_CONFIG_READY__?:Promise<boolean>}).__AZP_CONFIG_READY__
+    void (ready ?? Promise.resolve(false)).then(ok=>{
+      if(!this.content?.isValid || !this.webHostListener)return
+      if(ok)this.notifyWebHost('GAME_READY')
+      else {
+        this.notifyWebHost('SESSION_FAILED')
+        this.reportNativeBoot('fail')
+      }
+    }).catch(()=>{
+      if(!this.content?.isValid || !this.webHostListener)return
+      this.notifyWebHost('SESSION_FAILED')
+      this.reportNativeBoot('fail')
+    })
   }
   private notifyWebHost(type:'GAME_READY'|'SESSION_ACTIVE'|'SESSION_FAILED'):void {
     if(this.webHostListener && typeof window!=='undefined' && window.parent!==window)

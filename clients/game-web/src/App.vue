@@ -74,7 +74,7 @@ function reloadGame(){
   armLoadWatchdog()
 }
 
-function communicate(type:'SESSION_AVAILABLE'|'SESSION_REVOKED'|'OPEN_ROOMS'){
+function communicate(type:'SESSION_AVAILABLE'|'SESSION_REVOKED'|'OPEN_ROOMS'|'BOOT_PAUSE'|'BOOT_RESUME'){
   const frame=gameFrame.value?.contentWindow
   if(!frame)return
   // Room IDs are non-secret user intentions, never client-authoritative state.
@@ -91,7 +91,7 @@ function onFrameLoad(){
     if(!frame.contentDocument?.getElementById('GameCanvas'))
       failGameLoad('未找到游戏客户端资源，请检查部署或重新加载。')
   }catch{
-    failGameLoad('游戏页面不满足同源要求，请检查部署配置。')
+    failGameLoad('游戏页面无法访问，请检查网络、同源设置或部署配置。')
   }
 }
 function onGameMessage(event:MessageEvent){
@@ -113,10 +113,13 @@ function onGameMessage(event:MessageEvent){
       if(page.value==='game')armLoadWatchdog()
     }
   }else if(message.type==='BOOT_FAILED' && !isReady.value){
-    failGameLoad('游戏资源或引擎启动失败，请重新加载。')
+    // The native loader defers a real error while hidden; never turn hidden
+    // watchdog noise into an automatic iframe replacement on next entry.
+    if(page.value==='game')failGameLoad('游戏资源或引擎启动失败，请重新加载。')
   }else if(message.type==='BOOT_RETRY_REQUESTED'){
-    reloadGame()
+    if(page.value==='game')reloadGame()
   }else if(message.type==='GAME_READY'){
+    if(gamePhase.value==='failed')return
     if(account.value && client?.authenticated){
       if(!isReady.value){
         gamePhase.value='session'
@@ -130,6 +133,8 @@ function onGameMessage(event:MessageEvent){
       page.value='login'
     }
   }else if(message.type==='SESSION_ACTIVE'){
+    // An unsequenced or late success must not override a failed startup.
+    if(gamePhase.value!=='session' || !account.value || !client?.authenticated)return
     clearLoadWatchdog()
     gamePhase.value='ready'
     gameStage.value=4
@@ -210,10 +215,14 @@ function openGame(){
 // A hidden iframe may be throttled by the browser; do not misclassify it as
 // timed out or force a download on the next normal visit.
 watch(page,next=>{
-  if(next!=='game')clearLoadWatchdog()
-  else if(gameMounted.value && !isReady.value && gamePhase.value!=='failed')
-    armLoadWatchdog()
-})
+  if(next!=='game'){
+    clearLoadWatchdog()
+    communicate('BOOT_PAUSE')
+  }else if(gameMounted.value){
+    communicate('BOOT_RESUME')
+    if(!isReady.value && gamePhase.value!=='failed')armLoadWatchdog()
+  }
+},{flush:'post'})
 onMounted(()=>{
   window.addEventListener('message',onGameMessage)
   void initialize()

@@ -29,8 +29,31 @@ function configure(root,settings={}){
   const file=path.join(folder,'index.html');
   if(!fs.statSync(file).isFile())throw Error('not a built web index.html');
   let html=fs.readFileSync(file,'utf8');
-  const tag='<script src="./game-config.js"></script>';
-  if(!html.includes(tag)){
+  // Start the public config request asynchronously in <head>. A parser-blocking
+  // <script src> prevented the Cocos body/splash/watchdog from existing when the
+  // request stalled. The Cocos handshake waits for this explicit load promise.
+  const tag=`<script>
+  window.__AZP_CONFIG_READY__ = new Promise(function(resolve) {
+    var node = document.createElement('script');
+    var settled = false;
+    var timeout;
+    function finish(ok) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      node.onload = null;
+      node.onerror = null;
+      resolve(ok);
+    }
+    node.async = true;
+    node.src = './game-config.js';
+    node.onload = function() { finish(true); };
+    node.onerror = function() { finish(false); };
+    timeout = setTimeout(function() { finish(false); }, 20000);
+    document.head.appendChild(node);
+  });
+</script>`;
+  if(!html.includes('window.__AZP_CONFIG_READY__')){
     if(!/<\/head>/i.test(html))throw Error('web index missing head');
     html=html.replace(/<\/head>/i,tag+'\n</head>');
   }

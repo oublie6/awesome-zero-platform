@@ -53,6 +53,12 @@
         scene: [3, '正在准备游戏大厅']
       };
       let current = 0, complete = false, slow = 0, deadline = 0;
+      let suspended = false, deferredFailure = false;
+      function visible() {
+        if (document.hidden) return false;
+        try { return !window.frameElement || window.frameElement.getClientRects().length > 0; }
+        catch { return true; }
+      }
       function message(type, stage) {
         if (window.parent !== window)
           window.parent.postMessage({ protocol: 'azp-doudizhu-frame-v1', type, stage }, window.location.origin);
@@ -60,8 +66,21 @@
       function stop() { clearTimeout(slow); clearTimeout(deadline); }
       function arm() {
         stop();
-        slow = setTimeout(() => { if (!complete) root.classList.add('slow'); }, 15000);
-        deadline = setTimeout(() => { if (!complete) fail(); }, 60000);
+        if (complete || root.classList.contains('failed')) return;
+        if (suspended || !visible()) { suspended = true; return; }
+        slow = setTimeout(() => { if (!complete && !suspended) root.classList.add('slow'); }, 15000);
+        deadline = setTimeout(() => { if (!complete && !suspended) fail(); }, 60000);
+      }
+      function pause() {
+        suspended = true;
+        stop();
+        root.classList.remove('slow');
+      }
+      function resume() {
+        if (!visible() || complete || root.classList.contains('failed')) return;
+        suspended = false;
+        if (deferredFailure) { deferredFailure = false; fail(); return; }
+        arm();
       }
       function stage(name) {
         const item = phases[name];
@@ -76,8 +95,9 @@
         message('BOOT_STAGE', name);
       }
       function fail() {
-        if (complete) return;
+        if (complete || root.classList.contains('failed')) return;
         stop();
+        if (suspended || !visible()) { deferredFailure = true; return; }
         root.classList.add('failed');
         status.textContent = '游戏资源或引擎启动失败';
         step.textContent = '请检查网络连接，或重新加载游戏';
@@ -101,6 +121,17 @@
         if (!complete && current < 3 && (event.target instanceof HTMLScriptElement ||
             (event.target instanceof HTMLLinkElement && event.target.rel === 'stylesheet'))) fail();
       }, true);
+      window.addEventListener('message', (event) => {
+        if (event.source !== window.parent || event.origin !== window.location.origin ||
+            !event.data || event.data.protocol !== 'azp-doudizhu-frame-v1') return;
+        if (event.data.type === 'BOOT_PAUSE') pause();
+        else if (event.data.type === 'BOOT_RESUME') resume();
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) pause();
+        else if (visible()) resume();
+      });
+      suspended = !visible();
       window.__AZP_BOOT__ = { stage, done, fail };
       stage('document');
     })();
