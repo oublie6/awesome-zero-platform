@@ -58,4 +58,6 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
 - R2-N02：原生启动增加不可逆 terminalFailure。60 秒超时、CSS/引擎故障或隐藏期间真实故障进入该终态后，迟到的 stage/done/style onload 不再隐藏错误界面，只有明确重试并创建新页面才重置启动流程。
 - R2-N03：移除 HTML head 中阻断解析/脚本执行的外部 stylesheet，首屏启动页与必要 GameDiv/Canvas 尺寸采用内联关键 CSS；启动 watchdog 后以 print 非渲染阻塞方式加载 Cocos 样式，onload 后切换为 all，onerror 进入失败终态；stylesheet 加载完成前不可宣布 Cocos/Vue 游戏就绪。
 - 关联修复：Vue 在隐藏 iframe 或后台标签期间不抢先处理 CSS/config 所致的 SESSION_FAILED/BOOT_FAILED；原生错误在恢复可见时统一呈现，避免正常返回网站后重新进入自动销毁缓存 iframe。
+- 新增真实画布尺寸门禁：Cocos 真正成功设置非零 windowSize 且外部 CSS 已应用后才完成 __AZP_GEOMETRY_READY__；独立页 done 和嵌入页 GAME_READY 都要等待该信号。CSS 在引擎之后抵达时强制重新测量，既防止 0×0 假就绪，也避免 ResizeObserver 缺失导致卡住。
+- 显式点击重新加载立刻冻结原启动代的 timer/stage/done，迟到事件不得在 Vue 替换旧 iframe 前再次完成当前页。
 - 新增 VM 行为回归及源码门禁；实际 Chromium CSS stall、hidden-success engine、迟到事件、3 视口与真实 Cocos4 导出、CSP/304、三人游戏均应由 Codex 在 Round 3 独立验证。Goal0065 仍 in_progress；本轮没有测试集群或业务数据变更。
