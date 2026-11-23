@@ -58,7 +58,7 @@
       let current = 0, complete = false, slow = 0, deadline = 0;
       // A failed boot generation never becomes ready through a late callback.
       let terminalFailure = false, deferredFailure = false;
-      let suspended = false, stylesheetLoaded = false, pendingCompletion = false;
+      let suspended = false, stylesheetLoaded = false, geometryReady = false, pendingCompletion = false;
       function visible() {
         if (document.hidden) return false;
         try { return !window.frameElement || window.frameElement.getClientRects().length > 0; }
@@ -118,7 +118,7 @@
       function done() {
         if (complete || terminalFailure) return;
         // A fast engine cannot expose an unstyled or physically invalid canvas.
-        if (!stylesheetLoaded) { pendingCompletion = true; return; }
+        if (!stylesheetLoaded || !geometryReady) { pendingCompletion = true; return; }
         complete = true;
         stop();
         bar.style.width = '100%';
@@ -151,6 +151,16 @@
       });
       suspended = !visible();
       window.__AZP_BOOT__ = { stage, done, fail };
+      // CSS loaded is not proof the canvas has a usable physical viewport.
+      // The engine reports geometry only after setting a positive Cocos size.
+      window.__AZP_GEOMETRY_READY__ = new Promise((resolve) => {
+        window.__AZP_MARK_GEOMETRY_READY__ = () => {
+          if (terminalFailure || !stylesheetLoaded || geometryReady) return;
+          geometryReady = true;
+          resolve(true);
+          if (pendingCompletion) done();
+        };
+      });
       stage('document');
       // Parser-blocking CSS previously prevented this UI/watchdog from even
       // existing. A nonmatching media stylesheet downloads without blocking
@@ -167,8 +177,9 @@
           if (ok && !terminalFailure) {
             css.media = 'all';
             stylesheetLoaded = true;
+            window.__AZP_STYLE_LOADED__ = true;
             resolve(true);
-            if (pendingCompletion) done();
+            if (pendingCompletion && geometryReady) done();
           } else {
             resolve(false);
             fail();
@@ -210,6 +221,8 @@
               engine.screen.windowSize = new engine.Size(width, height);
               appliedWidth = width;
               appliedHeight = height;
+              if (window.__AZP_STYLE_LOADED__ === true)
+                window.__AZP_MARK_GEOMETRY_READY__?.();
             } catch {
               // A transient resize race must not stop the engine. The next
               // observer/BOOT_RESUME will retry once valid geometry returns.
@@ -239,7 +252,11 @@
         // If CSS arrives after engine initialization, remeasure even when
         // ResizeObserver is unavailable (and BOOT_RESUME was not needed).
         void window.__AZP_STYLE_READY__?.then(ok => {
-          if (ok) scheduleResize();
+          if (ok) {
+            appliedWidth = 0;
+            appliedHeight = 0;
+            scheduleResize();
+          }
         }).catch(() => {});
         window.addEventListener('pagehide', (event) => {
           if (event.persisted) return;

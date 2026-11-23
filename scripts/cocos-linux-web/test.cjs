@@ -302,13 +302,15 @@ test('Goal0065 Round2: native boot owns a visible CSS-independent splash',()=>{
  assert.match(template,/css.onload = \(\) => finish\(true\)/);
  assert.match(template,/css.onerror = \(\) => finish\(false\)/);
  assert.match(template,/window.__AZP_STYLE_READY__ = new Promise/);
- assert.match(template,/if \(!stylesheetLoaded\) \{ pendingCompletion = true; return; \}/);
+ assert.match(template,/if \(!stylesheetLoaded \|\| !geometryReady\) \{ pendingCompletion = true; return; \}/);
+ assert.match(template,/__AZP_GEOMETRY_READY__ = new Promise/);
+ assert.match(template,/__AZP_MARK_GEOMETRY_READY__/);
  assert.match(template,/terminalFailure = true;\s*stop\(\);\s*if \(window.parent === window\)/);
  assert.match(template,/__AZP_STYLE_READY__\?\.then\(ok => \{/);
  const bootstrap=fs.readFileSync(path.join(__dirname,
    '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
- assert.match(bootstrap,/Promise.all\(\[config \?\? Promise.resolve\(false\),style \?\? Promise.resolve\(false\)\]\)/);
- assert.match(bootstrap,/if\(configOK && styleOK\)/);
+ assert.match(bootstrap,/Promise.all\(\[config \?\? Promise.resolve\(false\),style \?\? Promise.resolve\(false\),/);
+ assert.match(bootstrap,/if\(configOK && styleOK && geometryOK\)/);
 });
 test('Goal0065 Round2: terminal watchdog failure rejects late engine and CSS completion',async()=>{
  const template=fs.readFileSync(path.join(__dirname,
@@ -371,6 +373,9 @@ test('Goal0065 Round2: scene completion cannot hide native splash before CSS',as
  links[0].onload();
  assert.equal(await win.__AZP_STYLE_READY__,true);
  assert.equal(links[0].media,'all');
+ assert.equal(classes.has('gone'),false,'CSS alone does not imply a usable canvas');
+ win.__AZP_MARK_GEOMETRY_READY__();
+ assert.equal(await win.__AZP_GEOMETRY_READY__,true);
  assert.equal(classes.has('gone'),true);
 });
 test('Goal0065 Round2: hidden completed engine safely resizes on show without new engine',async()=>{
