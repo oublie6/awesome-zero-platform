@@ -1093,7 +1093,10 @@ test('Goal0065 R1: HTTP identity success alone never means WSS can submit comman
 test('Goal0065 R4: failed authenticated room discovery never becomes an empty-room success',async()=>{
  const f=fixture()
  const choices={roomId:'room-existing',version:9,status:'WAITING_PLAYERS',member:true,
-   occupied:2,lastClientSequence:3,seats:[]}
+   occupied:2,lastClientSequence:3,seats:[
+     {position:1,accountId:'actor',ready:false},
+     {position:2,accountId:'friend',ready:true},
+     {position:3,accountId:'',ready:false}]}
  let fail=true
  f.platform.http.request=async(path)=>{
    if(path==='/v1/doudizhu/me/rooms'){
@@ -1123,7 +1126,9 @@ test('Goal0065 R4: failed verified-room read cannot be silently converted to a r
      throw new Error('HTTP 503: simulated room snapshot outage')
    return {code:'OK',data:{roomId:'room-rejoin',version:9,
      status:'WAITING_PLAYERS',occupied:2,member:true,lastClientSequence:12,
-     seats:[{position:1,accountId:'actor',ready:false}]}}
+     seats:[{position:1,accountId:'actor',ready:false},
+       {position:2,accountId:'friend',ready:true},
+       {position:3,accountId:'',ready:false}]}}
  }
  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
  await online.loginAndConnect()
