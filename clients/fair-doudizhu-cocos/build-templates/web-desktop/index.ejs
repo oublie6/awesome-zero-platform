@@ -127,6 +127,10 @@
         setTimeout(() => root.remove(), 350);
       }
       document.getElementById('azp-boot-retry').addEventListener('click', () => {
+        // Explicit retry starts a new page generation. Freeze this one's
+        // timers and completion callbacks while Vue replaces the old iframe.
+        terminalFailure = true;
+        stop();
         if (window.parent === window) window.location.reload();
         else message('BOOT_RETRY_REQUESTED');
       });
@@ -232,6 +236,11 @@
         window.addEventListener('resize', scheduleResize);
         window.addEventListener('message', onResume);
         document.addEventListener('visibilitychange', scheduleResize);
+        // If CSS arrives after engine initialization, remeasure even when
+        // ResizeObserver is unavailable (and BOOT_RESUME was not needed).
+        void window.__AZP_STYLE_READY__?.then(ok => {
+          if (ok) scheduleResize();
+        }).catch(() => {});
         window.addEventListener('pagehide', (event) => {
           if (event.persisted) return;
           disposed = true;

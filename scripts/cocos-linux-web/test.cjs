@@ -303,6 +303,8 @@ test('Goal0065 Round2: native boot owns a visible CSS-independent splash',()=>{
  assert.match(template,/css.onerror = \(\) => finish\(false\)/);
  assert.match(template,/window.__AZP_STYLE_READY__ = new Promise/);
  assert.match(template,/if \(!stylesheetLoaded\) \{ pendingCompletion = true; return; \}/);
+ assert.match(template,/terminalFailure = true;\s*stop\(\);\s*if \(window.parent === window\)/);
+ assert.match(template,/__AZP_STYLE_READY__\?\.then\(ok => \{/);
  const bootstrap=fs.readFileSync(path.join(__dirname,
    '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
  assert.match(bootstrap,/Promise.all\(\[config \?\? Promise.resolve\(false\),style \?\? Promise.resolve\(false\)\]\)/);
