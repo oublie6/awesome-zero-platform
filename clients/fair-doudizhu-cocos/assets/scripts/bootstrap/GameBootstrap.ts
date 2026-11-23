@@ -155,10 +155,14 @@ export class GameBootstrap extends Component {
         mat.m08,mat.m09,mat.m10,mat.m11,mat.m12,mat.m13,mat.m14,mat.m15]
         .every(Number.isFinite)
     }
-    const primary=this.buttons.find(button=>button.isValid &&
-      button.getComponent(UITransform)?.width>0 && button.getComponent(UITransform)?.height>0)
-    return !!primary && finite(this.node) && finite(camera) &&
-      finite(this.content) && finite(this.title.node) && finite(primary)
+    const usableButton=(button:Node):boolean=>{
+      if(!button.isValid)return false
+      const transform=button.getComponent(UITransform)
+      return !!transform && transform.width>0 && transform.height>0 &&
+        finite(button)
+    }
+    return finite(this.node) && finite(camera) && finite(this.content) &&
+      finite(this.title.node) && this.buttons.every(usableButton)
   }
   /** Await actual finite camera and input geometry, never invent a progress
    * stage based only on engine download. rAF pauses naturally in a background

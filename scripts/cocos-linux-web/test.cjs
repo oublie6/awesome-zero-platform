@@ -178,9 +178,9 @@ test('Goal0065 independent Cocos HTML renders splash before engine scripts and r
  const bootstrap=fs.readFileSync(path.join(__dirname,
   '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
  assert.match(bootstrap,/this\.reportNativeBoot\('stage','scene'\)/);
- assert.match(bootstrap,/this\.reportNativeBoot\(active\?'done':'fail'\)/);
+ assert.match(bootstrap,/this\.reportNativeBoot\(ready\?'done':'fail'\)/);
  assert.ok(bootstrap.indexOf("if(active)this.renderScreen('rooms')")<
-   bootstrap.indexOf("this.notifyWebHost(active?'SESSION_ACTIVE':'SESSION_FAILED')"));
+   bootstrap.indexOf("this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')"));
 })
 
 
@@ -189,7 +189,7 @@ test('Goal0065 R1: socket must actually be connected before GAME_READY completio
    '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
  assert.match(source,/const active=!!this\.online\?\.session\.authenticated\s*&&\s*!!this\.online\?\.shell\.commandTransportReady/);
  assert.ok(source.indexOf("if(active)this.renderScreen('rooms')") <
-   source.indexOf("this.notifyWebHost(active?'SESSION_ACTIVE':'SESSION_FAILED')"));
+   source.indexOf("this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')"));
  assert.match(source,/__AZP_CONFIG_READY__\?:Promise<boolean>/);
  assert.match(source,/this\.reportNativeBoot\('stage','session'\)/);
  assert.ok(source.indexOf("this.reportNativeBoot('stage','session')") <
@@ -310,7 +310,8 @@ test('Goal0065 Round2: native boot owns a visible CSS-independent splash',()=>{
  const bootstrap=fs.readFileSync(path.join(__dirname,
    '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
  assert.match(bootstrap,/Promise.all\(\[config \?\? Promise.resolve\(false\),style \?\? Promise.resolve\(false\),/);
- assert.match(bootstrap,/if\(configOK && styleOK && geometryOK\)/);
+ assert.match(bootstrap,/const sceneOK=configOK && styleOK && geometryOK && await this\.waitForWebScene\(\)/);
+ assert.match(bootstrap,/if\(sceneOK\)/);
 });
 test('Goal0065 Round2: terminal watchdog failure rejects late engine and CSS completion',async()=>{
  const template=fs.readFileSync(path.join(__dirname,
@@ -434,7 +435,7 @@ test('Goal0065 Round3: finite camera/UI world transforms gate all web ready stag
  assert.match(guard,/worldPosition/);
  assert.match(guard,/Number\.isFinite\(point\.x\)/);
  assert.match(guard,/mat\.m00[\s\S]*mat\.m15/);
- assert.match(guard,/finite\(primary\)/);
+ assert.match(guard,/this\.buttons\.every\(usableButton\)/);
  assert.match(code,/const sceneOK=configOK && styleOK && geometryOK && await this\.waitForWebScene\(\)/);
  assert.match(code,/const usable=active && await this\.waitForWebScene\(\)/);
  assert.match(code,/this\.notifyWebHost\(ready\?'SESSION_ACTIVE':'SESSION_FAILED'\)/);

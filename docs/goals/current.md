@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-23 ChatGPT **Goal0065 Round3 FAIL 集中修复 — 待 Round4 独立验收**：Vue 以保持真实布局但不可交互的屏外 parked iframe 替换 v-show/display:none，避免隐藏加载 Cocos 场景产生非有限 Camera/UI 世界矩阵；新增从场景到服务器会话的实际可渲染门禁、CSS 动态加载后无边框优先级与回归测试。仍未部署，详见 [Goal0065](0065-web-startup-cache.md)，保持 in_progress。
+
 - 2026-11-23 Codex **Goal0065 Round3 independent acceptance — FAIL**, fixed candidate `52fd6d76317d7023e0e3cc134dbe67a21afcf70f` (product-equivalent `b4f34e0`). Real Cocos4 export/200 tests pass; R2-N02 terminal failure and R2-N03 CSS blocking reproducers pass. R2-N01 remains P2: hidden startup restores positive canvas and signals ready while camera/world transforms stay nonfinite, leaving blank unclickable UI; normal-visible control succeeds. Additional P3 late stylesheet border clips portrait edge. Fresh3-account v60 game/UNKNOWN/refresh/proof and cache/account isolation pass on normal startup. No candidate rollout; six unchanged Ready Pods/two nodes, zero unfinished hands/deadlines, user29457 retained. [Round3 report and repair handoff](0065-round3-independent-acceptance.md). Goal0065 and Goal0045/0046 remain in_progress.
 
 - 2026-11-23 ChatGPT **Goal0065 Round2 FAIL 集中修复 — 待 Round3 独立验收**：针对隐藏时 Cocos 0×0 尺寸写入、失败后迟到 done 消除错误、外部 CSS 阻塞原生 splash 的三个 P2，以及隐藏 CSS 错误导致 Vue 提前失败等相关生命周期边界，调整原生模板、安全几何与 CSS 异步门禁并补充回归测试。详情见 [Goal0065](0065-web-startup-cache.md)。未部署，Goal0065 保持 in_progress。

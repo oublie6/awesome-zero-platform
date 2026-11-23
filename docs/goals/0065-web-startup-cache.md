@@ -61,3 +61,11 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
 - 新增真实画布尺寸门禁：Cocos 真正成功设置非零 windowSize 且外部 CSS 已应用后才完成 __AZP_GEOMETRY_READY__；独立页 done 和嵌入页 GAME_READY 都要等待该信号。CSS 在引擎之后抵达时强制重新测量，既防止 0×0 假就绪，也避免 ResizeObserver 缺失导致卡住。
 - 显式点击重新加载立刻冻结原启动代的 timer/stage/done，迟到事件不得在 Vue 替换旧 iframe 前再次完成当前页。
 - 新增 VM 行为回归及源码门禁；实际 Chromium CSS stall、hidden-success engine、迟到事件、3 视口与真实 Cocos4 导出、CSP/304、三人游戏均应由 Codex 在 Round 3 独立验证。Goal0065 仍 in_progress；本轮没有测试集群或业务数据变更。
+
+## Round 3 FAIL 集中修复（待 Codex Round 4 独立验收）
+
+- R3-N01 / P2：根因是 Vue 使用 `v-show` / `display:none` 停放 Cocos iframe，使隐藏期间下载完成的引擎在零布局下激活 UI 和摄像机，得到非有限 worldMatrix，单纯恢复 Canvas 像素尺寸无法修复。改为位于真实宽度的 `game-layout-parked` 绝对定位屏外元素，禁用交互与可访问焦点（`inert`、`aria-hidden`、`pointer-events:none`），保留原 iframe 引擎/缓存与真实布局。
+- 真实渲染门禁：Cocos 的 `GameBootstrap` 在原生 done、GAME_READY、SESSION_ACTIVE 之前要求 Camera、Canvas、SafeContent、标题和所有菜单按钮均拥有有限的 worldPosition/worldMatrix，以及有效按钮尺寸。通过 rAF 等待真实布局；若不可恢复，显示错误而不是假游戏就绪；不改变 Go 权威牌局数据。
+- 后台加载协调：隐藏期间可能已完成资源和 scene，Vue 暂缓发送 `SESSION_AVAILABLE`，直到返回游戏或后台标签恢复前台才启动 Web 会话验证，避免重复连线或无意义的后台业务初始化。
+- R3-N02 / P3：Cocos 生成样式在动态加载后会覆盖内联的 `#GameDiv` margin/border/radius/shadow，导致 5px 左偏与画布溢出。内联的视口关键样式加最高优先级 `!important`，保持三个视口无偏移。
+- 回归测试：修正源断言为双重（authenticated+transport+render）就绪验证；新增 parked iframe 布局/输入隔离与 Cocos 相机、按钮矩阵及 CSS 边框的定向约束。实际 `cc.js` 隐藏完成、横竖屏、菜单真点击、CSS 慢加载与三人牌局仍需由 Codex 在 Round 4 独立验收后才能部署测试环境。本轮没有修改测试集群。
