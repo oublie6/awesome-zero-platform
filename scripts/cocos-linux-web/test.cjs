@@ -4,6 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const os=require('node:os');
+const vm=require('node:vm');
 const {configure,publicConfig}=require('./configure.cjs');
 const {webBuildOptions}=require('./build-options.cjs');
 const {repairGeneratedTypes}=require('./verify-native-types.cjs');
@@ -30,6 +31,10 @@ test('Cocos Web index injects public config before game scripts, idempotently',t
  const html=fs.readFileSync(index,'utf8');
  assert.equal(html.split('game-config.js').length-1,1);
  assert.ok(html.indexOf('game-config.js')<html.indexOf('index.js'));
+ assert.match(html,/window\.__AZP_CONFIG_READY__ = new Promise/);
+ assert.match(html,/node\.async = true/);
+ assert.match(html,/node\.onerror = function\(\) \{ finish\(false\)/);
+ assert.doesNotMatch(html,/<script\s+src="\.\/game-config\.js"/);
  const publicJS=fs.readFileSync(path.join(dir,'game-config.js'),'utf8');
  assert.match(publicJS,/https:\/\/api.example.test/);
  assert.doesNotMatch(publicJS,/AppSecret|accessToken|password/);
@@ -177,3 +182,96 @@ test('Goal0065 independent Cocos HTML renders splash before engine scripts and r
  assert.ok(bootstrap.indexOf("if(active)this.renderScreen('rooms')")<
    bootstrap.indexOf("this.notifyWebHost(active?'SESSION_ACTIVE':'SESSION_FAILED')"));
 })
+
+
+test('Goal0065 R1: socket must actually be connected before GAME_READY completion',()=>{
+ const source=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
+ assert.match(source,/const active=!!this\.online\?\.session\.authenticated\s*&&\s*!!this\.online\?\.shell\.commandTransportReady/);
+ assert.ok(source.indexOf("if(active)this.renderScreen('rooms')") <
+   source.indexOf("this.notifyWebHost(active?'SESSION_ACTIVE':'SESSION_FAILED')"));
+ assert.match(source,/__AZP_CONFIG_READY__\?:Promise<boolean>/);
+ assert.match(source,/if\(ok\)this\.notifyWebHost\('GAME_READY'\)/);
+});
+test('Goal0065 R1: Cocos watchdog really pauses while hidden and resumes',()=>{
+ const template=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
+ const script=template.split('<body>')[1].match(/<script>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(script,'native loader bootstrap must exist in body before Cocos');
+ const handlers=new Map(), sent=[], clocks=new Map();
+ let count=0, frameVisible=true, hidden=false;
+ const classes=new Set();
+ const root={
+   classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x)},
+   querySelector:()=>({setAttribute:()=>{}}),remove:()=>{}
+ };
+ const elements={
+   'azp-boot':root,'azp-boot-fill':{style:{}},
+   'azp-boot-status':{textContent:''},'azp-boot-step':{textContent:''},
+   'azp-boot-retry':{addEventListener:()=>{}}
+ };
+ const doc={
+   get hidden(){return hidden},
+   getElementById:x=>elements[x],
+   addEventListener:(kind,fn)=>handlers.set('document:'+kind,fn)
+ };
+ const parent={postMessage:m=>sent.push(m)};
+ const win={
+   parent,location:{origin:'https://test.example'},
+   frameElement:{getClientRects:()=>frameVisible?[{width:500}]:[]},
+   addEventListener:(kind,fn)=>handlers.set('window:'+kind,fn)
+ };
+ vm.runInNewContext(script,{
+   window:win,document:doc,console,
+   HTMLScriptElement:class{},HTMLLinkElement:class{},
+   setTimeout:(fn,ms)=>{clocks.set(++count,{fn,ms});return count},
+   clearTimeout:id=>clocks.delete(id)
+ });
+ assert.equal(clocks.size,2);
+ frameVisible=false;
+ handlers.get('window:message')({
+   source:parent,origin:win.location.origin,
+   data:{protocol:'azp-doudizhu-frame-v1',type:'BOOT_PAUSE'}
+ });
+ assert.equal(clocks.size,0,'hidden loader must stop both native timers');
+ win.__AZP_BOOT__.fail();
+ assert.equal(classes.has('failed'),false,'real error is deferred while hidden');
+ frameVisible=true;
+ handlers.get('window:message')({
+   source:parent,origin:win.location.origin,
+   data:{protocol:'azp-doudizhu-frame-v1',type:'BOOT_RESUME'}
+ });
+ assert.equal(classes.has('failed'),true,'real deferred error must surface when visible');
+ assert.equal(sent.filter(x=>x.type==='BOOT_FAILED').length,1);
+ // Paused watchdogs are also suspended by the browser when tab is hidden.
+ assert.equal(clocks.size,0);
+});
+test('Goal0065 R1: visible suspended loader re-arms and stale origin cannot resume',()=>{
+ const html=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
+ assert.match(html,/event\.source !== window\.parent \|\| event\.origin !== window\.location\.origin/);
+ assert.match(html,/event\.data\.type === 'BOOT_PAUSE'/);
+ assert.match(html,/event\.data\.type === 'BOOT_RESUME'/);
+ assert.match(html,/suspended = !visible\(\)/);
+ assert.match(html,/if \(suspended \|\| !visible\(\)\)/);
+ assert.match(html,/deferredFailure = true/);
+ assert.match(html,/document\.addEventListener\('visibilitychange'/);
+});
+test('Goal0065 R1: public config is async without exposing startup to a sync head stall',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'azp-config-async-'));
+ t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ fs.writeFileSync(path.join(dir,'index.html'),'<html><head></head><body><script src="engine.js"></script></body></html>');
+ configure(dir,{apiBase:'https://api.example.test',socketEndpoint:'wss://api.example.test/ws'});
+ const html=fs.readFileSync(path.join(dir,'index.html'),'utf8');
+ const loader=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(loader);
+ let pending;
+ const doc={head:{appendChild:node=>{pending=node}},createElement:()=>({})};
+ const context={window:{},document:doc,setTimeout:()=>1,clearTimeout:()=>{}};
+ vm.runInNewContext(loader,context);
+ assert.equal(pending.src,'./game-config.js');
+ assert.equal(pending.async,true);
+ pending.onload();
+ assert.equal(await context.window.__AZP_CONFIG_READY__,true);
+ assert.ok(html.indexOf('window.__AZP_CONFIG_READY__') < html.indexOf('engine.js'));
+});

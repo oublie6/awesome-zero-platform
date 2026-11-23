@@ -43,3 +43,11 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
    CI + 实际 Cocos4 native Web 导出 + 独立 Codex 验收。
 6. 记录冷/热启动性能、每阶段耗时及 transferSize。未测量之前
    不宣称实际提速或已部署缓存。
+
+## Round 1 FAIL 集中修复（待 Codex Round 2 独立验收）
+
+- N01：启动就绪的判定现在要求账号认证且真实 WSS 传输连接可提交命令；配置尚未确认时不发送 GAME_READY。HTTP 鉴权成功但 socket 失败只能报 SESSION_FAILED。
+- N02：网页进入/离开游戏以经过同源鉴别的 BOOT_RESUME/BOOT_PAUSE 协调原生 Cocos 计时器；iframe/tab 隐藏时停止原生 15/60 秒计时器，真实异常延后到恢复可见时处理。
+- N03：公开配置改为异步脚本加载和明确的 load/timeout 结果；HTML 解析不再被 game-config.js 阻塞，Cocos 本地启动页会实际创建并显示，GAME_READY 在配置成功装载后才发送。
+- 额外状态防护：Vue 拒绝乱序 SESSION_ACTIVE/在失败后迟到的 GAME_READY；隐藏页面错误不再悄悄销毁缓存的 iframe；未改变 Go/房间/牌局协议、密钥或身份。
+- 变更后应重新计算和验证实际 Cocos Web 导出页面新增内联脚本 CSP 哈希；无 Web 上线，原 Goal 0064 部署继续保留。完整 CI、浏览器隐藏/恢复与 WSS 故障回归、源码完整三人牌局和独立验收仍未通过前，**Goal0065 必须保持 in_progress**。

@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-23 ChatGPT **Goal0065 Round1 FAIL 集中修复 — 开发中**：针对 HTTP 鉴权后 WSS 失败却错误就绪、隐藏原生启动页计时器超时、head 配置脚本阻塞启动页三个 P2 缺陷修改 Cocos/HTML/Vue/configure，并增加恢复可见后的真实错误处理、异步配置握手门禁与乱序状态保护；增加定向回归及 [修复说明](0065-web-startup-cache.md)。验收/部署尚未通过，Goal0065 保持 in_progress。
+
 - 2026-11-23 Codex **Goal0065 Round1 independent acceptance — FAIL**, fixed product `dac83978d4612e7cd50ed13b9b654aaa9719afcc`. Exact CI, official Cocos4 Web export, three viewport loading/input, HTTP cache, iframe reuse, logout/account isolation and UNKNOWN checks pass in executed scope. Three P2 findings: false READY after WSS failure, hidden native watchdog timeout, and blocking head configuration preventing standalone splash. No candidate Kubernetes deployment; existing six Pods/config/storage and user29457 forward retained, zero unfinished hands. [Round1 report and repair handoff](0065-round1-independent-acceptance.md) records metrics, observer corrections and remaining three-player/deployment/device gates. Goal0065 and Goal0045/0046 remain in_progress.
 
 - 2026-11-23 ChatGPT **Goal0065 Cocos Web 启动反馈与缓存优化 — in_progress**：针对“进入游戏黑屏、无加载进度、反复进入重复加载”新增 Vue 即时遮罩、Cocos Web HTML 启动页及可验证阶段进度、15秒慢加载与60秒无进展重试；同账号切换网站/游戏时保留单个 iframe，退出/换账号销毁。新增静态资源 HTTP 缓存策略（哈希资源 immutable、无哈希 Cocos 条件重验证、HTML/config 可更新），仅提供部署运维映射，**未声称测试环境已应用缓存头**；不缓存业务/身份数据，不修改 Go 协议。实现与定向测试参见 [Goal0065](0065-web-startup-cache.md)，待最终同 SHA CI、真实 Cocos Web 导出/浏览器实测及 Codex 独立验收后方可关闭。

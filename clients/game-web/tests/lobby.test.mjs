@@ -42,3 +42,16 @@ test('Goal0065 startup reports actual stages and offers bounded failure/retry',a
  assert.match(source,/loadDeadline=setTimeout/)
  assert.doesNotMatch(source,/Math\.random|setInterval\(/)
 })
+
+test('Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifecycle',async()=>{
+ const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
+ assert.match(source,/communicate\('BOOT_PAUSE'\)/)
+ assert.match(source,/communicate\('BOOT_RESUME'\)/)
+ assert.match(source,/\{flush:'post'\}/)
+ assert.match(source,/if\(page\.value==='game'\)failGameLoad\(/)
+ assert.match(source,/if\(page\.value==='game'\)reloadGame\(\)/)
+ assert.match(source,/if\(gamePhase\.value==='failed'\)return/)
+ assert.match(source,/if\(gamePhase\.value!=='session' \|\| !account\.value \|\| !client\?\.authenticated\)return/)
+ assert.match(source,/event\.source!==gameFrame\.value\?\.contentWindow/)
+ assert.match(source,/event\.origin!==window\.location\.origin/)
+})
