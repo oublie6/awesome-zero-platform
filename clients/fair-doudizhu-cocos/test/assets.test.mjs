@@ -77,7 +77,7 @@ test('delayed fairness kit UI updates are fenced after leave, hand and login rep
 
 test('accepted room.hand.start receipt is adopted only after exact fairness preflight',async()=>{
  const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
- const start=source.split('private async startHand():Promise<void> {')[1].split('private async refreshRoom():Promise<void>')[0]
+ const start=source.split('private async startHand():Promise<void> {')[1].split('private async refreshRoom(requiredForStartup=false):Promise<void>')[0]
  assert.match(start,/const generation=this\.roomGeneration/)
  assert.match(start,/await online\.startHand\(handID\)/)
  assert.match(start,/this\.currentRoom\(online,epoch,roomID,generation,selection\)/)
@@ -89,9 +89,9 @@ test('accepted room.hand.start receipt is adopted only after exact fairness pref
 test('Round16 HTTP H2 refresh defers rebinding until durable WSS start receipt',async()=>{
  const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
  const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
- const refresh=ui.split('private async refreshRoom():Promise<void> {')[1].split('private async refreshFairness():Promise<void>')[0]
- assert.match(refresh,/if\(online\.handStartInProgress\)return/)
- assert.ok(refresh.indexOf('if(online.handStartInProgress)return')<refresh.indexOf('online.adoptAuthorizedRoomRefresh(info,commandGeneration)'))
+ const refresh=ui.split('private async refreshRoom(requiredForStartup=false):Promise<void> {')[1].split('private async refreshFairness():Promise<void>')[0]
+ assert.match(refresh,/if\(online\.handStartInProgress\)\{[\s\S]*?if\(requiredForStartup\)throw/)
+ assert.ok(refresh.indexOf('if(online.handStartInProgress){')<refresh.indexOf('online.adoptAuthorizedRoomRefresh(info,commandGeneration)'))
  assert.doesNotMatch(refresh,/online\.rooms\.restoreTrustedRoom\(/)
  const guard=controller.split('confirmActiveFairnessHand(handId: string | null): void {')[1].split('private resetFairnessAfterConfirmedTransition()')[0]
  assert.match(guard,/this\.startingHand !== null && handId !== this\.confirmedFairnessHand/)
@@ -188,7 +188,7 @@ test('G50-N02: scene offers exact room UNKNOWN reconciliation before discovery',
 test('audit: Scene refresh does not bypass command generation or preflight barriers',async()=>{
  const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
  const controller=await readFile(new URL('../assets/scripts/game/GameOnlineController.ts',import.meta.url),'utf8')
- const refresh=ui.split('private async refreshRoom():Promise<void> {')[1].split('private async refreshFairness():')[0]
+ const refresh=ui.split('private async refreshRoom(requiredForStartup=false):Promise<void> {')[1].split('private async refreshFairness():')[0]
  assert.match(refresh,/const commandGeneration=online\.rooms\.commandGeneration/)
  assert.match(refresh,/online\.adoptAuthorizedRoomRefresh\(info,commandGeneration\)/)
  assert.doesNotMatch(refresh,/online\.rooms\.restoreTrustedRoom\(/)
@@ -199,7 +199,7 @@ test('audit: Scene refresh does not bypass command generation or preflight barri
 
 test('audit: pending Scene refresh is fenced when newer room selection begins',async()=>{
  const source=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
- const refresh=source.split('private async refreshRoom():Promise<void> {')[1].split('private async refreshFairness():')[0]
+ const refresh=source.split('private async refreshRoom(requiredForStartup=false):Promise<void> {')[1].split('private async refreshFairness():')[0]
  assert.match(refresh,/const roomID=this\.roomID,selection=this\.recoveryAttempt/)
  assert.match(refresh,/selection!==this\.recoveryAttempt/)
  assert.match(refresh,/online\.rooms\.state\.roomId!==roomID/)
@@ -212,7 +212,7 @@ test('G51-N01: stale account reconciliation callbacks cannot replace another acc
  assert.ok(reconnect.indexOf('if(!this.currentAccount(owner,epoch)') <
    reconnect.indexOf("this.notice('原房间操作已明确拒绝"))
  assert.match(reconnect,/if\(this\.currentAccount\(owner,epoch\) && ownedSelection===this\.recoveryAttempt\)\s*this\.notice\('重连失败：/)
- const login=ui.split('private async login(restoreOnly=false):Promise<void> {')[1].split('private async logoutWeb():Promise<void>{')[0]
+ const login=ui.split('private async login(restoreOnly=false):Promise<boolean> {')[1].split('private async logoutWeb():Promise<void>{')[0]
  assert.match(login,/text=>\{if\(this\.currentAccount\(online,generation\)\)this\.notice\(text\)\}/)
  assert.match(login,/if\(this\.currentAccount\(online,generation\) && this\.screen==='table'\)/)
 })
@@ -224,8 +224,8 @@ test('G51 audit: async room and hand callbacks require their original session an
   ['private async joinRoom():Promise<void> {','private async leaveRoom():'],
   ['private async leaveRoom():Promise<void> {','private async readyRoom():'],
   ['private async readyRoom():Promise<void> {','private async startHand():'],
-  ['private async startHand():Promise<void> {','private async refreshRoom():'],
-  ['private async refreshRoom():Promise<void> {','private async refreshFairness():'],
+  ['private async startHand():Promise<void> {','private async refreshRoom(requiredForStartup=false):'],
+  ['private async refreshRoom(requiredForStartup=false):Promise<void> {','private async refreshFairness():'],
   ['private async refreshFairness():Promise<void>{','private async submitOwnContribution():'],
   ['private async retryUnknownHand():Promise<void>{','private discardUnknownHand():'],
   ['private async bid(score:number):Promise<void> {','private async play():'],
@@ -255,7 +255,7 @@ test('G51 audit: repeat create/leave taps and menu recovery errors are controlle
 
 test('G51 audit: failed login preflight leaves the previous account event epoch active',async()=>{
  const ui=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
- const login=ui.split('private async login(restoreOnly=false):Promise<void> {')[1].split('private async logoutWeb():Promise<void>{')[0]
+ const login=ui.split('private async login(restoreOnly=false):Promise<boolean> {')[1].split('private async logoutWeb():Promise<void>{')[0]
  assert.match(login,/let generation=this\.requestGeneration/)
  assert.ok(login.indexOf('if(!cfg)throw')<login.indexOf('generation=++this.requestGeneration'))
  assert.ok(login.indexOf("if(target==='wechat' && !globals.wx)throw")<login.indexOf('generation=++this.requestGeneration'))
@@ -274,7 +274,7 @@ test('G52-N01: stale same-account failures compare the same room/selection lifet
  assert.match(reconnect,/ownedSelection=this\.recoveryAttempt/)
  assert.match(reconnect,/this\.recoverMyRooms\(token=>\{ownedSelection=token\}\)/)
  assert.match(reconnect,/this\.currentAccount\(owner,epoch\) && ownedSelection===this\.recoveryAttempt/)
- const refresh=section('private async refreshRoom():Promise<void> {','private async refreshFairness():')
+ const refresh=section('private async refreshRoom(requiredForStartup=false):Promise<void> {','private async refreshFairness():')
  assert.match(refresh,/let generation=this\.roomGeneration/)
  assert.match(refresh,/generation=this\.roomGeneration \/\/ Our own adopted hand/)
  assert.match(refresh,/this\.currentRoom\(owner,epoch,roomID,generation,selection\)/)
@@ -310,7 +310,7 @@ test('G52: changed selection stops delayed Hand/Fairness commands from writing U
  const section=(a,b)=>src.split(a)[1].split(b)[0]
  for(const [start,end] of [
   ['private async readyRoom():Promise<void> {','private async startHand():'],
-  ['private async startHand():Promise<void> {','private async refreshRoom():'],
+  ['private async startHand():Promise<void> {','private async refreshRoom(requiredForStartup=false):'],
   ['private async submitOwnContribution():Promise<void>{','private async verifyMyPhrase():'],
   ['private async verifyMyPhrase():Promise<void>{','private async prepareFairness():'],
   ['private async commitFairness():Promise<void>{','private async revealFairness():'],
@@ -378,7 +378,8 @@ test('embedded Vue game bridge validates origin/source and never trusts a suppli
  assert.match(bridge,/event\.origin!==origin/)
  assert.match(bridge,/data\.protocol!=='azp-doudizhu-frame-v1'/)
  assert.match(bridge,/data\.type==='SESSION_AVAILABLE'/)
- assert.match(bridge,/void this\.login\(true\)/)
+ assert.match(bridge,/const pending=this\.login\(true\)/)
+ assert.match(bridge,/const connected=restored && !!owner\?\.session\.authenticated/)
  assert.match(bridge,/data\.type==='SESSION_REVOKED'/)
  assert.match(bridge,/this\.online\?\.dispose\(\)/)
  assert.match(bridge,/data\.type==='OPEN_ROOMS'/)

@@ -1089,3 +1089,51 @@ test('Goal0065 R1: HTTP identity success alone never means WSS can submit comman
  assert.equal(online.shell.commandTransportReady,false,'real socket must be connected')
  online.dispose()
 })
+
+test('Goal0065 R4: failed authenticated room discovery never becomes an empty-room success',async()=>{
+ const f=fixture()
+ const choices={roomId:'room-existing',version:9,status:'WAITING_PLAYERS',member:true,
+   occupied:2,lastClientSequence:3,seats:[]}
+ let fail=true
+ f.platform.http.request=async(path)=>{
+   if(path==='/v1/doudizhu/me/rooms'){
+     if(fail)throw new Error('HTTP 503: simulated discovery outage')
+     return {code:'OK',data:{rooms:[choices]}}
+   }
+   return {code:'OK',data:choices}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await assert.rejects(online.discoverRecoverableRooms(),/HTTP 503/)
+ assert.equal(online.session.authenticated,true,'failure must not discard authenticated account')
+ assert.equal(online.shell.commandTransportReady,true,'socket is still available for explicit retry')
+ assert.equal(online.rooms.state,null,'failed discovery must not invent or adopt a room')
+ assert.equal(f.commands.length,0,'failure must not create a new durable room command')
+ fail=false
+ const rooms=await online.discoverRecoverableRooms()
+ assert.deepEqual(rooms.map(x=>x.roomId),['room-existing'])
+ assert.equal(f.commands.length,0)
+ online.dispose()
+});
+test('Goal0065 R4: failed verified-room read cannot be silently converted to a restored room',async()=>{
+ const f=fixture()
+ let fail=true
+ f.platform.http.request=async path=>{
+   if(path==='/v1/doudizhu/rooms/room-rejoin' && fail)
+     throw new Error('HTTP 503: simulated room snapshot outage')
+   return {code:'OK',data:{roomId:'room-rejoin',version:9,
+     status:'WAITING_PLAYERS',occupied:2,member:true,lastClientSequence:12,
+     seats:[{position:1,accountId:'actor',ready:false}]}}
+ }
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ await online.loginAndConnect()
+ await assert.rejects(online.reconnectAndResync('room-rejoin'),/HTTP 503/)
+ assert.equal(online.rooms.state,null)
+ assert.equal(f.commands.length,0)
+ fail=false
+ const restored=await online.reconnectAndResync('room-rejoin')
+ assert.equal(restored?.roomId,'room-rejoin')
+ assert.equal(online.rooms.state?.roomId,'room-rejoin')
+ assert.equal(f.commands.length,0)
+ online.dispose()
+});
