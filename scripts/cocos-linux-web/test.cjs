@@ -198,7 +198,8 @@ test('Goal0065 R1: socket must actually be connected before GAME_READY completio
 test('Goal0065 R1: Cocos watchdog really pauses while hidden and resumes',()=>{
  const template=fs.readFileSync(path.join(__dirname,
    '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
- const script=template.split('<body>')[1].match(/<script>([\s\S]*?)<\/script>/)?.[1];
+ const script=template.split('<body>')[1].match(/<script>([\s\S]*?)<\/script>/)?.[1]
+   ?.replace(/<%- JSON.stringify\(cssUrl\) %>/g,JSON.stringify('./style.css'));
  assert.ok(script,'native loader bootstrap must exist in body before Cocos');
  const handlers=new Map(), sent=[], clocks=new Map();
  let count=0, frameVisible=true, hidden=false;
@@ -212,9 +213,12 @@ test('Goal0065 R1: Cocos watchdog really pauses while hidden and resumes',()=>{
    'azp-boot-status':{textContent:''},'azp-boot-step':{textContent:''},
    'azp-boot-retry':{addEventListener:()=>{}}
  };
+ const cssLinks=[];
  const doc={
    get hidden(){return hidden},
    getElementById:x=>elements[x],
+   createElement:()=>({}),
+   head:{appendChild:el=>cssLinks.push(el)},
    addEventListener:(kind,fn)=>handlers.set('document:'+kind,fn)
  };
  const parent={postMessage:m=>sent.push(m)};
@@ -230,6 +234,8 @@ test('Goal0065 R1: Cocos watchdog really pauses while hidden and resumes',()=>{
    clearTimeout:id=>clocks.delete(id)
  });
  assert.equal(clocks.size,2);
+ assert.equal(cssLinks.length,1);
+ assert.equal(cssLinks[0].media,'print');
  frameVisible=false;
  handlers.get('window:message')({
    source:parent,origin:win.location.origin,
@@ -237,6 +243,8 @@ test('Goal0065 R1: Cocos watchdog really pauses while hidden and resumes',()=>{
  });
  assert.equal(clocks.size,0,'hidden loader must stop both native timers');
  win.__AZP_BOOT__.fail();
+ win.__AZP_BOOT__.done();
+ assert.equal(classes.has('gone'),false,'deferred terminal failure must reject late done');
  assert.equal(classes.has('failed'),false,'real error is deferred while hidden');
  frameVisible=true;
  handlers.get('window:message')({
@@ -278,4 +286,135 @@ test('Goal0065 R1: public config is async without exposing startup to a sync hea
  pending.onload();
  assert.equal(await context.window.__AZP_CONFIG_READY__,true);
  assert.ok(html.indexOf('window.__AZP_CONFIG_READY__') < html.indexOf('engine.js'));
+});
+
+test('Goal0065 Round2: native boot owns a visible CSS-independent splash',()=>{
+ const template=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
+ const markup=template.indexOf('id="azp-boot"');
+ const watchdog=template.indexOf('window.__AZP_BOOT__ = { stage, done, fail }');
+ const css=template.indexOf("css.rel = 'stylesheet'");
+ const engine=template.indexOf('<%- include(cocosTemplate, {}) %>');
+ assert.ok(markup>0 && markup<watchdog && watchdog<css && css<engine);
+ assert.doesNotMatch(template.slice(0,watchdog),/<link[^>]+rel=["']stylesheet["']/);
+ assert.match(template,/css.media = 'print'/);
+ assert.match(template,/css.media = 'all'/);
+ assert.match(template,/css.onload = \(\) => finish\(true\)/);
+ assert.match(template,/css.onerror = \(\) => finish\(false\)/);
+ assert.match(template,/window.__AZP_STYLE_READY__ = new Promise/);
+ assert.match(template,/if \(!stylesheetLoaded\) \{ pendingCompletion = true; return; \}/);
+ const bootstrap=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
+ assert.match(bootstrap,/Promise.all\(\[config \?\? Promise.resolve\(false\),style \?\? Promise.resolve\(false\)\]\)/);
+ assert.match(bootstrap,/if\(configOK && styleOK\)/);
+});
+test('Goal0065 Round2: terminal watchdog failure rejects late engine and CSS completion',async()=>{
+ const template=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
+ const script=template.split('<body>')[1].match(/<script>([\s\S]*?)<\/script>/)?.[1]
+   ?.replace(/<%- JSON.stringify\(cssUrl\) %>/g,JSON.stringify('./style.css'));
+ assert.ok(script);
+ const handlers=new Map(),sent=[],timers=new Map(),classes=new Set(),links=[];
+ let counter=0;
+ const root={classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),
+   contains:x=>classes.has(x)},querySelector:()=>({setAttribute:()=>{}}),
+   remove:()=>{root.removed=true},removed:false};
+ const elements={'azp-boot':root,'azp-boot-fill':{style:{}},
+   'azp-boot-status':{},'azp-boot-step':{},'azp-boot-retry':{addEventListener:()=>{}}};
+ const doc={hidden:false,getElementById:id=>elements[id],
+   createElement:()=>({}),head:{appendChild:el=>links.push(el)},
+   addEventListener:(type,fn)=>handlers.set('doc:'+type,fn)};
+ const parent={postMessage:x=>sent.push(x)};
+ const win={parent,location:{origin:'https://test.example'},
+   frameElement:{getClientRects:()=>[{width:500}]},
+   addEventListener:(type,fn)=>handlers.set('win:'+type,fn)};
+ vm.runInNewContext(script,{document:doc,window:win,console,
+   HTMLScriptElement:class{},HTMLLinkElement:class{},
+   setTimeout:(fn,ms)=>{timers.set(++counter,{fn,ms});return counter},
+   clearTimeout:id=>timers.delete(id)});
+ const deadline=Array.from(timers.values()).find(t=>t.ms===60000);
+ assert.ok(deadline);
+ deadline.fn();
+ assert.equal(classes.has('failed'),true);
+ win.__AZP_BOOT__.stage('engine');
+ win.__AZP_BOOT__.done();
+ links[0].onload(); // Late stylesheet success cannot clear failure.
+ assert.equal(await win.__AZP_STYLE_READY__,false);
+ assert.equal(root.removed,false);
+ assert.equal(classes.has('gone'),false);
+ assert.equal(sent.filter(x=>x.type==='BOOT_FAILED').length,1);
+});
+test('Goal0065 Round2: scene completion cannot hide native splash before CSS',async()=>{
+ const html=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
+ const script=html.split('<body>')[1].match(/<script>([\s\S]*?)<\/script>/)?.[1]
+   ?.replace(/<%- JSON.stringify\(cssUrl\) %>/g,JSON.stringify('./style.css'));
+ const links=[],classes=new Set(),timers=new Map();let counter=0;
+ const root={classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),
+   contains:x=>classes.has(x)},querySelector:()=>({setAttribute:()=>{}}),
+   remove:()=>{root.removed=true},removed:false};
+ const elements={'azp-boot':root,'azp-boot-fill':{style:{}},
+   'azp-boot-status':{},'azp-boot-step':{},'azp-boot-retry':{addEventListener:()=>{}}};
+ const doc={hidden:false,getElementById:id=>elements[id],createElement:()=>({}),
+   head:{appendChild:el=>links.push(el)},addEventListener:()=>{}};
+ const win={frameElement:null,location:{origin:'https://test.example'},
+   addEventListener:()=>{}};win.parent=win;
+ vm.runInNewContext(script,{document:doc,window:win,console,
+   HTMLScriptElement:class{},HTMLLinkElement:class{},
+   setTimeout:(fn,ms)=>{timers.set(++counter,{fn,ms});return counter},
+   clearTimeout:id=>timers.delete(id)});
+ win.__AZP_BOOT__.stage('scene');
+ win.__AZP_BOOT__.done();
+ assert.equal(classes.has('gone'),false);
+ links[0].onload();
+ assert.equal(await win.__AZP_STYLE_READY__,true);
+ assert.equal(links[0].media,'all');
+ assert.equal(classes.has('gone'),true);
+});
+test('Goal0065 Round2: hidden completed engine safely resizes on show without new engine',async()=>{
+ const html=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
+ const script=html.match(/<script>\s*(System\.import\('cc'\)[\s\S]*?)<\/script>/)?.[1];
+ assert.ok(script);
+ const handlers=new Map(),frames=[],stages=[],observers=[];
+ let hidden=true,width=0,height=0,assignments=0;
+ const rect=()=>({width,height});
+ const node={getBoundingClientRect:rect};
+ const doc={hidden:false,getElementById:()=>node,
+   addEventListener:(type,fn)=>handlers.set('doc:'+type,fn),
+   removeEventListener:type=>handlers.delete('doc:'+type)};
+ const parent={};
+ const win={parent,location:{origin:'https://test.example'},
+   frameElement:{getClientRects:()=>hidden?[]:[{width:500}]},
+   requestAnimationFrame:fn=>frames.push(fn),
+   addEventListener:(type,fn)=>handlers.set('win:'+type,fn),
+   removeEventListener:type=>handlers.delete('win:'+type),
+   __AZP_BOOT__:{stage:name=>stages.push(name),fail:()=>{throw Error('native loader failed')}}};
+ const engine={screen:{devicePixelRatio:2,set windowSize(size){
+   assert.ok(size.width>0 && size.height>0);
+   assignments++;
+ }},Size:class{constructor(w,h){this.width=w;this.height=h}},
+   Game:{EVENT_ENGINE_INITED:'inited'},game:{once:(_event,fn)=>handlers.set('engine:init',fn)}};
+ const System={import:async()=>engine};
+ class ResizeObserver {constructor(fn){this.callback=fn;observers.push(this)}
+   observe(){}disconnect(){}}
+ vm.runInNewContext(script,{document:doc,window:win,console,System,ResizeObserver});
+ await Promise.resolve();
+ assert.equal(typeof handlers.get('engine:init'),'function');
+ assert.doesNotThrow(()=>handlers.get('engine:init')());
+ frames.splice(0).forEach(fn=>fn());
+ assert.equal(assignments,0);
+ assert.deepEqual(stages,['engine']);
+ hidden=false;width=440;height=300;
+ handlers.get('win:message')({source:parent,origin:win.location.origin,
+   data:{protocol:'azp-doudizhu-frame-v1',type:'BOOT_RESUME'}});
+ frames.splice(0).forEach(fn=>fn());
+ assert.equal(assignments,1);
+ observers[0].callback();
+ frames.splice(0).forEach(fn=>fn());
+ assert.equal(assignments,1,'unchanged geometry must not reapply screen size');
+ width=330;height=250;
+ observers[0].callback();
+ frames.splice(0).forEach(fn=>fn());
+ assert.equal(assignments,2,'visible responsive geometry must update');
 });
