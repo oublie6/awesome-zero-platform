@@ -113,9 +113,10 @@ function onGameMessage(event:MessageEvent){
       if(page.value==='game')armLoadWatchdog()
     }
   }else if(message.type==='BOOT_FAILED' && !isReady.value){
-    // The native loader defers a real error while hidden; never turn hidden
-    // watchdog noise into an automatic iframe replacement on next entry.
-    if(page.value==='game')failGameLoad('游戏资源或引擎启动失败，请重新加载。')
+    // Hidden iframe and background-tab errors are deferred by the native
+    // loader; do not mark failed until the user can see its retry UI.
+    if(page.value==='game' && !document.hidden)
+      failGameLoad('游戏资源或引擎启动失败，请重新加载。')
   }else if(message.type==='BOOT_RETRY_REQUESTED'){
     if(page.value==='game')reloadGame()
   }else if(message.type==='GAME_READY'){
@@ -141,8 +142,11 @@ function onGameMessage(event:MessageEvent){
     gameLoadError.value=''
     gameStatus.value='游戏就绪'
     communicate('OPEN_ROOMS')
-  }else if(message.type==='SESSION_FAILED'){
-    failGameLoad('游戏连接失败，请检查 HTTPS/WSS 服务或重新进入。')
+  }else if(message.type==='SESSION_FAILED' && !isReady.value){
+    // A failed config/CSS request may finish while the retained iframe is
+    // hidden. The native boot terminal state will report BOOT_FAILED on resume.
+    if(page.value==='game' && !document.hidden)
+      failGameLoad('游戏连接失败，请检查 HTTPS/WSS 服务或重新进入。')
   }
 }
 async function initialize(){

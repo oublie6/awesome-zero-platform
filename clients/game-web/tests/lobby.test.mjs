@@ -48,7 +48,7 @@ test('Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifec
  assert.match(source,/communicate\('BOOT_PAUSE'\)/)
  assert.match(source,/communicate\('BOOT_RESUME'\)/)
  assert.match(source,/\{flush:'post'\}/)
- assert.match(source,/if\(page\.value==='game'\)failGameLoad\(/)
+ assert.match(source,/if\(page\.value==='game' && !document\.hidden\)\s*failGameLoad\(/)
  assert.match(source,/if\(page\.value==='game'\)reloadGame\(\)/)
  assert.match(source,/if\(gamePhase\.value==='failed'\)return/)
  assert.match(source,/if\(gamePhase\.value!=='session' \|\| !account\.value \|\| !client\?\.authenticated\)return/)
@@ -62,4 +62,13 @@ test('Goal0065 R1: background tabs also suspend Vue watchdog',async()=>{
  assert.match(source,/document\.addEventListener\('visibilitychange',onVisibilityChange\)/)
  assert.match(source,/document\.removeEventListener\('visibilitychange',onVisibilityChange\)/)
  assert.match(source,/if\(document\.hidden\)\{\s*clearLoadWatchdog\(\)/)
+})
+
+test('Goal0065 Round2: native CSS/session failure stays deferred in retained background iframe',async()=>{
+ const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
+ const boot=source.split("}else if(message.type==='BOOT_FAILED'")[1].split("}else if(message.type==='BOOT_RETRY_REQUESTED'")[0]
+ const session=source.split("}else if(message.type==='SESSION_FAILED'")[1].split('\n}')[0]
+ assert.match(boot,/page\.value==='game' && !document\.hidden/)
+ assert.match(session,/page\.value==='game' && !document\.hidden/)
+ assert.match(source,/if\(gamePhase\.value!=='session' \|\| !account\.value \|\| !client\?\.authenticated\)return/)
 })

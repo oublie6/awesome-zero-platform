@@ -51,3 +51,11 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
 - N03：公开配置改为异步脚本加载和明确的 load/timeout 结果；HTML 解析不再被 game-config.js 阻塞，Cocos 本地启动页会实际创建并显示，GAME_READY 在配置成功装载后才发送。
 - 额外状态防护：Vue 拒绝乱序 SESSION_ACTIVE/在失败后迟到的 GAME_READY；隐藏页面错误不再悄悄销毁缓存的 iframe；未改变 Go/房间/牌局协议、密钥或身份。
 - 变更后应重新计算和验证实际 Cocos Web 导出页面新增内联脚本 CSP 哈希；无 Web 上线，原 Goal 0064 部署继续保留。完整 CI、浏览器隐藏/恢复与 WSS 故障回归、源码完整三人牌局和独立验收仍未通过前，**Goal0065 必须保持 in_progress**。
+
+## Round 2 FAIL — 集中修复及 Round 3 验收范围
+
+- R2-N01：原生 Cocos ENGINE_INITED 不再使用 window.innerWidth 在隐藏 iframe 时强制写尺寸；改为读取实际 iframe 可见状态、GameDiv 和 Cocos3dGameContainer 的非零几何，使用公有 screen/windowSize API 在可见时应用。ResizeObserver、同源 BOOT_RESUME、浏览器 resize/visibilitychange 用于安全恢复，布局竞态不会中断 engine 初始化。
+- R2-N02：原生启动增加不可逆 terminalFailure。60 秒超时、CSS/引擎故障或隐藏期间真实故障进入该终态后，迟到的 stage/done/style onload 不再隐藏错误界面，只有明确重试并创建新页面才重置启动流程。
+- R2-N03：移除 HTML head 中阻断解析/脚本执行的外部 stylesheet，首屏启动页与必要 GameDiv/Canvas 尺寸采用内联关键 CSS；启动 watchdog 后以 print 非渲染阻塞方式加载 Cocos 样式，onload 后切换为 all，onerror 进入失败终态；stylesheet 加载完成前不可宣布 Cocos/Vue 游戏就绪。
+- 关联修复：Vue 在隐藏 iframe 或后台标签期间不抢先处理 CSS/config 所致的 SESSION_FAILED/BOOT_FAILED；原生错误在恢复可见时统一呈现，避免正常返回网站后重新进入自动销毁缓存 iframe。
+- 新增 VM 行为回归及源码门禁；实际 Chromium CSS stall、hidden-success engine、迟到事件、3 视口与真实 Cocos4 导出、CSP/304、三人游戏均应由 Codex 在 Round 3 独立验证。Goal0065 仍 in_progress；本轮没有测试集群或业务数据变更。
