@@ -425,3 +425,28 @@ test('Goal0065 Round2: hidden completed engine safely resizes on show without ne
  frames.splice(0).forEach(fn=>fn());
  assert.equal(assignments,2,'visible responsive geometry must update');
 });
+
+test('Goal0065 Round3: finite camera/UI world transforms gate all web ready stages',()=>{
+ const code=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
+ const guard=code.split('private webSceneRenderable():boolean')[1].split('private async waitForWebScene():Promise<boolean>')[0];
+ assert.match(guard,/getChildByName\('Camera'\)/);
+ assert.match(guard,/worldPosition/);
+ assert.match(guard,/Number\.isFinite\(point\.x\)/);
+ assert.match(guard,/mat\.m00[\s\S]*mat\.m15/);
+ assert.match(guard,/finite\(primary\)/);
+ assert.match(code,/const sceneOK=configOK && styleOK && geometryOK && await this\.waitForWebScene\(\)/);
+ assert.match(code,/const usable=active && await this\.waitForWebScene\(\)/);
+ assert.match(code,/this\.notifyWebHost\(ready\?'SESSION_ACTIVE':'SESSION_FAILED'\)/);
+ assert.match(code,/this\.reportNativeBoot\(sceneOK\?'done':'fail'\)/);
+});
+test('Goal0065 Round3: late exported CSS cannot restore portrait canvas borders',()=>{
+ const template=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/build-templates/web-desktop/index.ejs'),'utf8');
+ assert.match(template,/#GameDiv \{ width: 100vw !important; height: 100vh !important;/);
+ for(const rule of ['margin: 0 !important','border: 0 !important',
+   'border-radius: 0 !important','box-shadow: none !important',
+   'box-sizing: border-box !important'])
+   assert.ok(template.includes(rule),'missing highest priority rule '+rule);
+ assert.match(template,/css\.media = 'all'/);
+});

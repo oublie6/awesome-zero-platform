@@ -129,11 +129,47 @@ export class GameBootstrap extends Component {
       // Standalone can render a scene before CSS or the physical canvas is
       // ready. Keep the native splash until both actual conditions are met.
       void Promise.all([style ?? Promise.resolve(false),geometry ?? Promise.resolve(false)])
-        .then(([cssOK,geometryOK])=>{
-          if(this.content?.isValid)this.reportNativeBoot(cssOK && geometryOK?'done':'fail')
+        .then(async ([cssOK,geometryOK])=>{
+          const sceneOK=cssOK && geometryOK && await this.waitForWebScene()
+          if(this.content?.isValid)this.reportNativeBoot(sceneOK?'done':'fail')
         }).catch(()=>this.reportNativeBoot('fail'))
     }
     void this.shell.initialize()
+  }
+  /** Canvas width/height alone cannot prove a playable Cocos scene. A
+   * display:none initialization may leave the Camera and UI world matrices
+   * nonfinite even after the framebuffer is resized to a positive value.
+   * This presentation-only check never touches identity, room or hand data. */
+  private webSceneRenderable():boolean {
+    if(!this.content?.isValid || !this.node.isValid || !this.title?.node.isValid ||
+       this.buttons.length===0)return false
+    const camera=this.node.getChildByName('Camera')
+    if(!camera?.isValid)return false
+    const finite=(node:Node):boolean=>{
+      if(!node.isValid)return false
+      const point=node.worldPosition
+      if(!Number.isFinite(point.x)||!Number.isFinite(point.y)||!Number.isFinite(point.z))
+        return false
+      const mat=node.worldMatrix
+      return [mat.m00,mat.m01,mat.m02,mat.m03,mat.m04,mat.m05,mat.m06,mat.m07,
+        mat.m08,mat.m09,mat.m10,mat.m11,mat.m12,mat.m13,mat.m14,mat.m15]
+        .every(Number.isFinite)
+    }
+    const primary=this.buttons.find(button=>button.isValid &&
+      button.getComponent(UITransform)?.width>0 && button.getComponent(UITransform)?.height>0)
+    return !!primary && finite(this.node) && finite(camera) &&
+      finite(this.content) && finite(this.title.node) && finite(primary)
+  }
+  /** Await actual finite camera and input geometry, never invent a progress
+   * stage based only on engine download. rAF pauses naturally in a background
+   * tab, and the existing native watchdog owns the visible timeout/retry UI. */
+  private async waitForWebScene():Promise<boolean> {
+    if(detectRuntimeTarget()!=='web' || typeof window==='undefined')return true
+    for(let frame=0;frame<120 && this.content?.isValid;frame++){
+      if(this.webSceneRenderable())return true
+      await new Promise<void>(resolve=>window.requestAnimationFrame(()=>resolve()))
+    }
+    return false
   }
   private reportNativeBoot(action:'stage'|'done'|'fail',stage?:'scene'|'session'):void{
     if(typeof window==='undefined')return
@@ -155,17 +191,20 @@ export class GameBootstrap extends Component {
       if(data.type==='SESSION_AVAILABLE'){
         if(this.hostRestoring || this.online?.session.authenticated)return
         this.hostRestoring=true
-        void this.login(true).then(()=>{
+        void this.login(true).then(async ()=>{
           if(!this.content?.isValid)return
-          // A successful HTTP session is not a usable game connection.
-          // In particular, a failed WSS constructor leaves authenticated=true.
+          // HTTP authentication is not proof of connected WSS transport.
           const active=!!this.online?.session.authenticated &&
             !!this.online?.shell.commandTransportReady
           if(active)this.renderScreen('rooms')
-          // Never remove the startup splash before an actual room scene
-          // has been rendered and the authenticated restore has completed.
-          this.notifyWebHost(active?'SESSION_ACTIVE':'SESSION_FAILED')
-          this.reportNativeBoot(active?'done':'fail')
+          const owner=this.online
+          const usable=active && await this.waitForWebScene()
+          if(!this.content?.isValid || this.online!==owner)return
+          const ready=usable && !!owner?.session.authenticated &&
+            !!owner?.shell.commandTransportReady
+          // Never remove the splash for a blank/unusable scene.
+          this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')
+          this.reportNativeBoot(ready?'done':'fail')
         }).finally(()=>{this.hostRestoring=false})
       }else if(data.type==='SESSION_REVOKED'){
         ++this.requestGeneration
@@ -212,11 +251,13 @@ export class GameBootstrap extends Component {
     const geometry=(window as typeof window & {__AZP_GEOMETRY_READY__?:Promise<boolean>}).__AZP_GEOMETRY_READY__
     void Promise.all([config ?? Promise.resolve(false),style ?? Promise.resolve(false),
       geometry ?? Promise.resolve(false)])
-      .then(([configOK,styleOK,geometryOK])=>{
+      .then(async ([configOK,styleOK,geometryOK])=>{
         if(!this.content?.isValid || !this.webHostListener)return
-        if(configOK && styleOK && geometryOK){
-          // Never advertise an unstyled scene as interactive; reset the
-          // native watchdog only at the actual server-restore boundary.
+        const sceneOK=configOK && styleOK && geometryOK && await this.waitForWebScene()
+        if(!this.content?.isValid || !this.webHostListener)return
+        if(sceneOK){
+          // Require actual finite Camera/UI transforms as well as CSS,
+          // positive canvas geometry and validated public configuration.
           this.reportNativeBoot('stage','session')
           this.notifyWebHost('GAME_READY')
         }else {
