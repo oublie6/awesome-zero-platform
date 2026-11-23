@@ -4,10 +4,12 @@
   <meta charset="utf-8">
   <title><%= projectName %></title>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <link rel="stylesheet" href="<%= cssUrl %>">
+  <!-- Native loading UI is self-styled; noncritical Cocos CSS is loaded after its watchdog. -->
   <style>
     html, body { width: 100%; height: 100%; overflow: hidden; background: #0b181b; }
     #GameDiv { width: 100vw; height: 100vh; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+    #Cocos3dGameContainer { width: 100%; height: 100%; }
+    #GameCanvas { display: block; width: 100%; height: 100%; }
     #azp-boot { position: fixed; z-index: 2147483647; inset: 0; display: flex; align-items: center;
       justify-content: center; background: radial-gradient(circle at 50% 30%,#244b36,#0a1815 70%);
       font-family: system-ui, sans-serif; color: #f3e4be; text-align: center; padding: 20px; }
@@ -54,7 +56,9 @@
         session: [3, '正在验证服务器会话并恢复房间']
       };
       let current = 0, complete = false, slow = 0, deadline = 0;
-      let suspended = false, deferredFailure = false;
+      // A failed boot generation never becomes ready through a late callback.
+      let terminalFailure = false, deferredFailure = false;
+      let suspended = false, stylesheetLoaded = false, pendingCompletion = false;
       function visible() {
         if (document.hidden) return false;
         try { return !window.frameElement || window.frameElement.getClientRects().length > 0; }
@@ -67,7 +71,7 @@
       function stop() { clearTimeout(slow); clearTimeout(deadline); }
       function arm() {
         stop();
-        if (complete || root.classList.contains('failed')) return;
+        if (complete || terminalFailure) return;
         if (suspended || !visible()) { suspended = true; return; }
         slow = setTimeout(() => { if (!complete && !suspended) root.classList.add('slow'); }, 15000);
         deadline = setTimeout(() => { if (!complete && !suspended) fail(); }, 60000);
@@ -78,14 +82,14 @@
         root.classList.remove('slow');
       }
       function resume() {
-        if (!visible() || complete || root.classList.contains('failed')) return;
+        if (!visible() || complete) return;
         suspended = false;
-        if (deferredFailure) { deferredFailure = false; fail(); return; }
-        arm();
+        if (deferredFailure) { showFailure(); return; }
+        if (!terminalFailure) arm();
       }
       function stage(name) {
         const item = phases[name];
-        if (!item || complete || root.classList.contains('failed') ||
+        if (!item || complete || terminalFailure ||
             (item[0] <= current && name !== 'session')) return;
         current = item[0];
         status.textContent = item[1];
@@ -96,17 +100,25 @@
         arm();
         message('BOOT_STAGE', name);
       }
-      function fail() {
-        if (complete || root.classList.contains('failed')) return;
-        stop();
-        if (suspended || !visible()) { deferredFailure = true; return; }
+      function showFailure() {
+        if (root.classList.contains('failed')) return;
+        deferredFailure = false;
         root.classList.add('failed');
         status.textContent = '游戏资源或引擎启动失败';
         step.textContent = '请检查网络连接，或重新加载游戏';
         message('BOOT_FAILED');
       }
+      function fail() {
+        if (complete || terminalFailure) return;
+        terminalFailure = true;
+        stop();
+        if (suspended || !visible()) { deferredFailure = true; return; }
+        showFailure();
+      }
       function done() {
-        if (complete) return;
+        if (complete || terminalFailure) return;
+        // A fast engine cannot expose an unstyled or physically invalid canvas.
+        if (!stylesheetLoaded) { pendingCompletion = true; return; }
         complete = true;
         stop();
         bar.style.width = '100%';
@@ -136,6 +148,32 @@
       suspended = !visible();
       window.__AZP_BOOT__ = { stage, done, fail };
       stage('document');
+      // Parser-blocking CSS previously prevented this UI/watchdog from even
+      // existing. A nonmatching media stylesheet downloads without blocking
+      // first paint and is applied only after its actual load event.
+      window.__AZP_STYLE_READY__ = new Promise((resolve) => {
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.media = 'print';
+        css.href = <%- JSON.stringify(cssUrl) %>;
+        let settled = false;
+        function finish(ok) {
+          if (settled) return;
+          settled = true;
+          if (ok && !terminalFailure) {
+            css.media = 'all';
+            stylesheetLoaded = true;
+            resolve(true);
+            if (pendingCompletion) done();
+          } else {
+            resolve(false);
+            fail();
+          }
+        }
+        css.onload = () => finish(true);
+        css.onerror = () => finish(false);
+        document.head.appendChild(css);
+      });
     })();
   </script>
   <div id="GameDiv" cc_exact_fit_screen="false">
@@ -145,18 +183,65 @@
   <script>
     System.import('cc').then((engine) => {
       engine.game.once(engine.Game.EVENT_ENGINE_INITED, () => {
-        // Desktop subframes need an explicit physical size; CSS alone stretches
-        // the old framebuffer. Use the public API and the engine's capped DPR.
+        // A display:none iframe can have positive innerWidth but 0x0 content.
+        // Never let invalid physical geometry abort EVENT_ENGINE_INITED.
+        const container = document.getElementById('Cocos3dGameContainer');
+        const gameDiv = document.getElementById('GameDiv');
+        let appliedWidth = 0, appliedHeight = 0, queued = false, disposed = false;
         const resize = () => {
-          const dpr = engine.screen.devicePixelRatio;
-          engine.screen.windowSize = new engine.Size(window.innerWidth * dpr, window.innerHeight * dpr);
+          if (disposed || document.hidden) return;
+          try {
+            if (window.frameElement && !window.frameElement.getClientRects().length) return;
+            const outer = gameDiv?.getBoundingClientRect();
+            const inner = container?.getBoundingClientRect();
+            if (!outer || !inner || outer.width <= 0 || outer.height <= 0 ||
+                inner.width <= 0 || inner.height <= 0) return;
+            const dpr = engine.screen.devicePixelRatio;
+            if (!Number.isFinite(dpr) || dpr <= 0) return;
+            const width = Math.round(inner.width * dpr);
+            const height = Math.round(inner.height * dpr);
+            if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 ||
+                height <= 0 || (width === appliedWidth && height === appliedHeight)) return;
+            try {
+              engine.screen.windowSize = new engine.Size(width, height);
+              appliedWidth = width;
+              appliedHeight = height;
+            } catch {
+              // A transient resize race must not stop the engine. The next
+              // observer/BOOT_RESUME will retry once valid geometry returns.
+            }
+          } catch {
+            // Detached/temporarily hidden frames are recoverable.
+          }
         };
-        resize();
-        window.__AZP_BOOT__?.stage('engine');
-        window.addEventListener('resize', resize);
+        const scheduleResize = () => {
+          if (disposed || queued) return;
+          queued = true;
+          window.requestAnimationFrame(() => { queued = false; resize(); });
+        };
+        const onResume = (event) => {
+          if (event.source !== window.parent || event.origin !== window.location.origin ||
+              !event.data || event.data.protocol !== 'azp-doudizhu-frame-v1' ||
+              event.data.type !== 'BOOT_RESUME') return;
+          scheduleResize();
+        };
+        const observer = typeof ResizeObserver === 'function' ?
+          new ResizeObserver(scheduleResize) : null;
+        if (gameDiv) observer?.observe(gameDiv);
+        if (container) observer?.observe(container);
+        window.addEventListener('resize', scheduleResize);
+        window.addEventListener('message', onResume);
+        document.addEventListener('visibilitychange', scheduleResize);
         window.addEventListener('pagehide', (event) => {
-          if (!event.persisted) window.removeEventListener('resize', resize);
+          if (event.persisted) return;
+          disposed = true;
+          observer?.disconnect();
+          window.removeEventListener('resize', scheduleResize);
+          window.removeEventListener('message', onResume);
+          document.removeEventListener('visibilitychange', scheduleResize);
         });
+        scheduleResize();
+        window.__AZP_BOOT__?.stage('engine');
       });
     }).catch((error) => { window.__AZP_BOOT__?.fail(); console.error(error); });
   </script>
