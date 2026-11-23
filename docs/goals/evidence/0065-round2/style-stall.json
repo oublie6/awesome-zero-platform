@@ -1,0 +1,19 @@
+{
+  "at2": {
+    "bodyExists": false,
+    "overlayExists": false,
+    "bootHandlerExists": false,
+    "configPromiseExists": false,
+    "readyState": "loading"
+  },
+  "intercepted": true,
+  "after63": {
+    "bodyExists": false,
+    "overlayExists": false,
+    "bootHandlerExists": false,
+    "configPromiseExists": false,
+    "readyState": "loading"
+  },
+  "elapsed": 63771,
+  "afterReleaseScene": true
+}

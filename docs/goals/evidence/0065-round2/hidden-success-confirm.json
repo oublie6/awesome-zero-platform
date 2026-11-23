@@ -1,0 +1,96 @@
+{
+  "errors": [],
+  "console": [
+    "Error: _updateAdaptResult Invalid size.\n    at y (https://127.0.0.1:30465/game/cocos-js/cc.js:1:5153)\n    at T (https://127.0.0.1:30465/game/cocos-js/cc.js:1:3935)\n    at gM._updateAdaptResult (https://127.0.0.1:30465/game/cocos-js/cc.js:1:710440)\n    at e.emit (https://127.0.0.1:30465/game/cocos-js/cc.js:1:38655)\n    at e._ccprivate$_updateContainer (https://127.0.0.1:30465/game/cocos-js/cc.js:1:209298)\n    at e._ccprivate$_resizeFrame (https://127.0.0.1:30465/game/cocos-js/cc.js:1:207510)\n    at set windowSize (https://127.0.0.1:30465/game/cocos-js/cc.js:1:197983)\n    at set windowSize (https://127.0.0.1:30465/game/cocos-js/cc.js:1:210258)\n    at resize (https://127.0.0.1:30465/game/index.html:187:36)\n    at https://127.0.0.1:30465/game/index.html:189:9"
+  ],
+  "hidden": {
+    "parent": {
+      "status": "正在读取游戏页面",
+      "cover": true,
+      "sameFrame": true,
+      "messages": [
+        {
+          "at": 1795422294819,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        }
+      ]
+    },
+    "native": {
+      "viewport": {
+        "width": 1207,
+        "height": 701
+      },
+      "canvas": {
+        "width": 0,
+        "height": 0
+      },
+      "engineInited": false,
+      "scene": false,
+      "failed": false,
+      "status": "正在读取游戏页面"
+    }
+  },
+  "visible12": {
+    "parent": {
+      "status": "正在读取游戏页面",
+      "cover": true,
+      "sameFrame": true,
+      "messages": [
+        {
+          "at": 1795422294819,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        }
+      ]
+    },
+    "native": {
+      "viewport": {
+        "width": 1207,
+        "height": 701
+      },
+      "canvas": {
+        "width": 0,
+        "height": 0
+      },
+      "engineInited": false,
+      "scene": false,
+      "failed": false,
+      "status": "正在读取游戏页面"
+    }
+  },
+  "visibleFailure": {
+    "parent": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "sameFrame": true,
+      "messages": [
+        {
+          "at": 1795422294819,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795422366442,
+          "type": "BOOT_FAILED"
+        }
+      ]
+    },
+    "native": {
+      "viewport": {
+        "width": 1207,
+        "height": 701
+      },
+      "canvas": {
+        "width": 0,
+        "height": 0
+      },
+      "engineInited": false,
+      "scene": false,
+      "failed": true,
+      "status": "游戏资源或引擎启动失败"
+    }
+  },
+  "explicitRetryReady": true
+}

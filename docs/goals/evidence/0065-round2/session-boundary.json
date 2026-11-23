@@ -1,0 +1,67 @@
+{
+  "beforeConfig": {
+    "text": "正在准备游戏大厅",
+    "failed": false
+  },
+  "held": {
+    "status": "正在验证服务器会话并恢复房间",
+    "cover": true
+  },
+  "native": {
+    "failed": false,
+    "status": "正在验证服务器会话并恢复房间",
+    "timers": [
+      {
+        "at": 1795423380799,
+        "ms": 15000,
+        "status": "正在读取游戏页面",
+        "cancelled": true
+      },
+      {
+        "at": 1795423380799,
+        "ms": 60000,
+        "status": "正在读取游戏页面",
+        "cancelled": true
+      },
+      {
+        "at": 1795423385551,
+        "ms": 15000,
+        "status": "游戏引擎初始化完成",
+        "cancelled": true
+      },
+      {
+        "at": 1795423385551,
+        "ms": 60000,
+        "status": "游戏引擎初始化完成",
+        "cancelled": true
+      },
+      {
+        "at": 1795423388781,
+        "ms": 15000,
+        "status": "正在准备游戏大厅",
+        "cancelled": true
+      },
+      {
+        "at": 1795423388781,
+        "ms": 60000,
+        "status": "正在准备游戏大厅",
+        "cancelled": true
+      },
+      {
+        "at": 1795423396421,
+        "ms": 15000,
+        "status": "正在验证服务器会话并恢复房间",
+        "cancelled": false
+      },
+      {
+        "at": 1795423396421,
+        "ms": 60000,
+        "status": "正在验证服务器会话并恢复房间",
+        "cancelled": false
+      }
+    ]
+  },
+  "connected": true,
+  "nativeTimersAfterReady": [],
+  "elapsed": 19057
+}

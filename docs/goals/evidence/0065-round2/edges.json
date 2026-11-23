@@ -1,0 +1,29 @@
+{
+  "before": 1,
+  "beforeNativeTimers": [
+    2,
+    3
+  ],
+  "afterForged": {
+    "slow": false,
+    "failed": false,
+    "timers": [
+      2,
+      3
+    ]
+  },
+  "afterForgedResumeTimers": [
+    2,
+    3
+  ],
+  "afterRapid": {
+    "iframeCount": 1,
+    "status": "等待游戏页面响应"
+  },
+  "afterReady": {
+    "count": 1,
+    "transportReady": true
+  },
+  "logoutDestroyed": true,
+  "closedWhileLoading": true
+}

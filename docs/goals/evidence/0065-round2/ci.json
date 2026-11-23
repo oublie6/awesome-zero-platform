@@ -1,0 +1,90 @@
+[
+  {
+    "id": 45127956643,
+    "name": "Cocos Linux Native Client",
+    "source": "c3232213ec6de5a111c3a31a791a88190afb56f0",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45127956643",
+    "jobs": [
+      {
+        "name": "linux_source",
+        "conclusion": "success"
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  {
+    "id": 45127956667,
+    "name": "Fair Doudizhu Vue3 Web",
+    "source": "c3232213ec6de5a111c3a31a791a88190afb56f0",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45127956667",
+    "jobs": [
+      {
+        "name": "vue_build",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45127956611,
+    "name": "Fair Doudizhu",
+    "source": "c3232213ec6de5a111c3a31a791a88190afb56f0",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45127956611",
+    "jobs": [
+      {
+        "name": "mysql_integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success"
+      },
+      {
+        "name": "application",
+        "conclusion": "success"
+      },
+      {
+        "name": "client_foundation",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45127956722,
+    "name": "CI",
+    "source": "c3232213ec6de5a111c3a31a791a88190afb56f0",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45127956722",
+    "jobs": [
+      {
+        "name": "integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "unit",
+        "conclusion": "success"
+      },
+      {
+        "name": "secure_envelope",
+        "conclusion": "success"
+      },
+      {
+        "name": "admin_web",
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "report",
+        "conclusion": "success"
+      }
+    ]
+  }
+]

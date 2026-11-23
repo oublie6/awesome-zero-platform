@@ -1,0 +1,126 @@
+[
+  {
+    "name": "script-404-retry-old-messages",
+    "failed": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "progress": "1",
+      "slow": false,
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "messages": [
+        {
+          "at": 1795423175438,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795423175579,
+          "type": "BOOT_FAILED"
+        }
+      ],
+      "timers": []
+    },
+    "retryBefore": {
+      "status": "正在读取游戏页面",
+      "cover": true,
+      "progress": "1",
+      "slow": false,
+      "messages": [
+        {
+          "at": 1795423175438,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795423175579,
+          "type": "BOOT_FAILED"
+        },
+        {
+          "at": 1795423177268,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        }
+      ],
+      "timers": [
+        15000,
+        60000
+      ]
+    },
+    "retryAfterForged": {
+      "status": "正在读取游戏页面",
+      "cover": true,
+      "progress": "1",
+      "slow": false,
+      "messages": [
+        {
+          "at": 1795423175438,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795423175579,
+          "type": "BOOT_FAILED"
+        },
+        {
+          "at": 1795423177268,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795423177554,
+          "type": "SESSION_ACTIVE"
+        },
+        {
+          "at": 1795423177554,
+          "type": "SESSION_ACTIVE"
+        },
+        {
+          "at": 1795423177554,
+          "type": "SESSION_ACTIVE"
+        },
+        {
+          "at": 1795423177554,
+          "type": "BOOT_FAILED"
+        }
+      ],
+      "timers": [
+        15000,
+        60000
+      ]
+    },
+    "recovered": true,
+    "observerFailure": null
+  },
+  {
+    "name": "html-404",
+    "failed": {
+      "status": "未找到游戏客户端资源，请检查部署或重新加载。",
+      "cover": true,
+      "progress": "0",
+      "slow": false,
+      "error": "未找到游戏客户端资源，请检查部署或重新加载。",
+      "messages": [],
+      "timers": []
+    },
+    "retryBefore": null,
+    "retryAfterForged": null,
+    "recovered": false,
+    "observerFailure": null
+  },
+  {
+    "name": "offline-recovery",
+    "failed": {
+      "status": "游戏页面无法访问，请检查网络、同源设置或部署配置。",
+      "cover": true,
+      "progress": "0",
+      "slow": false,
+      "error": "游戏页面无法访问，请检查网络、同源设置或部署配置。",
+      "messages": [],
+      "timers": []
+    },
+    "retryBefore": null,
+    "retryAfterForged": null,
+    "recovered": true,
+    "observerFailure": null
+  }
+]

@@ -1,0 +1,426 @@
+[
+  {
+    "name": "N01-real-auth-WSS-failure-retry",
+    "failed": {
+      "hidden": false,
+      "cover": true,
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "progress": "3",
+      "messages": [
+        {
+          "at": 1795421874929,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795421879470,
+          "type": "BOOT_STAGE",
+          "stage": "engine"
+        },
+        {
+          "at": 1795421882951,
+          "type": "BOOT_STAGE",
+          "stage": "scene"
+        },
+        {
+          "at": 1795421882956,
+          "type": "BOOT_STAGE",
+          "stage": "session"
+        },
+        {
+          "at": 1795421882956,
+          "type": "GAME_READY"
+        },
+        {
+          "at": 1795421883011,
+          "type": "SESSION_FAILED"
+        },
+        {
+          "at": 1795421883012,
+          "type": "BOOT_FAILED"
+        }
+      ]
+    },
+    "native": {
+      "hidden": false,
+      "visible": true,
+      "overlay": true,
+      "failed": true,
+      "slow": false,
+      "status": "游戏资源或引擎启动失败",
+      "configPresent": true,
+      "readyState": "complete"
+    },
+    "actual": {
+      "authenticated": true,
+      "transportReady": false
+    },
+    "afterLate": {
+      "hidden": false,
+      "cover": true,
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "progress": "3",
+      "messages": [
+        {
+          "at": 1795421874929,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795421879470,
+          "type": "BOOT_STAGE",
+          "stage": "engine"
+        },
+        {
+          "at": 1795421882951,
+          "type": "BOOT_STAGE",
+          "stage": "scene"
+        },
+        {
+          "at": 1795421882956,
+          "type": "BOOT_STAGE",
+          "stage": "session"
+        },
+        {
+          "at": 1795421882956,
+          "type": "GAME_READY"
+        },
+        {
+          "at": 1795421883011,
+          "type": "SESSION_FAILED"
+        },
+        {
+          "at": 1795421883012,
+          "type": "BOOT_FAILED"
+        },
+        {
+          "at": 1795421883841,
+          "type": "SESSION_ACTIVE"
+        },
+        {
+          "at": 1795421883841,
+          "type": "GAME_READY"
+        }
+      ]
+    },
+    "recovered": {
+      "transportReady": true,
+      "authenticated": true,
+      "newFrame": true
+    },
+    "completed": true
+  },
+  {
+    "name": "N02-hidden-over60-resume-rapid",
+    "hidden": {
+      "hidden": false,
+      "visible": false,
+      "overlay": true,
+      "failed": false,
+      "slow": false,
+      "status": "正在读取游戏页面",
+      "configPresent": true,
+      "readyState": "complete"
+    },
+    "after62": {
+      "hidden": false,
+      "cover": true,
+      "status": "正在读取游戏页面",
+      "progress": "1",
+      "messages": [
+        {
+          "at": 1795421899072,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        }
+      ]
+    },
+    "nativeAfter": {
+      "hidden": false,
+      "visible": false,
+      "overlay": true,
+      "failed": false,
+      "slow": false,
+      "status": "正在读取游戏页面",
+      "configPresent": true,
+      "readyState": "complete"
+    },
+    "sameFrame": true,
+    "final": {
+      "hidden": false,
+      "cover": false,
+      "status": "游戏就绪",
+      "messages": [
+        {
+          "at": 1795421899072,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795421967000,
+          "type": "BOOT_STAGE",
+          "stage": "engine"
+        },
+        {
+          "at": 1795421970493,
+          "type": "BOOT_STAGE",
+          "stage": "scene"
+        },
+        {
+          "at": 1795421970639,
+          "type": "BOOT_STAGE",
+          "stage": "session"
+        },
+        {
+          "at": 1795421970639,
+          "type": "GAME_READY"
+        },
+        {
+          "at": 1795421970960,
+          "type": "SESSION_ACTIVE"
+        }
+      ]
+    },
+    "retained": {
+      "sameFrame": true,
+      "count": 1
+    },
+    "completed": true
+  },
+  {
+    "name": "N02-hidden-resource-404",
+    "hidden": {
+      "hidden": false,
+      "cover": true,
+      "status": "正在读取游戏页面",
+      "progress": "1",
+      "messages": [
+        {
+          "at": 1795422120348,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        }
+      ]
+    },
+    "nativeHidden": {
+      "hidden": false,
+      "visible": false,
+      "overlay": true,
+      "failed": false,
+      "slow": false,
+      "status": "正在读取游戏页面",
+      "configPresent": true,
+      "readyState": "complete"
+    },
+    "sameFrame": true,
+    "visible": {
+      "hidden": false,
+      "cover": true,
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "progress": "1",
+      "messages": [
+        {
+          "at": 1795422120348,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795422128828,
+          "type": "BOOT_FAILED"
+        }
+      ]
+    },
+    "recovered": true,
+    "completed": true
+  },
+  {
+    "name": "N03-config-slow-success",
+    "at16": {
+      "hidden": false,
+      "visible": true,
+      "overlay": true,
+      "failed": false,
+      "slow": false,
+      "status": "正在准备游戏大厅",
+      "configPresent": false,
+      "readyState": "interactive"
+    },
+    "parent16": {
+      "hidden": false,
+      "cover": true,
+      "status": "游戏场景已准备",
+      "progress": "3",
+      "messages": [
+        {
+          "at": 1795422141554,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795422146320,
+          "type": "BOOT_STAGE",
+          "stage": "engine"
+        },
+        {
+          "at": 1795422149943,
+          "type": "BOOT_STAGE",
+          "stage": "scene"
+        }
+      ]
+    },
+    "recovered": true,
+    "completed": true
+  },
+  {
+    "name": "N03-config-404",
+    "failed": {
+      "hidden": false,
+      "cover": true,
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "progress": "1",
+      "messages": [
+        {
+          "at": 1795422162673,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795422162699,
+          "type": "BOOT_FAILED"
+        }
+      ]
+    },
+    "retryRecovered": true,
+    "completed": true
+  },
+  {
+    "name": "N03-config-late-timeout",
+    "at16": {
+      "hidden": false,
+      "visible": true,
+      "overlay": true,
+      "failed": false,
+      "slow": false,
+      "status": "正在准备游戏大厅",
+      "configPresent": false,
+      "readyState": "interactive"
+    },
+    "parent16": {
+      "hidden": false,
+      "cover": true,
+      "status": "游戏场景已准备",
+      "progress": "3",
+      "messages": [
+        {
+          "at": 1795422174841,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795422178633,
+          "type": "BOOT_STAGE",
+          "stage": "engine"
+        },
+        {
+          "at": 1795422182007,
+          "type": "BOOT_STAGE",
+          "stage": "scene"
+        }
+      ]
+    },
+    "failed": {
+      "hidden": false,
+      "cover": true,
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "progress": "3",
+      "messages": [
+        {
+          "at": 1795422174841,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795422178633,
+          "type": "BOOT_STAGE",
+          "stage": "engine"
+        },
+        {
+          "at": 1795422182007,
+          "type": "BOOT_STAGE",
+          "stage": "scene"
+        },
+        {
+          "at": 1795422194835,
+          "type": "SESSION_FAILED"
+        },
+        {
+          "at": 1795422194837,
+          "type": "BOOT_FAILED"
+        }
+      ]
+    },
+    "afterLate": {
+      "hidden": false,
+      "cover": true,
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "progress": "3",
+      "messages": [
+        {
+          "at": 1795422174841,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795422178633,
+          "type": "BOOT_STAGE",
+          "stage": "engine"
+        },
+        {
+          "at": 1795422182007,
+          "type": "BOOT_STAGE",
+          "stage": "scene"
+        },
+        {
+          "at": 1795422194835,
+          "type": "SESSION_FAILED"
+        },
+        {
+          "at": 1795422194837,
+          "type": "BOOT_FAILED"
+        }
+      ]
+    },
+    "retryRecovered": true,
+    "completed": true
+  },
+  {
+    "name": "standalone-late-engine-after60",
+    "atFailure": {
+      "hidden": false,
+      "visible": true,
+      "overlay": true,
+      "failed": true,
+      "slow": true,
+      "status": "游戏资源或引擎启动失败",
+      "configPresent": true,
+      "readyState": "complete"
+    },
+    "afterLate": {
+      "hidden": false,
+      "visible": true,
+      "overlay": false,
+      "failed": false,
+      "slow": false,
+      "configPresent": true,
+      "readyState": "complete"
+    },
+    "failureRetained": false,
+    "completed": true
+  }
+]

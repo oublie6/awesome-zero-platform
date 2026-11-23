@@ -1,0 +1,15 @@
+{
+  "source": "c3232213ec6de5a111c3a31a791a88190afb56f0",
+  "creator": "4.0.0-beta.0",
+  "node": "22.23.4",
+  "cliRevision": "f506fa3de403b48b4833334fa48dddd27bb26364",
+  "engineRevision": "d0a696cfe63fd8d19c70d7913ba11aa641c2e3c7",
+  "buildSeconds": 50,
+  "strictRealDeclarations": "PASS",
+  "bigIntAST": "PASS",
+  "exportJS": 8,
+  "vueBuild": "PASS",
+  "vueTests": 12,
+  "scriptTests": 20,
+  "cocosTests": 163
+}
