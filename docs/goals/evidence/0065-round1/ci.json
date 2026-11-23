@@ -1,0 +1,90 @@
+[
+  {
+    "id": 45046396295,
+    "name": "CI",
+    "source": "dac83978d4612e7cd50ed13b9b654aaa9719afcc",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45046396295",
+    "jobs": [
+      {
+        "name": "secure_envelope",
+        "conclusion": "success"
+      },
+      {
+        "name": "admin_web",
+        "conclusion": "success"
+      },
+      {
+        "name": "unit",
+        "conclusion": "success"
+      },
+      {
+        "name": "integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "report",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45046396235,
+    "name": "Cocos Linux Native Client",
+    "source": "dac83978d4612e7cd50ed13b9b654aaa9719afcc",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45046396235",
+    "jobs": [
+      {
+        "name": "linux_source",
+        "conclusion": "success"
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  {
+    "id": 45046396312,
+    "name": "Fair Doudizhu Vue3 Web",
+    "source": "dac83978d4612e7cd50ed13b9b654aaa9719afcc",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45046396312",
+    "jobs": [
+      {
+        "name": "vue_build",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45046396606,
+    "name": "Fair Doudizhu",
+    "source": "dac83978d4612e7cd50ed13b9b654aaa9719afcc",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45046396606",
+    "jobs": [
+      {
+        "name": "application",
+        "conclusion": "success"
+      },
+      {
+        "name": "client_foundation",
+        "conclusion": "success"
+      },
+      {
+        "name": "mysql_integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success"
+      }
+    ]
+  }
+]

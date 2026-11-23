@@ -1,0 +1,38 @@
+{
+  "parent": {
+    "cover": false,
+    "status": "游戏就绪",
+    "messages": [
+      {
+        "at": 1795391630147,
+        "type": "BOOT_STAGE",
+        "stage": "document"
+      },
+      {
+        "at": 1795391632877,
+        "type": "BOOT_STAGE",
+        "stage": "engine"
+      },
+      {
+        "at": 1795391635877,
+        "type": "BOOT_STAGE",
+        "stage": "scene"
+      },
+      {
+        "at": 1795391635878,
+        "type": "GAME_READY"
+      },
+      {
+        "at": 1795391635935,
+        "type": "SESSION_ACTIVE"
+      }
+    ]
+  },
+  "authenticated": true,
+  "transportReady": false,
+  "native": {
+    "overlay": false
+  },
+  "errors": [],
+  "console": []
+}

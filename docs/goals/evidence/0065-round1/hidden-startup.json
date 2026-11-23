@@ -1,0 +1,32 @@
+{
+  "hidden": {
+    "at": 1795391680532,
+    "iframePresent": true,
+    "hidden": true
+  },
+  "after": {
+    "at": 1795391744581,
+    "sameFrame": true,
+    "status": "游戏资源或引擎启动失败，请重新加载。",
+    "messages": [
+      {
+        "at": 1795391680253,
+        "type": "BOOT_STAGE",
+        "stage": "document"
+      },
+      {
+        "at": 1795391740248,
+        "type": "BOOT_FAILED"
+      }
+    ]
+  },
+  "native": {
+    "failed": true,
+    "status": "游戏资源或引擎启动失败"
+  },
+  "reenter": {
+    "sameFrame": false,
+    "status": "等待游戏页面响应"
+  },
+  "elapsed": 64370
+}

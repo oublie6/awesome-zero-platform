@@ -1,0 +1,20 @@
+{
+  "injectionVerified": {
+    "engineModuleLoaded": true,
+    "inited": false,
+    "scene": false
+  },
+  "slow": {
+    "hint": "加载时间较长，可以继续等待或重新尝试。",
+    "progress": "1",
+    "status": "正在读取游戏页面"
+  },
+  "timeout": {
+    "error": "游戏资源或引擎启动失败，请重新加载。",
+    "progress": "1",
+    "status": "游戏资源或引擎启动失败，请重新加载。",
+    "elapsed": 60193
+  },
+  "retryAuthenticated": true,
+  "retryTransportReady": true
+}

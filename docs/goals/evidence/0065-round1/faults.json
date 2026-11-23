@@ -1,0 +1,146 @@
+[
+  {
+    "name": "script-404-retry-old-messages",
+    "failed": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "progress": "1",
+      "slow": false,
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "messages": [
+        {
+          "at": 1795392350017,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795392350084,
+          "type": "BOOT_FAILED"
+        },
+        {
+          "at": 1795392350085,
+          "type": "BOOT_FAILED"
+        }
+      ],
+      "timers": []
+    },
+    "retryBefore": {
+      "status": "正在读取游戏页面",
+      "cover": true,
+      "progress": "1",
+      "slow": false,
+      "messages": [
+        {
+          "at": 1795392350017,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795392350084,
+          "type": "BOOT_FAILED"
+        },
+        {
+          "at": 1795392350085,
+          "type": "BOOT_FAILED"
+        },
+        {
+          "at": 1795392351385,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        }
+      ],
+      "timers": [
+        15000,
+        60000
+      ]
+    },
+    "retryAfterForged": {
+      "status": "正在读取游戏页面",
+      "cover": true,
+      "progress": "1",
+      "slow": false,
+      "messages": [
+        {
+          "at": 1795392350017,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795392350084,
+          "type": "BOOT_FAILED"
+        },
+        {
+          "at": 1795392350085,
+          "type": "BOOT_FAILED"
+        },
+        {
+          "at": 1795392351385,
+          "type": "BOOT_STAGE",
+          "stage": "document"
+        },
+        {
+          "at": 1795392351529,
+          "type": "SESSION_ACTIVE"
+        },
+        {
+          "at": 1795392351529,
+          "type": "SESSION_ACTIVE"
+        },
+        {
+          "at": 1795392351529,
+          "type": "SESSION_ACTIVE"
+        },
+        {
+          "at": 1795392351529,
+          "type": "BOOT_FAILED"
+        }
+      ],
+      "timers": [
+        15000,
+        60000
+      ]
+    },
+    "recovered": true,
+    "observerFailure": null
+  },
+  {
+    "name": "html-404",
+    "failed": {
+      "status": "未找到游戏客户端资源，请检查部署或重新加载。",
+      "cover": true,
+      "progress": "0",
+      "slow": false,
+      "error": "未找到游戏客户端资源，请检查部署或重新加载。",
+      "messages": [],
+      "timers": []
+    },
+    "retryBefore": null,
+    "retryAfterForged": null,
+    "recovered": false,
+    "observerFailure": null
+  },
+  {
+    "name": "offline-recovery",
+    "failed": {
+      "status": "游戏页面不满足同源要求，请检查部署配置。",
+      "cover": true,
+      "progress": "0",
+      "slow": false,
+      "error": "游戏页面不满足同源要求，请检查部署配置。",
+      "messages": [],
+      "timers": []
+    },
+    "retryBefore": null,
+    "retryAfterForged": null,
+    "recovered": true,
+    "observerFailure": null
+  },
+  {
+    "name": "engine-init-stall",
+    "failed": null,
+    "retryBefore": null,
+    "retryAfterForged": null,
+    "recovered": false,
+    "observerFailure": "locator.waitFor: Timeout 51000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.game-loading-error') to be visible\u001b[22m\n"
+  }
+]

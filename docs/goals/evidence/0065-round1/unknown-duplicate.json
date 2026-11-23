@@ -1,0 +1,31 @@
+{
+  "normalReturn": {
+    "sameIframe": true,
+    "sameExactRequest": true,
+    "buttons": [
+      "RetryUnknownRoom"
+    ]
+  },
+  "identity": {
+    "sameController": true,
+    "oldPending": {
+      "requestId": "cmd-d13ad3d93d0a6316f0bacc3d216a05a9",
+      "type": "room.leave",
+      "aggregateId": "room-cmd-29e6a6d1b822b22b300888a5346031cb",
+      "clientSeq": 3,
+      "expectedVersion": 2,
+      "payload": {}
+    },
+    "newPending": {
+      "requestId": "cmd-d13ad3d93d0a6316f0bacc3d216a05a9",
+      "type": "room.leave",
+      "aggregateId": "room-cmd-29e6a6d1b822b22b300888a5346031cb",
+      "clientSeq": 3,
+      "expectedVersion": 2,
+      "payload": {}
+    },
+    "originalWasAccepted": [
+      true
+    ]
+  }
+}

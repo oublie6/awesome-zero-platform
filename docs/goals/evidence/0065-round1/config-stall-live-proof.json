@@ -1,0 +1,13 @@
+{
+  "observedAt": 1795392842823,
+  "elapsedSinceNavigation": 221672,
+  "bodyExists": false,
+  "overlayExists": false,
+  "bootHandlerExists": false,
+  "readyState": "loading",
+  "completedResources": [
+    "/game/style.css",
+    "/game/src/polyfills.bundle.js",
+    "/game/src/system.bundle.js"
+  ]
+}
