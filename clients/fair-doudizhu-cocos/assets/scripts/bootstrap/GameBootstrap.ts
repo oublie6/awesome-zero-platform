@@ -977,7 +977,11 @@ export class GameBootstrap extends Component {
       // a later membership-only read succeeds.
       await this.refreshRoom(true)
       if(!current())return
-      if(this.roomView?.roomId!==roomID)
+      // refreshRoom() updates the presentation through a separate async
+      // method. Read its post-await value rather than TS's earlier null
+      // narrowing from the scene reset at the start of recovery.
+      const presentation=this.roomView as RoomRead|null
+      if(presentation?.roomId!==roomID)
         throw new Error('权威房间界面尚未同步完成，请重新恢复')
       const verified=await online.roomInfo(roomID)
       if(!current())return

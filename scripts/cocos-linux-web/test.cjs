@@ -483,7 +483,8 @@ test('Goal0065 Round4: strict room/hand reads cannot be swallowed by startup',()
    .split('private async refreshFairness(')[0];
  assert.match(recovery,/if\(!room\)throw new Error/);
  assert.match(recovery,/await this\.refreshRoom\(true\)/);
- assert.match(recovery,/if\(this\.roomView\?\.roomId!==roomID\)\s*throw new Error/);
+ assert.match(recovery,/const presentation=this\.roomView as RoomRead\|null/);
+ assert.match(recovery,/if\(presentation\?\.roomId!==roomID\)\s*throw new Error/);
  assert.ok(recovery.indexOf('await this.refreshRoom(true)')<
    recovery.indexOf('const verified=await online.roomInfo(roomID)'));
  assert.match(refresh,/if\(requiredForStartup\)throw new Error/);
