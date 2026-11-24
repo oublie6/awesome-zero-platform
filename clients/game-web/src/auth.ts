@@ -10,6 +10,7 @@ export interface UserAccount {id:string;displayName:string}
 interface Envelope {code?:unknown;data?:unknown}
 type Fetcher=typeof fetch
 type StoragePort=Pick<Storage,'getItem'|'setItem'|'removeItem'>
+const loginEpochs=new WeakMap<StoragePort,number>()
 
 function record(value:unknown):value is Record<string,unknown>{
   return !!value && typeof value==='object' && !Array.isArray(value)
@@ -54,6 +55,7 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
   let generation=0
   let active:UserAccount|null=null
   let token:string|null=null
+  let ownedToken:string|null=null
   async function request(path:string,method:string,body?:unknown,accessToken?:string):Promise<unknown>{
     const controller=new AbortController()
     const timeout=setTimeout(()=>controller.abort(),timeoutMs)
@@ -79,17 +81,23 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
   async function restore():Promise<UserAccount|null>{
     const mine=++generation
     const stored=storage.getItem(SESSION_KEY)
-    if(!stored){active=null;token=null;return null}
+    const loginEpoch=loginEpochs.get(storage)??0
+    ownedToken=stored
+    active=null;token=null
+    if(!stored)return null
     try{
       const identity=await validate(stored)
       if(generation!==mine)return null
-      if(storage.getItem(SESSION_KEY)!==stored){active=null;token=null;return null}
+      if((loginEpochs.get(storage)??0)!==loginEpoch || storage.getItem(SESSION_KEY)!==stored){
+        ownedToken=null;return null
+      }
       token=stored;active=identity
       return identity
     }catch{
       if(generation===mine){
-        if(storage.getItem(SESSION_KEY)===stored)storage.removeItem(SESSION_KEY)
-        token=null;active=null
+        if((loginEpochs.get(storage)??0)===loginEpoch && storage.getItem(SESSION_KEY)===stored)
+          storage.removeItem(SESSION_KEY)
+        token=null;active=null;ownedToken=null
       }
       return null
     }
@@ -108,21 +116,23 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     const username=identifier.trim()
     if(!username||username.length>256||!password||password.length>128)
       throw Error('请输入有效账号和密码')
+    const loginEpoch=(loginEpochs.get(storage)??0)+1
+    loginEpochs.set(storage,loginEpoch)
     const reply=validatedData(await request('/auth/login','POST',{identifier:username,password}))
     const received=bearer(reply)
     // Verify server account before persisting; stale login responses after
     // logout/account switch cannot reintroduce an old access token.
     const identity=await validate(received)
-    if(generation!==mine)return null
+    if(generation!==mine || loginEpochs.get(storage)!==loginEpoch)return null
     storage.setItem(SESSION_KEY,received)
-    token=received;active=identity
+    ownedToken=received;token=received;active=identity
     return identity
   }
   async function logout():Promise<void>{
     ++generation
-    const old=token || storage.getItem(SESSION_KEY)
-    token=null;active=null
-    storage.removeItem(SESSION_KEY)
+    const old=token || ownedToken
+    token=null;active=null;ownedToken=null
+    if(old && storage.getItem(SESSION_KEY)===old)storage.removeItem(SESSION_KEY)
     if(old)await request('/auth/logout','POST',{},old)
   }
   return {register,login,restore,logout,get account(){return active},get authenticated(){return !!token && !!active}}

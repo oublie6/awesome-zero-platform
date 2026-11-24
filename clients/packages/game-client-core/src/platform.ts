@@ -26,6 +26,7 @@ class MiniAuth implements PlatformAuth {
 }
 class MiniVault implements SessionVault {
   constructor(private readonly sdk: MiniPlatformSDK, private readonly key: string) {}
+  get coordinationScope() { return {storage:this.sdk,key:this.key} }
   async load(): Promise<string | null> {
     if (!this.sdk.getStorageSync) throw new Error('session storage unsupported')
     const raw = this.sdk.getStorageSync(this.key)

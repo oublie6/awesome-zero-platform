@@ -24,6 +24,8 @@ export interface SocketTransport {
   connect(url: string, accessToken: string, options?: SocketOptions): Promise<SocketConnection>
 }
 export interface SessionVault {
+  /** Adapters sharing a backing store/key share in-process mutation ordering. */
+  readonly coordinationScope?: { readonly storage: object; readonly key: string }
   load(): Promise<string | null>
   save(token: string): Promise<void>
   clear(): Promise<void>

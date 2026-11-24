@@ -92,6 +92,8 @@ export class GameBootstrap extends Component {
   private requestGeneration = 0
   // Any leave, new hand or room switch invalidates older awaited HTTP replies.
   private roomGeneration = 0
+  private roomReadGeneration=0
+  private fairnessReadGeneration=0
   // Explicit room recovery choices are distinct from ordinary UI refreshes.
   private recoveryAttempt = 0
   private sceneRecovery: {
@@ -209,6 +211,11 @@ export class GameBootstrap extends Component {
           if(connected)this.renderScreen('rooms')
           const selection=this.recoveryAttempt
           const usable=connected && await this.waitForWebScene()
+          if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
+          // Scene/layout readiness is not an authorization lease. Refresh the
+          // room and fairness phase after the final scene wait, before the host
+          // removes its cover. No further rendering await after this proof.
+          if(usable && owner)await this.confirmStartupAuthority(owner,epoch,selection)
           if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
           const ready=usable && !!owner?.session.authenticated &&
             !!owner?.shell.commandTransportReady && this.requiredRecoveryReady(owner)
@@ -662,6 +669,48 @@ export class GameBootstrap extends Component {
     if(room.lastHandId)return room.lastHandId===this.handID &&
       online.shell.handProjectionReady(room.lastHandId,true)
     return true
+  }
+  private async confirmStartupAuthority(online:GameOnlineController,epoch:number,selection:number):Promise<void>{
+    const current=()=>this.currentAccount(online,epoch) && selection===this.recoveryAttempt
+    if(!current())throw new Error('startup selection superseded')
+    const roomID=this.roomID
+    if(!roomID){
+      // Recheck discovery as well: an empty/multiple-room decision may have
+      // changed while rendering. Never silently adopt a different selection.
+      const choices=await online.discoverRecoverableRooms()
+      if(!current() || this.roomID)throw new Error('startup selection superseded')
+      const active=choices.filter(room=>room.status==='HAND_ACTIVE')
+      if(active.length===1 || (active.length===0 && choices.length===1))
+        throw new Error('recoverable room changed during startup; retry')
+      this.recoverableRooms=choices
+      if(this.screen==='rooms')this.renderScreen('rooms')
+      return
+    }
+    try{
+      await this.refreshRoom(true)
+      if(!current() || this.roomID!==roomID)throw new Error('startup selection superseded')
+      const presentation=this.roomView
+      if(!presentation || presentation.roomId!==roomID)throw new Error('startup room not confirmed')
+      const readGeneration=this.roomReadGeneration
+      const fairnessGeneration=this.fairnessReadGeneration
+      const verified=await online.roomInfo(roomID)
+      if(!current() || this.roomID!==roomID || readGeneration!==this.roomReadGeneration ||
+         fairnessGeneration!==this.fairnessReadGeneration)
+        throw new Error('startup room changed during final verification')
+      if(!verified.member || verified.status==='CLOSED'){
+        this.revokeInvalidRecoveredRoom(online,roomID)
+        throw new Error('room closed or membership revoked during startup')
+      }
+      if(verified.version!==presentation.version ||
+         verified.activeHandId!==presentation.activeHandId ||
+         verified.lastHandId!==presentation.lastHandId ||
+         online.rooms.state?.version!==verified.version || !this.requiredRecoveryReady(online))
+        throw new Error('room or hand changed during startup; retry authoritative lookup')
+    }catch(error){
+      if(current() && this.recoveryAuthorityRevoked(error))
+        this.revokeInvalidRecoveredRoom(online,roomID)
+      throw error
+    }
   }
   /** Resolve true only after verified identity, live WSS and all required
    * read-only room/hand restoration have completed. Suppressed errors and
@@ -1258,15 +1307,22 @@ export class GameBootstrap extends Component {
     const owner=this.online,epoch=this.requestGeneration
     const roomID=this.roomID,selection=this.recoveryAttempt
     let generation=this.roomGeneration
+    const read=++this.roomReadGeneration
+    const fairnessRead=++this.fairnessReadGeneration
+    const superseded=()=>read!==this.roomReadGeneration || fairnessRead!==this.fairnessReadGeneration
+    const cancelled=()=>{if(requiredForStartup)throw new Error('room refresh superseded during startup')}
     try {
       const online=this.requireOnline()
       if(!this.roomID)throw new Error('还没有房间')
       const commandGeneration=online.rooms.commandGeneration
       const info=await online.roomInfo(roomID)
-      if(generation!==this.roomGeneration || selection!==this.recoveryAttempt ||
-        roomID!==this.roomID || online!==this.online ||
-        (online.rooms.state!==null && online.rooms.state.roomId!==roomID))return
-      if(!info.member)throw new Error('当前账号不属于该房间')
+      if(superseded() || generation!==this.roomGeneration || selection!==this.recoveryAttempt ||
+        roomID!==this.roomID || !this.currentAccount(owner,epoch) ||
+        (online.rooms.state!==null && online.rooms.state.roomId!==roomID)){cancelled();return}
+      if(!info.member || info.status==='CLOSED'){
+        this.revokeInvalidRecoveredRoom(online,roomID)
+        throw new Error('room closed or membership revoked during refresh')
+      }
       // The HTTP read can see a newly accepted H2 while the WSS start ACK is
       // still withheld. Do not rebind fairness or restore a room coordinator
       // that still owns an in-flight command. startHand() will refresh on ACK.
@@ -1293,17 +1349,17 @@ export class GameBootstrap extends Component {
       if(info.activeHandId){
         const handGeneration=this.roomGeneration
         const fairness=await online.api.fairness(info.activeHandId)
-        if(handGeneration!==this.roomGeneration || info.activeHandId!==this.handID ||
-           selection!==this.recoveryAttempt || !this.currentAccount(owner,epoch))return
+        if(superseded() || handGeneration!==this.roomGeneration || info.activeHandId!==this.handID ||
+           selection!==this.recoveryAttempt || !this.currentAccount(owner,epoch)){cancelled();return}
         this.fairnessView={handId:info.activeHandId,phase:fairness.phase,revealed:fairness.revealed}
         if(this.fairnessMode !== (fairness.fairnessMode||'')){
           this.fairnessMode=fairness.fairnessMode||''
           if(this.screen==='rooms')this.renderScreen('rooms')
         }
-        if(fairness.phase==='BIDDING' || fairness.phase==='PLAYING' || fairness.phase==='SETTLING'){
+        if(['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(fairness.phase)){
           await online.shell.syncHand(info.activeHandId)
-          if(!this.currentRoom(owner,epoch,roomID,handGeneration,selection) ||
-             info.activeHandId!==this.handID)return
+          if(superseded() || !this.currentRoom(owner,epoch,roomID,handGeneration,selection) ||
+             info.activeHandId!==this.handID){cancelled();return}
         } else {
           this.notice(fairness.fairnessMode==='client-contributed-server-custodied-v1'
             ? `玩家随机贡献由服务器加密保存 · ${fairness.phase} · ${fairness.revealed?'本人已提交':'等待本人输入字符串并提交'}`
@@ -1312,8 +1368,8 @@ export class GameBootstrap extends Component {
       } else if(info.lastHandId){
         const handGeneration=this.roomGeneration
         const evidence=await online.api.finalEvidence(info.lastHandId)
-        if(handGeneration!==this.roomGeneration || info.lastHandId!==this.handID ||
-           selection!==this.recoveryAttempt || !this.currentAccount(owner,epoch))return
+        if(superseded() || handGeneration!==this.roomGeneration || info.lastHandId!==this.handID ||
+           selection!==this.recoveryAttempt || !this.currentAccount(owner,epoch)){cancelled();return}
         online.shell.acceptVerifiedFinalEvidence(evidence)
         if(this.fairnessMode !== (evidence.fairnessMode||'')){
           this.fairnessMode=evidence.fairnessMode||''
@@ -1324,7 +1380,7 @@ export class GameBootstrap extends Component {
       if(this.screen==='rooms')this.renderScreen('rooms')
     }catch(error){
       if(requiredForStartup)throw error
-      if(this.currentRoom(owner,epoch,roomID,generation,selection))
+      if(!superseded() && this.currentRoom(owner,epoch,roomID,generation,selection))
         this.notice('刷新失败：'+this.message(error))
     }
   }
@@ -1332,11 +1388,12 @@ export class GameBootstrap extends Component {
     const owner=this.online,epoch=this.requestGeneration
     const roomID=this.roomID,handID=this.handID
     const generation=this.roomGeneration,selection=this.recoveryAttempt
+    const read=++this.fairnessReadGeneration
     try {
       const online=this.requireOnline()
       if(!this.handID)throw new Error('尚未开始牌局，请刷新房间')
       const view=await online.api.fairness(handID)
-      if(!this.currentRoom(owner,epoch,roomID,generation,selection) || handID!==this.handID)return
+      if(read!==this.fairnessReadGeneration || !this.currentRoom(owner,epoch,roomID,generation,selection) || handID!==this.handID)return
       this.fairnessView={handId:handID,phase:view.phase,revealed:view.revealed}
       if(this.fairnessMode !== (view.fairnessMode||'')){
         this.fairnessMode=view.fairnessMode||''
@@ -1348,10 +1405,10 @@ export class GameBootstrap extends Component {
       this.notice(view.fairnessMode==='client-contributed-server-custodied-v1'
         ? `服务端已加密保存玩家贡献 · ${view.phase} · ${view.revealed?'本人已提交':'等待本人提交'}${cutoff}`
         : `洗牌阶段 ${view.phase} · 座位${view.seat} · 版本${view.version} · ${view.committed?'承诺已确认':'待承诺'} / ${view.revealed?'贡献已确认':'待提交贡献'}${cutoff}`)
-      if(view.phase==='BIDDING'||view.phase==='PLAYING'||view.phase==='SETTLING')
+      if(['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(view.phase))
         await online.shell.syncHand(handID)
     }catch(error){
-      if(this.currentRoom(owner,epoch,roomID,generation,selection) && handID===this.handID)
+      if(read===this.fairnessReadGeneration && this.currentRoom(owner,epoch,roomID,generation,selection) && handID===this.handID)
         this.notice('公平阶段查询失败：'+this.message(error))
     }
   }

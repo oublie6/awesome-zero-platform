@@ -36,7 +36,7 @@ export class GameClientShell {
     const snapshot=this.hand.snapshot
     if(!this.commandTransportReady || this.pendingSync ||
        this.hand.status!=='connected' || !snapshot || snapshot.handId!==handId ||
-       snapshot.version<this.requiredHandVersion)return false
+       snapshot.version<this.requiredHandVersion || this.unknownVersionChange)return false
     if(archiveOnly)return ['COMPLETED','ABORTED'].includes(snapshot.phase) &&
       !!snapshot.view.terminalEvidence
     return ['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(snapshot.phase)
@@ -47,6 +47,7 @@ export class GameClientShell {
   // may advance state but never acknowledge an explicit recovery request.
   private pendingSync:PendingSync|null=null
   private requiredHandVersion=0
+  private unknownVersionChange=false
   // Bound only by authenticated room/start-hand evidence, not a realtime
   // event. A stale prior-room snapshot must not populate an empty HandStore.
   private authoritativeHand: string | null = null
@@ -98,14 +99,14 @@ export class GameClientShell {
         // Do not invalidate an already confirmed equal/newer projection.
         if(this.hand.snapshot && this.hand.snapshot.version>=this.requiredHandVersion)return
       }else if(changed.response?.type==='hand.timeout'){
-        // A committed but unversioned timeout proves a transition occurred.
-        // Persist a strict freshness floor across reads and reconnects.
-        // Duplicate notices before a newer projection do not keep raising
-        // the floor; an old full or conditional response cannot erase it.
+        // The notice proves a commit, not its numeric version. It may arrive
+        // after the snapshot of that very commit. Fence prior requests and
+        // broadcasts; only a fresh correlated full read (or immutable
+        // verified terminal archive) can resolve the unknown-version change.
         const snapshot=this.hand.snapshot
         if(snapshot && snapshot.handId===id && ['COMPLETED','ABORTED'].includes(snapshot.phase) &&
            snapshot.view.terminalEvidence)return
-        this.requiredHandVersion=Math.max(this.requiredHandVersion,(snapshot?.version??0)+1)
+        this.unknownVersionChange=true
         this.rejectSync('hand sync invalidated by an unversioned committed timeout')
       }
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')
@@ -256,6 +257,7 @@ export class GameClientShell {
     if (this.handBound && this.authoritativeHand === handId) return
     this.rejectSync('authoritative hand changed during synchronization')
     this.requiredHandVersion=0
+    this.unknownVersionChange=false
     this.authoritativeHand = handId
     this.handBound = true
     this.hand.clearHand()
@@ -282,7 +284,7 @@ export class GameClientShell {
     }
     const prior = this.hand.snapshot
     if (prior && prior.handId !== handId) throw new Error('terminal evidence hand mismatch')
-    if (prior && evidence.finalVersion < prior.version) throw new Error('stale terminal evidence')
+    if (evidence.finalVersion < this.requiredHandVersion || (prior && evidence.finalVersion < prior.version)) throw new Error('stale terminal evidence')
     if (prior && prior.version === evidence.finalVersion && prior.phase !== phase)
       throw new Error('terminal evidence version conflict')
     const snapshot: HandSnapshot = {
@@ -304,7 +306,10 @@ export class GameClientShell {
       throw new Error('snapshot outside authorized hand context')
     const applied = terminalArchive?this.hand.applyTerminalArchive(snapshot):this.hand.apply(snapshot)
     const confirmed = this.hand.snapshot
-    if (!this.pendingSync && this.hand.status === 'synchronizing' &&
+    if(terminalArchive && confirmed?.handId===snapshot.handId &&
+       confirmed.version===snapshot.version && confirmed.view.terminalEvidence)
+      this.unknownVersionChange=false
+    if (!this.pendingSync && !this.unknownVersionChange && this.hand.status === 'synchronizing' &&
         confirmed?.handId === snapshot.handId && confirmed.version === snapshot.version &&
         confirmed.version>=this.requiredHandVersion) {
       this.hand.setStatus('connected')
@@ -326,9 +331,9 @@ export class GameClientShell {
     const current=this.hand.snapshot
     // Do not advertise a known version without actually possessing it.
     const conditional=current?.handId===handId && current.version===knownVersion &&
-      current.version>=this.requiredHandVersion?knownVersion:undefined
+      !this.unknownVersionChange && current.version>=this.requiredHandVersion?knownVersion:undefined
     const minimumVersion=Math.max(this.requiredHandVersion,
-      current?.handId===handId?current.version:0,knownVersion??0)
+      current?.handId===handId?current.version:0)
     const old=this.pendingSync
     if(old && old.handId===handId && old.generation===this.generation &&
        old.knownVersion===conditional && old.minimumVersion>=minimumVersion)return old.promise
@@ -361,6 +366,7 @@ export class GameClientShell {
     }
     clearTimeout(entry.timer)
     this.pendingSync=null
+    this.unknownVersionChange=false
     if(this.hand.status==='synchronizing')this.hand.setStatus('connected')
     entry.resolve()
   }

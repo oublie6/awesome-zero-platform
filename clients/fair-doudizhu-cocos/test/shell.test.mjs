@@ -406,7 +406,7 @@ test('G65 R5: a conflicting equal-version phase is not a successful sync',async(
  s.dispose()
 })
 
-test('G65 R6: unversioned committed timeout persists a strict floor across broadcasts and reads',async()=>{
+test('G65 R7: unversioned change blocks old broadcasts and conditional reads, not a fresh authoritative equal version',async()=>{
  for(const waiting of [false,true]){
   const {s,deliver,c}=await syncFixture()
   try{
@@ -422,20 +422,26 @@ test('G65 R6: unversioned committed timeout persists a strict floor across broad
    deliver('doudizhu.hand.snapshot',viewReply('hand-1',2))
    assert.equal(s.handProjectionReady('hand-1'),false)
    assert.equal(s.hand.canSubmit,false)
-   const stale=s.syncHand('hand-1',2),failed=assert.rejects(stale,/stale/)
+   const stale=s.syncHand('hand-1',2),failed=assert.rejects(stale,/notModified/)
    const request=c.sent.at(-1)
    assert.equal(request.payload.knownVersion,undefined)
-   deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),request.id)
+   deliver('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',
+     notModified:true,knownVersion:2},request.id)
    await failed
    assert.equal(s.handProjectionReady('hand-1'),false)
    const retry=s.syncHand('hand-1')
-   deliver('doudizhu.hand.snapshot',viewReply('hand-1',3),c.sent.at(-1).id)
+   deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),c.sent.at(-1).id)
    await retry
+   assert.equal(s.handProjectionReady('hand-1'),true)
+   timeout()
+   const again=s.syncHand('hand-1')
+   deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),c.sent.at(-1).id)
+   await again
    assert.equal(s.handProjectionReady('hand-1'),true)
   }finally{s.dispose()}
  }
 })
-test('G65 R6: freshness floor survives reconnect but resets on a different authoritative hand',async()=>{
+test('G65 R7: causal freshness fence survives reconnect but resets on a different authoritative hand',async()=>{
  const {s,t,deliver}=await syncFixture()
  const first=s.syncHand('hand-1')
  deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),'sync-1')
@@ -445,7 +451,7 @@ test('G65 R6: freshness floor survives reconnect but resets on a different autho
  t.tasks[1].resolve();await open
  const send=(payload,id)=>{for(const cb of t.tasks[1].c.messages)cb(JSON.stringify({id,type:'doudizhu.hand.snapshot',payload}))}
  const stale=s.syncHand('hand-1'),failed=assert.rejects(stale,/stale/)
- send(viewReply('hand-1',2),'sync-2');await failed
+ send(viewReply('hand-1',1),'sync-2');await failed
  assert.equal(s.handProjectionReady('hand-1'),false)
  s.useAuthoritativeHand('hand-2')
  const next=s.syncHand('hand-2')

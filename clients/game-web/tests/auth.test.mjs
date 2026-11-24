@@ -129,3 +129,39 @@ test('late validation cannot adopt a token replaced outside the Web auth control
  assert.equal(web.authenticated,false)
  assert.equal(s.getItem(SESSION_KEY),'new')
 })
+
+test('G65 R7: old restore logout cannot remove or revoke replacement token',async()=>{
+ const s=storage(),revoked=[]
+ s.setItem(SESSION_KEY,'old')
+ let release
+ const old=createWebAuth(config,async(url,options)=>{
+  if(new URL(url).pathname==='/auth/logout'){
+   revoked.push(options.headers.Authorization);return okay({loggedOut:true})
+  }
+  return new Promise(ok=>{release=ok})
+ },s)
+ const pending=old.restore()
+ const fresh=createWebAuth(config,async url=>new URL(url).pathname==='/auth/login'
+  ?okay({tokenType:'Bearer',accessToken:'new'}):okay({account:{id:'new-id',displayName:'New'}}),s)
+ await fresh.login('new','password')
+ await old.logout()
+ release(okay({account:{id:'old-id',displayName:'Old'}}))
+ assert.equal(await pending,null)
+ assert.equal(s.getItem(SESSION_KEY),'new')
+ assert.deepEqual(revoked,['Bearer old'])
+ assert.equal(fresh.authenticated,true)
+})
+test('G65 R7: later login owns shared storage despite older exchange finishing last',async()=>{
+ const s=storage()
+ let release
+ const old=createWebAuth(config,async url=>new URL(url).pathname==='/auth/login'
+  ?new Promise(ok=>{release=ok}):okay({account:{id:'old-id',displayName:'Old'}}),s)
+ const pending=old.login('old','password')
+ const fresh=createWebAuth(config,async url=>new URL(url).pathname==='/auth/login'
+  ?okay({tokenType:'Bearer',accessToken:'new'}):okay({account:{id:'new-id',displayName:'New'}}),s)
+ await fresh.login('new','password')
+ release(okay({tokenType:'Bearer',accessToken:'old'}))
+ assert.equal(await pending,null)
+ assert.equal(s.getItem(SESSION_KEY),'new')
+ assert.equal(old.authenticated,false)
+})

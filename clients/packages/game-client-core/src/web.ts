@@ -71,6 +71,7 @@ export class WebRandom implements SecureRandomSource {
 }
 export class WebSessionVault implements SessionVault {
   constructor(private readonly key = 'fair-doudizhu-session') {}
+  get coordinationScope() { return {storage:sessionStorage,key:this.key} }
   async load() { const value = sessionStorage.getItem(this.key); return value?.trim() ? value : null }
   async save(token: string) { if (!token.trim()) throw new Error('empty session token'); sessionStorage.setItem(this.key, token) }
   async clear() { sessionStorage.removeItem(this.key) }

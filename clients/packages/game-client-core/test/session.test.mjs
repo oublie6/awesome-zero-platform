@@ -120,3 +120,51 @@ test('a stale validation cannot clear or restore a token replaced by another con
   assert.equal(await p.vault.load(),'new')
  }
 })
+
+test('G65 R7: logout owns the token observed by restore, not a newer shared token',async()=>{
+ const p=platform()
+ await p.vault.save('old')
+ const revoked=[]
+ const identity={exchange:async()=>({accessToken:'unused'}),revoke:async t=>{revoked.push(t)}}
+ const old=new GameSession(p,identity), fresh=new GameSession(p,identity)
+ let release
+ const pending=old.restore(()=>new Promise(ok=>{release=ok}))
+ for(let i=0;i<20&&!release;i++)await new Promise(ok=>setImmediate(ok))
+ assert.ok(release)
+ await fresh.loginWith(async()=>({accessToken:'new'}))
+ await old.logout()
+ release(true)
+ assert.equal(await pending,false)
+ assert.equal(await p.vault.load(),'new')
+ assert.deepEqual(revoked,['old'])
+ assert.equal(fresh.token,'new')
+ await new GameSession(p,identity).logout()
+ assert.equal(await p.vault.load(),'new')
+})
+test('G65 R7: shared async vault serializes delayed save and newer login',async()=>{
+ const p=platform(),save=p.vault.save
+ let release
+ p.vault.save=async value=>{if(value==='old')await new Promise(ok=>{release=ok});await save(value)}
+ const identity={exchange:async()=>({accessToken:'unused'})}
+ const old=new GameSession(p,identity),fresh=new GameSession(p,identity)
+ const pending=old.loginWith(async()=>({accessToken:'old'}))
+ for(let i=0;i<20&&!release;i++)await new Promise(ok=>setImmediate(ok))
+ assert.ok(release)
+ const next=fresh.loginWith(async()=>({accessToken:'new'}))
+ old.dispose()
+ release()
+ await Promise.all([pending,next])
+ assert.equal(await p.vault.load(),'new')
+ assert.equal(fresh.token,'new')
+ assert.equal(old.authenticated,false)
+})
+test('G65 R7: late exchange cannot replace a newer login across controllers',async()=>{
+ const p=platform(),identity={exchange:async()=>({accessToken:'unused'})}
+ const a=new GameSession(p,identity),b=new GameSession(p,identity)
+ let release
+ const pending=a.loginWith(()=>new Promise(ok=>{release=ok}))
+ await b.loginWith(async()=>({accessToken:'new'}))
+ release({accessToken:'old'});await pending
+ assert.equal(await p.vault.load(),'new')
+ assert.equal(a.authenticated,false)
+})
