@@ -302,7 +302,7 @@ test('G65 R5: malformed, mismatched, stale, forbidden and invalid conditional re
   const {s,deliver}=await syncFixture()
   s.acceptVerifiedSnapshot({...snapshot,version:7})
   const p=s.syncHand('hand-1')
-  const failed=assert.rejects(p,/sync|stale|notModified|malformed|identity/)
+  const failed=assert.rejects(p,/sync|stale|notModified|malformed|identity|invalid Go view wrapper/)
   if(fault==='malformed')deliver('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',view:{}},'sync-1')
   if(fault==='identity')deliver('doudizhu.hand.snapshot',viewReply('other-hand',8),'sync-1')
   if(fault==='stale')deliver('doudizhu.hand.snapshot',viewReply('hand-1',6),'sync-1')
@@ -339,5 +339,37 @@ test('G65 R5: terminal fallback validates the same archive contract and complete
  deliver('doudizhu.hand.evidence',{v:'doudizhu-realtime-event-v1',handId:'hand-1',evidence},'sync-1')
  await p;assert.equal(s.hand.snapshot.phase,'COMPLETED');assert.equal(s.hand.snapshot.version,8)
  assert.equal(s.hand.snapshot.view.cards,undefined);assert.equal(s.hand.canSubmit,false)
+ s.dispose()
+})
+
+test('G65 R5: a newer committed change invalidates earlier readiness; old change does not',async()=>{
+ const {s,deliver}=await syncFixture()
+ const first=s.syncHand('hand-1')
+ deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),'sync-1')
+ await first;assert.equal(s.handProjectionReady('hand-1'),true)
+ const changed=version=>deliver('doudizhu.hand.changed',{v:'doudizhu-realtime-event-v1',
+   handId:'hand-1',response:{live:{version}}})
+ changed(2);assert.equal(s.handProjectionReady('hand-1'),true)
+ changed(3);assert.equal(s.handProjectionReady('hand-1'),false)
+ const pending=s.syncHand('hand-1',2),rejected=assert.rejects(pending,/stale/)
+ deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),'sync-2')
+ await rejected;assert.equal(s.handProjectionReady('hand-1'),false)
+ const retry=s.syncHand('hand-1')
+ deliver('doudizhu.hand.snapshot',viewReply('hand-1',3),'sync-3')
+ await retry;assert.equal(s.handProjectionReady('hand-1'),true)
+ s.dispose()
+})
+test('G65 R5: verified same-version archive promotes a completed live projection',async()=>{
+ const {s,deliver}=await syncFixture()
+ s.acceptVerifiedSnapshot({...snapshot,version:8,phase:'COMPLETED'})
+ assert.equal(s.handProjectionReady('hand-1',true),false)
+ const pending=s.syncHand('hand-1')
+ const evidence={handId:'hand-1',status:'completed',finalVersion:8,
+  verification:{handId:'hand-1',finalVersion:8,recordDigest:'a'.repeat(64),seatPoints:[6,-3,-3],winnerSeat:1}}
+ deliver('doudizhu.hand.evidence',{v:'doudizhu-realtime-event-v1',handId:'hand-1',evidence},'sync-1')
+ await pending
+ assert.equal(s.handProjectionReady('hand-1',true),true)
+ assert.equal(s.hand.snapshot.view.terminalEvidence.recordDigest,'a'.repeat(64))
+ assert.equal(s.hand.snapshot.view.cards,undefined)
  s.dispose()
 })

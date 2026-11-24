@@ -46,6 +46,21 @@ export class HandStore {
     this.current = freezeJSON(snapshot)
     return true
   }
+  /** Promote a server-validated terminal archive over an equal-version live
+   * terminal projection. Regular snapshots must still never overwrite peers. */
+  applyTerminalArchive(snapshot:HandSnapshot):boolean {
+    if(!['COMPLETED','ABORTED'].includes(snapshot.phase) ||
+       !snapshot.view?.terminalEvidence || typeof snapshot.view.terminalEvidence!=='object')
+      throw new Error('invalid terminal archive snapshot')
+    const current=this.current
+    if(current && current.handId===snapshot.handId &&
+       current.version===snapshot.version && current.phase===snapshot.phase &&
+       !current.view.terminalEvidence){
+      this.current=freezeJSON(snapshot)
+      return true
+    }
+    return this.apply(snapshot)
+  }
   reset(): void { this.current = null; this.statusValue = 'disconnected' }
   /** Clear a departed room's hand without disconnecting the socket. */
   clearHand(): void { this.current = null }

@@ -30,6 +30,17 @@ export class GameClientShell {
   private initialized = false
   private transportReady = false
   get commandTransportReady(): boolean { return !this.disposed && this.transportReady && this.connection !== null }
+  /** Query readiness again immediately before a caller publishes success.
+   * A newer change or a disconnect can invalidate an earlier resolved read. */
+  handProjectionReady(handId:string,archiveOnly=false):boolean {
+    const snapshot=this.hand.snapshot
+    if(!this.commandTransportReady || this.pendingSync ||
+       this.hand.status!=='connected' || !snapshot || snapshot.handId!==handId ||
+       snapshot.version<this.requiredHandVersion)return false
+    if(archiveOnly)return ['COMPLETED','ABORTED'].includes(snapshot.phase) &&
+      !!snapshot.view.terminalEvidence
+    return ['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(snapshot.phase)
+  }
   private generation = 0
   private syncSequence = 0
   // One bounded, correlated read per controller/connection/hand. Broadcasts
@@ -76,9 +87,17 @@ export class GameClientShell {
       }
     })
     this.events.on('doudizhu.hand.changed', payload => {
-      const id = (payload as {handId?: string}).handId
+      const changed=payload as {handId?:string;response?:{live?:{version?:unknown}}}
+      const id=changed.handId
       if (this.handBound && id !== this.authoritativeHand) return
       if (this.hand.snapshot && id !== this.hand.snapshot.handId) return
+      const version=changed.response?.live?.version
+      if(typeof version==='number' && Number.isSafeInteger(version) && version>0){
+        this.requiredHandVersion=Math.max(this.requiredHandVersion,version)
+        // A broadcast may race ahead of its corresponding changed event.
+        // Do not invalidate an already confirmed equal/newer projection.
+        if(this.hand.snapshot && this.hand.snapshot.version>=this.requiredHandVersion)return
+      }
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')
       this.notify('收到牌局状态变化，请同步权威快照')
     })
@@ -250,8 +269,8 @@ export class GameClientShell {
     const prior = this.hand.snapshot
     if (prior && prior.handId !== handId) throw new Error('terminal evidence hand mismatch')
     if (prior && evidence.finalVersion < prior.version) throw new Error('stale terminal evidence')
-    if (prior && prior.version === evidence.finalVersion && prior.phase === phase) return
-    if (prior && prior.version === evidence.finalVersion) throw new Error('terminal evidence version conflict')
+    if (prior && prior.version === evidence.finalVersion && prior.phase !== phase)
+      throw new Error('terminal evidence version conflict')
     const snapshot: HandSnapshot = {
       handId, version: evidence.finalVersion, phase: phase as 'COMPLETED'|'ABORTED',
       view: { terminalEvidence: {
@@ -260,13 +279,16 @@ export class GameClientShell {
         recordDigest: verification.recordDigest,
       } },
     }
-    this.acceptVerifiedSnapshot(snapshot)
+    this.applyVerifiedSnapshot(snapshot,true)
   }
   acceptVerifiedSnapshot(snapshot: HandSnapshot): void {
+    this.applyVerifiedSnapshot(snapshot,false)
+  }
+  private applyVerifiedSnapshot(snapshot:HandSnapshot,terminalArchive:boolean):void {
     if (this.disposed) return
     if (this.handBound && snapshot.handId !== this.authoritativeHand)
       throw new Error('snapshot outside authorized hand context')
-    const applied = this.hand.apply(snapshot)
+    const applied = terminalArchive?this.hand.applyTerminalArchive(snapshot):this.hand.apply(snapshot)
     const confirmed = this.hand.snapshot
     if (!this.pendingSync && this.hand.status === 'synchronizing' &&
         confirmed?.handId === snapshot.handId && confirmed.version === snapshot.version &&

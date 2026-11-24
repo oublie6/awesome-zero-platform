@@ -90,7 +90,7 @@ export class GameOnlineController {
     if (!await this.session.restore(validate)) return false
     if (this.disposed) return false
     await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
-    return true
+    return !this.disposed && this.session.authenticated && this.shell.commandTransportReady
   }
   /** Recovery is read-only until its final authoritative membership check.
    * Never adopt an earlier room response over a newer user selection. */
@@ -124,9 +124,11 @@ export class GameOnlineController {
       commands===this.rooms.commandGeneration
     await this.shell.connect(this.platform.socket,this.socketEndpoint,this.session.token)
     if(!current())return null
+    if(!this.shell.commandTransportReady)throw new Error('socket disconnected during room recovery')
     if(!target){
       const choices=await this.discoverRecoverableRooms()
       if(!current())return null
+      if(!this.shell.commandTransportReady)throw new Error('socket disconnected during room discovery')
       const active=choices.filter(view=>view.status==='HAND_ACTIVE')
       if(active.length===1)target=active[0].roomId
       else if(active.length>1)throw new Error('multiple active rooms; choose one to recover')
@@ -162,6 +164,7 @@ export class GameOnlineController {
        fresh.activeHandId!==initial.activeHandId ||
        fresh.lastHandId!==initial.lastHandId)
       throw new Error('room changed during recovery; retry authoritative lookup')
+    if(!this.shell.commandTransportReady)throw new Error('socket disconnected before room adoption')
     this.adoptAuthorizedRoom(fresh)
     // No suspension between final membership check and authoritative adoption.
     if(fresh.activeHandId && (phase==='BIDDING'||phase==='PLAYING'||phase==='SETTLING')){
@@ -170,7 +173,9 @@ export class GameOnlineController {
     }else if(evidence){
       this.shell.acceptVerifiedFinalEvidence(evidence)
     }
-    return current()?fresh:null
+    if(!current())return null
+    if(!this.shell.commandTransportReady)throw new Error('socket disconnected before recovery completion')
+    return fresh
   }
   /** Scene refresh must obey the same pending-command/fairness/hand barriers.
    * Do not adopt HTTP data if a command changed while the read was in flight. */
@@ -280,6 +285,7 @@ export class GameOnlineController {
           fresh.lastHandId !== view.lastHandId)
         throw new Error('room changed during join; retry authoritative lookup')
       // No suspension between the final authorization read and adoption.
+      if(!this.shell.commandTransportReady)throw new Error('socket disconnected before member recovery')
       this.adoptAuthorizedRoom(fresh)
       const generation = ++this.membershipGeneration
       if (fresh.activeHandId && (phase === 'BIDDING' || phase === 'PLAYING' ||

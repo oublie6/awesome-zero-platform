@@ -211,7 +211,7 @@ export class GameBootstrap extends Component {
           const usable=connected && await this.waitForWebScene()
           if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
           const ready=usable && !!owner?.session.authenticated &&
-            !!owner?.shell.commandTransportReady
+            !!owner?.shell.commandTransportReady && this.requiredRecoveryReady(owner)
           this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')
           this.reportNativeBoot(ready?'done':'fail')
         }).catch(error=>{
@@ -641,6 +641,28 @@ export class GameBootstrap extends Component {
       generation===this.roomGeneration &&
       (selection===undefined || selection===this.recoveryAttempt)
   }
+  /** HTTP recovery has established the account's authoritative room choice.
+   * Recheck the live projection at every final success boundary, not merely
+   * whether an earlier sync promise once resolved. No room/predeal state
+   * legitimately needs private cards. */
+  private requiredRecoveryReady(online:GameOnlineController|null):boolean {
+    if(!online?.session.authenticated || !online.shell.commandTransportReady)return false
+    if(!this.roomID)return true
+    const room=this.roomView
+    if(!room || room.roomId!==this.roomID || !room.member || room.status==='CLOSED')return false
+    if(room.activeHandId){
+      if(room.activeHandId!==this.handID || this.fairnessView?.handId!==room.activeHandId)return false
+      const phase=this.fairnessView.phase
+      const snapshot=online.shell.hand.snapshot
+      if(['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(phase) ||
+         snapshot?.handId===room.activeHandId)
+        return online.shell.handProjectionReady(room.activeHandId)
+      return ['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING'].includes(phase)
+    }
+    if(room.lastHandId)return room.lastHandId===this.handID &&
+      online.shell.handProjectionReady(room.lastHandId,true)
+    return true
+  }
   /** Resolve true only after verified identity, live WSS and all required
    * read-only room/hand restoration have completed. Suppressed errors and
    * superseded selections must never be interpreted as startup success. */
@@ -728,7 +750,8 @@ export class GameBootstrap extends Component {
       // logout during await; neither should authorize a completed startup.
       return this.currentAccount(online,generation) &&
         selection===this.recoveryAttempt &&
-        online.session.authenticated && online.shell.commandTransportReady
+        online.session.authenticated && online.shell.commandTransportReady &&
+        this.requiredRecoveryReady(online)
     } catch(error) {
       if(error instanceof WeChatBindingRequiredError && generation===this.requestGeneration &&
          this.content?.isValid){
@@ -1000,8 +1023,10 @@ export class GameBootstrap extends Component {
         throw new Error('room changed during recovery; refresh authoritative state')
       if(online.rooms.state?.roomId!==roomID)
         throw new Error('room changed while applying recovery')
-      if(online.rooms.state.version!==verified.version)
+      if(online.rooms.state.version!==verified.version || presentation.version!==verified.version)
         throw new Error('room version changed after recovery; retry authoritative lookup')
+      if(!this.requiredRecoveryReady(online))
+        throw new Error('当前房间或牌局的权威状态尚未确认，请重新恢复')
       if(current())this.notice('已通过服务器恢复本人房间和牌局')
     }catch(error){
       if(current() && this.recoveryAuthorityRevoked(error))

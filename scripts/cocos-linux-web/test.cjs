@@ -493,3 +493,17 @@ test('Goal0065 Round4: strict room/hand reads cannot be swallowed by startup',()
  assert.match(refresh,/await online\.api\.finalEvidence\(info\.lastHandId\)/);
  assert.match(refresh,/await online\.shell\.syncHand\(info\.activeHandId\)/);
 });
+
+test('Goal0065 R5: revalidate current authoritative private or archive state immediately before SESSION_ACTIVE',()=>{
+ const source=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
+ const handler=source.split("if(data.type==='SESSION_AVAILABLE')")[1]
+   .split("}else if(data.type==='SESSION_REVOKED')")[0];
+ const gate=source.split('private requiredRecoveryReady(')[1].split('private async login(')[0];
+ assert.match(handler,/const ready=usable && !!owner\?\.session\.authenticated &&\s*!!owner\?\.shell\.commandTransportReady && this\.requiredRecoveryReady\(owner\)/);
+ assert.match(gate,/if\(!this\.roomID\)return true/);
+ assert.match(gate,/online\.shell\.handProjectionReady\(room\.activeHandId\)/);
+ assert.match(gate,/online\.shell\.handProjectionReady\(room\.lastHandId,true\)/);
+ assert.match(gate,/WAITING_PUBLIC_BEACON/);
+ assert.match(source,/presentation\.version!==verified\.version/);
+});
