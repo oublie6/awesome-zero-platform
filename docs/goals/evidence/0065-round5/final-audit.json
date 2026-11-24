@@ -1,0 +1,87 @@
+{
+  "deploymentsUnchanged": true,
+  "podsUnchanged": true,
+  "pods": [
+    {
+      "name": "app-api-99f88b95-dxrwx",
+      "ready": true,
+      "restarts": [
+        0
+      ]
+    },
+    {
+      "name": "beanstalkd-a-0",
+      "ready": true,
+      "restarts": [
+        0
+      ]
+    },
+    {
+      "name": "beanstalkd-b-0",
+      "ready": true,
+      "restarts": [
+        0
+      ]
+    },
+    {
+      "name": "game-web-5657f979dd-lhhxk",
+      "ready": true,
+      "restarts": [
+        0
+      ]
+    },
+    {
+      "name": "mysql-5cc48fd9b4-5hz6j",
+      "ready": true,
+      "restarts": [
+        2
+      ]
+    },
+    {
+      "name": "redis-67bdd89687-krvb4",
+      "ready": true,
+      "restarts": [
+        2
+      ]
+    }
+  ],
+  "configmapsUnchanged": true,
+  "servicesUnchanged": true,
+  "pvcUnchanged": true,
+  "statefulsetsUnchanged": true,
+  "db": "ABORTED\t11\nCOMPLETED\t8\n0\n",
+  "nodes": [
+    {
+      "name": "hk-worker",
+      "ready": true
+    },
+    {
+      "name": "ser730417996259",
+      "ready": true
+    }
+  ],
+  "user29457": "active",
+  "deadlineRows": 0,
+  "listeners": {
+    "29457": true,
+    "30465": false,
+    "19175": false
+  },
+  "temporaryNginxStopped": true,
+  "unfinishedHands": 0,
+  "finalReadUTC": "2026-11-24T00:37:38.640328+00:00",
+  "deploymentImages": {
+    "app-api": [
+      "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f"
+    ],
+    "game-web": [
+      "docker.io/awesome-zero-platform/goal0064-web@sha256:44995360be6e91a0e7e1c355db4e8e9027633d1fc4d9eb59b15b110990af0a0f"
+    ],
+    "mysql": [
+      "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+    ],
+    "redis": [
+      "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+    ]
+  }
+}

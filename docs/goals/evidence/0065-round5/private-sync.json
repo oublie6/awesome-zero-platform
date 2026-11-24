@@ -1,0 +1,74 @@
+{
+  "source": "5849b7d062f24a3f8a8c8121282d9aea623e0797",
+  "syncRequests": 2,
+  "droppedSnapshots": 2,
+  "pageErrors": [],
+  "events": [],
+  "previousFixtureCleanup": {
+    "status": 200,
+    "code": "OK"
+  },
+  "room": "room-cmd-94b10a02027fdfa28b1fe8e570d8ca22",
+  "hand": "hand-cmd-3dcc7738a100890a8f50d5ed14f8dd0d",
+  "control": {
+    "allThreeSnapshots": true,
+    "hand": "hand-cmd-3dcc7738a100890a8f50d5ed14f8dd0d",
+    "version": 1
+  },
+  "failedRestore": {
+    "authenticated": true,
+    "transportReady": true,
+    "sameRoom": true,
+    "sameHand": true,
+    "hasSnapshot": false,
+    "handStatus": "synchronizing",
+    "host": {
+      "status": "\u6e38\u620f\u5c31\u7eea",
+      "cover": false,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795480339725
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795480348877
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795480353573
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795480353574
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795480353574
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795480354698
+        }
+      ]
+    },
+    "nativeOverlay": 0
+  },
+  "findingConfirmed": true,
+  "retry": {
+    "sameRoom": true,
+    "sameHand": true,
+    "hasSnapshot": true,
+    "version": 1
+  },
+  "cleanup": {
+    "status": 200,
+    "triggered": true,
+    "code": "OK"
+  },
+  "recoveryCommands": 0
+}

@@ -1,0 +1,526 @@
+{
+  "source": "5849b7d062f24a3f8a8c8121282d9aea623e0797",
+  "cases": [
+    {
+      "step": "discovery",
+      "path": "/v1/doudizhu/me/rooms",
+      "n": 1,
+      "kind": 503,
+      "hit": 1,
+      "seen": 1,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": false,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479867096
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479870857
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479873637
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479873638
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479873638
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479873724
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479873725
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "discovery",
+      "path": "/v1/doudizhu/me/rooms",
+      "n": 1,
+      "kind": 401,
+      "hit": 1,
+      "seen": 1,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": false,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479876700
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479879864
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479882686
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479882687
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479882687
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479882760
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479882761
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "discovery",
+      "path": "/v1/doudizhu/me/rooms",
+      "n": 1,
+      "kind": 403,
+      "hit": 1,
+      "seen": 1,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": false,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479885617
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479889174
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479891862
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479891863
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479891863
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479891926
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479891927
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "discovery",
+      "path": "/v1/doudizhu/me/rooms",
+      "n": 1,
+      "kind": 404,
+      "hit": 1,
+      "seen": 1,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": false,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479894993
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479898796
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479902365
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479902366
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479902366
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479902444
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479902445
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "discovery",
+      "path": "/v1/doudizhu/me/rooms",
+      "n": 1,
+      "kind": "shape",
+      "hit": 1,
+      "seen": 1,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": false,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479905367
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479909119
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479912051
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479912052
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479912052
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479912118
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479912120
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "discovery",
+      "path": "/v1/doudizhu/me/rooms",
+      "n": 1,
+      "kind": "abort",
+      "hit": 1,
+      "seen": 1,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": false,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479914916
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479918609
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479921361
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479921362
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479921362
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479921427
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479921428
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "initial-room",
+      "path": "/v1/doudizhu/rooms/room-cmd-94b10a02027fdfa28b1fe8e570d8ca22",
+      "n": 1,
+      "kind": 503,
+      "hit": 1,
+      "seen": 1,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": false,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479924493
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479928024
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479930942
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479930944
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479930944
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479931053
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479931054
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "membership-recheck",
+      "path": "/v1/doudizhu/rooms/room-cmd-94b10a02027fdfa28b1fe8e570d8ca22",
+      "n": 2,
+      "kind": 503,
+      "hit": 1,
+      "seen": 2,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": false,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479934035
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479937261
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479940240
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479940241
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479940241
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479940412
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479940413
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "strict-presentation",
+      "path": "/v1/doudizhu/rooms/room-cmd-94b10a02027fdfa28b1fe8e570d8ca22",
+      "n": 3,
+      "kind": 503,
+      "hit": 1,
+      "seen": 3,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": true,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479943251
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479946012
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479948675
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479948676
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479948676
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479948838
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479948839
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "step": "final-authority",
+      "path": "/v1/doudizhu/rooms/room-cmd-94b10a02027fdfa28b1fe8e570d8ca22",
+      "n": 4,
+      "kind": 503,
+      "hit": 1,
+      "seen": 4,
+      "authenticated": true,
+      "transportReady": true,
+      "hasRoom": true,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "error": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795479951871
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795479955342
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795479958107
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795479958108
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795479958109
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795479958610
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795479958611
+          }
+        ]
+      },
+      "pass": true
+    }
+  ],
+  "pageErrors": [],
+  "room": "room-cmd-94b10a02027fdfa28b1fe8e570d8ca22",
+  "control": {
+    "authenticated": true,
+    "transportReady": true,
+    "roomRecovered": true
+  },
+  "retry": {
+    "sameRoom": true,
+    "transportReady": true
+  }
+}

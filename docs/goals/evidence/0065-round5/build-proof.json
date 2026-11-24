@@ -1,0 +1,76 @@
+{
+  "source": "5849b7d062f24a3f8a8c8121282d9aea623e0797",
+  "toolchain": {
+    "kind": "cocos-linux-native-wechat",
+    "engineVersion": "4.0.0-beta.0",
+    "cliRevision": "f506fa3de403b48b4833334fa48dddd27bb26364",
+    "engineRevision": "d0a696cfe63fd8d19c70d7913ba11aa641c2e3c7",
+    "platform": "wechatgame",
+    "nodeVersion": "22.23.4",
+    "project": "clients/fair-doudizhu-cocos",
+    "clientBuild": "2d-ui"
+  },
+  "engineProfileSHA256": "c3309a611939acf7eb744177aa263b3c86c66c67c57ab534e243333ffb069f77",
+  "nativeExportSeconds": 33,
+  "nativeTypecheck": "PASS",
+  "nativeASTJSFiles": 8,
+  "checks": [
+    {
+      "name": "vue-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit": 0,
+      "seconds": 9.233
+    },
+    {
+      "name": "vue-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit": 0,
+      "seconds": 0.727
+    },
+    {
+      "name": "script-tests",
+      "command": [
+        "node",
+        "--test",
+        "scripts/cocos-linux-web/test.cjs",
+        "scripts/game-web/stage.test.cjs"
+      ],
+      "exit": 0,
+      "seconds": 0.378
+    },
+    {
+      "name": "cocos-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit": 0,
+      "seconds": 7.006
+    }
+  ],
+  "tests": {
+    "vue": 14,
+    "cocos": 165,
+    "scripts": 28,
+    "skippedFinal": 0
+  },
+  "initialFixtureNotes": [
+    "First private input lacked required 2D profile; owned export stopped and restarted with repository profile.",
+    "CLI internal tsc was unavailable in PATH; separate required generated-declaration strict gate passed.",
+    "Initial script suite omitted CLI env and skipped AST test; explicit CLI rerun passed all28."
+  ],
+  "explicitCLIScriptRerun": {
+    "command": "COCOS_CLI_ROOT=/data/awesome-zero-platform-tools/round7-cocos-cli node --test scripts/cocos-linux-web/test.cjs scripts/game-web/stage.test.cjs",
+    "exit": 0,
+    "pass": 28,
+    "fail": 0,
+    "skip": 0
+  }
+}

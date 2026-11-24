@@ -1,0 +1,11 @@
+{
+  "ci.json": "00ed791497b11f5cd483e72b9f209ccfd0cd66d201e04228a1b3f084fc09f3ee",
+  "private-sync.json": "0734cf2ac905d7d72a23c5527a41bd9cb1c8c9dc1f0711e9d7f2999454f832ee",
+  "artifact-manifest.json": "f16be21df28c50d6710fcc09aafcb70944ff0d542afee1322958ae7cf935df1c",
+  "fixture-proof.json": "99227844ab8edaa17c37c15f0414473d8fd15613415d2af8f2a5a1d1495f4e63",
+  "final-audit.json": "5ad9d376699747af17a14fec2327aa61ec25db8ddef5612b597f00af174fedce",
+  "missing-private-ready.png": "2ce71f684748c9d7000af8d4e9770d47bdebbbc4d00dd8363806e3b8d9034a94",
+  "native-export-hashes.json": "fa6f808d6671d8d449d5e0882f97828d40e106e1725022b99501bb3d3124af5b",
+  "restore-matrix.json": "f89dec1bce257ffe2d0988cc86ba51ab6b46a16258a7886da23d226dfbf48d18",
+  "build-proof.json": "c5287f42391e49ae85cde129fc81e56edd51bbe08aa80d62ee7bcfdb68fb973d"
+}
