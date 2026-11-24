@@ -1,0 +1,77 @@
+[
+  {
+    "id": 45351843237,
+    "name": "CI",
+    "sha": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45351843237",
+    "jobs": [
+      {
+        "name": "integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "unit",
+        "conclusion": "success"
+      },
+      {
+        "name": "admin_web",
+        "conclusion": "success"
+      },
+      {
+        "name": "secure_envelope",
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "report",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45351843177,
+    "name": "Fair Doudizhu",
+    "sha": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45351843177",
+    "jobs": [
+      {
+        "name": "application",
+        "conclusion": "success"
+      },
+      {
+        "name": "client_foundation",
+        "conclusion": "success"
+      },
+      {
+        "name": "mysql_integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45351843297,
+    "name": "Cocos Linux Native Client",
+    "sha": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45351843297",
+    "jobs": [
+      {
+        "name": "linux_source",
+        "conclusion": "success"
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped"
+      }
+    ]
+  }
+]

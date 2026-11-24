@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-24 Codex **Goal0065 Round7 independent acceptance — FAIL**, fixed product `9ab7963dedfc4c194c8b5796db1388d17ffcdf12`: 315 source tests / real Cocos4 export PASS; original Round6 N01/N02/N03 reproducers PASS. New 3P2/1P3: late-timeout future-version floor (also actual Go v2 rejected below client floor3), cross-controller logout ownership, stale final room/predeal readiness, and delayed cross-controller vault save. Startup/cache/304/body-deadline and real three-account COMPLETED/v62 evidence collected; exit143 after saved terminal continued with same-room cleanup and fresh account-tail checks, documented limits. No product fix or candidate rollout; unchanged healthy baseline, unfinished0, user29457 retained. [Round7 report](0065-round7-independent-acceptance.md). Goal0065 remains in_progress.
+
 - 2026-11-24 ChatGPT **Goal0065 Round6 集中修复 — 待独立验收**：持久化 timeout 新鲜度屏障、共用 Socket 有界 send 生命周期与关闭清理、已有成员 join/reconnect 最终可用性统一；补充命令关联 ID、Web 身份响应体超时和旧会话 vault 写入/清理竞态。增加跨层受控SDK与控制器行为回归；保持 Go 协议、UNKNOWN 和部署基线不变。用户明确不处理手机黑屏。详见 [Goal0065](0065-web-startup-cache.md)，保持 in_progress。
 
 - 2026-11-24 Codex **Goal0065 Round6 independent acceptance — FAIL**, fixed product `9942db7258e14d5342783263d8fe00a74f92045f`: 302 source tests / real Cocos4 export PASS; R5 private-sync timeout and R3 hidden/layout reproducers PASS; real three-account game COMPLETED/v62. New controlled-protocol P2 timeout freshness barrier and two controlled-SDK/controller P3 findings; remaining cache/lifecycle/device gates unverified. User instructed “不修复，直接写报告”: no product fix or candidate rollout; six unchanged Ready Pods, unfinished hands0, user29457 retained. [Round6 report](0065-round6-independent-acceptance.md). Goal0065 remains in_progress.

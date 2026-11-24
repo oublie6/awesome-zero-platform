@@ -1,0 +1,22 @@
+{
+  "source": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+  "before": {
+    "status": 200,
+    "etag": "\"6b05a9c4-325a3\"",
+    "bytes": 206243,
+    "sha256": "6990f83a0747a68518c76739f3a6db33da62d2bab79ecd497aa8b31d4f044c11"
+  },
+  "changed": {
+    "status": 200,
+    "etag": "\"6b05ae91-325a7\"",
+    "bytes": 206247,
+    "sha256": "671a041f52ad416ab8668307d77296a2320938b1f5878ff067cdcd5630457143"
+  },
+  "restored": {
+    "status": 200,
+    "etag": "\"6b05ae91-325a3\"",
+    "bytes": 206243,
+    "sha256": "6990f83a0747a68518c76739f3a6db33da62d2bab79ecd497aa8b31d4f044c11"
+  },
+  "result": "PASS"
+}

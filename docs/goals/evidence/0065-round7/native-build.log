@@ -1,0 +1,212 @@
+Linux-native Cocos client/CLI/engine versions are pinned consistently
+
+> @awesome-zero-platform/game-client-core@0.1.0 build
+> tsc
+
+
+> @awesome-zero-platform/doudizhu-client@0.1.0 build
+> tsc
+
+
+> @awesome-zero-platform/secure-envelope@0.1.0 build
+> tsc
+
+Read config from path /root/goal0065-round7-9ab7963/input/web-build-options.json...
+Start record log in {file(/root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/temp/logs/cocos.log)}
+[Migration] 已注册 8 个迁移器
+[Migration] 开始执行迁移
+[Migration] 所有迁移执行成功
+ℹ injectWebAssembly ...
+Init Base: 201.837ms
+Init Infrastructure: 18.869ms
+Init SubSystem: 19.907ms
+Init Project: 15.144ms
+initEngine success
+ℹ [AssetConfig] asset-db mount scan roots: projectExtensions=/root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/extensions, builtin=none
+
+ ERROR  child process error: /data/awesome-zero-platform-tools/round7-cocos-cli/static/tools/cmft/cmftRelease64 --bypassoutputtype,--output0params,png,rgbm,latlong,--input,/data/awesome-zero-platform-tools/round7-cocos-cli/packages/engine/editor/assets/default_skybox/default_skybox.hdr,--output0,/root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/temp/asset-db/internal/d0/d032ac98-05e1-4090-88bb-eb640dcb5fc1/d032ac98-05e1-4090-88bb-eb640dcb5fc1
+
+
+ ERROR  Importer exec failed: {asset[/data/awesome-zero-platform-tools/round7-cocos-cli/packages/engine/editor/assets/default_skybox/default_skybox.hdr](d032ac98-05e1-4090-88bb-eb640dcb5fc1)}
+
+
+ ERROR  Error: spawn /data/awesome-zero-platform-tools/round7-cocos-cli/static/tools/cmft/cmftRelease64 ENOENT
+    at Process.ChildProcess._handle.onexit (node:internal/child_process:285:19)
+    at onErrorNT (node:internal/child_process:483:16)
+    at processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at runNextTicks (node:internal/process/task_queues:68:3)
+    at processImmediate (node:internal/timers:452:9)
+
+
+ ERROR  /bin/sh: 1: /data/awesome-zero-platform-tools/round7-cocos-cli/node_modules/@cocos/fbx-gltf-conv/bin/darwin/FBX-glTF-conv: Exec format error
+
+
+
+ ERROR  FBX-glTF-conv existed with unexpected non-zero code 126
+
+
+ ERROR  Importer exec failed: {asset[/data/awesome-zero-platform-tools/round7-cocos-cli/packages/engine/editor/assets/primitives.fbx](1263d74c-8167-4928-91a6-4e2672411f47)}
+
+
+ ERROR  Error: Failed to import /data/awesome-zero-platform-tools/round7-cocos-cli/packages/engine/editor/assets/primitives.fbx
+    at getFbxFilePath (/data/awesome-zero-platform-tools/round7-cocos-cli/src/core/assets/asset-handler/assets/gltf/reader-manager.ts:64:19)
+    at createGlTfReader (/data/awesome-zero-platform-tools/round7-cocos-cli/src/core/assets/asset-handler/assets/gltf/reader-manager.ts:248:34)
+    at GlTfReaderManager.getOrCreate (/data/awesome-zero-platform-tools/round7-cocos-cli/src/core/assets/asset-handler/assets/gltf/reader-manager.ts:27:58)
+    at importSubAssets (/data/awesome-zero-platform-tools/round7-cocos-cli/src/core/assets/asset-handler/assets/gltf.ts:269:27)
+    at Object.import (/data/awesome-zero-platform-tools/round7-cocos-cli/src/core/assets/asset-handler/assets/gltf.ts:223:20)
+    at CustomImporter.import (/data/awesome-zero-platform-tools/round7-cocos-cli/src/core/assets/manager/asset-handler.ts:44:25)
+
+update entry mod: 0.031ms
+
+ WARN  Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+update entry mod: 0.085ms
+update entry mod: 0.015ms
+update entry mod: 0.025ms
+update entry mod: 0.031ms
+update entry mod: 0.027ms
+update entry mod: 0.052ms
+update entry mod: 0.029ms
+update entry mod: 0.013ms
+update entry mod: 0.011ms
+update entry mod: 0.01ms
+update entry mod: 0.029ms
+update entry mod: 0.034ms
+update entry mod: 0.023ms
+update entry mod: 0.012ms
+update entry mod: 0.007ms
+update entry mod: 0.023ms
+update entry mod: 0.022ms
+update entry mod: 0.019ms
+update entry mod: 0.014ms
+update entry mod: 0.026ms
+update entry mod: 0.026ms
+update entry mod: 0.015ms
+update entry mod: 0.025ms
+update entry mod: 0.009ms
+update entry mod: 0.007ms
+update entry mod: 0.024ms
+update entry mod: 0.028ms
+update entry mod: 0.01ms
+update entry mod: 0.027ms
+[compileEffect] effect.bin generated: /root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/temp/asset-db/effect/effect.bin (5755 bytes)
+update entry mod: 0.017ms
+update entry mod: 0.025ms
+register platform web-desktop success!
+Switch record log to {file(/root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/temp/builder/log/web-desktop-build-1795532654945.log)}
+
+ WARN  Build parameter mainBundleCompressionType (merge_dep) validation failed,  compression type(undefined) is invalid for this platform!, will use default value "merge_dep"
+
+
+ WARN  Build parameter scenes ([]) validation failed, Scenes is empty, will use default value [{"url":"db://assets/scenes/Entry.scene","uuid":"e9a5f2e4-6d64-4363-814e-dab771327440","bundle":""}]
+
+◐ 🚀 Starting build for web-desktop
+ℹ 📋 Detailed logs will be saved to log file
+ℹ [░░░░░░░░░░░░░░░░░░░░] 0% - Start lock asset db...
+Asset DB is paused with build!
+ℹ 🔧 web-desktop:onAfterInit starting...
+✔ ✅ web-desktop:onAfterInit completed in 2ms
+ℹ [░░░░░░░░░░░░░░░░░░░░] 2% - web-desktop:onAfterInit completed ✓
+✔ web-desktop:onAfterInit completed ✓ (2%)
+ℹ [░░░░░░░░░░░░░░░░░░░░] 2% - Init all bundles start...
+ℹ [░░░░░░░░░░░░░░░░░░░░] 2% - Num of bundles: 2...
+ℹ 🔧 web-desktop:onAfterBundleInit starting...
+✔ ✅ web-desktop:onAfterBundleInit completed in 1ms
+ℹ [██░░░░░░░░░░░░░░░░░░] 8% - web-desktop:onAfterBundleInit completed ✓
+ℹ [██░░░░░░░░░░░░░░░░░░] 8% - Query Asset Bundle start
+ℹ [██░░░░░░░░░░░░░░░░░░] 8% - Init bundle root assets start...
+ℹ [██░░░░░░░░░░░░░░░░░░] 8% - Init bundle root assets success...
+creating executor ...
+ℹ [██░░░░░░░░░░░░░░░░░░] 8% - Init bundle share assets start...
+ℹ [██░░░░░░░░░░░░░░░░░░] 8% - Init bundle share assets success...
+ℹ [████░░░░░░░░░░░░░░░░] 18% - run build task Query Asset Bundle success in 665 ms√
+run build task Query Asset Bundle success in 665 ms√ (18%)
+ℹ [████░░░░░░░░░░░░░░░░] 18% - Query Asset Bundle start
+ℹ [██████░░░░░░░░░░░░░░] 28% - run build task Query Asset Bundle success in 3 ms√
+run build task Query Asset Bundle success in 3 ms√ (28%)
+ℹ [██████░░░░░░░░░░░░░░] 28% - Package scripts start
+[buildPolyfillsCommand]enter sub process 625254, 9229, see: chrome://inspect/#devices
+
+[buildPolyfillsCommand]Start record log in {file(/root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/temp/builder/log/web-desktop-build-1795532654945.log)}
+
+
+ ERROR  [buildPolyfillsCommand]
+ WARN  Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+
+
+
+ ERROR  [buildPolyfillsCommand]
+ WARN  Generated an empty chunk: "_rollup:plugin-multi-entry:entry-point"
+
+
+
+ℹ [██████░░░░░░░░░░░░░░] 28% - Generate systemJs...
+ℹ [██████░░░░░░░░░░░░░░] 29% - Still running: Generate systemJs...
+ℹ [██████░░░░░░░░░░░░░░] 29% - Build project scripts start...
+Running TypeScript static compile check...
+Project: /root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos
+Config: /root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/temp/tsconfig.cocos.json
+
+
+ WARN  ⚠ Non-assets TypeScript errors detected (showing full output):
+
+
+ ERROR  /bin/sh: 1: tsc: not found
+
+ℹ [██████░░░░░░░░░░░░░░] 30% - Still running: Build project scripts start...
+ℹ [██████░░░░░░░░░░░░░░] 31% - Still running: Build project scripts start...
+ℹ [██████░░░░░░░░░░░░░░] 31% - Build project scripts in (27701 ms) √
+ℹ [██████░░░░░░░░░░░░░░] 31% - Build engine scripts start...
+ℹ [██████░░░░░░░░░░░░░░] 31% - Build engine scripts in (1106 ms) √
+ℹ [██████░░░░░░░░░░░░░░] 31% - Copy plugin script ...
+ℹ [██████░░░░░░░░░░░░░░] 31% - Generate import-map...
+ℹ [████████░░░░░░░░░░░░] 38% - run build task Package scripts success in 57 s√
+run build task Package scripts success in 57 s√ (38%)
+ℹ [████████░░░░░░░░░░░░] 38% - Build Assets start
+ℹ [████████░░░░░░░░░░░░] 38% - Build bundles...
+ℹ [████████░░░░░░░░░░░░] 38% - Pack Images start
+ℹ [████████░░░░░░░░░░░░] 38% - Compress image start...
+ℹ [████████░░░░░░░░░░░░] 38% - Compress image success...
+ℹ [████████░░░░░░░░░░░░] 38% - Output asset in bundles start
+ℹ [████████░░░░░░░░░░░░] 38% - Output asset in bundles success
+ℹ [████████░░░░░░░░░░░░] 38% - Output asset in bundles start
+ℹ [████████░░░░░░░░░░░░] 38% - Output asset in bundles success
+ℹ [██████████░░░░░░░░░░] 48% - run build task Build Assets success in 653 ms√
+run build task Build Assets success in 653 ms√ (48%)
+ℹ [██████████░░░░░░░░░░] 48% - Organize some build option data to settings.json start
+ℹ [███████████░░░░░░░░░] 55% - run build task Organize some build option data to settings.json success in 17 ms√
+run build task Organize some build option data to settings.json success in 17 ms√ (55%)
+ℹ [███████████░░░░░░░░░] 55% - Fill script data to settings.json start
+ℹ [████████████░░░░░░░░] 62% - run build task Fill script data to settings.json success in 1 ms√
+run build task Fill script data to settings.json success in 1 ms√ (62%)
+ℹ [████████████░░░░░░░░] 62% - Organize some build option data to settings.json start
+ℹ [██████████████░░░░░░] 68% - run build task Organize some build option data to settings.json success in 6 ms√
+run build task Organize some build option data to settings.json success in 6 ms√ (68%)
+ℹ 🔧 web-desktop:onBeforeCompressSettings starting...
+✔ ✅ web-desktop:onBeforeCompressSettings completed in 1ms
+ℹ [██████████████░░░░░░] 70% - web-desktop:onBeforeCompressSettings completed ✓
+✔ web-desktop:onBeforeCompressSettings completed ✓ (70%)
+ℹ [██████████████░░░░░░] 70% - Organize static template files start
+ℹ [██████████████████░░] 90% - run build task Organize static template files success in 208 ms√
+run build task Organize static template files success in 208 ms√ (90%)
+ℹ 🔧 web-desktop:onBeforeCopyBuildTemplate starting...
+✔ ✅ web-desktop:onBeforeCopyBuildTemplate completed in 118ms
+ℹ [██████████████████░░] 92% - web-desktop:onBeforeCopyBuildTemplate completed ✓
+✔ web-desktop:onBeforeCopyBuildTemplate completed ✓ (92%)
+ℹ 🔧 web-desktop:onAfterBuild starting...
+getPreviewUrl: rawPath=/root/goal0065-round7-9ab7963/native2/fair-doudizhu-web, buildKey=undefined, platform=web-desktop
+✔ ✅ web-desktop:onAfterBuild completed in 6ms
+ℹ [███████████████████░] 94% - web-desktop:onAfterBuild completed ✓
+✔ web-desktop:onAfterBuild completed ✓ (94%)
+Switch record log to {file(/root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/temp/builder/log/web-desktop-build-1795532654945.log)}
+✅ 
+✔ ✅ Build completed successfully for web-desktop in 1 min
+Switch record log to {file(/root/goal0065-round7-9ab7963/input/clients/fair-doudizhu-cocos/temp/logs/cocos.log)}
+✓ Build completed successfully! Build Dest: project://../../../native2/fair-doudizhu-web
+Real generated Cocos4 TypeScript declaration gate passed
+Official fixed-candidate export and strict declarations/AST PASS; JS=8

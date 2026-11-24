@@ -1,0 +1,25 @@
+{
+  "source": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+  "kind": "controlled authenticated protocol ports; production Shell and Controller",
+  "cases": [
+    {
+      "name": "mismatched ACK/error IDs cannot consume another request; duplicates inert",
+      "result": "PASS"
+    },
+    {
+      "name": "lost command ACK remains UNKNOWN and exact identity survives retry",
+      "result": "PASS"
+    },
+    {
+      "name": "new-member accepted durable Join remains accepted after immediate close",
+      "result": "PASS"
+    }
+  ],
+  "joinReceipt": {
+    "acceptedVersion": 2,
+    "unknown": false,
+    "transportReady": false
+  },
+  "pass": 3,
+  "fail": 0
+}

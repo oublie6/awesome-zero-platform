@@ -1,0 +1,370 @@
+{
+  "passes": [
+    {
+      "label": "persistent-cold",
+      "bytes": 16726338,
+      "elapsed": 6046,
+      "responses": [
+        {
+          "path": "/game/index.html",
+          "status": 200
+        },
+        {
+          "path": "/game/src/polyfills.bundle.js",
+          "status": 200
+        },
+        {
+          "path": "/game/src/system.bundle.js",
+          "status": 200
+        },
+        {
+          "path": "/game/game-config.js",
+          "status": 200
+        },
+        {
+          "path": "/game/style.css",
+          "status": 200
+        },
+        {
+          "status": 200
+        },
+        {
+          "status": 200
+        },
+        {
+          "path": "/game/cocos-js/cc.js",
+          "status": 200
+        },
+        {
+          "path": "/game/application.js",
+          "status": 200
+        },
+        {
+          "path": "/favicon.ico",
+          "status": 204
+        },
+        {
+          "status": 200
+        },
+        {
+          "status": 200
+        },
+        {
+          "path": "/game/src/chunks/bundle.js",
+          "status": 200
+        },
+        {
+          "status": 200
+        },
+        {
+          "path": "/game/assets/internal/index.js",
+          "status": 200
+        },
+        {
+          "path": "/game/assets/internal/import/07/078d1fd7a.json",
+          "status": 200
+        },
+        {
+          "path": "/game/assets/internal/native/08/0835f102-5471-47a3-9a76-01c07ac9cdb2/OpenSans-Regular.ttf",
+          "status": 200
+        },
+        {
+          "path": "/game/assets/internal/native/b5/b5475517-23b9-4873-bc1a-968d96616081/OpenSans-Bold.ttf",
+          "status": 200
+        },
+        {
+          "path": "/game/assets/internal/native/0e/0ed97c56-390e-4dd1-96b7-e7f2d93a98ed/OpenSans-Italic.ttf",
+          "status": 200
+        },
+        {
+          "path": "/game/assets/internal/native/b2/b23391b6-52eb-46a6-8da1-6244d9d315fb/OpenSans-BoldItalic.ttf",
+          "status": 200
+        },
+        {
+          "path": "/game/assets/main/config.json",
+          "status": 200
+        },
+        {
+          "path": "/game/assets/main/index.js",
+          "status": 200
+        },
+        {
+          "path": "/game/assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "label": "persistent-warm",
+      "bytes": 18902,
+      "elapsed": 4829,
+      "responses": [
+        {
+          "path": "/game/index.html",
+          "status": 304
+        },
+        {
+          "status": 304
+        },
+        {
+          "path": "/game/src/system.bundle.js",
+          "status": 304
+        },
+        {
+          "path": "/game/game-config.js",
+          "status": 200
+        },
+        {
+          "path": "/game/style.css",
+          "status": 304
+        },
+        {
+          "path": "/game/src/import-map.json",
+          "status": 304
+        },
+        {
+          "path": "/game/index.js",
+          "status": 304
+        },
+        {
+          "path": "/game/cocos-js/cc.js",
+          "status": 304
+        },
+        {
+          "path": "/favicon.ico",
+          "status": 204
+        },
+        {
+          "path": "/game/application.js",
+          "status": 304
+        },
+        {
+          "path": "/game/src/settings.json",
+          "status": 304
+        },
+        {
+          "path": "/game/src/effect.bin",
+          "status": 304
+        },
+        {
+          "path": "/game/src/chunks/bundle.js",
+          "status": 304
+        },
+        {
+          "path": "/game/assets/internal/config.json",
+          "status": 304
+        },
+        {
+          "path": "/game/assets/internal/index.js",
+          "status": 304
+        },
+        {
+          "path": "/game/assets/internal/import/07/078d1fd7a.json",
+          "status": 304
+        },
+        {
+          "status": 304
+        },
+        {
+          "status": 304
+        },
+        {
+          "status": 304
+        },
+        {
+          "path": "/game/assets/internal/native/b2/b23391b6-52eb-46a6-8da1-6244d9d315fb/OpenSans-BoldItalic.ttf",
+          "status": 304
+        },
+        {
+          "path": "/game/assets/main/index.js",
+          "status": 304
+        },
+        {
+          "path": "/game/assets/main/config.json",
+          "status": 304
+        },
+        {
+          "path": "/game/assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+          "status": 304
+        }
+      ]
+    }
+  ],
+  "responses": [
+    {
+      "path": "/game/index.html",
+      "status": 200
+    },
+    {
+      "path": "/game/src/polyfills.bundle.js",
+      "status": 200
+    },
+    {
+      "path": "/game/src/system.bundle.js",
+      "status": 200
+    },
+    {
+      "path": "/game/game-config.js",
+      "status": 200
+    },
+    {
+      "path": "/game/style.css",
+      "status": 200
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 200
+    },
+    {
+      "path": "/game/cocos-js/cc.js",
+      "status": 200
+    },
+    {
+      "path": "/game/application.js",
+      "status": 200
+    },
+    {
+      "path": "/favicon.ico",
+      "status": 204
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 200
+    },
+    {
+      "path": "/game/src/chunks/bundle.js",
+      "status": 200
+    },
+    {
+      "status": 200
+    },
+    {
+      "path": "/game/assets/internal/index.js",
+      "status": 200
+    },
+    {
+      "path": "/game/assets/internal/import/07/078d1fd7a.json",
+      "status": 200
+    },
+    {
+      "path": "/game/assets/internal/native/08/0835f102-5471-47a3-9a76-01c07ac9cdb2/OpenSans-Regular.ttf",
+      "status": 200
+    },
+    {
+      "path": "/game/assets/internal/native/b5/b5475517-23b9-4873-bc1a-968d96616081/OpenSans-Bold.ttf",
+      "status": 200
+    },
+    {
+      "path": "/game/assets/internal/native/0e/0ed97c56-390e-4dd1-96b7-e7f2d93a98ed/OpenSans-Italic.ttf",
+      "status": 200
+    },
+    {
+      "path": "/game/assets/internal/native/b2/b23391b6-52eb-46a6-8da1-6244d9d315fb/OpenSans-BoldItalic.ttf",
+      "status": 200
+    },
+    {
+      "path": "/game/assets/main/config.json",
+      "status": 200
+    },
+    {
+      "path": "/game/assets/main/index.js",
+      "status": 200
+    },
+    {
+      "path": "/game/assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+      "status": 200
+    },
+    {
+      "path": "/game/index.html",
+      "status": 304
+    },
+    {
+      "status": 304
+    },
+    {
+      "path": "/game/src/system.bundle.js",
+      "status": 304
+    },
+    {
+      "path": "/game/game-config.js",
+      "status": 200
+    },
+    {
+      "path": "/game/style.css",
+      "status": 304
+    },
+    {
+      "path": "/game/src/import-map.json",
+      "status": 304
+    },
+    {
+      "path": "/game/index.js",
+      "status": 304
+    },
+    {
+      "path": "/game/cocos-js/cc.js",
+      "status": 304
+    },
+    {
+      "path": "/favicon.ico",
+      "status": 204
+    },
+    {
+      "path": "/game/application.js",
+      "status": 304
+    },
+    {
+      "path": "/game/src/settings.json",
+      "status": 304
+    },
+    {
+      "path": "/game/src/effect.bin",
+      "status": 304
+    },
+    {
+      "path": "/game/src/chunks/bundle.js",
+      "status": 304
+    },
+    {
+      "path": "/game/assets/internal/config.json",
+      "status": 304
+    },
+    {
+      "path": "/game/assets/internal/index.js",
+      "status": 304
+    },
+    {
+      "path": "/game/assets/internal/import/07/078d1fd7a.json",
+      "status": 304
+    },
+    {
+      "status": 304
+    },
+    {
+      "status": 304
+    },
+    {
+      "status": 304
+    },
+    {
+      "path": "/game/assets/internal/native/b2/b23391b6-52eb-46a6-8da1-6244d9d315fb/OpenSans-BoldItalic.ttf",
+      "status": 304
+    },
+    {
+      "path": "/game/assets/main/index.js",
+      "status": 304
+    },
+    {
+      "path": "/game/assets/main/config.json",
+      "status": 304
+    },
+    {
+      "path": "/game/assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+      "status": 304
+    }
+  ]
+}

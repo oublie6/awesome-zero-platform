@@ -1,0 +1,70 @@
+{
+  "source": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+  "room": "room-cmd-22088de3899579efb13b3893e2332084",
+  "hand": "hand-cmd-28be5da998ea566fbefaa757bd3e0527",
+  "initial": {
+    "phase": "FAIRNESS_COMMITTING",
+    "hasSnapshot": false
+  },
+  "controls": [
+    {
+      "phase": "BIDDING",
+      "version": 1,
+      "sameHand": true
+    },
+    {
+      "phase": "BIDDING",
+      "version": 1,
+      "sameHand": true
+    }
+  ],
+  "before": {
+    "phase": "FAIRNESS_COMMITTING",
+    "snapshot": false,
+    "status": "synchronizing",
+    "changes": [],
+    "dropped": 0,
+    "transport": true
+  },
+  "host": {
+    "status": "游戏就绪",
+    "cover": false,
+    "events": [
+      {
+        "type": "BOOT_STAGE",
+        "stage": "document",
+        "at": 1795533534194
+      },
+      {
+        "type": "BOOT_STAGE",
+        "stage": "engine",
+        "at": 1795533545189
+      },
+      {
+        "type": "BOOT_STAGE",
+        "stage": "scene",
+        "at": 1795533550446
+      },
+      {
+        "type": "BOOT_STAGE",
+        "stage": "session",
+        "at": 1795533550447
+      },
+      {
+        "type": "GAME_READY",
+        "at": 1795533550447
+      },
+      {
+        "type": "SESSION_ACTIVE",
+        "at": 1795533597873
+      }
+    ]
+  },
+  "findingConfirmed": true,
+  "snapshotDropFaultExercised": false,
+  "cleanup": {
+    "status": 200,
+    "triggered": true,
+    "code": "OK"
+  }
+}

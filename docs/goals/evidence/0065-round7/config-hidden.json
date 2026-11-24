@@ -1,0 +1,56 @@
+{
+  "hidden": {
+    "messages": [
+      {
+        "type": "BOOT_STAGE",
+        "stage": "document",
+        "at": 1795533032131
+      },
+      {
+        "type": "BOOT_STAGE",
+        "stage": "engine",
+        "at": 1795533036768
+      },
+      {
+        "type": "BOOT_STAGE",
+        "stage": "scene",
+        "at": 1795533040606
+      },
+      {
+        "type": "SESSION_FAILED",
+        "at": 1795533051977
+      }
+    ]
+  },
+  "sameFrame": true,
+  "afterLate": {
+    "error": "游戏资源或引擎启动失败，请重新加载。",
+    "messages": [
+      {
+        "type": "BOOT_STAGE",
+        "stage": "document",
+        "at": 1795533032131
+      },
+      {
+        "type": "BOOT_STAGE",
+        "stage": "engine",
+        "at": 1795533036768
+      },
+      {
+        "type": "BOOT_STAGE",
+        "stage": "scene",
+        "at": 1795533040606
+      },
+      {
+        "type": "SESSION_FAILED",
+        "at": 1795533051977
+      },
+      {
+        "type": "BOOT_FAILED",
+        "at": 1795533056636
+      }
+    ]
+  },
+  "retryReady": true,
+  "result": "PASS"
+}

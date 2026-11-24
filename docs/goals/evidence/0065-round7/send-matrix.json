@@ -1,0 +1,49 @@
+{
+  "source": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+  "kind": "actual MiniSocketTransport/openSocket/ConnectionManager/Shell; controlled SDK",
+  "cases": [
+    {
+      "name": "16 failed syncs with reconnect release every transport Promise",
+      "result": "PASS"
+    },
+    {
+      "name": "capacity32 rejects33 then close settles all without SDK",
+      "result": "PASS"
+    },
+    {
+      "name": "one send deadline cancels sibling waiters",
+      "result": "PASS"
+    },
+    {
+      "name": "ConnectionManager replacement settles original sends",
+      "result": "PASS"
+    },
+    {
+      "name": "synchronous SDK exception releases slot; late callbacks remain inert",
+      "result": "PASS"
+    },
+    {
+      "name": "send failure preserves UNKNOWN command outcome",
+      "result": "PASS"
+    },
+    {
+      "name": "accepted command ACK survives late send error",
+      "result": "PASS"
+    },
+    {
+      "name": "dispose during an active SDK send settles read and send without callbacks",
+      "result": "PASS"
+    },
+    {
+      "name": "read send deadline closes and settles concurrent UNKNOWN command",
+      "result": "PASS"
+    }
+  ],
+  "unhandled": [],
+  "serial16": {
+    "tasks": 16,
+    "outstanding": 0
+  },
+  "pass": 9,
+  "fail": 0
+}

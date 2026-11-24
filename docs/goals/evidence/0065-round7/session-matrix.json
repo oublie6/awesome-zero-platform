@@ -1,0 +1,72 @@
+{
+  "source": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+  "kind": "actual session/auth/vault classes; controlled identity callbacks and storage; real HTTPS streamed-body deadline",
+  "cases": [
+    {
+      "name": "same session delayed old save precedes new token",
+      "result": "PASS"
+    },
+    {
+      "name": "slow revoke cannot clear newer same-session login",
+      "result": "PASS"
+    },
+    {
+      "name": "old verification true after another controller login",
+      "result": "PASS"
+    },
+    {
+      "name": "old verification false after another controller login",
+      "result": "PASS"
+    },
+    {
+      "name": "old controller logout while old restore pending cannot clear new login",
+      "result": "FAIL",
+      "error": "old unauthenticated controller logout removed newer confirmed token\n\nnull !== 'new'\n"
+    },
+    {
+      "name": "slow save from another controller cannot overwrite newer token",
+      "result": "FAIL",
+      "error": "per-instance save queue overwrote/cleared another controller token\n\nnull !== 'new'\n"
+    },
+    {
+      "name": "rapid same-controller switch sequence leaves newest identity",
+      "result": "PASS"
+    },
+    {
+      "name": "Web auth old validation result cannot adopt replaced storage",
+      "result": "PASS"
+    },
+    {
+      "name": "Web auth old pending restore logout cannot clear/revoke new controller login",
+      "result": "FAIL",
+      "error": "old auth logout removed new shared token\n\nundefined !== 'new'\n"
+    },
+    {
+      "name": "real HTTPS headers-arrived body-stalled aborted within identity deadline",
+      "result": "PASS"
+    }
+  ],
+  "oldControllerLogout": {
+    "newControllerAuthenticated": true,
+    "storageStillNew": false,
+    "storageEmpty": true
+  },
+  "delayedCrossControllerSave": {
+    "newControllerAuthenticated": true,
+    "storageStillNew": false,
+    "storageEmpty": true
+  },
+  "webOldControllerLogout": {
+    "newControllerAuthenticated": true,
+    "storageStillNew": false,
+    "newTokenRevoked": true
+  },
+  "streamedHTTP": {
+    "elapsed": 156,
+    "headersArrived": true,
+    "authenticated": false,
+    "stored": false
+  },
+  "pass": 7,
+  "fail": 3
+}

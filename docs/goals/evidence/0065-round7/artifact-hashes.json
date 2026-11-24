@@ -1,0 +1,329 @@
+{
+  "source": "9ab7963dedfc4c194c8b5796db1388d17ffcdf12",
+  "files": [
+    {
+      "artifact": "cocos-export",
+      "path": "application.js",
+      "bytes": 1269,
+      "sha256": "60633140454acc1070f4eac53f89828e86f2c8471bb8f80e77e42fac68b4ff3a"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/internal/config.json",
+      "bytes": 2439,
+      "sha256": "e021b9fe38aebffd2ebd0382f1fd960eb98a01e810db747426b30e1b567a9226"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/internal/import/07/078d1fd7a.json",
+      "bytes": 197930,
+      "sha256": "139094c6a6e40219d1547ebfa516abd4c9c91d9a9cc921ed32e281d9c2b0e55c"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/internal/index.js",
+      "bytes": 259686,
+      "sha256": "edd79bd3246940d6acd8adcaa6093c8f1c4e635af2c203f59684696b390fdf58"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/internal/native/08/0835f102-5471-47a3-9a76-01c07ac9cdb2/OpenSans-Regular.ttf",
+      "bytes": 217360,
+      "sha256": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/internal/native/0e/0ed97c56-390e-4dd1-96b7-e7f2d93a98ed/OpenSans-Italic.ttf",
+      "bytes": 212896,
+      "sha256": "a54dc8488f8193bf30c3820cf6f261f911f9d328d699e1a1b8042641554cec70"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/internal/native/b2/b23391b6-52eb-46a6-8da1-6244d9d315fb/OpenSans-BoldItalic.ttf",
+      "bytes": 213292,
+      "sha256": "3ca680f2444cc9e50447d057c006464566e92f2e77b0b6e26491e5bd757ed4e7"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/internal/native/b5/b5475517-23b9-4873-bc1a-968d96616081/OpenSans-Bold.ttf",
+      "bytes": 224592,
+      "sha256": "5894a3649b213cf5b2d673b6e7a871815fd1d120fa68a463592f27db14eae323"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/main/config.json",
+      "bytes": 582,
+      "sha256": "51723a5b4c662d43b5eb9264df1effdc92e9140bfa4eb03cd7098a97f4d846c9"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/main/import/ba/ba21476f-2866-4f81-9c4d-6e359316e448.json",
+      "bytes": 192,
+      "sha256": "0a34e9263b215bb661d6334db6a255497c6cdac1f1c40b130f50bf9d91f4dd39"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+      "bytes": 1350,
+      "sha256": "a7879d77c700c29297c1070d677dffdf8176944f0f1a2fdb72674c2285ec4ea4"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/main/import/fd/fd8ec536-a354-4a17-9c74-4f3883c378c8.json",
+      "bytes": 480,
+      "sha256": "c2eee4552a460ed97591f527e127b95c811d5f796b9448f3f705974af9beba9d"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "assets/main/index.js",
+      "bytes": 618532,
+      "sha256": "6b4f9c224ea6106000ef9bbc90fdf71c8d36c594cd896750481a9d9bfda2d7be"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "cocos-js/cc.js",
+      "bytes": 12622964,
+      "sha256": "d0b4d7872199c93f0b86eddf5d19d80152fae2cd9d84a793261d39d0c5d58b9f"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "favicon.ico",
+      "bytes": 1150,
+      "sha256": "0ee6ea35321de21db85992f64e4b846def7abac1222fa2250318878396df988e"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "index.html",
+      "bytes": 13808,
+      "sha256": "18dc8e4407c9c9d8946b1feca902e4aa9281a12d2ea7053e8e4cef1be22e6285"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "index.js",
+      "bytes": 615,
+      "sha256": "2e2d7f9d93e071156db972f33f7a7b03b3ab6c65d865c3b83009c261929a6042"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "src/chunks/bundle.js",
+      "bytes": 1807365,
+      "sha256": "fe87c09f4eba1e04934e604b71637252c7840eae513e88b41dbf46d82dbeb1c5"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "src/effect.bin",
+      "bytes": 5755,
+      "sha256": "b0d92f8307e3109abe8af8a863d68feb58cf4f49cf000b1d48fbb3dc3ad45556"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "src/import-map.json",
+      "bytes": 40,
+      "sha256": "2be73d8f2e7e1d814627714ace691b6e1a9d445c779426a224e7f3685f0fa278"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "src/polyfills.bundle.js",
+      "bytes": 83,
+      "sha256": "77d21eb18bb5296dd7ef0e66a678af45cc5f297bc64b0dbcae29f49577462ab7"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "src/settings.json",
+      "bytes": 206243,
+      "sha256": "6990f83a0747a68518c76739f3a6db33da62d2bab79ecd497aa8b31d4f044c11"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "src/system.bundle.js",
+      "bytes": 97282,
+      "sha256": "356d457249c3c4e52bb7bdfb7c253b5ce8597ad9f881b06aada3dc8787822cd3"
+    },
+    {
+      "artifact": "cocos-export",
+      "path": "style.css",
+      "bytes": 1091,
+      "sha256": "48cc43329be1a113d6f0df5871fa55ba9ad9b7875d725104eb5578fd70bd079d"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "assets/index-ClJ3aGKE.js",
+      "bytes": 82624,
+      "sha256": "8aa67d99c402683804fa81fdff841ab3953c8dc7c0a5ac1ec6168689adebd2dd"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "assets/index-M5cYNUMW.css",
+      "bytes": 11419,
+      "sha256": "e09b4b2a9842280b3ef350b9671a1ba1abf23d230b2167caff8db7923b266f89"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/application.js",
+      "bytes": 1269,
+      "sha256": "60633140454acc1070f4eac53f89828e86f2c8471bb8f80e77e42fac68b4ff3a"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/internal/config.json",
+      "bytes": 2439,
+      "sha256": "e021b9fe38aebffd2ebd0382f1fd960eb98a01e810db747426b30e1b567a9226"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/internal/import/07/078d1fd7a.json",
+      "bytes": 197930,
+      "sha256": "139094c6a6e40219d1547ebfa516abd4c9c91d9a9cc921ed32e281d9c2b0e55c"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/internal/index.js",
+      "bytes": 259686,
+      "sha256": "edd79bd3246940d6acd8adcaa6093c8f1c4e635af2c203f59684696b390fdf58"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/internal/native/08/0835f102-5471-47a3-9a76-01c07ac9cdb2/OpenSans-Regular.ttf",
+      "bytes": 217360,
+      "sha256": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/internal/native/0e/0ed97c56-390e-4dd1-96b7-e7f2d93a98ed/OpenSans-Italic.ttf",
+      "bytes": 212896,
+      "sha256": "a54dc8488f8193bf30c3820cf6f261f911f9d328d699e1a1b8042641554cec70"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/internal/native/b2/b23391b6-52eb-46a6-8da1-6244d9d315fb/OpenSans-BoldItalic.ttf",
+      "bytes": 213292,
+      "sha256": "3ca680f2444cc9e50447d057c006464566e92f2e77b0b6e26491e5bd757ed4e7"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/internal/native/b5/b5475517-23b9-4873-bc1a-968d96616081/OpenSans-Bold.ttf",
+      "bytes": 224592,
+      "sha256": "5894a3649b213cf5b2d673b6e7a871815fd1d120fa68a463592f27db14eae323"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/main/config.json",
+      "bytes": 582,
+      "sha256": "51723a5b4c662d43b5eb9264df1effdc92e9140bfa4eb03cd7098a97f4d846c9"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/main/import/ba/ba21476f-2866-4f81-9c4d-6e359316e448.json",
+      "bytes": 192,
+      "sha256": "0a34e9263b215bb661d6334db6a255497c6cdac1f1c40b130f50bf9d91f4dd39"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+      "bytes": 1350,
+      "sha256": "a7879d77c700c29297c1070d677dffdf8176944f0f1a2fdb72674c2285ec4ea4"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/main/import/fd/fd8ec536-a354-4a17-9c74-4f3883c378c8.json",
+      "bytes": 480,
+      "sha256": "c2eee4552a460ed97591f527e127b95c811d5f796b9448f3f705974af9beba9d"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/assets/main/index.js",
+      "bytes": 618532,
+      "sha256": "6b4f9c224ea6106000ef9bbc90fdf71c8d36c594cd896750481a9d9bfda2d7be"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/cocos-js/cc.js",
+      "bytes": 12622964,
+      "sha256": "d0b4d7872199c93f0b86eddf5d19d80152fae2cd9d84a793261d39d0c5d58b9f"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/favicon.ico",
+      "bytes": 1150,
+      "sha256": "0ee6ea35321de21db85992f64e4b846def7abac1222fa2250318878396df988e"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/game-config.js",
+      "bytes": 202,
+      "sha256": "744efaed1b809d0dba523954a42f1832af1ddc9f0bfc92b7cf7f78e4c7f2c37c"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/index.html",
+      "bytes": 14457,
+      "sha256": "e7a6b6aeeac28d9fa048b0778c0d7a139d6851f26d601eb69bef0ac761539865"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/index.js",
+      "bytes": 615,
+      "sha256": "2e2d7f9d93e071156db972f33f7a7b03b3ab6c65d865c3b83009c261929a6042"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/src/chunks/bundle.js",
+      "bytes": 1807365,
+      "sha256": "fe87c09f4eba1e04934e604b71637252c7840eae513e88b41dbf46d82dbeb1c5"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/src/effect.bin",
+      "bytes": 5755,
+      "sha256": "b0d92f8307e3109abe8af8a863d68feb58cf4f49cf000b1d48fbb3dc3ad45556"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/src/import-map.json",
+      "bytes": 40,
+      "sha256": "2be73d8f2e7e1d814627714ace691b6e1a9d445c779426a224e7f3685f0fa278"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/src/polyfills.bundle.js",
+      "bytes": 83,
+      "sha256": "77d21eb18bb5296dd7ef0e66a678af45cc5f297bc64b0dbcae29f49577462ab7"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/src/settings.json",
+      "bytes": 206243,
+      "sha256": "6990f83a0747a68518c76739f3a6db33da62d2bab79ecd497aa8b31d4f044c11"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/src/system.bundle.js",
+      "bytes": 97282,
+      "sha256": "356d457249c3c4e52bb7bdfb7c253b5ce8597ad9f881b06aada3dc8787822cd3"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game/style.css",
+      "bytes": 1091,
+      "sha256": "48cc43329be1a113d6f0df5871fa55ba9ad9b7875d725104eb5578fd70bd079d"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game-config.js",
+      "bytes": 202,
+      "sha256": "744efaed1b809d0dba523954a42f1832af1ddc9f0bfc92b7cf7f78e4c7f2c37c"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "game-web-assets.json",
+      "bytes": 5060,
+      "sha256": "137e6d57312c52c5b438d1681100871d16f8bfa0d7503eab4e3991a25d273ae9"
+    },
+    {
+      "artifact": "staged-site",
+      "path": "index.html",
+      "bytes": 562,
+      "sha256": "36c965980cd746522821f6637971022dd19c87f21c0ba43034834452303f24fe"
+    }
+  ]
+}
