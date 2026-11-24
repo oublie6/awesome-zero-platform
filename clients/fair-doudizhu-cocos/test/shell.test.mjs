@@ -467,3 +467,45 @@ test('G65 R6: inconsistent command envelope and payload IDs cannot settle a rece
  deliver('doudizhu.command.result',result,input.requestId)
  assert.equal((await p).live.version,8);s.dispose()
 })
+
+// Exact resource-bound integration: real MiniSocketTransport, manager,
+// router and shell; the controlled native SDK never completes a send.
+test('G65 R6: repeated read retry cannot accumulate native send promises on a stalled task',async()=>{
+ const {MiniSocketTransport}=await import('@awesome-zero-platform/game-client-core/minigame')
+ const tasks=[]
+ const sdk={connectSocket(){
+  const listeners={open:new Set(),message:new Set(),close:new Set(),error:new Set()}
+  const task={calls:[],closes:0,listeners,
+   send(args){this.calls.push(args)},close(){this.closes++},
+   onOpen(cb){listeners.open.add(cb);queueMicrotask(cb)},offOpen(cb){listeners.open.delete(cb)},
+   onMessage(cb){listeners.message.add(cb)},offMessage(cb){listeners.message.delete(cb)},
+   onClose(cb){listeners.close.add(cb)},offClose(cb){listeners.close.delete(cb)},
+   onError(cb){listeners.error.add(cb)},offError(cb){listeners.error.delete(cb)}}
+  tasks.push(task);return task
+ }}
+ const native=new MiniSocketTransport(sdk)
+ let outstanding=0
+ const socket={async connect(...args){
+  const c=await native.connect(...args)
+  return {...c,send(raw,timeoutMs){outstanding++;return c.send(raw,timeoutMs).finally(()=>outstanding--)}}
+ }}
+ const s=new GameClientShell(()=>{},10)
+ await s.initialize()
+ try{
+  for(let attempt=0;attempt<4;attempt++){
+   await s.connect(socket,'wss://example.org/ws','token')
+   s.useAuthoritativeHand('hand-1')
+   await assert.rejects(s.syncHand('hand-1'),/timed out|connection lost/)
+   // Read and send use separate deadlines; allow the transport close
+   // callback from the same deadline to settle before checking ownership.
+   for(let i=0;i<20&&outstanding;i++)await new Promise(ok=>setTimeout(ok,1))
+   assert.equal(outstanding,0)
+   assert.equal(s.commandTransportReady,false)
+   assert.equal(tasks.at(-1).calls.length,1)
+   assert.equal(tasks.at(-1).closes,1)
+   assert.ok(Object.values(tasks.at(-1).listeners).every(set=>set.size===0))
+  }
+ }finally{s.dispose()}
+ tasks.forEach(t=>t.calls.forEach(c=>{c.success();c.fail(Error('late callback'))}))
+ assert.equal(outstanding,0)
+})

@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-24 ChatGPT **Goal0065 Round6 集中修复 — 待独立验收**：持久化 timeout 新鲜度屏障、共用 Socket 有界 send 生命周期与关闭清理、已有成员 join/reconnect 最终可用性统一；补充命令关联 ID、Web 身份响应体超时和旧会话 vault 写入/清理竞态。增加跨层受控SDK与控制器行为回归；保持 Go 协议、UNKNOWN 和部署基线不变。用户明确不处理手机黑屏。详见 [Goal0065](0065-web-startup-cache.md)，保持 in_progress。
+
 - 2026-11-24 Codex **Goal0065 Round6 independent acceptance — FAIL**, fixed product `9942db7258e14d5342783263d8fe00a74f92045f`: 302 source tests / real Cocos4 export PASS; R5 private-sync timeout and R3 hidden/layout reproducers PASS; real three-account game COMPLETED/v62. New controlled-protocol P2 timeout freshness barrier and two controlled-SDK/controller P3 findings; remaining cache/lifecycle/device gates unverified. User instructed “不修复，直接写报告”: no product fix or candidate rollout; six unchanged Ready Pods, unfinished hands0, user29457 retained. [Round6 report](0065-round6-independent-acceptance.md). Goal0065 remains in_progress.
 
 - 2026-11-24 ChatGPT **Goal0065 Round5 异步同步完成契约集中修复 — 待独立验收**：使用 Go 现有 envelope.id 关联私有牌局 sync 读请求，严格等待服务器回应与 HandStore 应用完成；有界超时、重复读取合并、断连/切换/销毁取消、版本门禁、终局回退共享验证。live ACK 尚未同步新快照时阻断新动作，保留 UNKNOWN。增加真实异步行为回归，不修改 Go 或部署。详见 [Goal0065](0065-web-startup-cache.md)，保持 in_progress。
