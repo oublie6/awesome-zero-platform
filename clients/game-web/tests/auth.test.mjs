@@ -103,3 +103,29 @@ test('registration reuses server identity, requires email and never creates sess
  assert.deepEqual(s.contents(),[])
  assert.equal(web.authenticated,false)
 })
+
+test('identity timeout includes reading the response body after headers arrived',async()=>{
+ const s=storage()
+ let aborted=false
+ const web=createWebAuth(config,async(_url,{signal})=>({
+  ok:true,json:()=>new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>{
+    aborted=true;reject(Error('body aborted'))
+  },{once:true}))
+ }),s,10)
+ await assert.rejects(web.login('alice','secret'),/body aborted/)
+ assert.equal(aborted,true)
+ assert.equal(web.authenticated,false)
+ assert.deepEqual(s.contents(),[])
+})
+test('late validation cannot adopt a token replaced outside the Web auth controller',async()=>{
+ const s=storage()
+ s.setItem(SESSION_KEY,'old')
+ let release
+ const web=createWebAuth(config,()=>new Promise(ok=>{release=ok}),s)
+ const pending=web.restore()
+ s.setItem(SESSION_KEY,'new')
+ release(okay({account:{id:'old-id',displayName:'Old'}}))
+ assert.equal(await pending,null)
+ assert.equal(web.authenticated,false)
+ assert.equal(s.getItem(SESSION_KEY),'new')
+})

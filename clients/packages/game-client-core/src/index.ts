@@ -27,6 +27,8 @@ export interface SessionVault {
   load(): Promise<string | null>
   save(token: string): Promise<void>
   clear(): Promise<void>
+  /** Atomic compare-and-clear on the built-in synchronous storage adapters. */
+  clearIf?(token:string):Promise<void>
 }
 export interface SecureRandomSource {
   bytes(length: number): Promise<Uint8Array>

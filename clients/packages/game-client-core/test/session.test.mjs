@@ -74,3 +74,49 @@ test('web login response arriving after logout cannot revive session',async()=>{
  assert.equal(s.authenticated,false)
  assert.equal(await p.vault.load(),null)
 })
+
+test('slow remote logout cannot clear a newer confirmed token',async()=>{
+ const p=platform()
+ let release
+ const s=new GameSession(p,{exchange:async()=>({accessToken:'unused'}),revoke:()=>new Promise(ok=>{release=ok})})
+ await s.loginWith(async()=>({accessToken:'old'}))
+ const logout=s.logout()
+ for(let i=0;i<20&&!release;i++)await new Promise(ok=>setImmediate(ok))
+ assert.ok(release)
+ assert.equal(await p.vault.load(),null)
+ await s.loginWith(async()=>({accessToken:'new'}))
+ release();await logout
+ assert.equal(s.token,'new');assert.equal(await p.vault.load(),'new')
+})
+test('late save cleanup is ordered before a newer login persists its token',async()=>{
+ const p=platform()
+ const normalSave=p.vault.save
+ let release,started=false
+ p.vault.save=async value=>{
+  if(value==='old'){started=true;await new Promise(ok=>{release=ok})}
+  await normalSave(value)
+ }
+ const s=new GameSession(p,{exchange:async()=>({accessToken:'unused'})})
+ const old=s.loginWith(async()=>({accessToken:'old'}))
+ for(let i=0;i<20&&!started;i++)await new Promise(ok=>setImmediate(ok))
+ assert.equal(started,true)
+ const fresh=s.loginWith(async()=>({accessToken:'new'}))
+ release();await Promise.all([old,fresh])
+ assert.equal(s.token,'new');assert.equal(await p.vault.load(),'new')
+})
+test('a stale validation cannot clear or restore a token replaced by another controller',async()=>{
+ for(const valid of [false,true]){
+  const p=platform()
+  await p.vault.save('old')
+  let release
+  const s=new GameSession(p,{exchange:async()=>({accessToken:'unused'})})
+  const pending=s.restore(()=>new Promise(ok=>{release=ok}))
+  for(let i=0;i<20&&!release;i++)await new Promise(ok=>setImmediate(ok))
+  assert.ok(release)
+  await p.vault.save('new')
+  release(valid)
+  assert.equal(await pending,false)
+  assert.equal(s.authenticated,false)
+  assert.equal(await p.vault.load(),'new')
+ }
+})

@@ -49,13 +49,14 @@ function validatedData(raw:unknown):unknown{
     throw Error('服务器拒绝了身份验证')
   return raw.data
 }
-export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:StoragePort){
+export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:StoragePort,timeoutMs=12000){
+  if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>60000)throw Error('invalid identity request timeout')
   let generation=0
   let active:UserAccount|null=null
   let token:string|null=null
   async function request(path:string,method:string,body?:unknown,accessToken?:string):Promise<unknown>{
     const controller=new AbortController()
-    const timeout=setTimeout(()=>controller.abort(),12000)
+    const timeout=setTimeout(()=>controller.abort(),timeoutMs)
     try{
       const response=await fetcher(config.apiBase+path,{
         method,signal:controller.signal,credentials:'omit',cache:'no-store',redirect:'error',
@@ -67,7 +68,8 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
         if(response.status===401)throw Error('账号或密码错误，或者会话已过期')
         throw Error('服务端请求失败（HTTP '+response.status+'）')
       }
-      return response.json()
+      // Keep the same deadline through body consumption, not only headers.
+      return await response.json()
     }finally{clearTimeout(timeout)}
   }
   async function validate(accessToken:string):Promise<UserAccount>{
@@ -80,7 +82,8 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     if(!stored){active=null;token=null;return null}
     try{
       const identity=await validate(stored)
-      if(generation!==mine)return active
+      if(generation!==mine)return null
+      if(storage.getItem(SESSION_KEY)!==stored){active=null;token=null;return null}
       token=stored;active=identity
       return identity
     }catch{
@@ -110,7 +113,7 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     // Verify server account before persisting; stale login responses after
     // logout/account switch cannot reintroduce an old access token.
     const identity=await validate(received)
-    if(generation!==mine)return active
+    if(generation!==mine)return null
     storage.setItem(SESSION_KEY,received)
     token=received;active=identity
     return identity

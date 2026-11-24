@@ -74,6 +74,9 @@ export class WebSessionVault implements SessionVault {
   async load() { const value = sessionStorage.getItem(this.key); return value?.trim() ? value : null }
   async save(token: string) { if (!token.trim()) throw new Error('empty session token'); sessionStorage.setItem(this.key, token) }
   async clear() { sessionStorage.removeItem(this.key) }
+  async clearIf(token:string) {
+    if(sessionStorage.getItem(this.key)===token)sessionStorage.removeItem(this.key)
+  }
 }
 export class WebLifecycle implements AppLifecycle {
   onForeground(cb: () => void): Unsubscribe {

@@ -40,6 +40,10 @@ class MiniVault implements SessionVault {
     if (!this.sdk.removeStorageSync) throw new Error('session clear unsupported')
     this.sdk.removeStorageSync(this.key)
   }
+  async clearIf(token:string):Promise<void>{
+    if(!this.sdk.getStorageSync || !this.sdk.removeStorageSync)throw new Error('session clear unsupported')
+    if(this.sdk.getStorageSync(this.key)===token)this.sdk.removeStorageSync(this.key)
+  }
 }
 class MiniLifecycle implements AppLifecycle {
   constructor(private readonly sdk: MiniPlatformSDK) {}
