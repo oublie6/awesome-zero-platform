@@ -62,10 +62,10 @@ export class GameClientShell {
     if (this.disposed || this.initialized) return
     this.initialized = true
     this.notify('连接模块就绪，请登录并同步服务端房间状态')
-    this.events.on('doudizhu.command.result', payload => {
+    this.events.on('doudizhu.command.result', (payload,responseId) => {
       if (this.disposed) return
       const id = (payload as {requestId?: unknown})?.requestId
-      if (typeof id !== 'string') return
+      if (typeof id !== 'string' || (responseId!==undefined && responseId!==id)) return
       const pending = this.pendingCommands.get(id)
       if (!pending) return
       try {
@@ -97,10 +97,15 @@ export class GameClientShell {
         // A broadcast may race ahead of its corresponding changed event.
         // Do not invalidate an already confirmed equal/newer projection.
         if(this.hand.snapshot && this.hand.snapshot.version>=this.requiredHandVersion)return
-      }else if(changed.response?.type==='hand.timeout' && this.pendingSync){
-        // The server's automatic committed timeout notification does not
-        // carry live.version. A read issued before that change is no longer
-        // a proof of freshness; retry instead of completing on a late view.
+      }else if(changed.response?.type==='hand.timeout'){
+        // A committed but unversioned timeout proves a transition occurred.
+        // Persist a strict freshness floor across reads and reconnects.
+        // Duplicate notices before a newer projection do not keep raising
+        // the floor; an old full or conditional response cannot erase it.
+        const snapshot=this.hand.snapshot
+        if(snapshot && snapshot.handId===id && ['COMPLETED','ABORTED'].includes(snapshot.phase) &&
+           snapshot.view.terminalEvidence)return
+        this.requiredHandVersion=Math.max(this.requiredHandVersion,(snapshot?.version??0)+1)
         this.rejectSync('hand sync invalidated by an unversioned committed timeout')
       }
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')
@@ -184,11 +189,12 @@ export class GameClientShell {
       const event = payload as {requestId?: unknown; code?: unknown}
       const sync=this.pendingSync
       if(sync && responseId===sync.id){
-        this.failSync(sync,new Error('hand sync rejected: '+(SERVER_ERROR_CODES.has(event.code as string)?event.code:'invalid response')))
+        this.failSync(sync,new Error('hand sync rejected: '+(event.requestId===sync.id && SERVER_ERROR_CODES.has(event.code as string)?event.code:'invalid response')))
         return
       }
       if(responseId?.startsWith('sync-'))return // stale read error
-      if (typeof event.requestId === 'string' && SERVER_ERROR_CODES.has(event.code as string)) {
+      if (typeof event.requestId === 'string' && (responseId===undefined || responseId===event.requestId) &&
+          SERVER_ERROR_CODES.has(event.code as string)) {
         const pending = this.pendingCommands.get(event.requestId)
         if (pending) {
           this.pendingCommands.delete(event.requestId)
@@ -339,7 +345,7 @@ export class GameClientShell {
     this.pendingSync=entry
     void connection.send({id,type:'doudizhu.hand.sync',
       payload:{v:'doudizhu-realtime-sync-v1',handId,
-        ...(conditional===undefined?{}:{knownVersion:conditional})}}).catch(()=>{
+        ...(conditional===undefined?{}:{knownVersion:conditional})}},this.syncTimeoutMs).catch(()=>{
       this.failSync(entry,new Error('hand sync send failed'))
     })
     return promise

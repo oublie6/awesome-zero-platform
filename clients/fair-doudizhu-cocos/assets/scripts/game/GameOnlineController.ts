@@ -174,8 +174,26 @@ export class GameOnlineController {
       this.shell.acceptVerifiedFinalEvidence(evidence)
     }
     if(!current())return null
-    if(!this.shell.commandTransportReady)throw new Error('socket disconnected before recovery completion')
+    this.assertRecoveryUsable(fresh,phase)
     return fresh
+  }
+  /** Both read-only recovery entry points confirm current state after the
+   * last await. An accepted durable Join remains a separate receipt contract. */
+  private assertRecoveryUsable(room:RoomRead,phase:string|null):void {
+    if(!this.session.authenticated || !this.shell.commandTransportReady)
+      throw new Error('socket disconnected before recovery completion')
+    if(this.rooms.state?.roomId!==room.roomId || this.rooms.state.version!==room.version)
+      throw new Error('room changed before recovery completion')
+    if(room.activeHandId){
+      const snapshot=this.shell.hand.snapshot
+      if(['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(phase??'') ||
+         snapshot?.handId===room.activeHandId){
+        if(!this.shell.handProjectionReady(room.activeHandId))
+          throw new Error('private hand state not confirmed before recovery completion')
+      }else if(!['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING'].includes(phase??''))
+        throw new Error('hand phase not confirmed before recovery completion')
+    }else if(room.lastHandId && !this.shell.handProjectionReady(room.lastHandId,true))
+      throw new Error('terminal archive not confirmed before recovery completion')
   }
   /** Scene refresh must obey the same pending-command/fairness/hand barriers.
    * Do not adopt HTTP data if a command changed while the read was in flight. */
@@ -298,6 +316,9 @@ export class GameOnlineController {
       } else if (evidence) {
         this.shell.acceptVerifiedFinalEvidence(evidence)
       }
+      if(this.disposed || token!==this.recoveryGeneration || generation!==this.membershipGeneration)
+        throw new Error('room selection superseded during join')
+      this.assertRecoveryUsable(fresh,phase)
       return {roomId:fresh.roomId,version:fresh.version}
     }
     if (view.status === 'HAND_ACTIVE') throw new Error('room not joinable')

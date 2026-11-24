@@ -405,3 +405,65 @@ test('G65 R5: a conflicting equal-version phase is not a successful sync',async(
  assert.equal(s.handProjectionReady('hand-1'),false)
  s.dispose()
 })
+
+test('G65 R6: unversioned committed timeout persists a strict floor across broadcasts and reads',async()=>{
+ for(const waiting of [false,true]){
+  const {s,deliver,c}=await syncFixture()
+  try{
+   const initial=s.syncHand('hand-1')
+   deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),'sync-1')
+   await initial
+   const pending=waiting?s.syncHand('hand-1',2):null
+   const rejected=pending?assert.rejects(pending,/invalidated/):null
+   const timeout=()=>deliver('doudizhu.hand.changed',{v:'doudizhu-realtime-event-v1',
+     handId:'hand-1',response:{type:'hand.timeout'}})
+   timeout();timeout()
+   if(rejected)await rejected
+   deliver('doudizhu.hand.snapshot',viewReply('hand-1',2))
+   assert.equal(s.handProjectionReady('hand-1'),false)
+   assert.equal(s.hand.canSubmit,false)
+   const stale=s.syncHand('hand-1',2),failed=assert.rejects(stale,/stale/)
+   const request=c.sent.at(-1)
+   assert.equal(request.payload.knownVersion,undefined)
+   deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),request.id)
+   await failed
+   assert.equal(s.handProjectionReady('hand-1'),false)
+   const retry=s.syncHand('hand-1')
+   deliver('doudizhu.hand.snapshot',viewReply('hand-1',3),c.sent.at(-1).id)
+   await retry
+   assert.equal(s.handProjectionReady('hand-1'),true)
+  }finally{s.dispose()}
+ }
+})
+test('G65 R6: freshness floor survives reconnect but resets on a different authoritative hand',async()=>{
+ const {s,t,deliver}=await syncFixture()
+ const first=s.syncHand('hand-1')
+ deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),'sync-1')
+ await first
+ deliver('doudizhu.hand.changed',{v:'doudizhu-realtime-event-v1',handId:'hand-1',response:{type:'hand.timeout'}})
+ const open=s.connect(t,'wss://example.org/ws','token')
+ t.tasks[1].resolve();await open
+ const send=(payload,id)=>{for(const cb of t.tasks[1].c.messages)cb(JSON.stringify({id,type:'doudizhu.hand.snapshot',payload}))}
+ const stale=s.syncHand('hand-1'),failed=assert.rejects(stale,/stale/)
+ send(viewReply('hand-1',2),'sync-2');await failed
+ assert.equal(s.handProjectionReady('hand-1'),false)
+ s.useAuthoritativeHand('hand-2')
+ const next=s.syncHand('hand-2')
+ send(viewReply('hand-2',1),'sync-3');await next
+ assert.equal(s.handProjectionReady('hand-2'),true)
+ s.dispose()
+})
+test('G65 R6: inconsistent command envelope and payload IDs cannot settle a receipt',async()=>{
+ const {s,deliver}=await syncFixture()
+ s.acceptVerifiedSnapshot(snapshot)
+ const input={requestId:'move-r6',type:'hand.pass',aggregateId:'hand-1',clientSeq:1,expectedVersion:7}
+ const p=s.submitCommand(input)
+ let done=false;void p.then(()=>{done=true},()=>{done=true})
+ const result={v:'doudizhu-api-command-result-v1',requestId:input.requestId,type:input.type,
+  live:{version:8,payload:{},requiresTermination:false}}
+ deliver('doudizhu.command.result',result,'other-id')
+ deliver('doudizhu.error',{v:'doudizhu-realtime-event-v1',requestId:input.requestId,code:'FORBIDDEN'},'other-id')
+ await tick();assert.equal(done,false)
+ deliver('doudizhu.command.result',result,input.requestId)
+ assert.equal((await p).live.version,8);s.dispose()
+})
