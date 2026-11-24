@@ -1142,3 +1142,82 @@ test('Goal0065 R4: failed verified-room read cannot be silently converted to a r
  assert.equal(f.commands.length,0)
  online.dispose()
 });
+
+// Exercise the actual controller -> WSS request -> router -> HandStore
+// chain, not a mock syncHand that resolves as soon as the frame is sent.
+test('G65 R5: controller live recovery and member rejoin await correlated private adoption',async()=>{
+ const f=fixture()
+ const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,
+  member:true,lastClientSequence:9,activeHandId:'hand-sync',seats:[
+   {position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:false},
+   {position:3,accountId:'third',ready:false}]}
+ f.platform.http.request=async path=>({code:'OK',data:path==='/v1/doudizhu/me/rooms'?{rooms:[room]}:room})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ try{
+  await online.loginAndConnect()
+  online.api.fairness=async()=>({handId:'hand-sync',phase:'BIDDING'})
+  const waitForSync=async count=>{
+   for(let i=0;i<50;i++){
+    const frames=f.commands.filter(c=>c.type==='doudizhu.hand.sync')
+    if(frames.length>=count)return frames[count-1]
+    await new Promise(resolve=>setImmediate(resolve))
+   }
+   throw new Error('expected controller to transmit sync read')
+  }
+  const respond=(id,version)=>{for(const cb of f.messages)cb(JSON.stringify({id,
+   type:'doudizhu.hand.snapshot',payload:{v:'doudizhu-realtime-event-v1',handId:'hand-sync',
+    view:{version,payload:{v:'doudizhu-live-private-view-v1',position:1,cards:['S3'],
+     public:{v:'doudizhu-live-public-view-v1',handId:'hand-sync',phase:'BIDDING',
+      stateVersion:version,bidding:{},seats:[
+       {position:1,accountId:'actor',remainingCards:17},
+       {position:2,accountId:'friend',remainingCards:17},
+       {position:3,accountId:'third',remainingCards:17}]}}}}}))}
+  let completed=false
+  const restoring=online.reconnectAndResync('room-sync')
+  void restoring.then(()=>{completed=true},()=>{})
+  const first=await waitForSync(1)
+  assert.equal(completed,false);assert.equal(online.shell.hand.snapshot,null)
+  respond(undefined,2)
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.equal(completed,false,'unsolicited snapshot cannot complete explicit recovery')
+  assert.equal(online.shell.handProjectionReady('hand-sync'),false)
+  respond(first.id,2)
+  assert.equal((await restoring).roomId,'room-sync')
+  assert.equal(online.shell.handProjectionReady('hand-sync'),true)
+  completed=false
+  const joining=online.joinRoom('room-sync')
+  void joining.then(()=>{completed=true},()=>{})
+  const second=await waitForSync(2)
+  assert.equal(completed,false)
+  respond(second.id,3)
+  assert.equal((await joining).roomId,'room-sync')
+  assert.equal(online.shell.hand.snapshot.version,3)
+  assert.equal(f.commands.filter(c=>c.type==='doudizhu.command').length,0)
+ }finally{online.dispose()}
+})
+test('G65 R5: controller rejects private recovery on a correlated server error',async()=>{
+ const f=fixture()
+ const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,
+  member:true,lastClientSequence:9,activeHandId:'hand-sync',seats:[
+   {position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:false},
+   {position:3,accountId:'third',ready:false}]}
+ f.platform.http.request=async()=>({code:'OK',data:room})
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ try{
+  await online.loginAndConnect()
+  online.api.fairness=async()=>({handId:'hand-sync',phase:'BIDDING'})
+  const pending=online.reconnectAndResync('room-sync'),failed=assert.rejects(pending,/hand sync rejected: FORBIDDEN/)
+  let request
+  for(let i=0;i<50&&!request;i++){
+   request=f.commands.find(c=>c.type==='doudizhu.hand.sync')
+   if(!request)await new Promise(resolve=>setImmediate(resolve))
+  }
+  assert.ok(request)
+  for(const cb of f.messages)cb(JSON.stringify({id:request.id,type:'doudizhu.error',
+   payload:{v:'doudizhu-realtime-event-v1',requestId:request.id,code:'FORBIDDEN'}}))
+  await failed
+  assert.equal(online.shell.commandTransportReady,true)
+  assert.equal(online.shell.handProjectionReady('hand-sync'),false)
+  assert.equal(f.commands.filter(c=>c.type==='doudizhu.command').length,0)
+ }finally{online.dispose()}
+})

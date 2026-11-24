@@ -87,7 +87,7 @@ export class GameClientShell {
       }
     })
     this.events.on('doudizhu.hand.changed', payload => {
-      const changed=payload as {handId?:string;response?:{live?:{version?:unknown}}}
+      const changed=payload as {handId?:string;response?:{type?:unknown;live?:{version?:unknown}}}
       const id=changed.handId
       if (this.handBound && id !== this.authoritativeHand) return
       if (this.hand.snapshot && id !== this.hand.snapshot.handId) return
@@ -97,6 +97,11 @@ export class GameClientShell {
         // A broadcast may race ahead of its corresponding changed event.
         // Do not invalidate an already confirmed equal/newer projection.
         if(this.hand.snapshot && this.hand.snapshot.version>=this.requiredHandVersion)return
+      }else if(changed.response?.type==='hand.timeout' && this.pendingSync){
+        // The server's automatic committed timeout notification does not
+        // carry live.version. A read issued before that change is no longer
+        // a proof of freshness; retry instead of completing on a late view.
+        this.rejectSync('hand sync invalidated by an unversioned committed timeout')
       }
       if (this.hand.status === 'connected') this.hand.setStatus('synchronizing')
       this.notify('收到牌局状态变化，请同步权威快照')
@@ -132,6 +137,9 @@ export class GameClientShell {
           throw new Error('unsupported hand phase')
         if(reply && version<Math.max(reply.minimumVersion,this.requiredHandVersion,this.hand.snapshot?.version??0))
           throw new Error('stale private hand sync response')
+        const prior=this.hand.snapshot
+        if(reply && prior?.handId===reply.handId && prior.version===version && prior.phase!==view.public.phase)
+          throw new Error('conflicting same-version private hand sync response')
         this.acceptVerifiedSnapshot({
           handId: view.public.handId,
           version,

@@ -373,3 +373,35 @@ test('G65 R5: verified same-version archive promotes a completed live projection
  assert.equal(s.hand.snapshot.view.cards,undefined)
  s.dispose()
 })
+
+test('G65 R5: an unversioned committed timeout fences an older pending sync',async()=>{
+ const {s,deliver}=await syncFixture()
+ const initial=s.syncHand('hand-1')
+ deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),'sync-1')
+ await initial
+ const stale=s.syncHand('hand-1',2),failed=assert.rejects(stale,/invalidated/)
+ deliver('doudizhu.hand.changed',{v:'doudizhu-realtime-event-v1',handId:'hand-1',
+  response:{type:'hand.timeout'}})
+ await failed
+ deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),'sync-2')
+ assert.equal(s.handProjectionReady('hand-1'),false)
+ const retry=s.syncHand('hand-1')
+ deliver('doudizhu.hand.snapshot',viewReply('hand-1',3),'sync-3')
+ await retry
+ assert.equal(s.handProjectionReady('hand-1'),true)
+ s.dispose()
+})
+test('G65 R5: a conflicting equal-version phase is not a successful sync',async()=>{
+ const {s,deliver}=await syncFixture()
+ const initial=s.syncHand('hand-1')
+ deliver('doudizhu.hand.snapshot',viewReply('hand-1',2),'sync-1')
+ await initial
+ const retry=s.syncHand('hand-1'),failed=assert.rejects(retry,/conflicting/)
+ const conflicting=viewReply('hand-1',2)
+ conflicting.view.payload.public.phase='PLAYING'
+ deliver('doudizhu.hand.snapshot',conflicting,'sync-2')
+ await failed
+ assert.equal(s.hand.snapshot.phase,'BIDDING')
+ assert.equal(s.handProjectionReady('hand-1'),false)
+ s.dispose()
+})
