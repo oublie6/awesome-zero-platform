@@ -102,3 +102,51 @@ test('Creator 3.8 compatible ES5 output invokes all Set-managed socket cleanup c
   assert.equal(callbacks, 2)
   assert.equal(closed, 1)
 })
+
+test('stalled native sends are bounded, close cancels every pending send and late callbacks are inert',async()=>{
+ const task=new Task(),calls=[]
+ task.send=args=>calls.push(args)
+ const opening=new MiniSocketTransport({connectSocket:()=>task}).connect('wss://example.org/ws','token')
+ task.emit('open')
+ const connection=await opening
+ const promises=[]
+ for(let i=0;i<32;i++)promises.push(connection.send('frame-'+i,1000))
+ const settled=Promise.all(promises.map(p=>assert.rejects(p,/closed during send/)))
+ await assert.rejects(connection.send('overflow'),/capacity/)
+ assert.equal(calls.length,32)
+ connection.close()
+ await settled
+ assert.equal(task.closes,1);assert.equal(task.listeners,0)
+ for(const call of calls){call.success();call.fail(Error('late'))}
+ await assert.rejects(connection.send('after-close'),/not open/)
+})
+test('native send deadline closes task and releases all sends without SDK callbacks',async()=>{
+ const task=new Task(),calls=[]
+ task.send=args=>calls.push(args)
+ const opening=new MiniSocketTransport({connectSocket:()=>task}).connect('wss://example.org/ws','token')
+ task.emit('open')
+ const connection=await opening
+ const first=assert.rejects(connection.send('stalled',10),/timed out/)
+ const second=assert.rejects(connection.send('also stalled',1000),/timed out/)
+ await Promise.all([first,second])
+ assert.equal(task.closes,1);assert.equal(task.listeners,0)
+ calls.forEach(call=>call.success())
+ await assert.rejects(connection.send('no more queued work'),/not open/)
+})
+test('native send failure and repeated callbacks cannot retain capacity or close a healthy connection',async()=>{
+ const task=new Task(),calls=[]
+ task.send=args=>calls.push(args)
+ const opening=new MiniSocketTransport({connectSocket:()=>task}).connect('wss://example.org/ws','token')
+ task.emit('open')
+ const connection=await opening
+ for(let i=0;i<40;i++){
+  const failed=assert.rejects(connection.send('frame',1000),/send failed/)
+  calls.at(-1).fail(Error('native failure'))
+  await failed
+  calls.at(-1).success()
+ }
+ assert.equal(task.closes,0)
+ const pending=connection.send('ok',1000)
+ calls.at(-1).success();await pending
+ connection.close()
+})

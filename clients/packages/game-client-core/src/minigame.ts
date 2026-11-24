@@ -74,7 +74,7 @@ export class MiniSocketTransport implements SocketTransport {
         } catch { cleanup(); throw new Error('mini-game socket listener failed') }
         return cleanup
       },
-      send: data => new Promise<void>((resolve, reject) => socket.send({data, success: resolve, fail: () => reject(new Error('mini-game socket send failed'))})),
+      send: (data,complete) => socket.send({data,success:()=>complete(),fail:()=>complete(new Error('mini-game socket send failed'))}),
       close: (code, reason) => socket.close({code, reason})
     }, options)
   }

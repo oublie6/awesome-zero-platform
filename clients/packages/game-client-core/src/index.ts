@@ -8,7 +8,8 @@ export interface HttpTransport {
   request<T>(path: string, options?: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number; accessToken?: string }): Promise<T>
 }
 export interface SocketConnection {
-  send(message: string): Promise<void>
+  /** Completion means local transport acceptance, not a server ACK. */
+  send(message: string, timeoutMs?: number): Promise<void>
   close(code?: number, reason?: string): void
   onMessage(handler: (message: string) => void): Unsubscribe
   onClose(handler: () => void): Unsubscribe
@@ -75,6 +76,7 @@ export class ConnectionManager {
     this.close()
     const generation = this.generation
     const connection = await this.socket.connect(url, token, { onCancel: handler => {
+      if(generation!==this.generation){handler();return ()=>{}}
       this.cancellations.add(handler)
       return () => { this.cancellations.delete(handler) }
     } })
@@ -88,9 +90,10 @@ export class ConnectionManager {
     if (generation !== this.generation) { offClose(); throw new Error('connection closed during registration') }
     this.unsubscribe.push(offClose)
   }
-  async send(value: unknown): Promise<void> {
-    if (!this.connection) throw new Error('socket disconnected')
-    await this.connection.send(JSON.stringify(value))
+  async send(value: unknown, timeoutMs?:number): Promise<void> {
+    const connection=this.connection
+    if (!connection) throw new Error('socket disconnected')
+    await connection.send(JSON.stringify(value),timeoutMs)
   }
   close(): void {
     this.generation++

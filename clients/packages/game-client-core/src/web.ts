@@ -51,7 +51,11 @@ export class WebSocketTransport implements SocketTransport {
           ws.removeEventListener('error', events.error)
         }
       },
-      async send(data) { if (ws.readyState !== WebSocket.OPEN) throw new Error('socket not open'); ws.send(data) },
+      send(data,complete) {
+        if (ws.readyState !== WebSocket.OPEN) {complete(new Error('socket not open'));return}
+        ws.send(data)
+        complete()
+      },
       close(code, reason) { ws.close(code, reason) }
     }, options)
   }
