@@ -1,0 +1,26 @@
+{
+  "source": "9325366e65f792364d5935493f95288764e8fb2a",
+  "environment": "production Controller/Session/Shell with controlled HTTP authority state; no synthetic success snapshot",
+  "cases": [
+    {
+      "method": "joinRoom",
+      "returnedRoom": true,
+      "authoritativePhase": "BIDDING",
+      "privateProjection": false,
+      "phaseReads": 2,
+      "roomReads": 3,
+      "syncRequests": 0,
+      "pass": false
+    },
+    {
+      "method": "reconnectAndResync",
+      "returnedRoom": true,
+      "authoritativePhase": "BIDDING",
+      "privateProjection": false,
+      "phaseReads": 2,
+      "roomReads": 3,
+      "syncRequests": 0,
+      "pass": false
+    }
+  ]
+}

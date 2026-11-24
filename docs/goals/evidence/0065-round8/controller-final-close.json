@@ -1,0 +1,161 @@
+{
+  "source": "9325366e65f792364d5935493f95288764e8fb2a",
+  "environment": "actual Controller/ConnectionManager/Shell/Router with controlled authenticated HTTP/SDK ports; synchronous close after valid snapshot application; no Go auth qualification",
+  "cases": [
+    {
+      "method": "reconnectAndResync",
+      "mode": "normal",
+      "resolved": true,
+      "returnedRoom": true,
+      "transportReady": true,
+      "handStatus": "connected",
+      "pass": true
+    },
+    {
+      "method": "reconnectAndResync",
+      "mode": "close",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "socket disconnected before recovery completion",
+      "transportReady": false,
+      "handStatus": "disconnected",
+      "pass": true
+    },
+    {
+      "method": "reconnectAndResync",
+      "mode": "new-version",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "private hand state not confirmed before recovery completion",
+      "transportReady": true,
+      "handStatus": "synchronizing",
+      "pass": true
+    },
+    {
+      "method": "reconnectAndResync",
+      "mode": "timeout",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "private hand state not confirmed before recovery completion",
+      "transportReady": true,
+      "handStatus": "synchronizing",
+      "pass": true
+    },
+    {
+      "method": "reconnectAndResync",
+      "mode": "room-change",
+      "resolved": true,
+      "returnedRoom": false,
+      "transportReady": true,
+      "handStatus": "connected",
+      "pass": true
+    },
+    {
+      "method": "reconnectAndResync",
+      "mode": "hand-change",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "private hand state not confirmed before recovery completion",
+      "transportReady": true,
+      "handStatus": "connected",
+      "pass": true
+    },
+    {
+      "method": "reconnectAndResync",
+      "mode": "session-invalid",
+      "resolved": true,
+      "returnedRoom": false,
+      "transportReady": true,
+      "handStatus": "connected",
+      "pass": true
+    },
+    {
+      "method": "reconnectAndResync",
+      "mode": "dispose",
+      "resolved": true,
+      "returnedRoom": false,
+      "transportReady": false,
+      "handStatus": "disconnected",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "mode": "normal",
+      "resolved": true,
+      "returnedRoom": true,
+      "transportReady": true,
+      "handStatus": "connected",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "mode": "close",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "socket disconnected before recovery completion",
+      "transportReady": false,
+      "handStatus": "disconnected",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "mode": "new-version",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "private hand state not confirmed before recovery completion",
+      "transportReady": true,
+      "handStatus": "synchronizing",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "mode": "timeout",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "private hand state not confirmed before recovery completion",
+      "transportReady": true,
+      "handStatus": "synchronizing",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "mode": "room-change",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "room selection superseded during join",
+      "transportReady": true,
+      "handStatus": "connected",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "mode": "hand-change",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "private hand state not confirmed before recovery completion",
+      "transportReady": true,
+      "handStatus": "connected",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "mode": "session-invalid",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "room selection superseded during join",
+      "transportReady": true,
+      "handStatus": "connected",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "mode": "dispose",
+      "resolved": false,
+      "returnedRoom": false,
+      "error": "room selection superseded during join",
+      "transportReady": false,
+      "handStatus": "disconnected",
+      "pass": true
+    }
+  ]
+}

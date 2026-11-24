@@ -1,0 +1,4 @@
+
+> fair-doudizhu-cocos@0.1.0 typecheck
+> tsc -p tsconfig.static.json
+

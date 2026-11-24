@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Fair Doudizhu Vue3 Web",
+    "id": 45436658246,
+    "sha": "9325366e65f792364d5935493f95288764e8fb2a",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45436658246",
+    "jobs": [
+      {
+        "name": "vue_build",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "name": "Cocos Linux Native Client",
+    "id": 45436657988,
+    "sha": "9325366e65f792364d5935493f95288764e8fb2a",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45436657988",
+    "jobs": [
+      {
+        "name": "linux_source",
+        "conclusion": "success"
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  {
+    "name": "Fair Doudizhu",
+    "id": 45436658297,
+    "sha": "9325366e65f792364d5935493f95288764e8fb2a",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45436658297",
+    "jobs": [
+      {
+        "name": "client_foundation",
+        "conclusion": "success"
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success"
+      },
+      {
+        "name": "application",
+        "conclusion": "success"
+      },
+      {
+        "name": "mysql_integration",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "name": "CI",
+    "id": 45436658451,
+    "sha": "9325366e65f792364d5935493f95288764e8fb2a",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45436658451",
+    "jobs": [
+      {
+        "name": "secure_envelope",
+        "conclusion": "success"
+      },
+      {
+        "name": "admin_web",
+        "conclusion": "success"
+      },
+      {
+        "name": "integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "unit",
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "report",
+        "conclusion": "success"
+      }
+    ]
+  }
+]

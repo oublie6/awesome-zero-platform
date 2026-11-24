@@ -1,0 +1,125 @@
+{
+  "source": "9325366e65f792364d5935493f95288764e8fb2a",
+  "hand": "hand-cmd-52d72ec465f313d1740c5447ec02f7af",
+  "cases": [
+    {
+      "name": "deal crosses final authority membership await",
+      "pass": false,
+      "falseReady": true
+    },
+    {
+      "name": "original R7 scene-await crosses real deal without private snapshot",
+      "pass": true,
+      "falseReady": false
+    },
+    {
+      "name": "explicit retry after gate 1",
+      "pass": true
+    },
+    {
+      "name": "explicit retry after gate 2",
+      "pass": true
+    }
+  ],
+  "control": {
+    "sameHand": true,
+    "phase": "BIDDING",
+    "version": 1
+  },
+  "before1": {
+    "phase": "FAIRNESS_COMMITTING",
+    "hasSnapshot": false,
+    "reads": 0,
+    "dropped": 0
+  },
+  "after1": {
+    "host": {
+      "status": "游戏就绪",
+      "cover": false,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795538942872
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795538954970
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795538960952
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795538960952
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795538960953
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795538984730
+        }
+      ]
+    },
+    "client": {
+      "phase": "FAIRNESS_COMMITTING",
+      "hasSnapshot": false,
+      "reads": 0,
+      "dropped": 0
+    }
+  },
+  "before0": {
+    "phase": "FAIRNESS_COMMITTING",
+    "hasSnapshot": false,
+    "reads": 0,
+    "dropped": 0
+  },
+  "after0": {
+    "host": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795538922321
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795538933968
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795538939568
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795538939568
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795538939569
+        },
+        {
+          "type": "BOOT_FAILED",
+          "at": 1795538999564
+        }
+      ]
+    },
+    "client": {
+      "phase": "BIDDING",
+      "hasSnapshot": false,
+      "reads": 1,
+      "dropped": 1
+    }
+  }
+}

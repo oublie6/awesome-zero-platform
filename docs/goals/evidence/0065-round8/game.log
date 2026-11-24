@@ -1,0 +1,27 @@
+authorized 0
+authorized 1
+authorized 2
+Real startup gate armed 0 final-scene
+Real startup gate armed 1 final-authority-membership
+Real startup gate result 1 {"status":"游戏就绪","phase":"FAIRNESS_COMMITTING","private":false,"reads":0,"pass":false}
+Real startup gate result 0 {"status":"游戏资源或引擎启动失败，请重新加载。","phase":"BIDDING","private":false,"reads":1,"pass":true}
+Waiting unchanged Go automatic deadline; late-notification proof armed
+Actual timeout wait 0
+Actual timeout wait 30
+Actual timeout wait 60
+Actual timeout wait 90
+Actual timeout wait 120
+Actual timeout wait 150
+Actual timeout wait 180
+Actual timeout wait 210
+Actual same-version automatic recovery {"version":2,"minimum":0,"causalBarrier":false,"status":"connected","canSubmit":true,"lastReply":{"id":"sync-5","version":2,"phase":"BIDDING"},"wireCommands":0,"readCount":5}
+illegal combination rejected with visible feedback
+turns 0
+turns 10
+turns 20
+turns 30
+turns 40
+turns 50
+COMPLETED 61
+PHASE3 PASS
+THREE PLAYER FULL GAME PASS {"room":"room-cmd-ba1b87237483961b3046050a826d2d99","hand":"hand-cmd-52d72ec465f313d1740c5447ec02f7af","pageErrors":0,"console":3,"steps":90}

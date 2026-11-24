@@ -1,0 +1,18 @@
+
+> @awesome-zero-platform/game-web@0.1.0 build
+> npm run typecheck && vite build
+
+
+> @awesome-zero-platform/game-web@0.1.0 typecheck
+> vue-tsc --noEmit
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 13 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                  0.56 kB │ gzip:  0.36 kB
+dist/assets/index-M5cYNUMW.css  11.41 kB │ gzip:  3.54 kB
+dist/assets/index-D3p9sVvh.js   82.77 kB │ gzip: 32.14 kB
+
+✓ built in 823ms
