@@ -1,0 +1,53 @@
+{
+  "cases": [
+    {
+      "kind": 503,
+      "hits": 1,
+      "elapsed": 16959,
+      "pass": true
+    },
+    {
+      "kind": 401,
+      "hits": 1,
+      "elapsed": 37416,
+      "pass": true
+    },
+    {
+      "kind": 403,
+      "hits": 1,
+      "elapsed": 38120,
+      "pass": true
+    },
+    {
+      "kind": 404,
+      "hits": 1,
+      "elapsed": 38795,
+      "pass": true
+    },
+    {
+      "kind": "malformed",
+      "hits": 1,
+      "elapsed": 37593,
+      "pass": true
+    },
+    {
+      "kind": "disconnect",
+      "hits": 1,
+      "elapsed": 38639,
+      "pass": true
+    },
+    {
+      "kind": "timeout",
+      "hits": 1,
+      "elapsed": 54301,
+      "pass": true
+    }
+  ],
+  "wssArchive": {
+    "reply": "doudizhu.hand.evidence",
+    "archiveReady": true,
+    "version": 62
+  },
+  "sameHand": true,
+  "archiveReady": true
+}

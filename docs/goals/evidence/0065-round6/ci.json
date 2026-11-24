@@ -1,0 +1,77 @@
+[
+  {
+    "id": 45311445437,
+    "name": "Cocos Linux Native Client",
+    "sha": "9942db7258e14d5342783263d8fe00a74f92045f",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45311445437",
+    "jobs": [
+      {
+        "name": "linux_source",
+        "conclusion": "success"
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  {
+    "id": 45311445588,
+    "name": "Fair Doudizhu",
+    "sha": "9942db7258e14d5342783263d8fe00a74f92045f",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45311445588",
+    "jobs": [
+      {
+        "name": "mysql_integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "client_foundation",
+        "conclusion": "success"
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success"
+      },
+      {
+        "name": "application",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "id": 45311445383,
+    "name": "CI",
+    "sha": "9942db7258e14d5342783263d8fe00a74f92045f",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45311445383",
+    "jobs": [
+      {
+        "name": "integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "unit",
+        "conclusion": "success"
+      },
+      {
+        "name": "admin_web",
+        "conclusion": "success"
+      },
+      {
+        "name": "secure_envelope",
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "report",
+        "conclusion": "success"
+      }
+    ]
+  }
+]

@@ -1,0 +1,98 @@
+
+> @awesome-zero-platform/game-web@0.1.0 test
+> node --experimental-strip-types --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: Vue runtime requires exact same-origin HTTPS/WSS; cannot use cross-origin iframe token bridge
+ok 1 - Vue runtime requires exact same-origin HTTPS/WSS; cannot use cross-origin iframe token bridge
+  ---
+  duration_ms: 3.605406
+  type: 'test'
+  ...
+# Subtest: real Go credential exchange and server validation store only server token, never password
+ok 2 - real Go credential exchange and server validation store only server token, never password
+  ---
+  duration_ms: 64.76653
+  type: 'test'
+  ...
+# Subtest: invalid login does not create local web session or socket credentials
+ok 3 - invalid login does not create local web session or socket credentials
+  ---
+  duration_ms: 1.926624
+  type: 'test'
+  ...
+# Subtest: server rejection of saved access token clears only old token
+ok 4 - server rejection of saved access token clears only old token
+  ---
+  duration_ms: 0.856665
+  type: 'test'
+  ...
+# Subtest: late login completion after logout never revives earlier identity
+ok 5 - late login completion after logout never revives earlier identity
+  ---
+  duration_ms: 2.541028
+  type: 'test'
+  ...
+# Subtest: malformed server token or missing principal fails closed
+ok 6 - malformed server token or missing principal fails closed
+  ---
+  duration_ms: 2.364938
+  type: 'test'
+  ...
+# Subtest: registration reuses server identity, requires email and never creates session
+ok 7 - registration reuses server identity, requires email and never creates session
+  ---
+  duration_ms: 1.844434
+  type: 'test'
+  ...
+# Subtest: Vue is an account entry, not a second room lobby
+ok 8 - Vue is an account entry, not a second room lobby
+  ---
+  duration_ms: 27.886865
+  type: 'test'
+  ...
+# Subtest: Goal0065 same-session site navigation retains iframe while logout destroys it
+ok 9 - Goal0065 same-session site navigation retains iframe while logout destroys it
+  ---
+  duration_ms: 4.124111
+  type: 'test'
+  ...
+# Subtest: Goal0065 startup reports actual stages and offers bounded failure/retry
+ok 10 - Goal0065 startup reports actual stages and offers bounded failure/retry
+  ---
+  duration_ms: 4.157824
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifecycle
+ok 11 - Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifecycle
+  ---
+  duration_ms: 2.18773
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: background tabs also suspend Vue watchdog
+ok 12 - Goal0065 R1: background tabs also suspend Vue watchdog
+  ---
+  duration_ms: 2.276612
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round2: native CSS/session failure stays deferred in retained background iframe
+ok 13 - Goal0065 Round2: native CSS/session failure stays deferred in retained background iframe
+  ---
+  duration_ms: 2.604795
+  type: 'test'
+  ...
+# Subtest: Goal0065 R3: parked iframe keeps its geometry but cannot receive interaction
+ok 14 - Goal0065 R3: parked iframe keeps its geometry but cannot receive interaction
+  ---
+  duration_ms: 4.895896
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 356.518851

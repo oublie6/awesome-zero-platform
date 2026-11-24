@@ -1,0 +1,13 @@
+{
+  "source": "9942db7258e14d5342783263d8fe00a74f92045f",
+  "environment": "actual MiniSocketTransport/openSocket/ConnectionManager/Shell with controlled SDK callbacks withheld; 10ms injected read deadline, not physical SDK evidence",
+  "serialReadTimeouts": 16,
+  "sdkSendCallsStillWithoutSuccessOrFail": 16,
+  "shellPendingRead": false,
+  "socketClosesBeforeDispose": 0,
+  "outstandingTransportSendPromises": 16,
+  "socketClosesAfterDispose": 1,
+  "listenerCountAfterDispose": 0,
+  "outstandingTransportSendPromisesAfterDispose": 16,
+  "afterControlledSDKCompletion": 0
+}

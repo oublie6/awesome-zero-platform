@@ -1,0 +1,184 @@
+TAP version 13
+# Subtest: Web endpoints require HTTPS/WSS without credentials or fragments
+ok 1 - Web endpoints require HTTPS/WSS without credentials or fragments
+  ---
+  duration_ms: 4.424148
+  type: 'test'
+  ...
+# Subtest: Cocos Web index injects public config before game scripts, idempotently
+ok 2 - Cocos Web index injects public config before game scripts, idempotently
+  ---
+  duration_ms: 7.316405
+  type: 'test'
+  ...
+# Subtest: missing endpoints produce deliberate fail-closed static asset
+ok 3 - missing endpoints produce deliberate fail-closed static asset
+  ---
+  duration_ms: 2.174368
+  type: 'test'
+  ...
+# Subtest: Web build invokes real pinned Cocos CLI web-desktop export
+ok 4 - Web build invokes real pinned Cocos CLI web-desktop export
+  ---
+  duration_ms: 0.814158
+  type: 'test'
+  ...
+# Subtest: browser smoke exercises rendered Cocos scene and Web login inputs
+ok 5 - browser smoke exercises rendered Cocos scene and Web login inputs
+  ---
+  duration_ms: 0.504734
+  type: 'test'
+  ...
+# Subtest: G57-N01: Web uses official CLI4 buildScriptTargets at a BigInt-safe target
+ok 6 - G57-N01: Web uses official CLI4 buildScriptTargets at a BigInt-safe target
+  ---
+  duration_ms: 0.692367
+  type: 'test'
+  ...
+# Subtest: G57-N01: AST rejects lowered BigInt pow and requires native exponent
+ok 7 - G57-N01: AST rejects lowered BigInt pow and requires native exponent
+  ---
+  duration_ms: 396.829535
+  type: 'test'
+  ...
+# Subtest: Cocos generated declaration paths are resolved for real strict TS gate
+ok 8 - Cocos generated declaration paths are resolved for real strict TS gate
+  ---
+  duration_ms: 7.40787
+  type: 'test'
+  ...
+# Subtest: native Web builder rebuilds each isolated TS package, never trusts copied stale dist
+ok 9 - native Web builder rebuilds each isolated TS package, never trusts copied stale dist
+  ---
+  duration_ms: 0.83362
+  type: 'test'
+  ...
+# Subtest: G58-N01: real-browser smoke checks no duplicate Cocos EditBox labels
+ok 10 - G58-N01: real-browser smoke checks no duplicate Cocos EditBox labels
+  ---
+  duration_ms: 0.962758
+  type: 'test'
+  ...
+# Subtest: G59-N01: native browser smoke clicks actual visible hints in all three viewports
+ok 11 - G59-N01: native browser smoke clicks actual visible hints in all three viewports
+  ---
+  duration_ms: 0.739865
+  type: 'test'
+  ...
+# Subtest: G60-N01: credential input mode is set before native scene activation
+ok 12 - G60-N01: credential input mode is set before native scene activation
+  ---
+  duration_ms: 2.954264
+  type: 'test'
+  ...
+# Subtest: Goal0065 independent Cocos HTML renders splash before engine scripts and reports actual events
+ok 13 - Goal0065 independent Cocos HTML renders splash before engine scripts and reports actual events
+  ---
+  duration_ms: 1.772492
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: socket must actually be connected before GAME_READY completion
+ok 14 - Goal0065 R1: socket must actually be connected before GAME_READY completion
+  ---
+  duration_ms: 1.653813
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: Cocos watchdog really pauses while hidden and resumes
+ok 15 - Goal0065 R1: Cocos watchdog really pauses while hidden and resumes
+  ---
+  duration_ms: 6.923791
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: visible suspended loader re-arms and stale origin cannot resume
+ok 16 - Goal0065 R1: visible suspended loader re-arms and stale origin cannot resume
+  ---
+  duration_ms: 0.91274
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: public config is async without exposing startup to a sync head stall
+ok 17 - Goal0065 R1: public config is async without exposing startup to a sync head stall
+  ---
+  duration_ms: 5.509378
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round2: native boot owns a visible CSS-independent splash
+ok 18 - Goal0065 Round2: native boot owns a visible CSS-independent splash
+  ---
+  duration_ms: 2.971505
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round2: terminal watchdog failure rejects late engine and CSS completion
+ok 19 - Goal0065 Round2: terminal watchdog failure rejects late engine and CSS completion
+  ---
+  duration_ms: 4.698444
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round2: scene completion cannot hide native splash before CSS
+ok 20 - Goal0065 Round2: scene completion cannot hide native splash before CSS
+  ---
+  duration_ms: 4.065372
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round2: hidden completed engine safely resizes on show without new engine
+ok 21 - Goal0065 Round2: hidden completed engine safely resizes on show without new engine
+  ---
+  duration_ms: 6.131695
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round3: finite camera/UI world transforms gate all web ready stages
+ok 22 - Goal0065 Round3: finite camera/UI world transforms gate all web ready stages
+  ---
+  duration_ms: 2.061671
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round3: late exported CSS cannot restore portrait canvas borders
+ok 23 - Goal0065 Round3: late exported CSS cannot restore portrait canvas borders
+  ---
+  duration_ms: 0.82186
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round4: required room restoration is a startup completion gate
+ok 24 - Goal0065 Round4: required room restoration is a startup completion gate
+  ---
+  duration_ms: 2.310369
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round4: strict room/hand reads cannot be swallowed by startup
+ok 25 - Goal0065 Round4: strict room/hand reads cannot be swallowed by startup
+  ---
+  duration_ms: 1.970033
+  type: 'test'
+  ...
+# Subtest: Goal0065 R5: revalidate current authoritative private or archive state immediately before SESSION_ACTIVE
+ok 26 - Goal0065 R5: revalidate current authoritative private or archive state immediately before SESSION_ACTIVE
+  ---
+  duration_ms: 2.557673
+  type: 'test'
+  ...
+# Subtest: Cocos+Vue staging is same-origin and public config is identical
+ok 27 - Cocos+Vue staging is same-origin and public config is identical
+  ---
+  duration_ms: 21.073574
+  type: 'test'
+  ...
+# Subtest: staging rejects missing game exporter, symlinks and fake HTML
+ok 28 - staging rejects missing game exporter, symlinks and fake HTML
+  ---
+  duration_ms: 19.209526
+  type: 'test'
+  ...
+# Subtest: Goal0065 cache policy revalidates mutable game and excludes runtime/session data
+ok 29 - Goal0065 cache policy revalidates mutable game and excludes runtime/session data
+  ---
+  duration_ms: 1.287713
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 702.885205

@@ -1,0 +1,325 @@
+{
+  "source": "9942db7258e14d5342783263d8fe00a74f92045f",
+  "cases": [
+    {
+      "name": "R5 exact dropped snapshot / actual15s deadline",
+      "pass": true
+    },
+    {
+      "name": "R5 explicit retry original room/hand",
+      "pass": true
+    },
+    {
+      "name": "fairness503",
+      "hits": 1,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795493179260
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795493197640
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795493205063
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795493205064
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795493205064
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795493205275
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795493205276
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "name": "member-room503",
+      "hits": 1,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795493234934
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795493251236
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795493258256
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795493258257
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795493258257
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795493258399
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795493258400
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "name": "actual unversioned timeout then delayed genuine older broadcast",
+      "pass": false,
+      "blocked": "No actual timeout or saved unsolicited broadcast"
+    },
+    {
+      "name": "actual automatic timeout invalidates older pending sync",
+      "pass": true
+    },
+    {
+      "name": "hand.bid ACK-first",
+      "pass": true,
+      "before": 3,
+      "middle": {
+        "version": 3,
+        "status": "synchronizing",
+        "canSubmit": false,
+        "minimum": 4,
+        "inFlight": false,
+        "pending": false,
+        "wireCommands": 1,
+        "heldAck": false,
+        "hasSnapshotReply": true
+      },
+      "afterVersion": 4
+    },
+    {
+      "name": "hand.play ACK-first",
+      "pass": true,
+      "before": 4,
+      "middle": {
+        "version": 4,
+        "status": "synchronizing",
+        "canSubmit": false,
+        "minimum": 5,
+        "inFlight": false,
+        "pending": false,
+        "wireCommands": 1,
+        "heldAck": false,
+        "hasSnapshotReply": true
+      },
+      "afterVersion": 5
+    },
+    {
+      "name": "hand.pass snapshot-first",
+      "pass": true,
+      "before": 5,
+      "middle": {
+        "version": 6,
+        "status": "connected",
+        "canSubmit": true,
+        "minimum": 6,
+        "inFlight": true,
+        "pending": true,
+        "wireCommands": 1,
+        "heldAck": true,
+        "hasSnapshotReply": false
+      },
+      "afterVersion": 6
+    },
+    {
+      "name": "hand.pass ACK-first",
+      "pass": true,
+      "before": 6,
+      "middle": {
+        "version": 6,
+        "status": "synchronizing",
+        "canSubmit": false,
+        "minimum": 7,
+        "inFlight": false,
+        "pending": false,
+        "wireCommands": 1,
+        "heldAck": false,
+        "hasSnapshotReply": true
+      },
+      "afterVersion": 7
+    },
+    {
+      "name": "hand.play snapshot-first",
+      "pass": true,
+      "before": 7,
+      "middle": {
+        "version": 8,
+        "status": "connected",
+        "canSubmit": true,
+        "minimum": 8,
+        "inFlight": true,
+        "pending": true,
+        "wireCommands": 1,
+        "heldAck": true,
+        "hasSnapshotReply": false
+      },
+      "afterVersion": 8
+    },
+    {
+      "name": "real PLAYING page refresh same hand",
+      "pass": true,
+      "version": 8
+    },
+    {
+      "name": "real lost live ACK exact original RequestID retry",
+      "pass": true,
+      "requestId": "cmd-31633152bf6c7f0387db203377899076",
+      "sameIdentity": true
+    },
+    {
+      "name": "real WSS close/reconnect same hand",
+      "pass": true
+    }
+  ],
+  "pending": {
+    "snapshot": false,
+    "handStatus": "disconnected",
+    "host": {
+      "status": "正在验证服务器会话并恢复房间",
+      "cover": true,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795492724187
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795492738846
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795492745916
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795492745919
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795492745919
+        }
+      ]
+    }
+  },
+  "timeout": {
+    "elapsedFromReload": 39732,
+    "authenticated": true,
+    "transportReady": true,
+    "snapshot": false,
+    "host": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "error": "游戏资源或引擎启动失败，请重新加载。",
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795492724187
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795492738846
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795492745916
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795492745919
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795492745919
+        },
+        {
+          "type": "SESSION_FAILED",
+          "at": 1795492761096
+        },
+        {
+          "type": "BOOT_FAILED",
+          "at": 1795492761098
+        }
+      ]
+    },
+    "frame": {
+      "syncs": [
+        {
+          "id": "sync-1",
+          "at": 1795492746083
+        }
+      ],
+      "dropped": 1,
+      "commands": 0,
+      "pending": false,
+      "now": 1795492761623
+    },
+    "elapsedSinceSync": 15540
+  },
+  "retry": {
+    "sameRoom": true,
+    "sameHand": true,
+    "version": 1
+  },
+  "timeoutControl": {
+    "hasActualBroadcast": false,
+    "oldResponseId": null,
+    "version": 1,
+    "deadline": 1795492986326
+  },
+  "nativeBoot": {
+    "slowAt": 15295,
+    "failAt": 60610,
+    "lateSuccessRetainsFailure": true,
+    "pass": true
+  },
+  "realTimeout": {
+    "seen": 1,
+    "hasLiveVersion": false,
+    "dropped": 2,
+    "probeArmed": true,
+    "probeResult": "hand sync invalidated by an unversioned committed timeout",
+    "version": 1,
+    "status": "synchronizing",
+    "canSubmit": false,
+    "projectionReady": false
+  }
+}

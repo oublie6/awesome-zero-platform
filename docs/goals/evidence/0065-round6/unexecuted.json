@@ -1,0 +1,19 @@
+{
+  "latestUserInstruction": "不修复，直接写报告",
+  "postRuntimeObserver": {
+    "result": "UNVERIFIED",
+    "error": [
+      "No UI action CreateRoom on rooms"
+    ],
+    "note": "No UI action CreateRoom; intended no-room precondition not established. No room-close gate defect asserted."
+  },
+  "cacheStartup": "observer networkidle timeout; incomplete metrics, not a product FAIL",
+  "predealGate": "earlier final room read not held; prepared replacement not run",
+  "remaining": [
+    "fresh full cache/304/version invalidation and performance",
+    "hidden timer pause/background/config handshake remaining runtime cases",
+    "logout/account-switch/rapid selection final lifecycle scenarios",
+    "physical mobile Chrome and real Mini Game SDK",
+    "candidate Kubernetes rollout and post-rollout gates"
+  ]
+}

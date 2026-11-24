@@ -1,0 +1,168 @@
+{
+  "source": "9942db7258e14d5342783263d8fe00a74f92045f",
+  "kind": "controlled protocol ports; actual Shell/Router/HandStore; not Go gameplay",
+  "cases": [
+    {
+      "name": "delayed matched response resolves after adoption",
+      "result": "PASS"
+    },
+    {
+      "name": "same read coalesces one waiter and timer",
+      "result": "PASS"
+    },
+    {
+      "name": "drop",
+      "result": "PASS"
+    },
+    {
+      "name": "stall-send",
+      "result": "PASS"
+    },
+    {
+      "name": "send-fail",
+      "result": "PASS"
+    },
+    {
+      "name": "matched-rejection",
+      "result": "PASS"
+    },
+    {
+      "name": "wrong-id",
+      "result": "PASS"
+    },
+    {
+      "name": "broadcast",
+      "result": "PASS"
+    },
+    {
+      "name": "bad-json",
+      "result": "PASS"
+    },
+    {
+      "name": "bad-protocol",
+      "result": "PASS"
+    },
+    {
+      "name": "wrong-hand",
+      "result": "PASS"
+    },
+    {
+      "name": "inner-hand",
+      "result": "PASS"
+    },
+    {
+      "name": "old-version",
+      "result": "PASS"
+    },
+    {
+      "name": "equal-phase-conflict",
+      "result": "PASS"
+    },
+    {
+      "name": "notModified-without-cache",
+      "result": "PASS"
+    },
+    {
+      "name": "valid conditional notModified confirms cached exact version",
+      "result": "PASS"
+    },
+    {
+      "name": "duplicate and late responses cannot resurrect expired request",
+      "result": "PASS"
+    },
+    {
+      "name": "incompatible read supersedes and fences old response",
+      "result": "PASS"
+    },
+    {
+      "name": "disconnect",
+      "result": "PASS"
+    },
+    {
+      "name": "replace",
+      "result": "PASS"
+    },
+    {
+      "name": "dispose",
+      "result": "PASS"
+    },
+    {
+      "name": "hand-switch",
+      "result": "PASS"
+    },
+    {
+      "name": "A-B-A",
+      "result": "PASS"
+    },
+    {
+      "name": "normal-archive",
+      "result": "PASS"
+    },
+    {
+      "name": "equal-completed-promotion",
+      "result": "PASS"
+    },
+    {
+      "name": "invalid-archive",
+      "result": "PASS"
+    },
+    {
+      "name": "archive-phase-conflict",
+      "result": "PASS"
+    },
+    {
+      "name": "old-archive",
+      "result": "PASS"
+    },
+    {
+      "name": "newer notification gates older sync; stale notification preserves newer view",
+      "result": "PASS"
+    },
+    {
+      "name": "timeout-during-wait",
+      "result": "FAIL",
+      "error": "old uncorrelated same-version view must not erase committed timeout freshness barrier\n\ntrue !== false\n"
+    },
+    {
+      "name": "timeout-after-resolved-read",
+      "result": "FAIL",
+      "error": "old uncorrelated same-version view must not erase committed timeout freshness barrier\n\ntrue !== false\n"
+    },
+    {
+      "name": "timeout barrier rejects a stale full read after invalidation",
+      "result": "FAIL",
+      "error": "Missing expected rejection."
+    },
+    {
+      "name": "hand.bid ACK-first",
+      "result": "PASS"
+    },
+    {
+      "name": "hand.bid snapshot-first",
+      "result": "PASS"
+    },
+    {
+      "name": "hand.play ACK-first",
+      "result": "PASS"
+    },
+    {
+      "name": "hand.play snapshot-first",
+      "result": "PASS"
+    },
+    {
+      "name": "hand.pass ACK-first",
+      "result": "PASS"
+    },
+    {
+      "name": "hand.pass snapshot-first",
+      "result": "PASS"
+    },
+    {
+      "name": "broadcast cannot settle UNKNOWN command",
+      "result": "PASS"
+    }
+  ],
+  "unhandled": [],
+  "pass": 36,
+  "fail": 3
+}

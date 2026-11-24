@@ -1,0 +1,21 @@
+{
+  "source": "9942db7258e14d5342783263d8fe00a74f92045f",
+  "environment": "actual Controller/ConnectionManager/Shell/Router with controlled authenticated HTTP/SDK ports; synchronous close after valid snapshot application; no Go auth qualification",
+  "cases": [
+    {
+      "method": "reconnectAndResync",
+      "resolved": false,
+      "error": "socket disconnected before recovery completion",
+      "transportReady": false,
+      "handStatus": "disconnected",
+      "pass": true
+    },
+    {
+      "method": "joinRoom",
+      "resolved": true,
+      "transportReady": false,
+      "handStatus": "disconnected",
+      "pass": false
+    }
+  ]
+}
