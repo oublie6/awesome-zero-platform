@@ -167,8 +167,8 @@ export class GameOnlineController {
     if(!this.shell.commandTransportReady)throw new Error('socket disconnected before room adoption')
     this.adoptAuthorizedRoom(fresh)
     // No suspension between final membership check and authoritative adoption.
-    if(fresh.activeHandId && (phase==='BIDDING'||phase==='PLAYING'||phase==='SETTLING')){
-      await this.shell.syncHand(fresh.activeHandId)
+    if(fresh.activeHandId){
+      phase=await this.completeActiveRecovery(fresh,phase,current)
       if(!current())return null
     }else if(evidence){
       this.shell.acceptVerifiedFinalEvidence(evidence)
@@ -176,6 +176,34 @@ export class GameOnlineController {
     if(!current())return null
     this.assertRecoveryUsable(fresh,phase)
     return fresh
+  }
+  /** A predeal phase read may predate the last membership read. Re-read it
+   * after adoption; if the deal has advanced, require its private projection.
+   * Any active-hand await is followed by a fresh membership/version check. */
+  private async completeActiveRecovery(room:RoomRead,phase:string|null,
+    current:()=>boolean):Promise<string|null>{
+    const handId=room.activeHandId
+    if(!handId)throw new Error('active recovery requires a hand')
+    if(['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING'].includes(phase??'')){
+      phase=(await this.api.fairness(handId)).phase
+      if(!current())return null
+    }
+    if(['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(phase??'')){
+      await this.shell.syncHand(handId)
+      if(!current())return null
+    }
+    this.assertRecoveryUsable(room,phase)
+    const verified=await this.roomInfo(room.roomId)
+    if(!current())return null
+    if(!verified.member || verified.status==='CLOSED'){
+      this.forgetInvalidRecoveredRoom(room.roomId)
+      throw new Error('room membership revoked or room closed during active recovery')
+    }
+    if(verified.version!==room.version || verified.activeHandId!==handId ||
+       verified.lastHandId!==room.lastHandId)
+      throw new Error('room changed during active recovery; retry authoritative lookup')
+    this.assertRecoveryUsable(room,phase)
+    return phase
   }
   /** Both read-only recovery entry points confirm current state after the
    * last await. An accepted durable Join remains a separate receipt contract. */
@@ -306,13 +334,12 @@ export class GameOnlineController {
       if(!this.shell.commandTransportReady)throw new Error('socket disconnected before member recovery')
       this.adoptAuthorizedRoom(fresh)
       const generation = ++this.membershipGeneration
-      if (fresh.activeHandId && (phase === 'BIDDING' || phase === 'PLAYING' ||
-                                  phase === 'SETTLING')) {
-        await this.shell.syncHand(fresh.activeHandId)
-        if (this.disposed || token !== this.recoveryGeneration ||
-            generation !== this.membershipGeneration ||
-            this.rooms.state?.roomId !== roomId)
-          throw new Error('room selection superseded during join')
+      if (fresh.activeHandId) {
+        const adoptedCurrent=()=>!this.disposed && this.session.authenticated &&
+          token===this.recoveryGeneration && generation===this.membershipGeneration &&
+          this.rooms.state?.roomId===roomId && commands===this.rooms.commandGeneration
+        phase=await this.completeActiveRecovery(fresh,phase,adoptedCurrent)
+        if(!adoptedCurrent())throw new Error('room selection superseded during join')
       } else if (evidence) {
         this.shell.acceptVerifiedFinalEvidence(evidence)
       }

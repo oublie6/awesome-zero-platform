@@ -529,7 +529,7 @@ test('cold controller discovers the authenticated active room without any device
  assert.equal(online.rooms.state.roomId,'room-cold')
  assert.equal(online.rooms.state.version,18)
  assert.deepEqual(synced,[],'predeal fairness is recoverable without an unavailable private hand')
- assert.deepEqual(paths,['/v1/doudizhu/me/rooms','/v1/doudizhu/rooms/room-cold','/v1/doudizhu/rooms/room-cold'])
+ assert.deepEqual(paths,['/v1/doudizhu/me/rooms','/v1/doudizhu/rooms/room-cold','/v1/doudizhu/rooms/room-cold','/v1/doudizhu/rooms/room-cold'])
  const joined=await online.joinRoom('room-cold')
  assert.equal(joined.roomId,'room-cold','already seated HAND_ACTIVE player must be able to resume')
  assert.deepEqual(synced,[])
@@ -1257,6 +1257,69 @@ test('G65 R6: both read-only member recovery paths reject final close or invalid
         stateVersion:2,bidding:{},seats:[1,2,3].map(position=>({position,accountId:'actor'+position,remainingCards:17}))}}}}}))
    await failed
    assert.equal(online.shell.handProjectionReady('hand-sync'),false)
+   assert.equal(f.commands.filter(c=>c.type==='doudizhu.command').length,0)
+  }finally{online.dispose()}
+ }
+})
+
+test('G65 R7: both member read paths refresh predeal phase and require dealt projection',async()=>{
+ for(const method of ['reconnectAndResync','joinRoom']){
+  const f=fixture()
+  const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,member:true,lastClientSequence:9,
+   activeHandId:'hand-sync',seats:[1,2,3].map(position=>({position,accountId:'actor'+position,ready:false}))}
+  f.platform.http.request=async()=>({code:'OK',data:room})
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  try{
+   await online.loginAndConnect()
+   let reads=0
+   online.api.fairness=async()=>({handId:'hand-sync',phase:++reads===1?'FAIRNESS_COMMITTING':'BIDDING'})
+   const pending=online[method]('room-sync')
+   let request
+   for(let i=0;i<50&&!request;i++){
+    request=f.commands.find(c=>c.type==='doudizhu.hand.sync')
+    if(!request)await new Promise(ok=>setImmediate(ok))
+   }
+   assert.ok(request)
+   assert.equal(reads,2)
+   for(const cb of [...f.messages])cb(JSON.stringify({id:request.id,type:'doudizhu.hand.snapshot',payload:{
+     v:'doudizhu-realtime-event-v1',handId:'hand-sync',view:{version:2,payload:{
+      v:'doudizhu-live-private-view-v1',position:1,cards:['S3'],public:{
+       v:'doudizhu-live-public-view-v1',handId:'hand-sync',phase:'BIDDING',stateVersion:2,bidding:{},
+       seats:[1,2,3].map(position=>({position,accountId:'actor'+position,remainingCards:17}))}}}}}))
+   assert.equal((await pending).roomId,'room-sync')
+   assert.equal(online.shell.handProjectionReady('hand-sync'),true)
+   assert.equal(f.commands.filter(c=>c.type==='doudizhu.command').length,0)
+  }finally{online.dispose()}
+ }
+})
+test('G65 R7: a room closed during final private sync cannot return member recovery success',async()=>{
+ for(const method of ['reconnectAndResync','joinRoom']){
+  const f=fixture()
+  const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,member:true,lastClientSequence:9,
+   activeHandId:'hand-sync',seats:[1,2,3].map(position=>({position,accountId:'actor'+position,ready:false}))}
+  let closed=false
+  f.platform.http.request=async()=>({code:'OK',data:closed?
+   {roomId:'room-sync',version:19,status:'CLOSED',occupied:0,member:false,lastClientSequence:0}:room})
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  try{
+   await online.loginAndConnect()
+   online.api.fairness=async()=>({handId:'hand-sync',phase:'BIDDING'})
+   const pending=online[method]('room-sync'),failed=assert.rejects(pending,/membership revoked|room closed/)
+   let request
+   for(let i=0;i<50&&!request;i++){
+    request=f.commands.find(c=>c.type==='doudizhu.hand.sync')
+    if(!request)await new Promise(ok=>setImmediate(ok))
+   }
+   assert.ok(request)
+   closed=true
+   for(const cb of [...f.messages])cb(JSON.stringify({id:request.id,type:'doudizhu.hand.snapshot',payload:{
+     v:'doudizhu-realtime-event-v1',handId:'hand-sync',view:{version:2,payload:{
+      v:'doudizhu-live-private-view-v1',position:1,cards:['S3'],public:{
+       v:'doudizhu-live-public-view-v1',handId:'hand-sync',phase:'BIDDING',stateVersion:2,bidding:{},
+       seats:[1,2,3].map(position=>({position,accountId:'actor'+position,remainingCards:17}))}}}}}))
+   await failed
+   assert.equal(online.rooms.state,null)
+   assert.equal(online.shell.hand.snapshot,null)
    assert.equal(f.commands.filter(c=>c.type==='doudizhu.command').length,0)
   }finally{online.dispose()}
  }

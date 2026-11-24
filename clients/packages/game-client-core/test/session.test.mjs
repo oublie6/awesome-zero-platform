@@ -168,3 +168,19 @@ test('G65 R7: late exchange cannot replace a newer login across controllers',asy
  assert.equal(await p.vault.load(),'new')
  assert.equal(a.authenticated,false)
 })
+
+test('G65 R7: provider detach clears only owned local token and never revokes again',async()=>{
+ const p=platform()
+ let revokes=0
+ const identity={exchange:async()=>({accessToken:'unused'}),revoke:async()=>{revokes++}}
+ const old=new GameSession(p,identity),fresh=new GameSession(p,identity)
+ await old.loginWith(async()=>({accessToken:'old'}))
+ await fresh.loginWith(async()=>({accessToken:'new'}))
+ await old.discardLocal()
+ old.dispose()
+ assert.equal(await p.vault.load(),'new')
+ assert.equal(revokes,0)
+ await fresh.discardLocal()
+ assert.equal(await p.vault.load(),null)
+ assert.equal(revokes,0)
+})

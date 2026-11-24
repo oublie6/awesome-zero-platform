@@ -106,6 +106,7 @@ export class GameBootstrap extends Component {
   // Never accept AccountID, tokens, passwords or game state from frame messages.
   private webHostListener:((event:MessageEvent)=>void)|null=null
   private hostRestoring=false
+  private hostRestoreAttempt=0
 
   override start(): void {
     this.content = new Node('SafeContent')
@@ -197,11 +198,13 @@ export class GameBootstrap extends Component {
       if(data.type==='SESSION_AVAILABLE'){
         if(this.hostRestoring || this.online?.session.authenticated)return
         this.hostRestoring=true
+        const attempt=++this.hostRestoreAttempt
         // login() increments the controller epoch synchronously before its
         // first await. Snapshot ownership to fence late completions after
         // SESSION_REVOKED, a replacement identity or iframe destruction.
         const pending=this.login(true)
         const owner=this.online,epoch=this.requestGeneration
+        let selection=this.recoveryAttempt
         void pending.then(async restored=>{
           if(!this.currentAccount(owner,epoch))return
           const connected=restored && !!owner?.session.authenticated &&
@@ -209,7 +212,7 @@ export class GameBootstrap extends Component {
           // Login has already finished authoritative room/hand restoration.
           // Do not redraw a generic empty lobby after a failed recovery.
           if(connected)this.renderScreen('rooms')
-          const selection=this.recoveryAttempt
+          selection=this.recoveryAttempt
           const usable=connected && await this.waitForWebScene()
           if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
           // Scene/layout readiness is not an authorization lease. Refresh the
@@ -222,12 +225,15 @@ export class GameBootstrap extends Component {
           this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')
           this.reportNativeBoot(ready?'done':'fail')
         }).catch(error=>{
-          if(!this.currentAccount(owner,epoch))return
+          if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt ||
+             attempt!==this.hostRestoreAttempt)return
           this.notice('启动恢复失败：'+this.message(error))
           this.notifyWebHost('SESSION_FAILED')
           this.reportNativeBoot('fail')
-        }).finally(()=>{this.hostRestoring=false})
+        }).finally(()=>{if(attempt===this.hostRestoreAttempt)this.hostRestoring=false})
       }else if(data.type==='SESSION_REVOKED'){
+        ++this.hostRestoreAttempt
+        this.hostRestoring=false
         ++this.requestGeneration
         ++this.recoveryAttempt
         this.sceneRecovery=null
@@ -776,6 +782,25 @@ export class GameBootstrap extends Component {
         if(this.currentAccount(online,generation) && this.screen==='table')this.renderScreen('table')
         else if(this.currentAccount(online,generation) && this.screen==='rooms')this.renderScreen('rooms')
       })
+      // Unversioned automatic commits require a new full read, not manual
+      // player interaction or an invented minimum version. Coalesce same-turn
+      // notices; shell still owns the single bounded correlated request.
+      let timeoutRead=0
+      online.shell.events.on('doudizhu.hand.changed',payload=>{
+        const event=payload as {handId?:string;response?:{type?:unknown}}
+        const handID=event.handId,roomID=this.roomID
+        if(event.response?.type!=='hand.timeout' || !handID || handID!==this.handID ||
+           !this.currentAccount(online,generation) || online.shell.handProjectionReady(handID))return
+        const read=++timeoutRead,roomGeneration=this.roomGeneration,selection=this.recoveryAttempt
+        const current=()=>read===timeoutRead && handID===this.handID &&
+          this.currentRoom(online,generation,roomID,roomGeneration,selection)
+        void Promise.resolve().then(async()=>{
+          if(current() && !online.shell.handProjectionReady(handID))
+            await online.shell.syncHand(handID)
+        }).catch(error=>{
+          if(current())this.notice('自动操作后同步失败，请刷新牌局：'+this.message(error))
+        })
+      })
       online.shell.events.on('doudizhu.hand.evidence',(payload,responseId)=>{
         const id=(payload as {handId?: string})?.handId
         // A correlated terminal response was validated/adopted in the shell.
@@ -874,27 +899,29 @@ export class GameBootstrap extends Component {
     const platform=this.platform,online=this.online,epoch=this.requestGeneration
     try{
       const code=await platform.auth.acquireCode()
+      if(!this.currentAccount(online,epoch))return
       const prep=await platform.http.request<unknown>('/auth/wechat/prepare',{
         method:'POST',body:{code},timeoutMs:12000
       }) as {code?:unknown;data?:{pendingToken?:unknown}}
       const proof=prep?.code==='OK'?prep.data?.pendingToken:null
       if(typeof proof!=='string'||proof.length<32)throw new Error('微信验证未通过')
+      if(!this.currentAccount(online,epoch))return
       const raw=await platform.http.request<unknown>('/auth/wechat/relink',{
         method:'POST',accessToken:online.session.token,timeoutMs:12000,body:{pendingToken:proof,
           sourceIdentifier,sourcePassword,targetIdentifier,targetPassword}
       }) as {code?:unknown}
       if(raw?.code!=='OK')throw new Error('换绑失败')
       if(!this.currentAccount(online,epoch))return
-      await this.detachWeChatSession(platform,online)
-      this.notice('微信换绑成功。所有历史游戏数据仍留在原账号。')
+      if(await this.detachWeChatSession(online))
+        this.notice('微信换绑成功。所有历史游戏数据仍留在原账号。')
     }catch(error){
       if(this.currentAccount(online,epoch))this.notice('微信换绑失败：'+this.message(error))
     }
   }
-  private async detachWeChatSession(platform:GamePlatform,online:GameOnlineController):Promise<void>{
+  private async detachWeChatSession(online:GameOnlineController):Promise<boolean>{
     // The provider mapping changed and server sessions were revoked. Discard
-    // the local token without trying an already-revoked remote logout.
-    ++this.requestGeneration
+    // only the session's owned local token; a newer account may be logging in.
+    const generation=++this.requestGeneration
     ++this.recoveryAttempt
     this.sceneRecovery=null
     this.online=null
@@ -908,8 +935,11 @@ export class GameBootstrap extends Component {
     this.fairnessMode=null
     this.recoverableRooms=[]
     this.selectedCards.clear()
+    const cleanup=online.session.discardLocal()
     online.dispose()
-    try{await platform.vault.clear()}finally{this.renderScreen('rooms')}
+    if(this.currentAccount(null,generation))this.renderScreen('rooms')
+    await cleanup
+    return this.currentAccount(null,generation)
   }
   private async unlinkWeChat():Promise<void>{
     if(this.screen!=='wechat-unlink'||!this.platform||!this.online?.session.authenticated)return
@@ -924,8 +954,8 @@ export class GameBootstrap extends Component {
       const response=raw as {code?:unknown}|null
       if(response?.code!=='OK')throw new Error('解绑失败')
       if(!this.currentAccount(online,epoch))return
-      await this.detachWeChatSession(platform,online)
-      this.notice('微信解绑成功；原账号游戏数据仍保留')
+      if(await this.detachWeChatSession(online))
+        this.notice('微信解绑成功；原账号游戏数据仍保留')
     }catch(error){
       if(this.currentAccount(online,epoch))this.notice('微信解绑失败：'+this.message(error))
     }

@@ -467,3 +467,19 @@ test('Goal0064 scene prevents double taps before async room writes and gives roo
  assert.match(source,/label\.fontSize=this\.screen==='rooms' && portrait && width>=800/)
  assert.match(source,/const seen=new Set\(this\.menuActions\.map/)
 })
+
+test('G65 R7: final host success follows fresh authority after scene wait and fences superseded failures',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ const host=src.split("if(data.type==='SESSION_AVAILABLE'){")[1].split("}else if(data.type==='SESSION_REVOKED'){")[0]
+ assert.ok(host.indexOf('await this.waitForWebScene()')<host.indexOf('await this.confirmStartupAuthority(owner,epoch,selection)'))
+ assert.ok(host.indexOf('await this.confirmStartupAuthority(owner,epoch,selection)')<host.indexOf("this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')"))
+ assert.match(host,/selection!==this\.recoveryAttempt/)
+ assert.match(host,/if\(attempt===this\.hostRestoreAttempt\)this\.hostRestoring=false/)
+ const gate=src.split('private async confirmStartupAuthority(')[1].split('private async login(')[0]
+ assert.match(gate,/await this\.refreshRoom\(true\)/)
+ assert.match(gate,/await online\.roomInfo\(roomID\)/)
+ assert.match(gate,/verified\.activeHandId!==presentation\.activeHandId/)
+ assert.match(gate,/verified\.status==='CLOSED'/)
+ assert.match(src,/online\.session\.discardLocal\(\)/)
+ assert.doesNotMatch(src,/platform\.vault\.clear\(\)/)
+})

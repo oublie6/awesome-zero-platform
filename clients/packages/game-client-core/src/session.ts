@@ -113,11 +113,21 @@ export class GameSession {
       this.accessToken=result.accessToken
     })
   }
-  async logout(): Promise<void> {
+  private releaseToken():string|null {
     this.generation++
-    const token = this.accessToken || this.ownedToken
-    this.accessToken = null
-    this.ownedToken = null
+    const token=this.accessToken || this.ownedToken
+    this.accessToken=null
+    this.ownedToken=null
+    return token
+  }
+  /** Provider relink/unlink already revoked the session on Go. Erase only
+   * this controller's local credential; never claim another vault value. */
+  async discardLocal():Promise<void>{
+    const token=this.releaseToken()
+    if(token)await this.mutateVault(()=>this.clearOwnedToken(token))
+  }
+  async logout(): Promise<void> {
+    const token=this.releaseToken()
     // An untouched controller owns no token. Never claim the current vault
     // value on logout; it may belong to a newer controller.
     if(!token)return
