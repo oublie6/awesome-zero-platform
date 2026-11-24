@@ -705,9 +705,14 @@ export class GameBootstrap extends Component {
         if(this.currentAccount(online,generation) && this.screen==='table')this.renderScreen('table')
         else if(this.currentAccount(online,generation) && this.screen==='rooms')this.renderScreen('rooms')
       })
-      online.shell.events.on('doudizhu.hand.evidence',payload=>{
+      online.shell.events.on('doudizhu.hand.evidence',(payload,responseId)=>{
         const id=(payload as {handId?: string})?.handId
-        if(this.currentAccount(online,generation) && id && id===this.handID)void this.showEvidence()
+        // A correlated terminal response was validated/adopted in the shell.
+        // Only unsolicited notifications need another authenticated HTTP read.
+        if(this.currentAccount(online,generation) && id && id===this.handID){
+          if(responseId){if(this.screen==='table'||this.screen==='rooms')this.renderScreen(this.screen)}
+          else void this.showEvidence()
+        }
       })
       if(target==='web' && this.screen==='login')this.renderScreen('rooms')
       this.notice(target==='web'?'已验证网页账号并连接游戏服务':'已验证微信账号并连接游戏服务')
@@ -1272,6 +1277,8 @@ export class GameBootstrap extends Component {
         }
         if(fairness.phase==='BIDDING' || fairness.phase==='PLAYING' || fairness.phase==='SETTLING'){
           await online.shell.syncHand(info.activeHandId)
+          if(!this.currentRoom(owner,epoch,roomID,handGeneration,selection) ||
+             info.activeHandId!==this.handID)return
         } else {
           this.notice(fairness.fairnessMode==='client-contributed-server-custodied-v1'
             ? `玩家随机贡献由服务器加密保存 · ${fairness.phase} · ${fairness.revealed?'本人已提交':'等待本人输入字符串并提交'}`
@@ -1316,7 +1323,8 @@ export class GameBootstrap extends Component {
       this.notice(view.fairnessMode==='client-contributed-server-custodied-v1'
         ? `服务端已加密保存玩家贡献 · ${view.phase} · ${view.revealed?'本人已提交':'等待本人提交'}${cutoff}`
         : `洗牌阶段 ${view.phase} · 座位${view.seat} · 版本${view.version} · ${view.committed?'承诺已确认':'待承诺'} / ${view.revealed?'贡献已确认':'待提交贡献'}${cutoff}`)
-      if(view.phase==='BIDDING'||view.phase==='PLAYING')await online.shell.syncHand(this.handID)
+      if(view.phase==='BIDDING'||view.phase==='PLAYING'||view.phase==='SETTLING')
+        await online.shell.syncHand(handID)
     }catch(error){
       if(this.currentRoom(owner,epoch,roomID,generation,selection) && handID===this.handID)
         this.notice('公平阶段查询失败：'+this.message(error))
@@ -1552,7 +1560,7 @@ export class GameBootstrap extends Component {
       if(!this.currentRoom(owner,epoch,roomID,generation,selection) || handID!==this.handID)return
       await online.shell.syncHand(handID)
       if(this.currentRoom(owner,epoch,roomID,generation,selection) && handID===this.handID)
-        this.notice('原请求已确认，正在同步权威牌局状态')
+        this.notice('原请求已确认，权威牌局状态已同步')
     } catch(error) {
       if(this.currentRoom(owner,epoch,roomID,generation,selection) && handID===this.handID)
         this.notice('原请求重试失败：'+this.message(error))

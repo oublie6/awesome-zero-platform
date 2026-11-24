@@ -31,15 +31,22 @@ test('real shell emits exact Go sync shape, preserves notModified and stops term
  const notices=[],s=new GameClientShell(v=>notices.push(v));await s.initialize();await s.initialize()
  const t=transport(),p=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await p
  s.acceptVerifiedSnapshot(snapshot);assert.equal(s.hand.canSubmit,true)
- await s.syncHand('hand-1',7)
+ const syncing=s.syncHand('hand-1',7)
  assert.deepEqual(t.tasks[0].c.sent[0],{id:'sync-1',type:'doudizhu.hand.sync',payload:{v:'doudizhu-realtime-sync-v1',handId:'hand-1',knownVersion:7}})
- const receive=(type,payload)=>{for(const cb of t.tasks[0].c.messages)cb(JSON.stringify({type,payload}))}
+ const receive=(type,payload,id)=>{for(const cb of t.tasks[0].c.messages)cb(JSON.stringify({type,payload,id}))}
+ assert.equal(s.hand.canSubmit,false)
+ receive('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',notModified:true,knownVersion:7},'sync-1')
+ await syncing
  receive('doudizhu.hand.evidence',{v:'doudizhu-realtime-event-v1',handId:'unrelated',evidence:{}});assert.equal(s.hand.canSubmit,true)
  const before=notices.length
  receive('doudizhu.hand.changed',{v:'doudizhu-realtime-event-v1',handId:'hand-1'})
  assert.equal(notices.length,before+1);assert.equal(s.hand.canSubmit,false)
  receive('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',notModified:true,knownVersion:6});assert.equal(s.hand.canSubmit,false)
- receive('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',notModified:true,knownVersion:7});assert.equal(s.hand.canSubmit,true);assert.deepEqual(s.hand.snapshot,snapshot)
+ const next=s.syncHand('hand-1',7)
+ receive('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',notModified:true,knownVersion:7});assert.equal(s.hand.canSubmit,false)
+ receive('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',notModified:true,knownVersion:7},'sync-2')
+ await next
+ assert.equal(s.hand.canSubmit,true);assert.deepEqual(s.hand.snapshot,snapshot)
  receive('doudizhu.hand.evidence',{v:'doudizhu-realtime-event-v1',handId:'hand-1',evidence:{}});assert.equal(s.hand.canSubmit,false)
  s.dispose();assert.equal(t.tasks[0].c.messages.size,0);assert.equal(t.tasks[0].c.closes.size,0)
  await assert.rejects(s.syncHand('hand-1'),/not connected/)
@@ -85,7 +92,10 @@ test('real WSS command response matches request and disconnect leaves outcome un
  const deliver=payload=>{for(const cb of t.tasks[0].c.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload}))}
  deliver({v:'doudizhu-api-command-result-v1',requestId:'move-1',type:'hand.pass',live:{version:8,payload:{},requiresTermination:false}})
  assert.equal((await pending).live.version,8)
- const pending2=s.submitCommand({...req,requestId:'move-2'})
+ assert.equal(s.hand.canSubmit,false,'ACK does not supply a confirmed new private projection')
+ await assert.rejects(s.submitCommand({...req,requestId:'early-move'}),/not eligible/)
+ s.acceptVerifiedSnapshot({...snapshot,version:8})
+ const pending2=s.submitCommand({...req,requestId:'move-2',expectedVersion:8})
  await tick()
  for(const cb of t.tasks[0].c.closes)cb()
  await assert.rejects(pending2,/outcome unknown/)
@@ -244,4 +254,90 @@ test('audit: buffered messages from a replaced socket cannot mutate the current 
  assert.equal(shell.hand.status,'connected','obsolete socket must not force syncing')
  assert.equal(notices.length,priorNotices,'obsolete socket must not notify current session')
  shell.dispose()
+})
+
+function viewReply(handId='hand-1',version=2){
+ return {v:'doudizhu-realtime-event-v1',handId,notModified:false,view:{version,payload:{
+  v:'doudizhu-live-private-view-v1',position:1,cards:['S3'],
+  public:{v:'doudizhu-live-public-view-v1',handId,phase:'BIDDING',stateVersion:version,
+    bidding:{},seats:[{position:1,accountId:'a',remainingCards:17},{position:2,accountId:'b',remainingCards:17},{position:3,accountId:'c',remainingCards:17}]}}}}
+}
+async function syncFixture(timeout=1000){
+ const s=new GameClientShell(()=>{},timeout),t=transport()
+ await s.initialize()
+ const open=s.connect(t,'wss://example.org/ws','token');t.tasks[0].resolve();await open
+ s.useAuthoritativeHand('hand-1')
+ const c=t.tasks[0].c
+ const deliver=(type,payload,id)=>{for(const cb of c.messages)cb(JSON.stringify({type,payload,id}))}
+ return {s,t,c,deliver}
+}
+test('G65 R5: send is not completion; delayed correlated private response is required',async()=>{
+ const {s,c,deliver}=await syncFixture()
+ const first=s.syncHand('hand-1'),duplicate=s.syncHand('hand-1')
+ assert.strictEqual(first,duplicate);assert.equal(c.sent.length,1)
+ let completed=false;void first.then(()=>{completed=true})
+ await tick();assert.equal(completed,false);assert.equal(s.hand.snapshot,null)
+ deliver('doudizhu.hand.snapshot',viewReply())
+ await tick();assert.equal(completed,false,'broadcast is not correlated read completion')
+ assert.equal(s.hand.canSubmit,false)
+ deliver('doudizhu.hand.snapshot',viewReply(),'sync-1')
+ await first;assert.equal(s.hand.snapshot.version,2);assert.equal(s.hand.status,'connected')
+ s.dispose()
+})
+test('G65 R5: dropped or stalled send times out and late response cannot resurrect recovery',async()=>{
+ const {s,c,deliver}=await syncFixture(20)
+ c.send=()=>new Promise(()=>{})
+ await assert.rejects(s.syncHand('hand-1'),/timed out/)
+ assert.equal(s.hand.status,'synchronizing');assert.equal(s.hand.snapshot,null)
+ deliver('doudizhu.hand.snapshot',viewReply(),'sync-1')
+ assert.equal(s.hand.snapshot,null)
+ c.send=async()=>{}
+ const retry=s.syncHand('hand-1')
+ deliver('doudizhu.hand.snapshot',viewReply(),'sync-2')
+ await retry;assert.equal(s.hand.snapshot.handId,'hand-1')
+ s.dispose()
+})
+test('G65 R5: malformed, mismatched, stale, forbidden and invalid conditional replies reject',async()=>{
+ for(const fault of ['malformed','identity','stale','forbidden','notModified','router']){
+  const {s,deliver}=await syncFixture()
+  s.acceptVerifiedSnapshot({...snapshot,version:7})
+  const p=s.syncHand('hand-1')
+  const failed=assert.rejects(p,/sync|stale|notModified|malformed|identity/)
+  if(fault==='malformed')deliver('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',view:{}},'sync-1')
+  if(fault==='identity')deliver('doudizhu.hand.snapshot',viewReply('other-hand',8),'sync-1')
+  if(fault==='stale')deliver('doudizhu.hand.snapshot',viewReply('hand-1',6),'sync-1')
+  if(fault==='forbidden')deliver('doudizhu.error',{v:'doudizhu-realtime-event-v1',requestId:'sync-1',code:'FORBIDDEN'},'sync-1')
+  if(fault==='notModified')deliver('doudizhu.hand.snapshot',{v:'doudizhu-realtime-event-v1',handId:'hand-1',notModified:true,knownVersion:7},'sync-1')
+  if(fault==='router')deliver('doudizhu.hand.snapshot',{v:'bad',handId:'hand-1'},'sync-1')
+  await failed
+  assert.equal(s.hand.snapshot.version,7);assert.equal(s.hand.canSubmit,false)
+  s.dispose()
+ }
+})
+test('G65 R5: disconnect, disposal, replacement, and hand switch cancel pending reads',async()=>{
+ for(const mode of ['close','dispose','replace','switch']){
+  const {s,t,c,deliver}=await syncFixture()
+  const p=s.syncHand('hand-1'),failed=assert.rejects(p,/connection|disposed|changed/)
+  if(mode==='close')for(const cb of c.closes)cb()
+  if(mode==='dispose')s.dispose()
+  if(mode==='replace'){
+   const reopening=s.connect(t,'wss://example.org/ws','token')
+   t.tasks[1].resolve();await reopening
+  }
+  if(mode==='switch')s.useAuthoritativeHand('hand-2')
+  await failed
+  deliver('doudizhu.hand.snapshot',viewReply(),'sync-1')
+  assert.equal(s.hand.snapshot,null)
+  s.dispose()
+ }
+})
+test('G65 R5: terminal fallback validates the same archive contract and completes without invented cards',async()=>{
+ const {s,deliver}=await syncFixture()
+ const p=s.syncHand('hand-1')
+ const evidence={handId:'hand-1',status:'completed',finalVersion:8,
+  verification:{handId:'hand-1',finalVersion:8,recordDigest:'a'.repeat(64),seatPoints:[6,-3,-3],winnerSeat:1}}
+ deliver('doudizhu.hand.evidence',{v:'doudizhu-realtime-event-v1',handId:'hand-1',evidence},'sync-1')
+ await p;assert.equal(s.hand.snapshot.phase,'COMPLETED');assert.equal(s.hand.snapshot.version,8)
+ assert.equal(s.hand.snapshot.view.cards,undefined);assert.equal(s.hand.canSubmit,false)
+ s.dispose()
 })

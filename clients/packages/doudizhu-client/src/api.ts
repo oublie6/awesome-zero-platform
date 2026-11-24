@@ -137,22 +137,7 @@ export class DoudizhuHTTPClient {
     if(!/^[A-Za-z0-9_-]{1,128}$/.test(handId))throw new Error('invalid final evidence hand')
     const raw=await this.transport.request<unknown>(
       '/v1/doudizhu/hands/'+encodeURIComponent(handId)+'/evidence',{accessToken:this.token()})
-    const data=unwrap(raw)
-    if(!record(data)||data.handId!==handId || !record(data.verification) ||
-      (data.fairnessMode!==undefined && data.fairnessMode!=='client-contributed-server-custodied-v1') ||
-      data.verification.fairnessMode!==data.fairnessMode ||
-      !Number.isSafeInteger(data.finalVersion)||(data.finalVersion as number)<1 ||
-      data.verification.handId!==handId ||
-      data.verification.finalVersion!==data.finalVersion ||
-      !['completed','aborted','COMPLETED','ABORTED'].includes(String(data.status)) ||
-      !Array.isArray(data.verification.seatPoints) ||
-      data.verification.seatPoints.length!==3 ||
-      !data.verification.seatPoints.every(value=>typeof value==='number'&&Number.isSafeInteger(value)) ||
-      typeof data.verification.recordDigest!=='string' ||
-      !/^[0-9a-f]{64}$/.test(data.verification.recordDigest)) {
-      throw new Error('invalid verified final game evidence')
-    }
-    return JSON.parse(JSON.stringify(data)) as FinalEvidenceRead
+    return parseFinalEvidenceRead(unwrap(raw),handId)
   }
   /** Final-only authenticated proof material for this account's own seat.
    * Never returns the stored phrase. Re-entry must be checked locally. */
@@ -294,4 +279,23 @@ export interface OwnContributionRead {
  secureRandom:string
  commitment:string
  contributionDigest:string
+}
+
+/** The same authoritative archive DTO is returned by HTTP and WSS sync. */
+export function parseFinalEvidenceRead(data:unknown,handId:string):FinalEvidenceRead {
+  if(!record(data)||data.handId!==handId || !record(data.verification) ||
+    (data.fairnessMode!==undefined && data.fairnessMode!=='client-contributed-server-custodied-v1') ||
+    data.verification.fairnessMode!==data.fairnessMode ||
+    !Number.isSafeInteger(data.finalVersion)||(data.finalVersion as number)<1 ||
+    data.verification.handId!==handId ||
+    data.verification.finalVersion!==data.finalVersion ||
+    !['completed','aborted','COMPLETED','ABORTED'].includes(String(data.status)) ||
+    !Array.isArray(data.verification.seatPoints) ||
+    data.verification.seatPoints.length!==3 ||
+    !data.verification.seatPoints.every(value=>typeof value==='number'&&Number.isSafeInteger(value)) ||
+    typeof data.verification.recordDigest!=='string' ||
+    !/^[0-9a-f]{64}$/.test(data.verification.recordDigest)) {
+    throw new Error('invalid verified final game evidence')
+  }
+  return JSON.parse(JSON.stringify(data)) as FinalEvidenceRead
 }

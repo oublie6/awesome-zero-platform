@@ -117,9 +117,9 @@ export interface RealtimeEnvelope {
 
 /** Routes only recognized protocol messages, never fabricates authoritative state. */
 export class GameMessageRouter {
-  private listeners = new Map<string, Set<(payload: unknown) => void>>()
-  on(type: GameMessageType, handler: (payload: unknown) => void): () => void {
-    const set = this.listeners.get(type) ?? new Set<(payload: unknown) => void>()
+  private listeners = new Map<string, Set<(payload: unknown, responseId?: string) => void>>()
+  on(type: GameMessageType, handler: (payload: unknown, responseId?: string) => void): () => void {
+    const set = this.listeners.get(type) ?? new Set<(payload: unknown, responseId?: string) => void>()
     set.add(handler)
     this.listeners.set(type, set)
     return () => {
@@ -140,8 +140,9 @@ export class GameMessageRouter {
     if (msg.type === 'doudizhu.hand.snapshot' && msg.payload.notModified === true &&
         (typeof msg.payload.handId !== 'string' || !Number.isSafeInteger(msg.payload.knownVersion) ||
          (msg.payload.knownVersion as number) < 1 || msg.payload.view !== undefined)) throw new Error('invalid notModified snapshot')
+    if (msg.id !== undefined && typeof msg.id !== 'string') throw new Error('invalid realtime response id')
     const callbacks = this.listeners.get(msg.type)
-    callbacks?.forEach(callback => callback(msg.payload))
+    callbacks?.forEach(callback => callback(msg.payload, typeof msg.id === 'string' && msg.id ? msg.id : undefined))
   }
   clear(): void { this.listeners.clear() }
 }

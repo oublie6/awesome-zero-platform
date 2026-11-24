@@ -76,3 +76,7 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
 - 关联修复：`performAuthorizedRoomRecovery` 对明确目标返回 null 视为失败；调用 `refreshRoom(true)` 不允许吞掉房间/公平阶段/终局证据/实时同步错误，并在最终读取成员资格前验证 `roomView` 已经同步到目标房间。用户主动刷新仍采用原 best-effort 行为，不改变一般操作体验。
 - 同源启动握手保存所属 controller/epoch/selection；注销、换号、关闭 iframe 或新选房间使迟到的登录/恢复成功失效，防止旧请求错误发送 `SESSION_ACTIVE`。恢复失败不会再被一次普通 `renderScreen('rooms')` 覆盖提示；展示原生错误界面，由用户明确重试重新进行只读房间查询，不用新建持久化房间命令掩盖失败。
 - 已增加两组启动门禁/必需读失败/时序测试。仍需 Codex 在真实 Cocos Web 环境注入 /me/rooms、/room、/fairness、/evidence 的 HTTP 503，验证现有房间可恢复、无房间正常成功、401/403/超时以及中途注销、重试、UNKNOWN 时序；后续完成上一轮未执行的 R3-N01/R3-N02 及部署验收。
+
+## Round 5 私有牌局同步与异步调用链集中修复
+
+设计边界：GameClientShell 负责已有 WSS 读取的完成语义，纯 TS GameMessageRouter 透传已有服务端 envelope.id，DoudizhuHTTPClient 与 WSS 共享终局证据验证；Go/数据库/协议不变。每个 shell 至多一个兼容的在途同步读取，15s 有界超时；同请求复用，切换、断连、销毁、替换及超时清理；直接回应需匹配 ID/hand/连接代次，严格验证版本、私有投影和 HandStore 状态后才 resolve；广播只更新权威版本，不冒充应答。notModified 需具备匹配的可信本地快照。终局回退使用同一归档验证器。收到已提交 live ACK 但私有视图尚未达到 ACK 版本时阻断新动作，保留 UNKNOWN 原始请求身份。房间严格刷新、控制器恢复及普通同步调用者自动继承新的完成契约，刷新后的 UI 再次检查账号/房间选择代次。不新增协议或持久化内容；故障只触发读取重试，不补发写命令。正常同步增加等待真实响应的时间，不新增常驻轮询；通过取消和单一计时器限制资源。回滚只需原客户端产物。新增行为测试覆盖等待、超时/迟到、同请求合并、错误/畸形/错牌局/旧版本/无效条件响应、连接及牌局切换、终局归档和 ACK 与快照版本差异。真实 Cocos 导出、旧缺陷复验及集群部署仍须 Codex 独立验证。

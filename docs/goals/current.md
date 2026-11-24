@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-24 ChatGPT **Goal0065 Round5 异步同步完成契约集中修复 — 待独立验收**：使用 Go 现有 envelope.id 关联私有牌局 sync 读请求，严格等待服务器回应与 HandStore 应用完成；有界超时、重复读取合并、断连/切换/销毁取消、版本门禁、终局回退共享验证。live ACK 尚未同步新快照时阻断新动作，保留 UNKNOWN。增加真实异步行为回归，不修改 Go 或部署。详见 [Goal0065](0065-web-startup-cache.md)，保持 in_progress。
+
 - 2026-11-24 Codex **Goal0065 Round5 independent acceptance — FAIL**, fixed product `5849b7d062f24a3f8a8c8121282d9aea623e0797`. Round4 discovery503 original and ten HTTP fault cells PASS; new G65-R5-N01/P2: actual BIDDING private snapshots dropped over otherwise healthy WSS leave HandStore empty/synchronizing while SESSION_ACTIVE/游戏就绪 removes both covers. Same-hand/version retry succeeds. Real Cocos4 export/207 tests pass; remaining full matrix, R3/layout/cache/business/deployment gates explicitly unexecuted. No product repair or candidate rollout; two owned QA hands business-cancelled, unfinished0, six unchanged Ready Pods and user29457 retained. [Round5 report](0065-round5-independent-acceptance.md). Goal0065 remains in_progress.
 
 - 2026-11-23 ChatGPT **Goal0065 Round4 恢复顺序集中修复 — 待独立验收**：修复身份/WSS 已成功但房间发现/自动恢复失败仍发布 SESSION_ACTIVE；登录恢复引入显式结果，必要房间/公平/终局/实时同步严格传播错误，缺失目标房间数据不得判为成功；启动 epoch+controller+selection 栅栏拒绝注销/换号/新选择后的迟到成功。补充定向回归；未部署，Goal0065 仍 in_progress。详见 [Goal0065](0065-web-startup-cache.md)。
