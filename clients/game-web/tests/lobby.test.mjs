@@ -90,3 +90,15 @@ test('Goal0065 R3: parked iframe keeps its geometry but cannot receive interacti
  assert.doesNotMatch(parked,/display\s*:\s*none|visibility\s*:\s*hidden|width\s*:\s*0/)
  assert.match(source,/if\(gamePhase\.value==='session' && !document\.hidden\)/)
 })
+
+test('G65 R9: external session replacement drops old host presentation without revoking replacement',async()=>{
+ const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
+ const reconcile=source.split('function reconcileLocalIdentity(){')[1].split('function onStorageChange')[0]
+ assert.match(reconcile,/client\?\.authenticated/)
+ assert.match(reconcile,/communicate\('SESSION_REVOKED'\)/)
+ assert.match(reconcile,/gameMounted\.value=false/)
+ assert.match(reconcile,/account\.value=null/)
+ assert.doesNotMatch(reconcile,/\.logout\(|removeItem\(/)
+ assert.match(source,/window\.addEventListener\('storage',onStorageChange\)/)
+ assert.match(source,/window\.removeEventListener\('storage',onStorageChange\)/)
+})

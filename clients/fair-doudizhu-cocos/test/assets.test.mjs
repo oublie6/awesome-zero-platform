@@ -486,3 +486,15 @@ test('G65 R7: final host success follows fresh authority after scene wait and fe
  assert.match(src,/online\.session\.discardLocal\(\)/)
  assert.doesNotMatch(src,/platform\.vault\.clear\(\)/)
 })
+
+test('G65 R9: Bootstrap delegates identity requests and separates scene ownership from authenticated business ownership',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ assert.doesNotMatch(src,/platform\.http\.request|session\.token|session\.authenticated/)
+ assert.match(src,/return this\.currentScene\(online,epoch\) && !!online\?\.identityCurrent/)
+ assert.match(src,/online\.relinkWeChat\(/)
+ assert.match(src,/online\.unlinkWeChat\(/)
+ assert.match(src,/online\.viewerAccount\(/)
+ assert.match(src,/online\.completeWeChatBinding\(/)
+ assert.match(src,/if\(!online\.session\.captureAttempt\(\)\(\)\)return false/)
+ assert.match(src,/return this\.currentScene\(null,generation\)/)
+})

@@ -786,7 +786,10 @@ export class GameBootstrap extends Component {
       }else{
         const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
         if(!this.currentScene(online,generation))return false
-        if(!restored && !await online.loginAndConnect())return false
+        if(!restored){
+          if(!online.session.captureAttempt()())return false
+          if(!await online.loginAndConnect())return false
+        }
       }
       if(!this.currentAccount(online,generation))return false
       // Profile is a verified server read used for lobby presentation only.
@@ -904,7 +907,7 @@ export class GameBootstrap extends Component {
       this.notice('请填写原账号和目标账号的账号密码');return
     }
     const online=this.online,epoch=this.requestGeneration
-    const current=()=>this.currentAccount(online,epoch) && this.screen==='wechat-relink'
+    const current=()=>this.currentAccount(online,epoch)
     try{
       const completed=await online.relinkWeChat({sourceIdentifier,sourcePassword,targetIdentifier,targetPassword},current)
       if(!completed || !this.currentAccount(online,epoch))return

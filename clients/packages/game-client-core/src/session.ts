@@ -76,8 +76,9 @@ export class GameSession {
     const current=()=>!this.disposed && generation===this.generation && loginEpoch===this.order.loginEpoch &&
       this.order.pendingLogin===null
     this.attemptOwner=current
-    // Do not restore a previous stored identity while a newer login is in flight.
-    if(!current())return null
+    // A restore skipped because a newer login is in flight cannot become a
+    // fresh provider login when that newer login finishes.
+    if(!current()){this.attemptOwner=()=>false;return null}
     await this.order.tail
     if(!current())return null
     const stored = await this.platform.vault.load()
@@ -99,7 +100,10 @@ export class GameSession {
     // shared token while the HTTP validation was outstanding.
     const saved=await this.platform.vault.load()
     if(!current() || saved!==stored){
-      if(generation===this.generation)this.ownedToken=null
+      if(generation===this.generation){
+        this.ownedToken=null
+        this.attemptOwner=()=>false
+      }
       return null
     }
     this.accessToken = stored

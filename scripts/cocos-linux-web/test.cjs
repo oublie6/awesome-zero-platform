@@ -187,7 +187,7 @@ test('Goal0065 independent Cocos HTML renders splash before engine scripts and r
 test('Goal0065 R1: socket must actually be connected before GAME_READY completion',()=>{
  const source=fs.readFileSync(path.join(__dirname,
    '../../clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts'),'utf8');
- assert.match(source,/const connected=restored && !!owner\?\.session\.authenticated\s*&&\s*!!owner\?\.shell\.commandTransportReady/);
+ assert.match(source,/const connected=restored && !!owner\?\.identityCurrent\s*&&\s*!!owner\?\.shell\.commandTransportReady/);
  assert.ok(source.indexOf("if(connected)this.renderScreen('rooms')") <
    source.indexOf("this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')"));
  assert.match(source,/__AZP_CONFIG_READY__\?:Promise<boolean>/);
@@ -462,17 +462,17 @@ test('Goal0065 Round4: required room restoration is a startup completion gate',(
  assert.match(login,/await this\.recoverMyRooms\(token=>\{selection=token\}\)/);
  assert.match(login,/catch\(error\)\{[\s\S]*?房间或牌局恢复失败，请重试[\s\S]*?return false/);
  assert.match(login,/return this\.currentAccount\(online,generation\) &&\s*selection===this\.recoveryAttempt &&/);
- assert.match(login,/online\.session\.authenticated && online\.shell\.commandTransportReady/);
+ assert.match(login,/online\.identityCurrent && online\.shell\.commandTransportReady/);
  assert.match(login,/\}\s*catch\(error\)\s*\{[\s\S]*return false\s*\}/);
  assert.match(handler,/const pending=this\.login\(true\)/);
  assert.match(handler,/const owner=this\.online,epoch=this\.requestGeneration/);
  assert.match(handler,/pending\.then\(async restored=>/);
- assert.match(handler,/const connected=restored && !!owner\?\.session\.authenticated &&\s*!!owner\?\.shell\.commandTransportReady/);
+ assert.match(handler,/const connected=restored && !!owner\?\.identityCurrent &&\s*!!owner\?\.shell\.commandTransportReady/);
  assert.match(handler,/if\(connected\)this\.renderScreen\('rooms'\)/);
- assert.match(handler,/if\(!this\.currentAccount\(owner,epoch\) \|\| selection!==this\.recoveryAttempt\)return/);
- assert.match(handler,/const ready=usable && !!owner\?\.session\.authenticated &&/);
+ assert.match(handler,/if\(!this\.currentScene\(owner,epoch\) \|\| selection!==this\.recoveryAttempt\)return/);
+ assert.match(handler,/const ready=usable && !!owner\?\.identityCurrent &&/);
  assert.match(handler,/this\.notifyWebHost\(ready\?'SESSION_ACTIVE':'SESSION_FAILED'\)/);
- assert.doesNotMatch(handler,/const active=!!this\.online\?\.session\.authenticated/);
+ assert.doesNotMatch(handler,/const active=!!this\.online\?\.identityCurrent/);
 });
 test('Goal0065 Round4: strict room/hand reads cannot be swallowed by startup',()=>{
  const source=fs.readFileSync(path.join(__dirname,
@@ -500,7 +500,7 @@ test('Goal0065 R5: revalidate current authoritative private or archive state imm
  const handler=source.split("if(data.type==='SESSION_AVAILABLE')")[1]
    .split("}else if(data.type==='SESSION_REVOKED')")[0];
  const gate=source.split('private requiredRecoveryReady(')[1].split('private async login(')[0];
- assert.match(handler,/const ready=usable && !!owner\?\.session\.authenticated &&\s*!!owner\?\.shell\.commandTransportReady && this\.requiredRecoveryReady\(owner\)/);
+ assert.match(handler,/const ready=usable && !!owner\?\.identityCurrent &&\s*!!owner\?\.shell\.commandTransportReady && this\.requiredRecoveryReady\(owner\)/);
  assert.match(gate,/if\(!this\.roomID\)return true/);
  assert.match(gate,/online\.shell\.handProjectionReady\(room\.activeHandId\)/);
  assert.match(gate,/online\.shell\.handProjectionReady\(room\.lastHandId,true\)/);

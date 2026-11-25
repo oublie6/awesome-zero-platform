@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed,onMounted,onUnmounted,ref,watch} from 'vue'
-import {createWebAuth,runtimeConfig,type UserAccount} from './auth.ts'
+import {createWebAuth,runtimeConfig,SESSION_KEY,type UserAccount} from './auth.ts'
 
 type Page='home'|'login'|'register'|'lobby'|'game'
 type PublicRuntime=typeof globalThis & {__FAIR_DOUDIZHU_CONFIG__?:unknown}
@@ -231,7 +231,27 @@ watch(page,next=>{
     if(!isReady.value && gamePhase.value!=='failed')armLoadWatchdog()
   }
 },{flush:'post'})
+// Another same-origin document can replace this tab's sessionStorage.
+// Drop stale presentation without revoking or clearing the replacement.
+function reconcileLocalIdentity(){
+  if(!account.value || client?.authenticated)return
+  communicate('SESSION_REVOKED')
+  clearLoadWatchdog()
+  gameMounted.value=false
+  gameFrame.value=null
+  gamePhase.value='waiting'
+  gameStage.value=0
+  account.value=null
+  page.value='login'
+  password.value=''
+  error.value='平台会话已变化，请重新登录。'
+}
+function onStorageChange(event:StorageEvent){
+  if(event.storageArea===sessionStorage && (event.key===SESSION_KEY || event.key===null))
+    reconcileLocalIdentity()
+}
 function onVisibilityChange(){
+  reconcileLocalIdentity()
   if(document.hidden){
     clearLoadWatchdog()
     communicate('BOOT_PAUSE')
@@ -243,11 +263,13 @@ function onVisibilityChange(){
 }
 onMounted(()=>{
   window.addEventListener('message',onGameMessage)
+  window.addEventListener('storage',onStorageChange)
   document.addEventListener('visibilitychange',onVisibilityChange)
   void initialize()
 })
 onUnmounted(()=>{
   window.removeEventListener('message',onGameMessage)
+  window.removeEventListener('storage',onStorageChange)
   document.removeEventListener('visibilitychange',onVisibilityChange)
   clearLoadWatchdog()
 })
