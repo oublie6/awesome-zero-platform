@@ -24,7 +24,9 @@ export class GameOnlineController {
   private authAttempt=0
   private identityEstablished=false
   private identityGrant:SessionGrant|null=null
-  private get identityCurrent():boolean { return this.identityEstablished && !!this.identityGrant?.isCurrent() }
+  /** Established controller identity is distinct from transport readiness. */
+  get identityCurrent():boolean { return !this.disposed && this.identityEstablished && !!this.identityGrant?.isCurrent() }
+  private identityMutation=false
   private membershipGeneration = 0
   // The latest explicit recovery choice owns all post-await room/hand writes.
   // Same-target concurrent recoveries share one operation only while its
@@ -109,6 +111,78 @@ export class GameOnlineController {
       this.identityEstablished=true
       return true
     }catch(error){if(!current())return false;throw error}
+  }
+  /** Authenticated profile and provider mutations share the same grant as
+   * game HTTP. The scene's operation ownership is checked at each await. */
+  async viewerAccount(owned:()=>boolean):Promise<string|null>{
+    const grant=this.identityGrant
+    const current=()=>owned() && this.identityCurrent && !!grant?.isCurrent()
+    if(!grant || !current())return null
+    const raw=await this.platform.http.request<unknown>('/auth/session',{
+      accessToken:grant.token,timeoutMs:5000
+    }) as {code?:unknown;data?:{account?:{id?:unknown}}}|null
+    if(!current())return null
+    const id=raw?.code==='OK'?raw.data?.account?.id:null
+    return typeof id==='string' && id.length>0 && id.length<=128?id:null
+  }
+  private async providerOperation(
+    owned:()=>boolean,work:(current:()=>boolean,token:string)=>Promise<boolean>
+  ):Promise<boolean>{
+    const grant=this.identityGrant
+    const current=()=>owned() && this.identityCurrent && !!grant?.isCurrent()
+    if(this.platform.target!=='wechat' || !grant || !current() || this.identityMutation)return false
+    this.identityMutation=true
+    try{return await work(current,grant.token)}
+    catch(error){if(!current())return false;throw error}
+    finally{this.identityMutation=false}
+  }
+  async unlinkWeChat(password:string,owned:()=>boolean):Promise<boolean>{
+    return this.providerOperation(owned,async(current,token)=>{
+      const raw=await this.platform.http.request<unknown>('/auth/wechat/unlink',{
+        method:'POST',accessToken:token,body:{password},timeoutMs:12000
+      }) as {code?:unknown}|null
+      if(!current())return false
+      if(raw?.code!=='OK')throw new Error('解绑失败')
+      return true
+    })
+  }
+  async relinkWeChat(input:{sourceIdentifier:string;sourcePassword:string;targetIdentifier:string;targetPassword:string},
+    owned:()=>boolean):Promise<boolean>{
+    return this.providerOperation(owned,async(current,token)=>{
+      const code=await this.platform.auth.acquireCode()
+      if(!current())return false
+      const prep=await this.platform.http.request<unknown>('/auth/wechat/prepare',{
+        method:'POST',body:{code},timeoutMs:12000
+      }) as {code?:unknown;data?:{pendingToken?:unknown}}|null
+      if(!current())return false
+      const proof=prep?.code==='OK'?prep.data?.pendingToken:null
+      if(typeof proof!=='string'||proof.length<32)throw new Error('微信验证未通过')
+      const raw=await this.platform.http.request<unknown>('/auth/wechat/relink',{
+        method:'POST',accessToken:token,timeoutMs:12000,body:{pendingToken:proof,...input}
+      }) as {code?:unknown}|null
+      if(!current())return false
+      if(raw?.code!=='OK')throw new Error('换绑失败')
+      return true
+    })
+  }
+  /** Initial provider binding is a distinct, unauthenticated proof flow.
+   * It cannot acquire authority from a newer login or from a stored token. */
+  async completeWeChatBinding(create:boolean,proof:string,input:{username:string;password:string;email:string;displayName:string},
+    attempt:()=>boolean,owned:()=>boolean):Promise<boolean>{
+    const current=()=>!this.disposed && !this.identityEstablished && attempt() && owned()
+    if(this.platform.target!=='wechat' || !current() || this.identityMutation)return false
+    this.identityMutation=true
+    try{
+      const {username,password,email,displayName}=input
+      const raw=await this.platform.http.request<unknown>(create?'/auth/wechat/register':'/auth/wechat/bind',{
+        method:'POST',timeoutMs:12000,
+        body:create?{pendingToken:proof,username,email,displayName,password}:{pendingToken:proof,identifier:username,password}
+      }) as {code?:unknown}|null
+      if(!current())return false
+      if(raw?.code!=='OK')throw new Error('关联账号失败')
+      return true
+    }catch(error){if(!current())return false;throw error}
+    finally{this.identityMutation=false}
   }
   /** Recovery is read-only until its final authoritative membership check.
    * Never adopt an earlier room response over a newer user selection. */

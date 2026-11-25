@@ -379,7 +379,7 @@ test('embedded Vue game bridge validates origin/source and never trusts a suppli
  assert.match(bridge,/data\.protocol!=='azp-doudizhu-frame-v1'/)
  assert.match(bridge,/data\.type==='SESSION_AVAILABLE'/)
  assert.match(bridge,/const pending=this\.login\(true\)/)
- assert.match(bridge,/const connected=restored && !!owner\?\.session\.authenticated/)
+ assert.match(bridge,/const connected=restored && !!owner\?\.identityCurrent/)
  assert.match(bridge,/data\.type==='SESSION_REVOKED'/)
  assert.match(bridge,/this\.online\?\.dispose\(\)/)
  assert.match(bridge,/data\.type==='OPEN_ROOMS'/)
@@ -394,7 +394,7 @@ test('embedded Vue game bridge validates origin/source and never trusts a suppli
 test('Vue-embedded Cocos uses host account UI and never exposes standalone login/logout buttons',async()=>{
  const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
  const rooms=src.split("} else if (screen === 'rooms') {")[1].split("} else if (screen === 'login') {")[0]
- assert.match(rooms,/if\(!this\.online\?\.session\.authenticated && !this\.webHostListener\)/)
+ assert.match(rooms,/if\(!this\.online\?\.identityCurrent && !this\.webHostListener\)/)
  assert.match(rooms,/name:'LoginEntry'/)
  assert.match(rooms,/name:'RestoreWebSession'/)
  assert.match(rooms,/detectRuntimeTarget\(\)==='web' && !this\.webHostListener/)

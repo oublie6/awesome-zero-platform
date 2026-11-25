@@ -1421,3 +1421,78 @@ test('G65 R8: pending socket handshake is cancelled when replacement login fails
   await assert.rejects(online.createRoom(),/authenticated session required/)
  }finally{online.dispose()}
 })
+
+test('G65 R9: provider operations and profile use established grant across every awaited step',async()=>{
+ for(const step of ['entry','sdk','prepare','reply']){
+  const f=fixture(),calls=[]
+  let release
+  const a=new GameOnlineController(f.platform,{exchange:async()=>({accessToken:'a'})},'wss://example.org/ws',()=>{})
+  const b=new GameOnlineController(f.platform,{exchange:async()=>({accessToken:'b'})},'wss://example.org/ws',()=>{})
+  const input={sourceIdentifier:'a',sourcePassword:'old',targetIdentifier:'b',targetPassword:'new'}
+  try{
+   await a.loginAndConnect()
+   f.platform.http.request=async(path,options)=>{
+    calls.push({path,token:options.accessToken})
+    if(path==='/auth/wechat/prepare'){
+     if(step==='prepare')await new Promise(ok=>{release=ok})
+     return {code:'OK',data:{pendingToken:'p'.repeat(43)}}
+    }
+    if(step==='reply')await new Promise(ok=>{release=ok})
+    return {code:'OK',data:{account:{id:'actor'}}}
+   }
+   if(step==='sdk')f.platform.auth.acquireCode=()=>new Promise(ok=>{release=()=>ok('temporary-wx-code')})
+   if(step==='entry'){
+    await b.session.loginWith(async()=>({accessToken:'b'}))
+    assert.equal(await a.unlinkWeChat('old',()=>true),false)
+    assert.equal(await a.relinkWeChat(input,()=>true),false)
+    assert.equal(await a.viewerAccount(()=>true),null)
+    assert.deepEqual(calls,[])
+   }else{
+    const pending=a.relinkWeChat(input,()=>true)
+    for(let i=0;i<20&&!release;i++)await new Promise(ok=>setImmediate(ok))
+    assert.ok(release)
+    await b.session.loginWith(async()=>({accessToken:'b'}))
+    release()
+    assert.equal(await pending,false)
+    assert.deepEqual(calls.map(c=>c.path),step==='sdk'?[]:step==='prepare'?['/auth/wechat/prepare']:['/auth/wechat/prepare','/auth/wechat/relink'])
+   }
+   assert.equal(a.identityCurrent,false)
+  }finally{a.dispose();b.dispose()}
+ }
+})
+test('G65 R9: valid provider and profile operations work, duplicate mutation is not sent',async()=>{
+ const f=fixture(),calls=[]
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ let release
+ try{
+  await online.loginAndConnect()
+  f.platform.http.request=async(path,options)=>{
+   calls.push({path,token:options.accessToken})
+   if(path==='/auth/session')return {code:'OK',data:{account:{id:'actor'}}}
+   if(path==='/auth/wechat/unlink')await new Promise(ok=>{release=ok})
+   return {code:'OK'}
+  }
+  assert.equal(await online.viewerAccount(()=>true),'actor')
+  const pending=online.unlinkWeChat('pw',()=>true)
+  assert.equal(await online.unlinkWeChat('pw',()=>true),false)
+  release()
+  assert.equal(await pending,true)
+  assert.deepEqual(calls.map(c=>c.path),['/auth/session','/auth/wechat/unlink'])
+  assert.ok(calls.every(c=>c.token==='server-validated-token'))
+ }finally{online.dispose()}
+})
+test('G65 R9: initial binding uses original attempt, not the current vault value',async()=>{
+ const f=fixture(),calls=[]
+ const a=new GameOnlineController(f.platform,{exchange:async()=>{throw Error('binding required')}},'wss://example.org/ws',()=>{})
+ const b=new GameOnlineController(f.platform,{exchange:async()=>({accessToken:'new'})},'wss://example.org/ws',()=>{})
+ try{
+  await assert.rejects(a.loginAndConnect(),/binding required/)
+  const owner=a.session.captureAttempt()
+  f.platform.http.request=async(path)=>{calls.push(path);return {code:'OK'}}
+  const input={username:'alice',password:'pw',email:'a@example.com',displayName:'Alice'}
+  assert.equal(await a.completeWeChatBinding(false,'p'.repeat(43),input,owner,()=>true),true)
+  await b.loginAndConnect()
+  assert.equal(await a.completeWeChatBinding(true,'p'.repeat(43),input,owner,()=>true),false)
+  assert.deepEqual(calls,['/auth/wechat/bind'])
+ }finally{a.dispose();b.dispose()}
+})

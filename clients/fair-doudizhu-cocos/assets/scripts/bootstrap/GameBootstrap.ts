@@ -77,6 +77,7 @@ export class GameBootstrap extends Component {
   private wechatEmail: EditBox | null = null
   private wechatDisplay: EditBox | null = null
   private wechatPending = ''
+  private wechatPendingOwner:(()=>boolean)|null=null
   private loginNodes: Node[] = []
   private screen: Screen = 'home'
   private selectedCards = new Set<string>()
@@ -196,7 +197,7 @@ export class GameBootstrap extends Component {
       if(!data || typeof data!=='object' ||
          data.protocol!=='azp-doudizhu-frame-v1')return
       if(data.type==='SESSION_AVAILABLE'){
-        if(this.hostRestoring || this.online?.session.authenticated)return
+        if(this.hostRestoring || this.online?.identityCurrent)return
         this.hostRestoring=true
         const attempt=++this.hostRestoreAttempt
         // login() increments the controller epoch synchronously before its
@@ -206,26 +207,26 @@ export class GameBootstrap extends Component {
         const owner=this.online,epoch=this.requestGeneration
         let selection=this.recoveryAttempt
         void pending.then(async restored=>{
-          if(!this.currentAccount(owner,epoch))return
-          const connected=restored && !!owner?.session.authenticated &&
+          if(!this.currentScene(owner,epoch))return
+          const connected=restored && !!owner?.identityCurrent &&
             !!owner?.shell.commandTransportReady
           // Login has already finished authoritative room/hand restoration.
           // Do not redraw a generic empty lobby after a failed recovery.
           if(connected)this.renderScreen('rooms')
           selection=this.recoveryAttempt
           const usable=connected && await this.waitForWebScene()
-          if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
+          if(!this.currentScene(owner,epoch) || selection!==this.recoveryAttempt)return
           // Scene/layout readiness is not an authorization lease. Refresh the
           // room and fairness phase after the final scene wait, before the host
           // removes its cover. No further rendering await after this proof.
-          if(usable && owner)await this.confirmStartupAuthority(owner,epoch,selection)
-          if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt)return
-          const ready=usable && !!owner?.session.authenticated &&
+          if(usable && owner?.identityCurrent)await this.confirmStartupAuthority(owner,epoch,selection)
+          if(!this.currentScene(owner,epoch) || selection!==this.recoveryAttempt)return
+          const ready=usable && !!owner?.identityCurrent &&
             !!owner?.shell.commandTransportReady && this.requiredRecoveryReady(owner)
           this.notifyWebHost(ready?'SESSION_ACTIVE':'SESSION_FAILED')
           this.reportNativeBoot(ready?'done':'fail')
         }).catch(error=>{
-          if(!this.currentAccount(owner,epoch) || selection!==this.recoveryAttempt ||
+          if(!this.currentScene(owner,epoch) || selection!==this.recoveryAttempt ||
              attempt!==this.hostRestoreAttempt)return
           this.notice('启动恢复失败：'+this.message(error))
           this.notifyWebHost('SESSION_FAILED')
@@ -252,16 +253,16 @@ export class GameBootstrap extends Component {
         this.renderScreen('home')
         this.notice('已退出网页账号')
       }else if(data.type==='OPEN_ROOMS'){
-        if(this.online?.session.authenticated)this.renderScreen('rooms')
+        if(this.online?.identityCurrent)this.renderScreen('rooms')
       }else if(data.type==='CREATE_ROOM'){
         // UI intention only. The existing RoomCoordinator allocates the
         // request ID, checks authority and handles exact UNKNOWN retries.
-        if(!this.online?.session.authenticated)return
+        if(!this.online?.identityCurrent)return
         this.renderScreen('rooms')
         void this.createRoom()
       }else if(data.type==='JOIN_ROOM'){
         const roomId=(event.data as {roomId?:unknown}).roomId
-        if(!this.online?.session.authenticated || typeof roomId!=='string' ||
+        if(!this.online?.identityCurrent || typeof roomId!=='string' ||
            !/^[A-Za-z0-9_-]{1,128}$/.test(roomId))return
         this.renderScreen('rooms')
         if(!this.roomInput)return
@@ -413,7 +414,7 @@ export class GameBootstrap extends Component {
       for(const command of [...plan.primary,...plan.secondary])actions.push(choices[command])
       this.roomRetryRendered=!!this.online?.rooms.needsReconciliation
       this.fairnessRetryRendered=!!this.online?.fairness.needsReconciliation
-      if(!this.roomID && this.online?.session.authenticated && !this.roomRetryRendered){
+      if(!this.roomID && this.online?.identityCurrent && !this.roomRetryRendered){
         for(const room of this.recoverableRooms)actions.push({name:'Resume_'+room.roomId,
           caption:(room.status==='HAND_ACTIVE'?'继续牌局 ':'恢复房间 ')+room.roomId,
           action:()=>void this.resumeSelectedRoom(room.roomId)})
@@ -438,7 +439,7 @@ export class GameBootstrap extends Component {
             {name:'CommitFairness',caption:'旧局：提交承诺',action:()=>void this.commitFairness()},
             {name:'RevealFairness',caption:'旧局：揭示贡献',action:()=>void this.revealFairness()})
         }
-        if(detectRuntimeTarget()==='wechat' && this.online?.session.authenticated){
+        if(detectRuntimeTarget()==='wechat' && this.online?.identityCurrent){
           actions.push({name:'UnlinkWeChat',caption:'账号：解绑微信',action:()=>this.renderScreen('wechat-unlink')})
           actions.push({name:'RelinkWeChat',caption:'账号：换绑微信',action:()=>this.renderScreen('wechat-relink')})
         }else if(detectRuntimeTarget()==='web' && !this.webHostListener){
@@ -446,7 +447,7 @@ export class GameBootstrap extends Component {
         }
         actions.push({name:'BackHome',caption:'返回首页',action:()=>this.renderScreen('home')})
       }
-      if(!this.online?.session.authenticated && !this.webHostListener){
+      if(!this.online?.identityCurrent && !this.webHostListener){
         actions.push({name:'LoginEntry',caption:detectRuntimeTarget()==='web'?'账号登录':'微信登录',
           action:()=>{if(detectRuntimeTarget()==='web')this.renderScreen('login');else void this.login()}})
         if(detectRuntimeTarget()==='web')
@@ -472,7 +473,7 @@ export class GameBootstrap extends Component {
       this.addMenu([
         {name:'WechatBindExisting',caption:'绑定已有平台账号',action:()=>void this.completeWeChatBinding(false)},
         {name:'WechatRegisterNew',caption:'创建新账号并绑定',action:()=>void this.completeWeChatBinding(true)},
-        {name:'WechatCancelBind',caption:'取消并返回',action:()=>{this.wechatPending='';this.renderScreen('rooms')}}
+        {name:'WechatCancelBind',caption:'取消并返回',action:()=>{this.wechatPending='';this.wechatPendingOwner=null;this.renderScreen('rooms')}}
       ])
     } else if (screen === 'wechat-relink') {
       this.title!.string='换绑微信账号'
@@ -595,7 +596,7 @@ export class GameBootstrap extends Component {
   private lobbyPlan():LobbyPlan {
     const snapshot=this.online?.shell.hand.snapshot
     return planLobby({
-      authenticated:!!this.online?.session.authenticated,roomId:this.roomID,
+      authenticated:!!this.online?.identityCurrent,roomId:this.roomID,
       room:this.roomView,roomUnknown:!!this.online?.rooms.needsReconciliation,
       fairnessUnknown:!!this.online?.fairness.needsReconciliation,
       fairnessMode:this.fairnessMode,fairness:this.fairnessView,
@@ -645,8 +646,11 @@ export class GameBootstrap extends Component {
   /** Every async UI callback belongs to one authenticated controller and one
    * Scene login epoch. Disposed/replaced accounts may finish their requests,
    * but must never modify the current account's UI. */
-  private currentAccount(online:GameOnlineController|null,epoch:number):boolean{
+  private currentScene(online:GameOnlineController|null,epoch:number):boolean{
     return online===this.online && epoch===this.requestGeneration && !!this.content?.isValid
+  }
+  private currentAccount(online:GameOnlineController|null,epoch:number):boolean{
+    return this.currentScene(online,epoch) && !!online?.identityCurrent
   }
   private currentRoom(online:GameOnlineController|null,epoch:number,roomID:string,
     generation:number,selection?:number):boolean{
@@ -659,7 +663,7 @@ export class GameBootstrap extends Component {
    * whether an earlier sync promise once resolved. No room/predeal state
    * legitimately needs private cards. */
   private requiredRecoveryReady(online:GameOnlineController|null):boolean {
-    if(!online?.session.authenticated || !online.shell.commandTransportReady)return false
+    if(!online?.identityCurrent || !online.shell.commandTransportReady)return false
     if(!this.roomID)return true
     const room=this.roomView
     if(!room || room.roomId!==this.roomID || !room.member || room.status==='CLOSED')return false
@@ -754,6 +758,8 @@ export class GameBootstrap extends Component {
         })
       generation=++this.requestGeneration
       this.platform=platform
+      this.wechatPending=''
+      this.wechatPendingOwner=null
       ++this.recoveryAttempt
       this.sceneRecovery=null
       this.online?.dispose()
@@ -779,13 +785,13 @@ export class GameBootstrap extends Component {
         }else if(!await online.loginWithPassword(identifier,password))return false
       }else{
         const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
-        if(!this.currentAccount(online,generation))return false
+        if(!this.currentScene(online,generation))return false
         if(!restored && !await online.loginAndConnect())return false
       }
       if(!this.currentAccount(online,generation))return false
       // Profile is a verified server read used for lobby presentation only.
       // Never infer an AccountID from a token or a room code.
-      void this.resolveViewerAccount(online,platform,generation)
+      void this.resolveViewerAccount(online,generation)
       online.shell.events.on('doudizhu.hand.snapshot',()=>{
         if(this.currentAccount(online,generation) && this.screen==='table')this.renderScreen('table')
         else if(this.currentAccount(online,generation) && this.screen==='rooms')this.renderScreen('rooms')
@@ -832,12 +838,15 @@ export class GameBootstrap extends Component {
       // logout during await; neither should authorize a completed startup.
       return this.currentAccount(online,generation) &&
         selection===this.recoveryAttempt &&
-        online.session.authenticated && online.shell.commandTransportReady &&
+        online.identityCurrent && online.shell.commandTransportReady &&
         this.requiredRecoveryReady(online)
     } catch(error) {
       if(error instanceof WeChatBindingRequiredError && generation===this.requestGeneration &&
-         this.content?.isValid){
+         this.content?.isValid && this.online){
+        const owner=this.online.session.captureAttempt()
+        if(!owner())return false
         this.wechatPending=error.pendingToken
+        this.wechatPendingOwner=owner
         this.renderScreen('wechat-bind')
       }else if(generation===this.requestGeneration && this.content?.isValid){
         this.notice('登录失败：'+this.message(error))
@@ -845,16 +854,10 @@ export class GameBootstrap extends Component {
       return false
     }
   }
-  private async resolveViewerAccount(online:GameOnlineController,platform:GamePlatform,
-    generation:number):Promise<void>{
+  private async resolveViewerAccount(online:GameOnlineController,generation:number):Promise<void>{
     try{
-      const raw=await platform.http.request<unknown>('/auth/session',{
-        accessToken:online.session.token,timeoutMs:5000
-      })
-      const envelope=raw as {code?:unknown;data?:{account?:{id?:unknown}}}|null
-      const accountID=envelope?.code==='OK'?envelope.data?.account?.id:null
-      if(typeof accountID!=='string'||!accountID||accountID.length>128)return
-      if(!this.currentAccount(online,generation))return
+      const accountID=await online.viewerAccount(()=>this.currentAccount(online,generation))
+      if(!accountID || !this.currentAccount(online,generation))return
       this.viewerAccountID=accountID
       if(this.screen==='rooms' && this.roomID)this.renderScreen('rooms')
     }catch{
@@ -863,9 +866,8 @@ export class GameBootstrap extends Component {
     }
   }
   private async completeWeChatBinding(create:boolean):Promise<void>{
-    const proof=this.wechatPending
-    const platform=this.platform
-    if(detectRuntimeTarget()!=='wechat' || !proof || !platform || this.screen!=='wechat-bind'){
+    const proof=this.wechatPending,attempt=this.wechatPendingOwner,online=this.online
+    if(detectRuntimeTarget()!=='wechat' || !proof || !online || !attempt?.() || this.screen!=='wechat-bind'){
       this.notice('请重新进行微信身份验证');return
     }
     const username=this.loginIdentifier?.string.trim()||''
@@ -877,24 +879,21 @@ export class GameBootstrap extends Component {
       this.notice('请填写所需账号资料');return
     }
     const epoch=this.requestGeneration
+    const current=()=>this.currentScene(online,epoch) && this.wechatPendingOwner===attempt &&
+      this.wechatPending===proof && this.screen==='wechat-bind' && attempt()
     try{
-      const raw=await platform.http.request<unknown>(create?'/auth/wechat/register':'/auth/wechat/bind',{
-        method:'POST',timeoutMs:12000,
-        body:create?{pendingToken:proof,username,email,displayName,password}:{pendingToken:proof,identifier:username,password}
-      })
-      const envelope=raw as {code?:unknown;data?:unknown}|null
-      if(!envelope || envelope.code!=='OK')throw new Error('关联账号失败')
-      if(epoch!==this.requestGeneration || this.wechatPending!==proof || !this.content?.isValid)return
+      const completed=await online.completeWeChatBinding(create,proof,{username,password,email,displayName},attempt,current)
+      if(!completed || !current())return
       this.wechatPending=''
+      this.wechatPendingOwner=null
       this.renderScreen('rooms')
       await this.login()
     }catch(error){
-      if(epoch===this.requestGeneration && this.content?.isValid)
-        this.notice('账号关联失败：'+this.message(error))
+      if(current())this.notice('账号关联失败：'+this.message(error))
     }
   }
   private async relinkWeChat():Promise<void>{
-    if(this.screen!=='wechat-relink'||!this.platform||!this.online?.session.authenticated)return
+    if(this.screen!=='wechat-relink'||!this.platform||!this.online?.identityCurrent)return
     const sourceIdentifier=this.loginIdentifier?.string.trim()||''
     const sourcePassword=this.loginPassword?.string||''
     const targetIdentifier=this.wechatEmail?.string.trim()||''
@@ -904,22 +903,11 @@ export class GameBootstrap extends Component {
     if(!sourceIdentifier||!sourcePassword||!targetIdentifier||!targetPassword){
       this.notice('请填写原账号和目标账号的账号密码');return
     }
-    const platform=this.platform,online=this.online,epoch=this.requestGeneration
+    const online=this.online,epoch=this.requestGeneration
+    const current=()=>this.currentAccount(online,epoch) && this.screen==='wechat-relink'
     try{
-      const code=await platform.auth.acquireCode()
-      if(!this.currentAccount(online,epoch))return
-      const prep=await platform.http.request<unknown>('/auth/wechat/prepare',{
-        method:'POST',body:{code},timeoutMs:12000
-      }) as {code?:unknown;data?:{pendingToken?:unknown}}
-      const proof=prep?.code==='OK'?prep.data?.pendingToken:null
-      if(typeof proof!=='string'||proof.length<32)throw new Error('微信验证未通过')
-      if(!this.currentAccount(online,epoch))return
-      const raw=await platform.http.request<unknown>('/auth/wechat/relink',{
-        method:'POST',accessToken:online.session.token,timeoutMs:12000,body:{pendingToken:proof,
-          sourceIdentifier,sourcePassword,targetIdentifier,targetPassword}
-      }) as {code?:unknown}
-      if(raw?.code!=='OK')throw new Error('换绑失败')
-      if(!this.currentAccount(online,epoch))return
+      const completed=await online.relinkWeChat({sourceIdentifier,sourcePassword,targetIdentifier,targetPassword},current)
+      if(!completed || !this.currentAccount(online,epoch))return
       if(await this.detachWeChatSession(online))
         this.notice('微信换绑成功。所有历史游戏数据仍留在原账号。')
     }catch(error){
@@ -945,23 +933,19 @@ export class GameBootstrap extends Component {
     this.selectedCards.clear()
     const cleanup=online.session.discardLocal()
     online.dispose()
-    if(this.currentAccount(null,generation))this.renderScreen('rooms')
+    if(this.currentScene(null,generation))this.renderScreen('rooms')
     await cleanup
-    return this.currentAccount(null,generation)
+    return this.currentScene(null,generation)
   }
   private async unlinkWeChat():Promise<void>{
-    if(this.screen!=='wechat-unlink'||!this.platform||!this.online?.session.authenticated)return
+    if(this.screen!=='wechat-unlink'||!this.platform||!this.online?.identityCurrent)return
     const password=this.loginPassword?.string||''
     if(this.loginPassword)this.loginPassword.string=''
     if(!password){this.notice('请输入当前账号密码');return}
-    const platform=this.platform,online=this.online,epoch=this.requestGeneration
+    const online=this.online,epoch=this.requestGeneration
     try{
-      const raw=await platform.http.request<unknown>('/auth/wechat/unlink',{
-        method:'POST',accessToken:online.session.token,body:{password},timeoutMs:12000
-      })
-      const response=raw as {code?:unknown}|null
-      if(response?.code!=='OK')throw new Error('解绑失败')
-      if(!this.currentAccount(online,epoch))return
+      const completed=await online.unlinkWeChat(password,()=>this.currentAccount(online,epoch))
+      if(!completed || !this.currentAccount(online,epoch))return
       if(await this.detachWeChatSession(online))
         this.notice('微信解绑成功；原账号游戏数据仍保留')
     }catch(error){
@@ -972,7 +956,7 @@ export class GameBootstrap extends Component {
    * Do not discard an unknown durable command without exact reconciliation. */
   private async logoutWeb():Promise<void>{
     const owner=this.online
-    if(detectRuntimeTarget()!=='web' || !owner?.session.authenticated){
+    if(detectRuntimeTarget()!=='web' || !owner?.identityCurrent){
       this.notice('当前没有已登录的网页账号')
       return
     }
@@ -1306,7 +1290,7 @@ export class GameBootstrap extends Component {
     const generation=this.roomGeneration
     const selection=this.recoveryAttempt
     try {
-      if(!online?.session.authenticated)throw new Error('请先完成微信登录')
+      if(!online?.identityCurrent)throw new Error('请先完成微信登录')
       if(!this.platform)throw new Error('游戏平台未初始化')
       if(!roomID || online.rooms.state?.roomId!==roomID)
         throw new Error('请先确认当前房间成员身份')
@@ -1457,7 +1441,7 @@ export class GameBootstrap extends Component {
     if(this.roomInput)this.roomInput.string=''
     try{
       if(this.fairnessMode!=='client-contributed-server-custodied-v1' ||
-        !handID || !online?.session.authenticated || !fairness)
+        !handID || !online?.identityCurrent || !fairness)
         throw new Error('当前牌局尚未进入个人贡献阶段')
       await fairness.submitCustodied(handID,phrase)
       if(!this.currentRoom(online,epoch,roomID,generation,selection) ||
@@ -1482,7 +1466,7 @@ export class GameBootstrap extends Component {
     const phrase=this.roomInput?.string||''
     if(this.roomInput)this.roomInput.string=''
     try{
-      if(!online?.session.authenticated || !handID ||
+      if(!online?.identityCurrent || !handID ||
         this.fairnessMode!=='client-contributed-server-custodied-v1' || !phrase)
         throw new Error('请在终局后输入自己当初提交的字符串')
       // Retrieve authenticated final evidence before the own-random record;
@@ -1514,7 +1498,7 @@ export class GameBootstrap extends Component {
     try{
       if(this.fairnessMode!=='')throw new Error('公平模式尚未确认或不是历史模式')
       if(!handID)throw new Error('尚未开始牌局')
-      if(!online?.session.authenticated || !fairness)throw new Error('请先完成微信登录')
+      if(!online?.identityCurrent || !fairness)throw new Error('请先完成微信登录')
       const kit=await fairness.prepareRecoveryKit(handID)
       // The reply may arrive after an authoritative cancel/leave, hand switch,
       // session replacement or UI destruction. Never re-display old secrets.
@@ -1728,7 +1712,7 @@ export class GameBootstrap extends Component {
     }
   }
   private requireOnline():GameOnlineController {
-    if(!this.online?.session.authenticated)throw new Error(detectRuntimeTarget()==='wechat'
+    if(!this.online?.identityCurrent)throw new Error(detectRuntimeTarget()==='wechat'
       ? '请先完成微信登录' : '请先登录平台账号')
     return this.online
   }
@@ -1857,6 +1841,8 @@ export class GameBootstrap extends Component {
   }
   override onDestroy(): void {
     this.requestGeneration++
+    this.wechatPending=''
+    this.wechatPendingOwner=null
     if(this.webHostListener && typeof window!=='undefined')
       window.removeEventListener('message',this.webHostListener)
     this.webHostListener=null
