@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-25 ChatGPT **Goal0065 Round9 身份契约集中修复 — 待 CI / 独立验收**：统一共享 SessionGrant 认证、身份操作生命周期、Web 状态及前置绑定所有权，保留独立清理语义；不改 Go、协议、缓存、数据库或部署，Goal0065 保持 in_progress。
+
 - 2026-11-25 Codex **Goal0065 Round9 independent functional acceptance — FAIL**, fixed product `e9762f566a1c03bef99f42630f0d4384f2538443`: original Round8 N01/N02 PASS; 330 client tests, four affected Go unit packages, actual MySQL joint-read/PK/concurrency evidence and single Cocos4 export PASS. Candidate API+Web completes three-account v61 game, automatic deal with dropped broadcast repair, actual API restart/recovery, UNKNOWN/proofs/logout; cache/304/update/memory and strengthened concurrency checks recorded. New 1P2: Cocos unlink/relink continues identity HTTP after SessionGrant invalidation, including delayed SDK continuation (controlled provider ports, no actual mapping change). Extra scene-delay/cancel-message observer gaps explicit. No candidate deployment; existing six Ready Pods, unfinished0, user29457 preserved; own isolated resources stopped. [Round9 report](0065-round9-independent-acceptance.md). Goal0065 remains in_progress; 0045/0046 unchanged.
 
 - 2026-11-25 ChatGPT **Goal0065 Round8 系统性改造 — 待 CI 与独立验收**：Session operation-owned grant、Controller 统一身份/连接完成契约；向后兼容 Go room v1 成员限定同读点阶段证明与自动发牌通知，统一 join/reconnect/启动门禁，必要时一次有界私有同步重核验。无 schema/命令/缓存变更，API-first / Web-second 部署与逆序回滚，保持 in_progress。详见 [Goal0065](0065-web-startup-cache.md)。

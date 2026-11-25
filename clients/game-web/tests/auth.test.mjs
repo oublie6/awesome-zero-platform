@@ -165,3 +165,26 @@ test('G65 R7: later login owns shared storage despite older exchange finishing l
  assert.equal(s.getItem(SESSION_KEY),'new')
  assert.equal(old.authenticated,false)
 })
+
+test('G65 R9: superseded established Web identity and late login continuation are inactive',async()=>{
+ const s=storage(),calls=[]
+ const good=async(url,options)=>{
+  const path=new URL(url).pathname
+  calls.push(path)
+  return path==='/auth/login'?okay({tokenType:'Bearer',accessToken:'old'}):okay({account:{id:'old',displayName:'Old'}})
+ }
+ const old=createWebAuth(config,good,s)
+ await old.login('old','password')
+ let release
+ const fresh=createWebAuth(config,async url=>new URL(url).pathname==='/auth/login'
+  ?new Promise(ok=>{release=ok}):okay({account:{id:'new',displayName:'New'}}),s)
+ const pending=fresh.login('new','password')
+ assert.equal(old.authenticated,false);assert.equal(old.account,null)
+ const restore=createWebAuth(config,good,s)
+ assert.equal(await restore.restore(),null)
+ release(okay({tokenType:'Bearer',accessToken:'new'}))
+ await pending
+ assert.equal(fresh.authenticated,true)
+ s.setItem(SESSION_KEY,'external')
+ assert.equal(fresh.authenticated,false);assert.equal(fresh.account,null)
+})

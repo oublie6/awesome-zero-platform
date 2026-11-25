@@ -109,3 +109,7 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
 - 回归覆盖旧成功丢弃与 B 连接/待确认命令保留、同 room version 的阶段推进、Go 成员限定证明和独立手牌版本、协议校验、自动发牌通知、已有成员双入口和 Bootstrap 共用门禁；保持 in_progress。真实 Cocos/Go、MySQL 一致读、完整业务与本产物缓存性能仍需 CI/Codex 证据；不调查手机黑屏。
 
 第二遍自审与 CI 修正：同步更新旧 room discovery fixture 和构建断言，修复 TS 跨 await 收窄与 gofmt；补真实 MySQL 联合查询集成测试；连接绑定授权 grant 与连接代次，替换尚未建立身份的登录时立即取消旧握手，即使新登录失败也不会遗留可提交连接；Controller 业务入口要求已建立身份。联合证明检查 durable version 单调、相同版本不得冲突，连接/房间/命令代次变化撤销证明；预发牌恢复转为 live 即使收到无关联广播仍须关联私有读取。
+
+### Round 9 follow-up: session identity and UI ownership (development)
+
+Owner: shared client session lifecycle, Cocos composition and Web host. A current grant, not stored credential presence, authorizes client business continuations. Pending login blocks restoration of the previous stored identity in the same logical scope. Pre-authentication provider binding captures its original attempt; cleanup retains only the previously owned credential. Go authorization and wire/schema contracts remain unchanged. Constant-time checks and bounded existing HTTP/SDK deadlines, no additional normal-path network calls. Same-realm coordination only; cross-realm storage and already dispatched server operations are not cancellation leases. Regression and CI precede independent Round10 acceptance; no deployment in this change.

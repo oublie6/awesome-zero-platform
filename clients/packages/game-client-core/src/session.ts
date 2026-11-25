@@ -12,7 +12,7 @@ export interface IdentityExchange {
 // One mutation queue per logical vault, not per controller. The weak key
 // releases the coordinator with its backing store. Async adapters sharing a
 // store must expose the same scope or reuse the same SessionVault instance.
-type VaultOrder={tail:Promise<void>;loginEpoch:number}
+type VaultOrder={tail:Promise<void>;loginEpoch:number;pendingLogin:number|null}
 const orders=new WeakMap<object,Map<string,VaultOrder>>()
 function orderFor(vault:SessionVault):VaultOrder {
   const scope=vault.coordinationScope
@@ -20,7 +20,7 @@ function orderFor(vault:SessionVault):VaultOrder {
   let keys=orders.get(storage)
   if(!keys){keys=new Map();orders.set(storage,keys)}
   let order=keys.get(key)
-  if(!order){order={tail:Promise.resolve(),loginEpoch:0};keys.set(key,order)}
+  if(!order){order={tail:Promise.resolve(),loginEpoch:0,pendingLogin:null};keys.set(key,order)}
   return order
 }
 /** An identity operation owns exactly this credential and epoch.
@@ -34,6 +34,8 @@ export class GameSession {
   private generation = 0
   private disposed = false
   private ownedToken:string|null=null
+  private activeGrant:SessionGrant|null=null
+  private attemptOwner:()=>boolean=()=>false
   private readonly order:VaultOrder
   private mutateVault<T>(operation:()=>Promise<T>):Promise<T>{
     const work=this.order.tail.then(operation)
@@ -48,11 +50,17 @@ export class GameSession {
   constructor(private readonly platform: GamePlatform, private readonly identity: IdentityExchange) {
     this.order=orderFor(platform.vault)
   }
-  get authenticated(): boolean { return !!this.accessToken && !this.disposed }
+  /** Business identity is the current grant, not mere credential presence.
+   * Cleanup separately owns the captured token even after supersession. */
+  get authenticated(): boolean { return this.activeGrant?.isCurrent()??false }
   get token(): string {
-    if (!this.accessToken || this.disposed) throw new Error('not authenticated')
-    return this.accessToken
+    const grant=this.activeGrant
+    if (!grant?.isCurrent()) throw new Error('not authenticated')
+    return grant.token
   }
+  /** Capture the specific identity attempt for a pre-authentication binding
+   * continuation. This is not an authenticated business grant. */
+  captureAttempt():()=>boolean { return this.attemptOwner }
   /** Does not interpret local storage as a verified identity. Authentication must be confirmed by the server. */
   async restore(validate: (accessToken: string) => Promise<boolean>): Promise<boolean> {
     const grant=await this.restoreOwned(validate)
@@ -62,20 +70,26 @@ export class GameSession {
     this.assertActive()
     const generation = ++this.generation
     this.accessToken=null
+    this.activeGrant=null
     this.ownedToken=null
     const loginEpoch=this.order.loginEpoch
+    const current=()=>!this.disposed && generation===this.generation && loginEpoch===this.order.loginEpoch &&
+      this.order.pendingLogin===null
+    this.attemptOwner=current
+    // Do not restore a previous stored identity while a newer login is in flight.
+    if(!current())return null
     await this.order.tail
-    if(this.disposed || generation!==this.generation || loginEpoch!==this.order.loginEpoch)return null
+    if(!current())return null
     const stored = await this.platform.vault.load()
-    if (!stored || this.disposed || generation!==this.generation || loginEpoch!==this.order.loginEpoch) return null
+    if (!stored || !current()) return null
     // Capture ownership at restore, never by reloading during logout.
     this.ownedToken=stored
     let valid = false
     try { valid = await validate(stored) } catch { valid = false }
-    if (this.disposed || generation !== this.generation || loginEpoch!==this.order.loginEpoch) return null
+    if (!current()) return null
     if (!valid) {
       await this.mutateVault(async()=>{
-        if(!this.disposed && generation===this.generation && loginEpoch===this.order.loginEpoch)
+        if(current())
           await this.clearOwnedToken(stored)
       })
       if(generation===this.generation)this.ownedToken=null
@@ -83,57 +97,65 @@ export class GameSession {
     }
     // Another controller or the parent Web page may have replaced the
     // shared token while the HTTP validation was outstanding.
-    const current=await this.platform.vault.load()
-    if(this.disposed || generation!==this.generation || loginEpoch!==this.order.loginEpoch || current!==stored){
+    const saved=await this.platform.vault.load()
+    if(!current() || saved!==stored){
       if(generation===this.generation)this.ownedToken=null
       return null
     }
     this.accessToken = stored
-    return this.grant(stored,generation,loginEpoch)
+    return this.activeGrant=this.grant(stored,generation,loginEpoch)
   }
   private grant(token:string,generation:number,loginEpoch:number):SessionGrant {
     return Object.freeze({token,isCurrent:()=>!this.disposed && generation===this.generation &&
       loginEpoch===this.order.loginEpoch && this.accessToken===token})
   }
   async login(): Promise<SessionGrant|null> {
-    const expected = this.generation + 1
-    return this.loginWith(async () => {
+    return this.loginWith(async current => {
       const code = await this.platform.auth.acquireCode()
       // Do not exchange a platform code after logout or account replacement.
-      if (this.disposed || this.generation !== expected) return {accessToken: ''}
+      if (!current()) return {accessToken: ''}
       return this.identity.exchange(this.platform.target, code)
     })
   }
   /** Credential and platform-code login share the same epoch, token and
    * logout semantics. Credential material is never passed to the vault. */
-  async loginWith(exchange: () => Promise<{accessToken: string}>): Promise<SessionGrant|null> {
+  async loginWith(exchange: (current:()=>boolean) => Promise<{accessToken: string}>): Promise<SessionGrant|null> {
     this.assertActive()
     const generation = ++this.generation
     const loginEpoch=++this.order.loginEpoch
+    this.order.pendingLogin=loginEpoch
+    this.activeGrant=null
     const current=()=>!this.disposed && generation===this.generation && loginEpoch===this.order.loginEpoch
-    let result:{accessToken:string}
-    try{result=await exchange()}catch(error){if(!current())return null;throw error}
-    if (!current()) return null
-    if (!result || typeof result.accessToken !== 'string' || !result.accessToken.trim()) {
-      throw new Error('identity exchange returned no access token')
-    }
-    const grant=await this.mutateVault(async()=>{
-      if(!current())return null
-      await this.platform.vault.save(result.accessToken)
-      if(!current()){
-        await this.clearOwnedToken(result.accessToken)
-        return null
+    this.attemptOwner=current
+    try{
+      let result:{accessToken:string}
+      try{result=await exchange(current)}catch(error){if(!current())return null;throw error}
+      if (!current()) return null
+      if (!result || typeof result.accessToken !== 'string' || !result.accessToken.trim()) {
+        throw new Error('identity exchange returned no access token')
       }
-      this.ownedToken=result.accessToken
-      this.accessToken=result.accessToken
-      return this.grant(result.accessToken,generation,loginEpoch)
-    })
-    return grant?.isCurrent()?grant:null
+      const grant=await this.mutateVault(async()=>{
+        if(!current())return null
+        await this.platform.vault.save(result.accessToken)
+        if(!current()){
+          await this.clearOwnedToken(result.accessToken)
+          return null
+        }
+        this.ownedToken=result.accessToken
+        this.accessToken=result.accessToken
+        return this.activeGrant=this.grant(result.accessToken,generation,loginEpoch)
+      })
+      return grant?.isCurrent()?grant:null
+    }finally{
+      if(this.order.pendingLogin===loginEpoch)this.order.pendingLogin=null
+    }
   }
   private releaseToken():string|null {
     this.generation++
     const token=this.accessToken || this.ownedToken
     this.accessToken=null
+    this.activeGrant=null
+    this.attemptOwner=()=>false
     this.ownedToken=null
     return token
   }
@@ -156,6 +178,8 @@ export class GameSession {
     this.generation++
     this.disposed = true
     this.accessToken = null
+    this.activeGrant=null
+    this.attemptOwner=()=>false
     this.ownedToken = null
   }
   private assertActive(): void { if (this.disposed) throw new Error('session disposed') }
