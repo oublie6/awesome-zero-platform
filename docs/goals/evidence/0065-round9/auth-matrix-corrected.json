@@ -1,0 +1,15 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "scope": "Actual Controller/Session/Shell/ConnectionManager, controlled identity/vault/socket callbacks",
+  "cases": [
+    {
+      "name": "old handshake pending -> restore fails",
+      "oldHandshakeCancelled": true,
+      "ready": false,
+      "result": "PASS"
+    }
+  ],
+  "unhandled": [],
+  "pass": 1,
+  "fail": 0
+}

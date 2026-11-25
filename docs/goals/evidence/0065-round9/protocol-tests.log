@@ -1,0 +1,324 @@
+
+> @awesome-zero-platform/doudizhu-client@0.1.0 test
+> npm run build && node --test test/*.test.mjs
+
+
+> @awesome-zero-platform/doudizhu-client@0.1.0 build
+> tsc
+
+TAP version 13
+# Subtest: authenticated real dispatcher command and wrapped Go response
+ok 1 - authenticated real dispatcher command and wrapped Go response
+  ---
+  duration_ms: 7.235958
+  type: 'test'
+  ...
+# Subtest: API rejects missing auth or malformed wrapper
+ok 2 - API rejects missing auth or malformed wrapper
+  ---
+  duration_ms: 2.415616
+  type: 'test'
+  ...
+# Subtest: private hand path does not accept untrusted query injection
+ok 3 - private hand path does not accept untrusted query injection
+  ---
+  duration_ms: 0.775785
+  type: 'test'
+  ...
+# Subtest: room GET supplies authoritative version while outsiders receive no seats
+ok 4 - room GET supplies authoritative version while outsiders receive no seats
+  ---
+  duration_ms: 1.31152
+  type: 'test'
+  ...
+# Subtest: room GET rejects response identity and membership leaks
+ok 5 - room GET rejects response identity and membership leaks
+  ---
+  duration_ms: 1.699978
+  type: 'test'
+  ...
+# Subtest: fairness GET returns only the authenticated seat commitment and sequence
+ok 6 - fairness GET returns only the authenticated seat commitment and sequence
+  ---
+  duration_ms: 1.378986
+  type: 'test'
+  ...
+# Subtest: client refuses malformed or mismatched server-signed reveal AAD context
+ok 7 - client refuses malformed or mismatched server-signed reveal AAD context
+  ---
+  duration_ms: 2.17413
+  type: 'test'
+  ...
+# Subtest: raw signed Go reveal-key manifest is passed to cryptographic verifier without API-envelope unwrap
+ok 8 - raw signed Go reveal-key manifest is passed to cryptographic verifier without API-envelope unwrap
+  ---
+  duration_ms: 1.716208
+  type: 'test'
+  ...
+# Subtest: real partially occupied Go room has omitted empty-seat account IDs
+ok 9 - real partially occupied Go room has omitted empty-seat account IDs
+  ---
+  duration_ms: 2.616846
+  type: 'test'
+  ...
+# Subtest: server-issued custodial HPKE ticket is authenticated and version separated
+ok 10 - server-issued custodial HPKE ticket is authenticated and version separated
+  ---
+  duration_ms: 2.216493
+  type: 'test'
+  ...
+# Subtest: account-authorized final own-random endpoint rejects malformed and mismatched material
+ok 11 - account-authorized final own-random endpoint rejects malformed and mismatched material
+  ---
+  duration_ms: 1.699831
+  type: 'test'
+  ...
+# Subtest: recoverable rooms are authenticated, membership-scoped and strictly parsed
+ok 12 - recoverable rooms are authenticated, membership-scoped and strictly parsed
+  ---
+  duration_ms: 5.698441
+  type: 'test'
+  ...
+# Subtest: G65 R8: room authority is actor-scoped and must match active hand
+ok 13 - G65 R8: room authority is actor-scoped and must match active hand
+  ---
+  duration_ms: 1.203287
+  type: 'test'
+  ...
+# Subtest: create, ready and start use actual Go DTO and advance only on confirmed durable results
+ok 14 - create, ready and start use actual Go DTO and advance only on confirmed durable results
+  ---
+  duration_ms: 8.938556
+  type: 'test'
+  ...
+# Subtest: join from trusted version and do not expose mutable room state
+ok 15 - join from trusted version and do not expose mutable room state
+  ---
+  duration_ms: 2.930937
+  type: 'test'
+  ...
+# Subtest: explicit durable rejection does not mutate confirmed version
+ok 16 - explicit durable rejection does not mutate confirmed version
+  ---
+  duration_ms: 1.789055
+  type: 'test'
+  ...
+# Subtest: unknown transport outcome is not converted to confirmed state and sequence is not reused
+ok 17 - unknown transport outcome is not converted to confirmed state and sequence is not reused
+  ---
+  duration_ms: 1.913429
+  type: 'test'
+  ...
+# Subtest: reject mismatched durable confirmation
+ok 18 - reject mismatched durable confirmation
+  ---
+  duration_ms: 0.788861
+  type: 'test'
+  ...
+# Subtest: one in-flight room operation per coordinator
+ok 19 - one in-flight room operation per coordinator
+  ---
+  duration_ms: 1.382674
+  type: 'test'
+  ...
+# Subtest: secure IDs use injected entropy, reject missing or short entropy without a fake fallback
+ok 20 - secure IDs use injected entropy, reject missing or short entropy without a fake fallback
+  ---
+  duration_ms: 1.577983
+  type: 'test'
+  ...
+# Subtest: room coordinator supports asynchronous secure identities and validates top-level envelope
+ok 21 - room coordinator supports asynchronous secure identities and validates top-level envelope
+  ---
+  duration_ms: 2.194627
+  type: 'test'
+  ...
+# Subtest: lost room.create acknowledgment preserves the exact request ID and locator
+ok 22 - lost room.create acknowledgment preserves the exact request ID and locator
+  ---
+  duration_ms: 1.676708
+  type: 'test'
+  ...
+# Subtest: new custodial hand start keeps mode inside exact durable command identity
+ok 23 - new custodial hand start keeps mode inside exact durable command identity
+  ---
+  duration_ms: 1.494814
+  type: 'test'
+  ...
+# Subtest: authoritative CLOSED clears only a confirmed room; never destroys unknown durable create
+ok 24 - authoritative CLOSED clears only a confirmed room; never destroys unknown durable create
+  ---
+  duration_ms: 26.242232
+  type: 'test'
+  ...
+# Subtest: G48-N02: recovering a different room cannot discard UNKNOWN request identity
+ok 25 - G48-N02: recovering a different room cannot discard UNKNOWN request identity
+  ---
+  duration_ms: 2.61979
+  type: 'test'
+  ...
+# Subtest: G49-N01: same-room UNKNOWN survives old authorized room reads until exact retry
+ok 26 - G49-N01: same-room UNKNOWN survives old authorized room reads until exact retry
+  ---
+  duration_ms: 1.289009
+  type: 'test'
+  ...
+# Subtest: G50-N01: an older authorized read cannot roll back a confirmed room version
+ok 27 - G50-N01: an older authorized read cannot roll back a confirmed room version
+  ---
+  duration_ms: 0.629706
+  type: 'test'
+  ...
+# Subtest: audit: rejected join must not poison a different room command sequence
+ok 28 - audit: rejected join must not poison a different room command sequence
+  ---
+  duration_ms: 0.717726
+  type: 'test'
+  ...
+# Subtest: audit: command generation advances after definite rejection and exact UNKNOWN retry
+ok 29 - audit: command generation advances after definite rejection and exact UNKNOWN retry
+  ---
+  duration_ms: 0.932028
+  type: 'test'
+  ...
+# Subtest: audit: A to B to A cannot discard the prior confirmed A version watermark
+ok 30 - audit: A to B to A cannot discard the prior confirmed A version watermark
+  ---
+  duration_ms: 0.524239
+  type: 'test'
+  ...
+# Subtest: server snapshots never regress in version
+ok 31 - server snapshots never regress in version
+  ---
+  duration_ms: 3.809854
+  type: 'test'
+  ...
+# Subtest: commands require connection and synchronization
+ok 32 - commands require connection and synchronization
+  ---
+  duration_ms: 1.006486
+  type: 'test'
+  ...
+# Subtest: versioned command envelopes reject malformed data
+ok 33 - versioned command envelopes reject malformed data
+  ---
+  duration_ms: 14.271091
+  type: 'test'
+  ...
+# Subtest: duplicate snapshots do not replace state and consumers cannot mutate accepted state
+ok 34 - duplicate snapshots do not replace state and consumers cannot mutate accepted state
+  ---
+  duration_ms: 0.788027
+  type: 'test'
+  ...
+# Subtest: invalid command shapes, names, actor claims and timestamps fail closed
+ok 35 - invalid command shapes, names, actor claims and timestamps fail closed
+  ---
+  duration_ms: 4.624923
+  type: 'test'
+  ...
+# Subtest: router gates wire versions and old unsubscribe cannot remove a replacement listener
+ok 36 - router gates wire versions and old unsubscribe cannot remove a replacement listener
+  ---
+  duration_ms: 2.348183
+  type: 'test'
+  ...
+# Subtest: snapshot phase coverage matches actual Go owner constants, including beacon wait
+ok 37 - snapshot phase coverage matches actual Go owner constants, including beacon wait
+  ---
+  duration_ms: 44.621161
+  type: 'test'
+  ...
+# Subtest: accept Go versioned private-view wrapper
+ok 38 - accept Go versioned private-view wrapper
+  ---
+  duration_ms: 5.478295
+  type: 'test'
+  ...
+# Subtest: reject wrapper and actual view version mismatch
+ok 39 - reject wrapper and actual view version mismatch
+  ---
+  duration_ms: 1.535633
+  type: 'test'
+  ...
+# Subtest: reject client-generated or incomplete private hands
+ok 40 - reject client-generated or incomplete private hands
+  ---
+  duration_ms: 0.884158
+  type: 'test'
+  ...
+# Subtest: parsed private cards do not reference untrusted input
+ok 41 - parsed private cards do not reference untrusted input
+  ---
+  duration_ms: 3.770699
+  type: 'test'
+  ...
+# Subtest: reject duplicate seat, account, malformed optional turn and duplicate or invalid cards
+ok 42 - reject duplicate seat, account, malformed optional turn and duplicate or invalid cards
+  ---
+  duration_ms: 2.236198
+  type: 'test'
+  ...
+# Subtest: revealed landlord cards are trusted public data and stay read-only
+ok 43 - revealed landlord cards are trusted public data and stay read-only
+  ---
+  duration_ms: 1.759575
+  type: 'test'
+  ...
+# Subtest: real dispatcher room create wire shape
+ok 44 - real dispatcher room create wire shape
+  ---
+  duration_ms: 7.313691
+  type: 'test'
+  ...
+# Subtest: non-creation requests must observe a nonzero version
+ok 45 - non-creation requests must observe a nonzero version
+  ---
+  duration_ms: 1.404665
+  type: 'test'
+  ...
+# Subtest: room ready payload matches actual Go DTO
+ok 46 - room ready payload matches actual Go DTO
+  ---
+  duration_ms: 4.64038
+  type: 'test'
+  ...
+# Subtest: commit uses 32-byte lowercase hex, not base64url
+ok 47 - commit uses 32-byte lowercase hex, not base64url
+  ---
+  duration_ms: 1.166444
+  type: 'test'
+  ...
+# Subtest: reveal fails closed until actual AAD is attainable
+ok 48 - reveal fails closed until actual AAD is attainable
+  ---
+  duration_ms: 0.60416
+  type: 'test'
+  ...
+# Subtest: live commands map to actual dispatcher command types
+ok 49 - live commands map to actual dispatcher command types
+  ---
+  duration_ms: 0.792178
+  type: 'test'
+  ...
+# Subtest: correlation required before accepting server command result
+ok 50 - correlation required before accepting server command result
+  ---
+  duration_ms: 1.052867
+  type: 'test'
+  ...
+# Subtest: client-created custodial hand version and HPKE contribution have strict wire bindings
+ok 51 - client-created custodial hand version and HPKE contribution have strict wire bindings
+  ---
+  duration_ms: 2.054737
+  type: 'test'
+  ...
+1..51
+# tests 51
+# suites 0
+# pass 51
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 452.360916

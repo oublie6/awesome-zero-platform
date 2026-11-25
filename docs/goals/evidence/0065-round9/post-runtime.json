@@ -1,0 +1,193 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "cases": [
+    {
+      "name": "normal no-room startup",
+      "pass": true
+    },
+    {
+      "name": "actual room closes during final scene await",
+      "pass": true,
+      "closing": {
+        "http": 200,
+        "accepted": true,
+        "authorityHTTP": 200,
+        "authority": {
+          "roomId": "room-cmd-a6e7a289fde594faf3db5274882dc5e0",
+          "version": 2,
+          "status": "CLOSED",
+          "occupied": 0,
+          "member": false,
+          "lastClientSequence": 2
+        }
+      },
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "cover": true,
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795569116046
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795569120042
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795569123804
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795569123805
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795569123805
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795569124996
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795569124997
+          }
+        ]
+      }
+    },
+    {
+      "name": "multiple rooms require explicit selection",
+      "pass": true,
+      "choices": {
+        "selected": "",
+        "choices": [
+          "r6-multi-76ef859c-1117-4090-9b7c-497cc82f1f72",
+          "room-cmd-685814034f82c3700dc43d8f3a636559"
+        ]
+      }
+    },
+    {
+      "name": "real WSS close during final scene await",
+      "pass": true,
+      "host": {
+        "status": "游戏资源或引擎启动失败，请重新加载。",
+        "events": [
+          {
+            "type": "BOOT_STAGE",
+            "stage": "document",
+            "at": 1795569146321
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "engine",
+            "at": 1795569150411
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "scene",
+            "at": 1795569153508
+          },
+          {
+            "type": "BOOT_STAGE",
+            "stage": "session",
+            "at": 1795569153509
+          },
+          {
+            "type": "GAME_READY",
+            "at": 1795569153509
+          },
+          {
+            "type": "SESSION_FAILED",
+            "at": 1795569153713
+          },
+          {
+            "type": "BOOT_FAILED",
+            "at": 1795569153717
+          }
+        ]
+      }
+    },
+    {
+      "name": "old-success/new-success",
+      "pass": true,
+      "before": {
+        "room": "r6-multi-76ef859c-1117-4090-9b7c-497cc82f1f72",
+        "status": "已通过服务器恢复本人房间和牌局"
+      },
+      "after": {
+        "room": "r6-multi-76ef859c-1117-4090-9b7c-497cc82f1f72",
+        "status": "已通过服务器恢复本人房间和牌局"
+      }
+    },
+    {
+      "name": "old-failure/new-success",
+      "pass": true,
+      "before": {
+        "room": "r6-multi-76ef859c-1117-4090-9b7c-497cc82f1f72",
+        "status": "已通过服务器恢复本人房间和牌局"
+      },
+      "after": {
+        "room": "r6-multi-76ef859c-1117-4090-9b7c-497cc82f1f72",
+        "status": "已通过服务器恢复本人房间和牌局"
+      }
+    },
+    {
+      "name": "old-success/new-failure",
+      "pass": true,
+      "before": {
+        "room": "r6-multi-76ef859c-1117-4090-9b7c-497cc82f1f72",
+        "status": "恢复房间失败：HTTP 503"
+      },
+      "after": {
+        "room": "r6-multi-76ef859c-1117-4090-9b7c-497cc82f1f72",
+        "status": "恢复房间失败：HTTP 503"
+      }
+    },
+    {
+      "name": "A-B-A",
+      "pass": true,
+      "before": {
+        "room": "room-cmd-685814034f82c3700dc43d8f3a636559",
+        "status": "已通过服务器恢复本人房间和牌局"
+      },
+      "after": {
+        "room": "room-cmd-685814034f82c3700dc43d8f3a636559",
+        "status": "已通过服务器恢复本人房间和牌局"
+      }
+    },
+    {
+      "name": "same room duplicate recovery coalesces",
+      "pass": true
+    },
+    {
+      "name": "logout during recovery / old late completion / switch account",
+      "pass": true,
+      "logout": {
+        "oldDetached": true,
+        "oldTokenStatus": 401
+      },
+      "newAccountHasNoOldRoom": true
+    },
+    {
+      "name": "rapid iframe reload",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "roomA": "room-cmd-685814034f82c3700dc43d8f3a636559",
+  "closedGateRoom": "room-cmd-a6e7a289fde594faf3db5274882dc5e0",
+  "roomB": "r6-multi-76ef859c-1117-4090-9b7c-497cc82f1f72",
+  "coalescing": {
+    "same": true,
+    "room": "room-cmd-685814034f82c3700dc43d8f3a636559"
+  },
+  "logout": {
+    "oldDetached": true,
+    "oldTokenStatus": 401
+  }
+}

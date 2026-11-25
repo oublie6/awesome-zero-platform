@@ -1,0 +1,60 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "scope": "Production Shell with controlled protocol; Bootstrap proactive sync verified separately in real game",
+  "cases": [
+    {
+      "name": "notice-first",
+      "pass": true,
+      "numericMinimum": 0,
+      "version": 1
+    },
+    {
+      "name": "snapshot-first",
+      "pass": true,
+      "numericMinimum": 0,
+      "version": 1
+    },
+    {
+      "name": "duplicate-notice",
+      "pass": true,
+      "numericMinimum": 0,
+      "version": 1
+    },
+    {
+      "name": "late-notice",
+      "pass": true,
+      "numericMinimum": 0,
+      "version": 2
+    },
+    {
+      "name": "lost-notice",
+      "pass": true,
+      "numericMinimum": 0,
+      "version": 1
+    },
+    {
+      "name": "lost-snapshot-correlated-repair",
+      "pass": true,
+      "numericMinimum": 0,
+      "version": 1
+    },
+    {
+      "name": "durable-version-not-live-floor",
+      "pass": true,
+      "numericMinimum": 0,
+      "version": 1
+    },
+    {
+      "name": "old-hand",
+      "pass": true,
+      "numericMinimum": 0
+    },
+    {
+      "name": "new-hand-clears-hint",
+      "pass": true,
+      "numericMinimum": 0
+    }
+  ],
+  "pass": 9,
+  "fail": 0
+}

@@ -1,0 +1,10 @@
+{
+  "source": "ea1e1823f35cd17c37c524a378e6fe6e61b3164a",
+  "byteIdenticalFiles": 28,
+  "runtimeEndpointOnlyFiles": [
+    "game-config.js",
+    "game/game-config.js"
+  ],
+  "candidateAPI": "http://127.0.0.1:18869",
+  "newBuildPerformed": false
+}

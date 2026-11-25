@@ -1,0 +1,20 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "scope": "Real candidate authenticated room HTTP, active predeal hand; includes HTTP, auth and joint query, fixed local test environment",
+  "samples": [
+    {
+      "concurrency": 1,
+      "n": 20,
+      "p50Ms": 13.832113999997091,
+      "p95Ms": 50.177182999999786,
+      "p99Ms": 50.177182999999786
+    },
+    {
+      "concurrency": 4,
+      "n": 80,
+      "p50Ms": 30.92851199999859,
+      "p95Ms": 84.37282999999661,
+      "p99Ms": 109.87734000000273
+    }
+  ]
+}

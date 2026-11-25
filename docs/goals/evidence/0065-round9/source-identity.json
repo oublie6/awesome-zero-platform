@@ -1,0 +1,11 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "checked": 1275,
+  "byteIdentical": 1274,
+  "jsonSemanticOnly": [
+    "clients/fair-doudizhu-cocos/package.json"
+  ],
+  "differences": [],
+  "binarySHA256": "dc50adc3bdc3fabe04b64e0a66f417df44a1fb56fc35a2f3f225e9cdb714c000",
+  "goVersion": "go version go1.25.8 linux/amd64"
+}

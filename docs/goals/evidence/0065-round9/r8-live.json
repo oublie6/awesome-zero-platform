@@ -1,0 +1,141 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "cases": [
+    {
+      "name": "other clients automatically synchronize real timeout without manual refresh",
+      "pass": true
+    },
+    {
+      "name": "R7 actual late timeout recovers current same version automatically",
+      "pass": true
+    },
+    {
+      "name": "automatic sync terminates without continuing retries",
+      "pass": true
+    },
+    {
+      "name": "hand.bid ACK-first",
+      "pass": true,
+      "before": 2,
+      "middle": {
+        "version": 2,
+        "status": "synchronizing",
+        "canSubmit": false,
+        "minimum": 3,
+        "inFlight": false,
+        "pending": false,
+        "wireCommands": 1,
+        "heldAck": false,
+        "hasSnapshotReply": true
+      },
+      "afterVersion": 3
+    },
+    {
+      "name": "hand.play ACK-first",
+      "pass": true,
+      "before": 3,
+      "middle": {
+        "version": 3,
+        "status": "synchronizing",
+        "canSubmit": false,
+        "minimum": 4,
+        "inFlight": false,
+        "pending": false,
+        "wireCommands": 1,
+        "heldAck": false,
+        "hasSnapshotReply": true
+      },
+      "afterVersion": 4
+    },
+    {
+      "name": "hand.pass snapshot-first",
+      "pass": true,
+      "before": 4,
+      "middle": {
+        "version": 5,
+        "status": "connected",
+        "canSubmit": true,
+        "minimum": 5,
+        "inFlight": true,
+        "pending": true,
+        "wireCommands": 1,
+        "heldAck": true,
+        "hasSnapshotReply": false
+      },
+      "afterVersion": 5
+    },
+    {
+      "name": "hand.pass ACK-first",
+      "pass": true,
+      "before": 5,
+      "middle": {
+        "version": 5,
+        "status": "synchronizing",
+        "canSubmit": false,
+        "minimum": 6,
+        "inFlight": false,
+        "pending": false,
+        "wireCommands": 1,
+        "heldAck": false,
+        "hasSnapshotReply": true
+      },
+      "afterVersion": 6
+    },
+    {
+      "name": "hand.play snapshot-first",
+      "pass": true,
+      "before": 6,
+      "middle": {
+        "version": 7,
+        "status": "connected",
+        "canSubmit": true,
+        "minimum": 7,
+        "inFlight": true,
+        "pending": true,
+        "wireCommands": 1,
+        "heldAck": true,
+        "hasSnapshotReply": false
+      },
+      "afterVersion": 7
+    },
+    {
+      "name": "real PLAYING page refresh same hand",
+      "pass": true,
+      "version": 7
+    },
+    {
+      "name": "real lost live ACK exact original RequestID retry",
+      "pass": true,
+      "requestId": "cmd-abfd58024765b895e4dca7f04984cc37",
+      "sameIdentity": true
+    },
+    {
+      "name": "real WSS close/reconnect same hand",
+      "pass": true
+    }
+  ],
+  "actualTimeout": {
+    "captured": true,
+    "hasVersion": false,
+    "previous": 1
+  },
+  "otherClientsAutomaticVersions": [
+    2,
+    2
+  ],
+  "authoritativeVersion": 2,
+  "recovered": {
+    "version": 2,
+    "minimum": 0,
+    "causalBarrier": false,
+    "status": "connected",
+    "canSubmit": true,
+    "lastReply": {
+      "id": "sync-7",
+      "version": 2,
+      "phase": "BIDDING"
+    },
+    "wireCommands": 0,
+    "readCount": 7
+  }
+}

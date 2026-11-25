@@ -1,0 +1,172 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "scope": "Production Controller and Shell; controlled HTTP and socket ports; 50ms injected sync deadline",
+  "cases": [
+    {
+      "name": "joint completion: normal",
+      "roomReads": 2,
+      "privateReads": 1,
+      "returnedProof": true,
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: drop",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "hand sync response timed out",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: wrong-id",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "hand sync response timed out",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: wrong-hand",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "hand sync response identity mismatch",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: error",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "hand sync response timed out",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: low-live",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "stale private hand sync response",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: room-change",
+      "roomReads": 2,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "room changed during recovery; retry authoritative lookup",
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: hand-change",
+      "roomReads": 2,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "room changed during recovery; retry authoritative lookup",
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: revoked",
+      "roomReads": 2,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "room membership revoked or room closed during recovery",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: connection-replace",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "socket disconnected or room changed before recovery completion",
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: discard",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "socket disconnected or room changed before recovery completion",
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: command-change",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "error": "socket disconnected or room changed before recovery completion",
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: cancel-selection",
+      "roomReads": 1,
+      "privateReads": 1,
+      "returnedProof": false,
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: conflict-durable",
+      "roomReads": 1,
+      "privateReads": 0,
+      "returnedProof": false,
+      "error": "stale or conflicting active hand authority",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: rollback-durable",
+      "roomReads": 1,
+      "privateReads": 0,
+      "returnedProof": false,
+      "error": "stale or conflicting active hand authority",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: missing-proof",
+      "roomReads": 1,
+      "privateReads": 0,
+      "returnedProof": false,
+      "error": "active hand authority proof unavailable",
+      "result": "PASS"
+    },
+    {
+      "name": "joint completion: invalid-phase",
+      "roomReads": 1,
+      "privateReads": 0,
+      "returnedProof": false,
+      "error": "invalid authoritative active hand proof",
+      "result": "PASS"
+    },
+    {
+      "name": "R8 final membership deal window: joinRoom",
+      "roomReads": 4,
+      "privateReads": 1,
+      "durableVersion": 9,
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "R8 final membership deal window: reconnectAndResync",
+      "roomReads": 4,
+      "privateReads": 1,
+      "durableVersion": 9,
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "predeal proof plus real-shaped dealt hint still requires correlated projection",
+      "roomReads": 2,
+      "privateReads": 1,
+      "result": "PASS"
+    }
+  ],
+  "unhandled": [],
+  "pass": 20,
+  "fail": 0
+}

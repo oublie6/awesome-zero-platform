@@ -1,0 +1,33 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "cases": [
+    {
+      "name": "R8 N02 final authority membership crosses real deal",
+      "result": "PASS",
+      "basis": "joint proof phase BIDDING durable11 room7, correlated request attempted, real15s failure with dropped reply; then retry succeeds"
+    },
+    {
+      "name": "extra original R7 final-scene delay",
+      "result": "UNVERIFIED",
+      "basis": "Native terminal BOOT_FAILED already present at 60-second watchdog; observer woke on preexisting error before delayed login continuation settled, then retry destroyed it. reads0 observation does not prove a product sync omission."
+    },
+    {
+      "name": "legacy accepted Web active room compatibility",
+      "result": "PASS",
+      "artifact": "legacy-next-hand-second-observer.json / first case"
+    },
+    {
+      "name": "candidate actual first terminal hand to second hand switch",
+      "result": "PASS",
+      "artifact": "legacy-next-hand.json / first case"
+    },
+    {
+      "name": "extra real cancel-notification replay",
+      "result": "UNVERIFIED",
+      "basis": "No raw hand.cancel changed notice captured; not an assertion of required hand.dealt or state-switch behavior. Controlled old-hand dealt matrix passes."
+    }
+  ],
+  "productDefects": [
+    "G65-R9-N01"
+  ]
+}

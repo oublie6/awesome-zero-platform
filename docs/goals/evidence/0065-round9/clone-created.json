@@ -1,0 +1,8 @@
+{
+  "database": "goal0065r9",
+  "liveBackupSHA256": "fcb620bf5ba818fcacef1a0ee7ca616491839d1a5c3c4e10c4e1fe7ef484e06e",
+  "isolated": true,
+  "schemaChanges": false,
+  "queuePrefix": "g65r9-turn",
+  "authPrefix": "g65r9:authn:session:"
+}

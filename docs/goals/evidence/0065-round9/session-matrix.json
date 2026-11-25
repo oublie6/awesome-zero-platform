@@ -1,0 +1,101 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "kind": "actual session/auth/vault classes; controlled identity callbacks and storage; real HTTPS streamed-body deadline",
+  "cases": [
+    {
+      "name": "same session delayed old save precedes new token",
+      "result": "PASS"
+    },
+    {
+      "name": "slow revoke cannot clear newer same-session login",
+      "result": "PASS"
+    },
+    {
+      "name": "old verification true after another controller login",
+      "result": "PASS"
+    },
+    {
+      "name": "old verification false after another controller login",
+      "result": "PASS"
+    },
+    {
+      "name": "old controller logout while old restore pending cannot clear new login",
+      "result": "PASS"
+    },
+    {
+      "name": "slow save from another controller cannot overwrite newer token",
+      "result": "PASS"
+    },
+    {
+      "name": "rapid same-controller switch sequence leaves newest identity",
+      "result": "PASS"
+    },
+    {
+      "name": "Web auth old validation result cannot adopt replaced storage",
+      "result": "PASS"
+    },
+    {
+      "name": "Web auth old pending restore logout cannot clear/revoke new controller login",
+      "result": "PASS"
+    },
+    {
+      "name": "different vault instances same scope serialize delayed save",
+      "result": "PASS"
+    },
+    {
+      "name": "different keys do not share queue or login generation",
+      "result": "PASS"
+    },
+    {
+      "name": "old async load cannot claim a newer token",
+      "result": "PASS"
+    },
+    {
+      "name": "failed async clear does not poison later login queue",
+      "result": "PASS"
+    },
+    {
+      "name": "failed save does not poison shared queue",
+      "result": "PASS"
+    },
+    {
+      "name": "late old exchange across two scoped vaults never writes",
+      "result": "PASS"
+    },
+    {
+      "name": "discardLocal clears only owned token and never re-revokes provider detach",
+      "result": "PASS"
+    },
+    {
+      "name": "untouched controller cannot clear another token",
+      "result": "PASS"
+    },
+    {
+      "name": "real HTTPS headers-arrived body-stalled aborted within identity deadline",
+      "result": "PASS"
+    }
+  ],
+  "oldControllerLogout": {
+    "newControllerAuthenticated": true,
+    "storageStillNew": true,
+    "storageEmpty": false
+  },
+  "delayedCrossControllerSave": {
+    "newControllerAuthenticated": true,
+    "storageStillNew": true,
+    "storageEmpty": false
+  },
+  "webOldControllerLogout": {
+    "newControllerAuthenticated": true,
+    "storageStillNew": true,
+    "newTokenRevoked": false
+  },
+  "streamedHTTP": {
+    "elapsed": 160,
+    "headersArrived": true,
+    "authenticated": false,
+    "stored": false
+  },
+  "pass": 18,
+  "fail": 0
+}

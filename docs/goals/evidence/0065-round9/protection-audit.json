@@ -1,0 +1,14 @@
+{
+  "secretsUnchanged": true,
+  "nodes": [
+    {
+      "name": "hk-worker",
+      "ready": true
+    },
+    {
+      "name": "ser730417996259",
+      "ready": true
+    }
+  ],
+  "userForwardActive": true
+}

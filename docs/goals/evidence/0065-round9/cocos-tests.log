@@ -1,0 +1,1142 @@
+
+> fair-doudizhu-cocos@0.1.0 test
+> tsc -p tsconfig.shell.json && node --test test/*.test.mjs
+
+TAP version 13
+# Subtest: entry scene has valid references, Canvas camera and stable bootstrap script UUID
+ok 1 - entry scene has valid references, Canvas camera and stable bootstrap script UUID
+  ---
+  duration_ms: 85.3494
+  type: 'test'
+  ...
+# Subtest: every source asset and directory has a unique stable meta UUID
+ok 2 - every source asset and directory has a unique stable meta UUID
+  ---
+  duration_ms: 140.724615
+  type: 'test'
+  ...
+# Subtest: Creator 3.8 card selections use Set.forEach instead of downlevel-unsafe iteration
+ok 3 - Creator 3.8 card selections use Set.forEach instead of downlevel-unsafe iteration
+  ---
+  duration_ms: 6.428317
+  type: 'test'
+  ...
+# Subtest: native UI exposes a room leave control and displays verified archive completion
+ok 4 - native UI exposes a room leave control and displays verified archive completion
+  ---
+  duration_ms: 10.641806
+  type: 'test'
+  ...
+# Subtest: native fairness backup gate requires explicit user-held re-entry before commitment
+ok 5 - native fairness backup gate requires explicit user-held re-entry before commitment
+  ---
+  duration_ms: 4.105262
+  type: 'test'
+  ...
+# Subtest: delayed fairness kit UI updates are fenced after leave, hand and login replacement
+ok 6 - delayed fairness kit UI updates are fenced after leave, hand and login replacement
+  ---
+  duration_ms: 3.242431
+  type: 'test'
+  ...
+# Subtest: accepted room.hand.start receipt is adopted only after exact fairness preflight
+ok 7 - accepted room.hand.start receipt is adopted only after exact fairness preflight
+  ---
+  duration_ms: 2.96247
+  type: 'test'
+  ...
+# Subtest: Round16 HTTP H2 refresh defers rebinding until durable WSS start receipt
+ok 8 - Round16 HTTP H2 refresh defers rebinding until durable WSS start receipt
+  ---
+  duration_ms: 5.011671
+  type: 'test'
+  ...
+# Subtest: new hands use player text and server custody without game-local backup
+ok 9 - new hands use player text and server custody without game-local backup
+  ---
+  duration_ms: 12.411303
+  type: 'test'
+  ...
+# Subtest: R18 recovery UI gates unknown H2 mode and discovers rooms on fresh login
+ok 10 - R18 recovery UI gates unknown H2 mode and discovers rooms on fresh login
+  ---
+  duration_ms: 5.736428
+  type: 'test'
+  ...
+# Subtest: Round19 latest recovery choice and final membership verification are mandatory
+ok 11 - Round19 latest recovery choice and final membership verification are mandatory
+  ---
+  duration_ms: 5.812337
+  type: 'test'
+  ...
+# Subtest: G47-N01: scene join shares latest room selection token
+ok 12 - G47-N01: scene join shares latest room selection token
+  ---
+  duration_ms: 12.725779
+  type: 'test'
+  ...
+# Subtest: G48-N03: online join rejects stale results after logout
+ok 13 - G48-N03: online join rejects stale results after logout
+  ---
+  duration_ms: 2.439231
+  type: 'test'
+  ...
+# Subtest: G50-N02: scene offers exact room UNKNOWN reconciliation before discovery
+ok 14 - G50-N02: scene offers exact room UNKNOWN reconciliation before discovery
+  ---
+  duration_ms: 4.165349
+  type: 'test'
+  ...
+# Subtest: audit: Scene refresh does not bypass command generation or preflight barriers
+ok 15 - audit: Scene refresh does not bypass command generation or preflight barriers
+  ---
+  duration_ms: 3.677722
+  type: 'test'
+  ...
+# Subtest: audit: pending Scene refresh is fenced when newer room selection begins
+ok 16 - audit: pending Scene refresh is fenced when newer room selection begins
+  ---
+  duration_ms: 2.949143
+  type: 'test'
+  ...
+# Subtest: G51-N01: stale account reconciliation callbacks cannot replace another account notice
+ok 17 - G51-N01: stale account reconciliation callbacks cannot replace another account notice
+  ---
+  duration_ms: 40.274798
+  type: 'test'
+  ...
+# Subtest: G51 audit: async room and hand callbacks require their original session and room
+ok 18 - G51 audit: async room and hand callbacks require their original session and room
+  ---
+  duration_ms: 3.964717
+  type: 'test'
+  ...
+# Subtest: G51 audit: repeat create/leave taps and menu recovery errors are controlled
+ok 19 - G51 audit: repeat create/leave taps and menu recovery errors are controlled
+  ---
+  duration_ms: 3.015775
+  type: 'test'
+  ...
+# Subtest: G51 audit: failed login preflight leaves the previous account event epoch active
+ok 20 - G51 audit: failed login preflight leaves the previous account event epoch active
+  ---
+  duration_ms: 3.078121
+  type: 'test'
+  ...
+# Subtest: G52-N01: stale same-account failures compare the same room/selection lifetime as successes
+ok 21 - G52-N01: stale same-account failures compare the same room/selection lifetime as successes
+  ---
+  duration_ms: 2.755324
+  type: 'test'
+  ...
+# Subtest: G52: same-Hand A-B-A stale errors and successful reads share selection barrier
+ok 22 - G52: same-Hand A-B-A stale errors and successful reads share selection barrier
+  ---
+  duration_ms: 3.686377
+  type: 'test'
+  ...
+# Subtest: G52: recovery coalescing honors owner and selection, so stale A is not reused after B
+ok 23 - G52: recovery coalescing honors owner and selection, so stale A is not reused after B
+  ---
+  duration_ms: 2.849284
+  type: 'test'
+  ...
+# Subtest: G52: changed selection stops delayed Hand/Fairness commands from writing UI
+ok 24 - G52: changed selection stops delayed Hand/Fairness commands from writing UI
+  ---
+  duration_ms: 8.45856
+  type: 'test'
+  ...
+# Subtest: paged Cocos UI does not depend on downlevel Array.entries iterator
+ok 25 - paged Cocos UI does not depend on downlevel Array.entries iterator
+  ---
+  duration_ms: 3.689873
+  type: 'test'
+  ...
+# Subtest: G55-N01/N02: exported Mini Game syntax target and preview settings preserve native BigInt
+ok 26 - G55-N01/N02: exported Mini Game syntax target and preview settings preserve native BigInt
+  ---
+  duration_ms: 16.765004
+  type: 'test'
+  ...
+# Subtest: web login form uses explicit password input and server credential exchange
+ok 27 - web login form uses explicit password input and server credential exchange
+  ---
+  duration_ms: 3.951233
+  type: 'test'
+  ...
+# Subtest: web session revalidation and logout do not bypass current command reconciliation
+ok 28 - web session revalidation and logout do not bypass current command reconciliation
+  ---
+  duration_ms: 4.795868
+  type: 'test'
+  ...
+# Subtest: embedded Vue game bridge validates origin/source and never trusts a supplied token or account
+ok 29 - embedded Vue game bridge validates origin/source and never trusts a supplied token or account
+  ---
+  duration_ms: 3.858002
+  type: 'test'
+  ...
+# Subtest: Vue-embedded Cocos uses host account UI and never exposes standalone login/logout buttons
+ok 30 - Vue-embedded Cocos uses host account UI and never exposes standalone login/logout buttons
+  ---
+  duration_ms: 8.647198
+  type: 'test'
+  ...
+# Subtest: G58-N01: dynamically created EditBoxes reuse one engine text/placeholder pair
+ok 31 - G58-N01: dynamically created EditBoxes reuse one engine text/placeholder pair
+  ---
+  duration_ms: 7.629248
+  type: 'test'
+  ...
+# Subtest: G59-N01: Cocos EditBox label origin and responsive hit region are aligned
+ok 32 - G59-N01: Cocos EditBox label origin and responsive hit region are aligned
+  ---
+  duration_ms: 6.511699
+  type: 'test'
+  ...
+# Subtest: Goal0064 scene prevents double taps before async room writes and gives room codes dedicated labels
+ok 33 - Goal0064 scene prevents double taps before async room writes and gives room codes dedicated labels
+  ---
+  duration_ms: 4.457109
+  type: 'test'
+  ...
+# Subtest: G65 R7: final host success follows fresh authority after scene wait and fences superseded failures
+ok 34 - G65 R7: final host success follows fresh authority after scene wait and fences superseded failures
+  ---
+  duration_ms: 4.252606
+  type: 'test'
+  ...
+# Subtest: commitment matches canonical Go contribution and commitment hashing vector
+ok 35 - commitment matches canonical Go contribution and commitment hashing vector
+  ---
+  duration_ms: 18.83505
+  type: 'test'
+  ...
+# Subtest: reveal AAD canonical bytes match Go binary length and milliseconds layout
+ok 36 - reveal AAD canonical bytes match Go binary length and milliseconds layout
+  ---
+  duration_ms: 1.430324
+  type: 'test'
+  ...
+# Subtest: real fairness commit stays attached to authoritative seat/version and uses secure random
+ok 37 - real fairness commit stays attached to authoritative seat/version and uses secure random
+  ---
+  duration_ms: 3.214305
+  type: 'test'
+  ...
+# Subtest: unknown commit outcome is not retried under a new ID and does not lose secret
+ok 38 - unknown commit outcome is not retried under a new ID and does not lose secret
+  ---
+  duration_ms: 3.607309
+  type: 'test'
+  ...
+# Subtest: user-held fairness kit survives full client shutdown without plaintext platform storage
+ok 39 - user-held fairness kit survives full client shutdown without plaintext platform storage
+  ---
+  duration_ms: 5.379566
+  type: 'test'
+  ...
+# Subtest: fairness recovery kit rejects changed seat and changed server commitment
+ok 40 - fairness recovery kit rejects changed seat and changed server commitment
+  ---
+  duration_ms: 20.238763
+  type: 'test'
+  ...
+# Subtest: known durable fairness rejection clears pending but preserves original secret
+ok 41 - known durable fairness rejection clears pending but preserves original secret
+  ---
+  duration_ms: 2.769021
+  type: 'test'
+  ...
+# Subtest: disposal during async preparation must not recreate or expose sensitive entropy
+ok 42 - disposal during async preparation must not recreate or expose sensitive entropy
+  ---
+  duration_ms: 0.919754
+  type: 'test'
+  ...
+# Subtest: Round15 hand-transition reservation prevents new fairness work and releases after failed start
+ok 43 - Round15 hand-transition reservation prevents new fairness work and releases after failed start
+  ---
+  duration_ms: 2.722873
+  type: 'test'
+  ...
+# Subtest: custodied final phrase verification recomputes canonical commitment locally
+ok 44 - custodied final phrase verification recomputes canonical commitment locally
+  ---
+  duration_ms: 3.792156
+  type: 'test'
+  ...
+# Subtest: custodied H2 cannot initialize legacy recovery/commit even while UI mode is unknown
+ok 45 - custodied H2 cannot initialize legacy recovery/commit even while UI mode is unknown
+  ---
+  duration_ms: 1.04527
+  type: 'test'
+  ...
+# Subtest: real hand actions use authoritative ID/version and cryptographic request IDs
+ok 46 - real hand actions use authoritative ID/version and cryptographic request IDs
+  ---
+  duration_ms: 6.60054
+  type: 'test'
+  ...
+# Subtest: reject malformed cards, incorrect phase, disconnected state and duplicate selection
+ok 47 - reject malformed cards, incorrect phase, disconnected state and duplicate selection
+  ---
+  duration_ms: 2.235239
+  type: 'test'
+  ...
+# Subtest: bid requires bidding phase and rejects invalid score
+ok 48 - bid requires bidding phase and rejects invalid score
+  ---
+  duration_ms: 3.966289
+  type: 'test'
+  ...
+# Subtest: snapshot changes during entropy acquisition invalidate action
+ok 49 - snapshot changes during entropy acquisition invalidate action
+  ---
+  duration_ms: 12.911099
+  type: 'test'
+  ...
+# Subtest: unknown live action retains identical request across reconnect and blocks new commands
+ok 50 - unknown live action retains identical request across reconnect and blocks new commands
+  ---
+  duration_ms: 15.112378
+  type: 'test'
+  ...
+# Subtest: explicit server command rejection releases pending action but ambiguous failure does not
+ok 51 - explicit server command rejection releases pending action but ambiguous failure does not
+  ---
+  duration_ms: 3.933073
+  type: 'test'
+  ...
+# Subtest: Round15 live hand reservation rejects unknown and in-flight commands
+ok 52 - Round15 live hand reservation rejects unknown and in-flight commands
+  ---
+  duration_ms: 53.495388
+  type: 'test'
+  ...
+# Subtest: Round3 unknown bid/play/pass notifies presentation only after transport settles
+ok 53 - Round3 unknown bid/play/pass notifies presentation only after transport settles
+  ---
+  duration_ms: 23.744667
+  type: 'test'
+  ...
+# Subtest: Round3 explicit rejection and authorized discard notify to hide retry controls
+ok 54 - Round3 explicit rejection and authorized discard notify to hide retry controls
+  ---
+  duration_ms: 1.545563
+  type: 'test'
+  ...
+# Subtest: guest, entry and unverified room expose no unauthorized room mutations
+ok 55 - guest, entry and unverified room expose no unauthorized room mutations
+  ---
+  duration_ms: 8.011806
+  type: 'test'
+  ...
+# Subtest: room waiting, ready and terminal states show next action, not flat test menu
+ok 56 - room waiting, ready and terminal states show next action, not flat test menu
+  ---
+  duration_ms: 4.511315
+  type: 'test'
+  ...
+# Subtest: new fairness contribution and terminal own phrase verification are distinct inputs
+ok 57 - new fairness contribution and terminal own phrase verification are distinct inputs
+  ---
+  duration_ms: 1.420576
+  type: 'test'
+  ...
+# Subtest: UNKNOWN preserves exact original request path and hides all fresh mutations
+ok 58 - UNKNOWN preserves exact original request path and hides all fresh mutations
+  ---
+  duration_ms: 0.930108
+  type: 'test'
+  ...
+# Subtest: state projection never exposes full AccountID in seat labels
+ok 59 - state projection never exposes full AccountID in seat labels
+  ---
+  duration_ms: 0.948623
+  type: 'test'
+  ...
+# Subtest: terminal last hand retains its own-phrase fairness verification
+ok 60 - terminal last hand retains its own-phrase fairness verification
+  ---
+  duration_ms: 0.531543
+  type: 'test'
+  ...
+# Subtest: only owner at authoritative seat 1 is offered start, ready players are not prompted again
+ok 61 - only owner at authoritative seat 1 is offered start, ready players are not prompted again
+  ---
+  duration_ms: 1.491315
+  type: 'test'
+  ...
+# Subtest: Goal0064 primary/secondary waiting controls never duplicate refresh
+ok 62 - Goal0064 primary/secondary waiting controls never duplicate refresh
+  ---
+  duration_ms: 3.229526
+  type: 'test'
+  ...
+# Subtest: landscape crowded room menu remains paged with readable, non-overlapping targets
+ok 63 - landscape crowded room menu remains paged with readable, non-overlapping targets
+  ---
+  duration_ms: 7.496882
+  type: 'test'
+  ...
+# Subtest: historical menu paging stays compatible for legacy layout consumers
+ok 64 - historical menu paging stays compatible for legacy layout consumers
+  ---
+  duration_ms: 5.4919
+  type: 'test'
+  ...
+# Subtest: ordinary small screens retain a single visible menu page
+ok 65 - ordinary small screens retain a single visible menu page
+  ---
+  duration_ms: 0.595888
+  type: 'test'
+  ...
+# Subtest: visible-page clamping supports resize without losing action access
+ok 66 - visible-page clamping supports resize without losing action access
+  ---
+  duration_ms: 0.43367
+  type: 'test'
+  ...
+# Subtest: portrait room captions use a full-width target rather than 9px shrink-to-fit
+ok 67 - portrait room captions use a full-width target rather than 9px shrink-to-fit
+  ---
+  duration_ms: 0.710914
+  type: 'test'
+  ...
+# Subtest: G59 follow-up: login actions do not overlap the password input hitbox
+ok 68 - G59 follow-up: login actions do not overlap the password input hitbox
+  ---
+  duration_ms: 0.525761
+  type: 'test'
+  ...
+# Subtest: room drafts survive only the exact in-place owner/room/hand/input-purpose refresh
+ok 69 - room drafts survive only the exact in-place owner/room/hand/input-purpose refresh
+  ---
+  duration_ms: 1.273753
+  type: 'test'
+  ...
+# Subtest: all room rerenders use the same scoped draft protection, including create UNKNOWN
+ok 70 - all room rerenders use the same scoped draft protection, including create UNKNOWN
+  ---
+  duration_ms: 70.158109
+  type: 'test'
+  ...
+# Subtest: room inputs cannot reuse a personal phrase for a different purpose
+ok 71 - room inputs cannot reuse a personal phrase for a different purpose
+  ---
+  duration_ms: 2.083546
+  type: 'test'
+  ...
+# Subtest: Goal0064 390px embedded portrait room keeps touch targets and pagination
+ok 72 - Goal0064 390px embedded portrait room keeps touch targets and pagination
+  ---
+  duration_ms: 1.714736
+  type: 'test'
+  ...
+# Subtest: online coordinator requires server identity exchange before connecting socket and sends true room command
+ok 73 - online coordinator requires server identity exchange before connecting socket and sends true room command
+  ---
+  duration_ms: 30.555137
+  type: 'test'
+  ...
+# Subtest: failed server identity exchange cannot create socket or local room
+ok 74 - failed server identity exchange cannot create socket or local room
+  ---
+  duration_ms: 2.376452
+  type: 'test'
+  ...
+# Subtest: authenticated room query restores version and monotonic sequence for rejoin
+ok 75 - authenticated room query restores version and monotonic sequence for rejoin
+  ---
+  duration_ms: 8.024872
+  type: 'test'
+  ...
+# Subtest: reconnect reauthenticates the transport and fetches authoritative room version
+ok 76 - reconnect reauthenticates the transport and fetches authoritative room version
+  ---
+  duration_ms: 6.123807
+  type: 'test'
+  ...
+# Subtest: reconnect cannot silently restore an unconfirmed room membership
+ok 77 - reconnect cannot silently restore an unconfirmed room membership
+  ---
+  duration_ms: 2.372521
+  type: 'test'
+  ...
+# Subtest: room exit is confirmed before local room identity is cleared
+ok 78 - room exit is confirmed before local room identity is cleared
+  ---
+  duration_ms: 5.83971
+  type: 'test'
+  ...
+# Subtest: replacement room member reconnects without reading a previous hand archive
+ok 79 - replacement room member reconnects without reading a previous hand archive
+  ---
+  duration_ms: 3.821494
+  type: 'test'
+  ...
+# Subtest: confirmed leave securely invalidates pending old fairness preparation and permits next hand
+ok 80 - confirmed leave securely invalidates pending old fairness preparation and permits next hand
+  ---
+  duration_ms: 15.977052
+  type: 'test'
+  ...
+# Subtest: authoritatively changed active hand releases prior cancelled secret, same hand preserves it
+ok 81 - authoritatively changed active hand releases prior cancelled secret, same hand preserves it
+  ---
+  duration_ms: 4.11019
+  type: 'test'
+  ...
+# Subtest: unknown fairness command is never erased by a hand switch or leave attempt
+ok 82 - unknown fairness command is never erased by a hand switch or leave attempt
+  ---
+  duration_ms: 4.89269
+  type: 'test'
+  ...
+# Subtest: Round15 exact fairness reconciliation precedes ACKed new hand and adopts new state
+ok 83 - Round15 exact fairness reconciliation precedes ACKed new hand and adopts new state
+  ---
+  duration_ms: 7.611215
+  type: 'test'
+  ...
+# Subtest: Round15 unresolved fairness response blocks room.hand.start before transmission
+ok 84 - Round15 unresolved fairness response blocks room.hand.start before transmission
+  ---
+  duration_ms: 2.77996
+  type: 'test'
+  ...
+# Subtest: Round15 definitive prior fairness rejection permits a new ACKed hand without losing isolation
+ok 85 - Round15 definitive prior fairness rejection permits a new ACKed hand without losing isolation
+  ---
+  duration_ms: 5.288324
+  type: 'test'
+  ...
+# Subtest: Round15 active fairness operation blocks irreversible new-hand command
+ok 86 - Round15 active fairness operation blocks irreversible new-hand command
+  ---
+  duration_ms: 1.822378
+  type: 'test'
+  ...
+# Subtest: Round15 concurrent old authoritative refresh cannot invalidate an ACKed new hand
+ok 87 - Round15 concurrent old authoritative refresh cannot invalidate an ACKed new hand
+  ---
+  duration_ms: 3.753474
+  type: 'test'
+  ...
+# Subtest: Round15 failed room start retains original fairness secret and lifts reservation
+ok 88 - Round15 failed room start retains original fairness secret and lifts reservation
+  ---
+  duration_ms: 2.783556
+  type: 'test'
+  ...
+# Subtest: Round15 live pending preflight blocks new room.hand.start before ACK
+ok 89 - Round15 live pending preflight blocks new room.hand.start before ACK
+  ---
+  duration_ms: 1.111639
+  type: 'test'
+  ...
+# Subtest: Round16 early authoritative H2 HTTP refresh cannot replace reserved fairness before WSS ACK
+ok 90 - Round16 early authoritative H2 HTTP refresh cannot replace reserved fairness before WSS ACK
+  ---
+  duration_ms: 8.11664
+  type: 'test'
+  ...
+# Subtest: Round16 failed hand start releases controller lock without clearing original secret
+ok 91 - Round16 failed hand start releases controller lock without clearing original secret
+  ---
+  duration_ms: 2.326528
+  type: 'test'
+  ...
+# Subtest: cold controller discovers the authenticated active room without any device game locator
+ok 92 - cold controller discovers the authenticated active room without any device game locator
+  ---
+  duration_ms: 4.805657
+  type: 'test'
+  ...
+# Subtest: cold recovery refuses ambiguous active rooms instead of choosing wrong game
+ok 93 - cold recovery refuses ambiguous active rooms instead of choosing wrong game
+  ---
+  duration_ms: 1.992041
+  type: 'test'
+  ...
+# Subtest: nonmember may not join an already active hand through a stale locator
+ok 94 - nonmember may not join an already active hand through a stale locator
+  ---
+  duration_ms: 1.262394
+  type: 'test'
+  ...
+# Subtest: R19-N01: older A HTTP response cannot overwrite newer explicit room B recovery
+ok 95 - R19-N01: older A HTTP response cannot overwrite newer explicit room B recovery
+  ---
+  duration_ms: 18.713242
+  type: 'test'
+  ...
+# Subtest: R19-N01: duplicate same-room recovery coalesces and creates one reconnect socket
+ok 96 - R19-N01: duplicate same-room recovery coalesces and creates one reconnect socket
+  ---
+  duration_ms: 8.969925
+  type: 'test'
+  ...
+# Subtest: R19-N02: fresh CLOSED/nonmember read rejects stale WAITING and never adopts it
+ok 97 - R19-N02: fresh CLOSED/nonmember read rejects stale WAITING and never adopts it
+  ---
+  duration_ms: 2.230511
+  type: 'test'
+  ...
+# Subtest: R19-N02: later definitive CLOSED revokes an already adopted room
+ok 98 - R19-N02: later definitive CLOSED revokes an already adopted room
+  ---
+  duration_ms: 2.040999
+  type: 'test'
+  ...
+# Subtest: G47-N01: delayed member join A cannot overwrite newer recovery B
+ok 99 - G47-N01: delayed member join A cannot overwrite newer recovery B
+  ---
+  duration_ms: 6.677342
+  type: 'test'
+  ...
+# Subtest: G47-N01: late CLOSED recheck prevents stale existing-member join
+ok 100 - G47-N01: late CLOSED recheck prevents stale existing-member join
+  ---
+  duration_ms: 1.43329
+  type: 'test'
+  ...
+# Subtest: G48-N02: controller refuses cross-room recovery while exact join result is UNKNOWN
+ok 101 - G48-N02: controller refuses cross-room recovery while exact join result is UNKNOWN
+  ---
+  duration_ms: 1.140679
+  type: 'test'
+  ...
+# Subtest: G48-N03: logout revokes delayed member join before any room adoption
+ok 102 - G48-N03: logout revokes delayed member join before any room adoption
+  ---
+  duration_ms: 3.25693
+  type: 'test'
+  ...
+# Subtest: G49-N01: delayed same-room recovery cannot settle a newer unknown ready
+ok 103 - G49-N01: delayed same-room recovery cannot settle a newer unknown ready
+  ---
+  duration_ms: 5.937666
+  type: 'test'
+  ...
+# Subtest: G49-N02: fairness transition rejection cannot partially adopt another room
+ok 104 - G49-N02: fairness transition rejection cannot partially adopt another room
+  ---
+  duration_ms: 1.19436
+  type: 'test'
+  ...
+# Subtest: G50-N01: delayed member join cannot overwrite a newer confirmed ready ACK
+ok 105 - G50-N01: delayed member join cannot overwrite a newer confirmed ready ACK
+  ---
+  duration_ms: 2.833527
+  type: 'test'
+  ...
+# Subtest: G50-N02: room UNKNOWN can be retried from authenticated controller with same request ID
+ok 106 - G50-N02: room UNKNOWN can be retried from authenticated controller with same request ID
+  ---
+  duration_ms: 2.759893
+  type: 'test'
+  ...
+# Subtest: audit: direct scene refresh cannot partially adopt room when fairness preflight rejects
+ok 107 - audit: direct scene refresh cannot partially adopt room when fairness preflight rejects
+  ---
+  duration_ms: 0.985455
+  type: 'test'
+  ...
+# Subtest: G53-N01: a new A recovery after a real member join B must not reuse obsolete core A
+ok 108 - G53-N01: a new A recovery after a real member join B must not reuse obsolete core A
+  ---
+  duration_ms: 2.519026
+  type: 'test'
+  ...
+# Subtest: audit: a room command epoch revokes an in-flight same-key recovery while retaining exact room identity
+ok 109 - audit: a room command epoch revokes an in-flight same-key recovery while retaining exact room identity
+  ---
+  duration_ms: 2.472396
+  type: 'test'
+  ...
+# Subtest: audit: delayed create CSPRNG cannot steal a newer member room selection
+ok 110 - audit: delayed create CSPRNG cannot steal a newer member room selection
+  ---
+  duration_ms: 2.488437
+  type: 'test'
+  ...
+# Subtest: audit: current create still commits after CSPRNG and accepted server receipt
+ok 111 - audit: current create still commits after CSPRNG and accepted server receipt
+  ---
+  duration_ms: 2.102495
+  type: 'test'
+  ...
+# Subtest: audit: superseded startHand after waiting for old fairness reconciliation does not send hand start to B
+ok 112 - audit: superseded startHand after waiting for old fairness reconciliation does not send hand start to B
+  ---
+  duration_ms: 2.894917
+  type: 'test'
+  ...
+# Subtest: web login exchanges identifier/password at existing Go route and connects only after verified access token
+ok 113 - web login exchanges identifier/password at existing Go route and connects only after verified access token
+  ---
+  duration_ms: 1.470366
+  type: 'test'
+  ...
+# Subtest: invalid or rejected web login cannot connect any WSS transport
+ok 114 - invalid or rejected web login cannot connect any WSS transport
+  ---
+  duration_ms: 0.599795
+  type: 'test'
+  ...
+# Subtest: web login rejects header-injection newlines without rejecting ordinary letters r and n
+ok 115 - web login rejects header-injection newlines without rejecting ordinary letters r and n
+  ---
+  duration_ms: 0.792076
+  type: 'test'
+  ...
+# Subtest: Goal0064 concurrent same-room Join shares original command and accepted receipt
+ok 116 - Goal0064 concurrent same-room Join shares original command and accepted receipt
+  ---
+  duration_ms: 3.43845
+  type: 'test'
+  ...
+# Subtest: Goal0064 same-room UNKNOWN refuses new Join request rather than replacing original
+ok 117 - Goal0064 same-room UNKNOWN refuses new Join request rather than replacing original
+  ---
+  duration_ms: 1.121717
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: HTTP identity success alone never means WSS can submit commands
+ok 118 - Goal0065 R1: HTTP identity success alone never means WSS can submit commands
+  ---
+  duration_ms: 0.595153
+  type: 'test'
+  ...
+# Subtest: Goal0065 R4: failed authenticated room discovery never becomes an empty-room success
+ok 119 - Goal0065 R4: failed authenticated room discovery never becomes an empty-room success
+  ---
+  duration_ms: 0.992346
+  type: 'test'
+  ...
+# Subtest: Goal0065 R4: failed verified-room read cannot be silently converted to a restored room
+ok 120 - Goal0065 R4: failed verified-room read cannot be silently converted to a restored room
+  ---
+  duration_ms: 1.082322
+  type: 'test'
+  ...
+# Subtest: G65 R5: controller live recovery and member rejoin await correlated private adoption
+ok 121 - G65 R5: controller live recovery and member rejoin await correlated private adoption
+  ---
+  duration_ms: 8.766141
+  type: 'test'
+  ...
+# Subtest: G65 R5: controller rejects private recovery on a correlated server error
+ok 122 - G65 R5: controller rejects private recovery on a correlated server error
+  ---
+  duration_ms: 3.038622
+  type: 'test'
+  ...
+# Subtest: G65 R6: both read-only member recovery paths reject final close or invalidation after snapshot
+ok 123 - G65 R6: both read-only member recovery paths reject final close or invalidation after snapshot
+  ---
+  duration_ms: 6.267645
+  type: 'test'
+  ...
+# Subtest: G65 R7: both member read paths refresh predeal phase and require dealt projection
+ok 124 - G65 R7: both member read paths refresh predeal phase and require dealt projection
+  ---
+  duration_ms: 7.213067
+  type: 'test'
+  ...
+# Subtest: G65 R7: a room closed during final private sync cannot return member recovery success
+ok 125 - G65 R7: a room closed during final private sync cannot return member recovery success
+  ---
+  duration_ms: 5.622763
+  type: 'test'
+  ...
+# Subtest: G65 R8: superseded identity completion cannot replace newer socket or pending command
+ok 126 - G65 R8: superseded identity completion cannot replace newer socket or pending command
+  ---
+  duration_ms: 3.298986
+  type: 'test'
+  ...
+# Subtest: G65 R8: joint authority detects deal during final member read with unchanged room version
+ok 127 - G65 R8: joint authority detects deal during final member read with unchanged room version
+  ---
+  duration_ms: 4.768109
+  type: 'test'
+  ...
+# Subtest: G65 R8: pending socket handshake is cancelled when replacement login fails
+ok 128 - G65 R8: pending socket handshake is cancelled when replacement login fails
+  ---
+  duration_ms: 2.678919
+  type: 'test'
+  ...
+# Subtest: destroy during connect cancels state changes and disposes listeners
+ok 129 - destroy during connect cancels state changes and disposes listeners
+  ---
+  duration_ms: 10.163613
+  type: 'test'
+  ...
+# Subtest: late success/failure from old attempts cannot pollute a newer connection
+ok 130 - late success/failure from old attempts cannot pollute a newer connection
+  ---
+  duration_ms: 2.128848
+  type: 'test'
+  ...
+# Subtest: real shell emits exact Go sync shape, preserves notModified and stops terminal actions
+ok 131 - real shell emits exact Go sync shape, preserves notModified and stops terminal actions
+  ---
+  duration_ms: 9.62342
+  type: 'test'
+  ...
+# Subtest: a wire view is never cast into local authoritative state without mapping
+ok 132 - a wire view is never cast into local authoritative state without mapping
+  ---
+  duration_ms: 1.609147
+  type: 'test'
+  ...
+# Subtest: same-version full snapshot confirms reconnect without replacing confirmed state
+ok 133 - same-version full snapshot confirms reconnect without replacing confirmed state
+  ---
+  duration_ms: 1.427618
+  type: 'test'
+  ...
+# Subtest: real Go private hand snapshot is applied after strict version and identity checks
+ok 134 - real Go private hand snapshot is applied after strict version and identity checks
+  ---
+  duration_ms: 3.6141
+  type: 'test'
+  ...
+# Subtest: real WSS command response matches request and disconnect leaves outcome unknown
+ok 135 - real WSS command response matches request and disconnect leaves outcome unknown
+  ---
+  duration_ms: 47.184011
+  type: 'test'
+  ...
+# Subtest: P1 old send failure does not erase same-id command on replacement connection
+ok 136 - P1 old send failure does not erase same-id command on replacement connection
+  ---
+  duration_ms: 6.370156
+  type: 'test'
+  ...
+# Subtest: P2 server rejection settles matching request without waiting for timeout
+ok 137 - P2 server rejection settles matching request without waiting for timeout
+  ---
+  duration_ms: 16.934895
+  type: 'test'
+  ...
+# Subtest: P2 terminal hand blocks any hand mutation while room commands remain separately controlled
+ok 138 - P2 terminal hand blocks any hand mutation while room commands remain separately controlled
+  ---
+  duration_ms: 2.742611
+  type: 'test'
+  ...
+# Subtest: P2 outstanding commands have finite capacity
+ok 139 - P2 outstanding commands have finite capacity
+  ---
+  duration_ms: 7.201396
+  type: 'test'
+  ...
+# Subtest: R1 malformed empty error code cannot consume a valid pending operation
+ok 140 - R1 malformed empty error code cannot consume a valid pending operation
+  ---
+  duration_ms: 5.98063
+  type: 'test'
+  ...
+# Subtest: R2 fresh lobby can create room without any hand snapshot
+ok 141 - R2 fresh lobby can create room without any hand snapshot
+  ---
+  duration_ms: 2.578652
+  type: 'test'
+  ...
+# Subtest: R2 socket not ready or disconnected still refuses lobby commands
+ok 142 - R2 socket not ready or disconnected still refuses lobby commands
+  ---
+  duration_ms: 1.133052
+  type: 'test'
+  ...
+# Subtest: authenticated archive evidence changes terminal UI state without forging live cards
+ok 143 - authenticated archive evidence changes terminal UI state without forging live cards
+  ---
+  duration_ms: 2.79373
+  type: 'test'
+  ...
+# Subtest: Round9 explicitly bound second hand rejects old finished snapshots and stale evidence
+ok 144 - Round9 explicitly bound second hand rejects old finished snapshots and stale evidence
+  ---
+  duration_ms: 2.756872
+  type: 'test'
+  ...
+# Subtest: audit: buffered messages from a replaced socket cannot mutate the current hand or notices
+ok 145 - audit: buffered messages from a replaced socket cannot mutate the current hand or notices
+  ---
+  duration_ms: 0.806967
+  type: 'test'
+  ...
+# Subtest: G65 R5: send is not completion; delayed correlated private response is required
+ok 146 - G65 R5: send is not completion; delayed correlated private response is required
+  ---
+  duration_ms: 14.90323
+  type: 'test'
+  ...
+# Subtest: G65 R5: dropped or stalled send times out and late response cannot resurrect recovery
+ok 147 - G65 R5: dropped or stalled send times out and late response cannot resurrect recovery
+  ---
+  duration_ms: 21.814903
+  type: 'test'
+  ...
+# Subtest: G65 R5: malformed, mismatched, stale, forbidden and invalid conditional replies reject
+ok 148 - G65 R5: malformed, mismatched, stale, forbidden and invalid conditional replies reject
+  ---
+  duration_ms: 13.018576
+  type: 'test'
+  ...
+# Subtest: G65 R5: disconnect, disposal, replacement, and hand switch cancel pending reads
+ok 149 - G65 R5: disconnect, disposal, replacement, and hand switch cancel pending reads
+  ---
+  duration_ms: 5.76541
+  type: 'test'
+  ...
+# Subtest: G65 R5: terminal fallback validates the same archive contract and completes without invented cards
+ok 150 - G65 R5: terminal fallback validates the same archive contract and completes without invented cards
+  ---
+  duration_ms: 0.762263
+  type: 'test'
+  ...
+# Subtest: G65 R5: a newer committed change invalidates earlier readiness; old change does not
+ok 151 - G65 R5: a newer committed change invalidates earlier readiness; old change does not
+  ---
+  duration_ms: 1.708696
+  type: 'test'
+  ...
+# Subtest: G65 R5: verified same-version archive promotes a completed live projection
+ok 152 - G65 R5: verified same-version archive promotes a completed live projection
+  ---
+  duration_ms: 0.716787
+  type: 'test'
+  ...
+# Subtest: G65 R5: an unversioned committed timeout fences an older pending sync
+ok 153 - G65 R5: an unversioned committed timeout fences an older pending sync
+  ---
+  duration_ms: 0.968273
+  type: 'test'
+  ...
+# Subtest: G65 R5: a conflicting equal-version phase is not a successful sync
+ok 154 - G65 R5: a conflicting equal-version phase is not a successful sync
+  ---
+  duration_ms: 0.741149
+  type: 'test'
+  ...
+# Subtest: G65 R7: unversioned change blocks old broadcasts and conditional reads, not a fresh authoritative equal version
+ok 155 - G65 R7: unversioned change blocks old broadcasts and conditional reads, not a fresh authoritative equal version
+  ---
+  duration_ms: 5.20403
+  type: 'test'
+  ...
+# Subtest: G65 R7: causal freshness fence survives reconnect but resets on a different authoritative hand
+ok 156 - G65 R7: causal freshness fence survives reconnect but resets on a different authoritative hand
+  ---
+  duration_ms: 10.568582
+  type: 'test'
+  ...
+# Subtest: G65 R6: inconsistent command envelope and payload IDs cannot settle a receipt
+ok 157 - G65 R6: inconsistent command envelope and payload IDs cannot settle a receipt
+  ---
+  duration_ms: 21.569295
+  type: 'test'
+  ...
+# Subtest: G65 R6: repeated read retry cannot accumulate native send promises on a stalled task
+ok 158 - G65 R6: repeated read retry cannot accumulate native send promises on a stalled task
+  ---
+  duration_ms: 68.747086
+  type: 'test'
+  ...
+# Subtest: G65 R8: deal notice requires private projection and never uses durable version as live floor
+ok 159 - G65 R8: deal notice requires private projection and never uses durable version as live floor
+  ---
+  duration_ms: 1.351025
+  type: 'test'
+  ...
+# Subtest: Dou Dizhu sorts ranks descending with deterministic suit ties
+ok 160 - Dou Dizhu sorts ranks descending with deterministic suit ties
+  ---
+  duration_ms: 7.361987
+  type: 'test'
+  ...
+# Subtest: public numeric card IDs map exactly to Go canonical deck
+ok 161 - public numeric card IDs map exactly to Go canonical deck
+  ---
+  duration_ms: 1.29671
+  type: 'test'
+  ...
+# Subtest: three seats rotate consistently relative to the local player
+ok 162 - three seats rotate consistently relative to the local player
+  ---
+  duration_ms: 0.885342
+  type: 'test'
+  ...
+# Subtest: full 20-card hand fits narrow portrait and short landscape with no paging
+ok 163 - full 20-card hand fits narrow portrait and short landscape with no paging
+  ---
+  duration_ms: 2.444381
+  type: 'test'
+  ...
+# Subtest: table view is a distinct authority-preserving scene, not a paged menu
+ok 164 - table view is a distinct authority-preserving scene, not a paged menu
+  ---
+  duration_ms: 39.264575
+  type: 'test'
+  ...
+# Subtest: header title, clock and room buttons do not overlap on target screens
+ok 165 - header title, clock and room buttons do not overlap on target screens
+  ---
+  duration_ms: 0.951285
+  type: 'test'
+  ...
+# Subtest: the selected hand stays clear of play and bid buttons
+ok 166 - the selected hand stays clear of play and bid buttons
+  ---
+  duration_ms: 1.084213
+  type: 'test'
+  ...
+# Subtest: the pass action is disabled until a public trick exists
+ok 167 - the pass action is disabled until a public trick exists
+  ---
+  duration_ms: 7.671092
+  type: 'test'
+  ...
+# Subtest: real Go []uint8 Base64 wire tricks preserve legality and card identities
+ok 168 - real Go []uint8 Base64 wire tricks preserve legality and card identities
+  ---
+  duration_ms: 2.226689
+  type: 'test'
+  ...
+# Subtest: portrait design resolution retains physical touch sizes and playable fan
+ok 169 - portrait design resolution retains physical touch sizes and playable fan
+  ---
+  duration_ms: 2.348981
+  type: 'test'
+  ...
+# Subtest: table view consumes terminal evidence without a live public projection
+ok 170 - table view consumes terminal evidence without a live public projection
+  ---
+  duration_ms: 16.592921
+  type: 'test'
+  ...
+# Subtest: monotonic turn clock survives view recreation and ignores stale timestamps
+ok 171 - monotonic turn clock survives view recreation and ignores stale timestamps
+  ---
+  duration_ms: 3.150166
+  type: 'test'
+  ...
+# Subtest: table button captions remain readable in real CSS portrait scaling
+ok 172 - table button captions remain readable in real CSS portrait scaling
+  ---
+  duration_ms: 7.033362
+  type: 'test'
+  ...
+# Subtest: Round3 UNKNOWN action and room UI are refreshed from current owner state
+ok 173 - Round3 UNKNOWN action and room UI are refreshed from current owner state
+  ---
+  duration_ms: 25.154678
+  type: 'test'
+  ...
+# Subtest: Round4 retry controls and status are independent rows in three target viewports
+ok 174 - Round4 retry controls and status are independent rows in three target viewports
+  ---
+  duration_ms: 2.660947
+  type: 'test'
+  ...
+# Subtest: UNKNOWN takes over action row, including terminal proof button
+ok 175 - UNKNOWN takes over action row, including terminal proof button
+  ---
+  duration_ms: 8.360882
+  type: 'test'
+  ...
+# Subtest: transient table errors suppress secondary hints sharing their visual band
+ok 176 - transient table errors suppress secondary hints sharing their visual band
+  ---
+  duration_ms: 3.347194
+  type: 'test'
+  ...
+# Subtest: Round5 regression: actual Cocos projection of 760x390 PASS UNKNOWN never covers public trick
+ok 177 - Round5 regression: actual Cocos projection of 760x390 PASS UNKNOWN never covers public trick
+  ---
+  duration_ms: 0.817882
+  type: 'test'
+  ...
+# Subtest: table feedback adapts to measured trick/button space at real and projected viewports
+ok 178 - table feedback adapts to measured trick/button space at real and projected viewports
+  ---
+  duration_ms: 2.499712
+  type: 'test'
+  ...
+# Subtest: actual public card geometry and notice spacing share one authority
+ok 179 - actual public card geometry and notice spacing share one authority
+  ---
+  duration_ms: 9.190443
+  type: 'test'
+  ...
+# Subtest: Round6 P2: actual Cocos SHRINK integer font, not configured float, meets 11px
+ok 180 - Round6 P2: actual Cocos SHRINK integer font, not configured float, meets 11px
+  ---
+  duration_ms: 0.882317
+  type: 'test'
+  ...
+# Subtest: short table metadata and bounded status do not repeat the low-font pattern
+ok 181 - short table metadata and bounded status do not repeat the low-font pattern
+  ---
+  duration_ms: 3.182287
+  type: 'test'
+  ...
+# Subtest: countdown uses trusted server time, never local wall clock
+ok 182 - countdown uses trusted server time, never local wall clock
+  ---
+  duration_ms: 4.370889
+  type: 'test'
+  ...
+# Subtest: missing or unreasonable time is not a fabricated countdown
+ok 183 - missing or unreasonable time is not a fabricated countdown
+  ---
+  duration_ms: 0.563221
+  type: 'test'
+  ...
+# Subtest: table preserves countdown origin when selecting cards without a new snapshot
+ok 184 - table preserves countdown origin when selecting cards without a new snapshot
+  ---
+  duration_ms: 30.926395
+  type: 'test'
+  ...
+# Subtest: an unbound verified WeChat code cannot become an authenticated AccountID session
+ok 185 - an unbound verified WeChat code cannot become an authenticated AccountID session
+  ---
+  duration_ms: 3.925938
+  type: 'test'
+  ...
+# Subtest: an already bound verified WeChat identity yields only server-issued token
+ok 186 - an already bound verified WeChat identity yields only server-issued token
+  ---
+  duration_ms: 2.440595
+  type: 'test'
+  ...
+# Subtest: untrusted WeChat return values and malformed codes fail closed
+ok 187 - untrusted WeChat return values and malformed codes fail closed
+  ---
+  duration_ms: 0.927257
+  type: 'test'
+  ...
+# Subtest: session verification is always server-backed
+ok 188 - session verification is always server-backed
+  ---
+  duration_ms: 3.900042
+  type: 'test'
+  ...
+1..188
+# tests 188
+# suites 0
+# pass 188
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 920.167314

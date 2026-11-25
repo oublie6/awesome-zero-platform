@@ -1,0 +1,14 @@
+=== RUN   TestRecoverableRoomDiscoveryWithRealMySQL
+--- PASS: TestRecoverableRoomDiscoveryWithRealMySQL (0.02s)
+=== RUN   TestRoomAuthorityJointReadWithRealMySQL
+--- PASS: TestRoomAuthorityJointReadWithRealMySQL (0.05s)
+=== RUN   TestRound9AuthorityConsistentReadAndCost
+    round9_authority_independent_test.go:29: EXPLAIN map[Extra:<nil> filtered:100 id:1 key:PRIMARY key_len:514 partitions:<nil> possible_keys:PRIMARY ref:const rows:1 select_type:SIMPLE table:r type:const]
+    round9_authority_independent_test.go:29: EXPLAIN map[Extra:<nil> filtered:100 id:1 key:PRIMARY key_len:514 partitions:<nil> possible_keys:PRIMARY,idx_doudizhu_hands_room_created ref:const rows:1 select_type:SIMPLE table:h type:const]
+    round9_authority_independent_test.go:29: EXPLAIN map[Extra:<nil> filtered:100 id:1 key:PRIMARY key_len:1094 partitions:<nil> possible_keys:PRIMARY ref:const,const,const rows:1 select_type:SIMPLE table:c type:const]
+    round9_authority_independent_test.go:34: consistent tuples: 120 real InnoDB atomic updates / 480 concurrent production-store reads, zero torn observations
+    round9_authority_independent_test.go:35: PRODUCTION_STORE_LATENCY concurrency=1 n=100 p50_us=2202 p95_us=3269 p99_us=6267 room_json_bytes=401 hand_json_bytes=1342
+    round9_authority_independent_test.go:35: PRODUCTION_STORE_LATENCY concurrency=4 n=400 p50_us=2311 p95_us=33839 p99_us=73439 room_json_bytes=401 hand_json_bytes=1342
+--- PASS: TestRound9AuthorityConsistentReadAndCost (3.02s)
+PASS
+ok  	github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore	3.118s

@@ -1,0 +1,4 @@
+ok  	github.com/oublie6/awesome-zero-platform/server/business/doudizhu/application	0.016s
+ok  	github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore	0.056s
+ok  	github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/bootstrap	0.263s
+ok  	github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/doudizhuapi	0.023s

@@ -1,0 +1,190 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "scope": "Actual Controller/Session/Shell/ConnectionManager, controlled identity/vault/socket callbacks",
+  "cases": [
+    {
+      "name": "password->password; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "password->password; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "password->code; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "password->code; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "password->restore; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "password->restore; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "code->password; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "code->password; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "code->code; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "code->code; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "code->restore; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "code->restore; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "restore->password; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "restore->password; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "restore->code; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "restore->code; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "restore->restore; old success after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "restore->restore; old failure after new established",
+      "connections": 1,
+      "selectedCommandPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "old handshake pending -> password succeeds",
+      "oldHandshakeCancelled": true,
+      "ready": true,
+      "result": "PASS"
+    },
+    {
+      "name": "old handshake pending -> password fails",
+      "oldHandshakeCancelled": true,
+      "ready": false,
+      "result": "PASS"
+    },
+    {
+      "name": "old handshake pending -> code succeeds",
+      "oldHandshakeCancelled": true,
+      "ready": true,
+      "result": "PASS"
+    },
+    {
+      "name": "old handshake pending -> code fails",
+      "oldHandshakeCancelled": true,
+      "ready": false,
+      "result": "PASS"
+    },
+    {
+      "name": "old handshake pending -> restore succeeds",
+      "oldHandshakeCancelled": true,
+      "ready": true,
+      "result": "PASS"
+    },
+    {
+      "name": "old handshake pending -> restore fails",
+      "oldHandshakeCancelled": true,
+      "ready": false,
+      "result": "PASS"
+    },
+    {
+      "name": "established identity rejects every direct replacement entry before touching connection",
+      "entryPoints": 3,
+      "result": "PASS"
+    },
+    {
+      "name": "socket closes during registration",
+      "falseSuccess": false,
+      "result": "PASS"
+    },
+    {
+      "name": "socket closes during connected-notice",
+      "falseSuccess": false,
+      "result": "PASS"
+    },
+    {
+      "name": "shared store replacement invalidates grant, HTTP and business gates; old cleanup preserves new token",
+      "newTokenPreserved": true,
+      "staleHTTPRequests": 0,
+      "result": "PASS"
+    },
+    {
+      "name": "identity exchange pending then logout",
+      "lateConnections": 0,
+      "result": "PASS"
+    },
+    {
+      "name": "identity exchange pending then dispose",
+      "lateConnections": 0,
+      "result": "PASS"
+    },
+    {
+      "name": "identity exchange pending then discardLocal",
+      "lateConnections": 0,
+      "result": "PASS"
+    }
+  ],
+  "unhandled": [],
+  "pass": 31,
+  "fail": 0,
+  "observerCorrection": "Only latest restore validation failure observer corrected: false/null is valid rejection; original 30 passing cells reused, affected one rerun."
+}

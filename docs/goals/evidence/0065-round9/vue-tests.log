@@ -1,0 +1,122 @@
+
+> @awesome-zero-platform/game-web@0.1.0 test
+> node --experimental-strip-types --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: Vue runtime requires exact same-origin HTTPS/WSS; cannot use cross-origin iframe token bridge
+ok 1 - Vue runtime requires exact same-origin HTTPS/WSS; cannot use cross-origin iframe token bridge
+  ---
+  duration_ms: 4.985096
+  type: 'test'
+  ...
+# Subtest: real Go credential exchange and server validation store only server token, never password
+ok 2 - real Go credential exchange and server validation store only server token, never password
+  ---
+  duration_ms: 73.301758
+  type: 'test'
+  ...
+# Subtest: invalid login does not create local web session or socket credentials
+ok 3 - invalid login does not create local web session or socket credentials
+  ---
+  duration_ms: 2.648113
+  type: 'test'
+  ...
+# Subtest: server rejection of saved access token clears only old token
+ok 4 - server rejection of saved access token clears only old token
+  ---
+  duration_ms: 1.154276
+  type: 'test'
+  ...
+# Subtest: late login completion after logout never revives earlier identity
+ok 5 - late login completion after logout never revives earlier identity
+  ---
+  duration_ms: 3.043194
+  type: 'test'
+  ...
+# Subtest: malformed server token or missing principal fails closed
+ok 6 - malformed server token or missing principal fails closed
+  ---
+  duration_ms: 2.909426
+  type: 'test'
+  ...
+# Subtest: registration reuses server identity, requires email and never creates session
+ok 7 - registration reuses server identity, requires email and never creates session
+  ---
+  duration_ms: 2.879315
+  type: 'test'
+  ...
+# Subtest: identity timeout includes reading the response body after headers arrived
+ok 8 - identity timeout includes reading the response body after headers arrived
+  ---
+  duration_ms: 22.677306
+  type: 'test'
+  ...
+# Subtest: late validation cannot adopt a token replaced outside the Web auth controller
+ok 9 - late validation cannot adopt a token replaced outside the Web auth controller
+  ---
+  duration_ms: 3.608988
+  type: 'test'
+  ...
+# Subtest: G65 R7: old restore logout cannot remove or revoke replacement token
+ok 10 - G65 R7: old restore logout cannot remove or revoke replacement token
+  ---
+  duration_ms: 5.743021
+  type: 'test'
+  ...
+# Subtest: G65 R7: later login owns shared storage despite older exchange finishing last
+ok 11 - G65 R7: later login owns shared storage despite older exchange finishing last
+  ---
+  duration_ms: 4.130267
+  type: 'test'
+  ...
+# Subtest: Vue is an account entry, not a second room lobby
+ok 12 - Vue is an account entry, not a second room lobby
+  ---
+  duration_ms: 18.523822
+  type: 'test'
+  ...
+# Subtest: Goal0065 same-session site navigation retains iframe while logout destroys it
+ok 13 - Goal0065 same-session site navigation retains iframe while logout destroys it
+  ---
+  duration_ms: 4.638036
+  type: 'test'
+  ...
+# Subtest: Goal0065 startup reports actual stages and offers bounded failure/retry
+ok 14 - Goal0065 startup reports actual stages and offers bounded failure/retry
+  ---
+  duration_ms: 13.07936
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifecycle
+ok 15 - Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifecycle
+  ---
+  duration_ms: 6.934594
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: background tabs also suspend Vue watchdog
+ok 16 - Goal0065 R1: background tabs also suspend Vue watchdog
+  ---
+  duration_ms: 10.895701
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round2: native CSS/session failure stays deferred in retained background iframe
+ok 17 - Goal0065 Round2: native CSS/session failure stays deferred in retained background iframe
+  ---
+  duration_ms: 4.960688
+  type: 'test'
+  ...
+# Subtest: Goal0065 R3: parked iframe keeps its geometry but cannot receive interaction
+ok 18 - Goal0065 R3: parked iframe keeps its geometry but cannot receive interaction
+  ---
+  duration_ms: 5.316154
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 456.623033

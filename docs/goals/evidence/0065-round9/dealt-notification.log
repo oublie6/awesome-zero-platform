@@ -1,0 +1,10 @@
+=== RUN   TestRound9DealtNotificationFailureOrdering
+=== RUN   TestRound9DealtNotificationFailureOrdering/write-error
+=== RUN   TestRound9DealtNotificationFailureOrdering/write-rejected
+=== RUN   TestRound9DealtNotificationFailureOrdering/tracking-error
+--- PASS: TestRound9DealtNotificationFailureOrdering (0.00s)
+    --- PASS: TestRound9DealtNotificationFailureOrdering/write-error (0.00s)
+    --- PASS: TestRound9DealtNotificationFailureOrdering/write-rejected (0.00s)
+    --- PASS: TestRound9DealtNotificationFailureOrdering/tracking-error (0.00s)
+PASS
+ok  	github.com/oublie6/awesome-zero-platform/server/apps/app-api/internal/bootstrap	0.023s

@@ -1,0 +1,26 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "kind": "actual compiled GameSession separately evaluated in two real same-origin browser realms; dummy identity callbacks; real sessionStorage",
+  "cases": [
+    {
+      "name": "cross-realm synchronous compare-clear protects replacement during old restore/logout",
+      "pass": true,
+      "newPreserved": true,
+      "oldAuthenticated": false,
+      "noForeignRevoke": true,
+      "revokeCount": 0
+    }
+  ],
+  "positive": {
+    "newPreserved": true,
+    "oldAuthenticated": false,
+    "noForeignRevoke": true,
+    "revokeCount": 0
+  },
+  "boundary": {
+    "backingStoreShared": true,
+    "freshControllerStillHasNewer": true,
+    "guarantee": "Independent realm queues/epochs do not coordinate arbitrary delayed login writes; documented boundary, not qualified as protected."
+  },
+  "result": "PASS for scoped synchronous cross-realm cleanup; arbitrary async cross-realm writes outside guarantee"
+}

@@ -1,0 +1,242 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "hand": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+  "cases": [
+    {
+      "name": "deal crosses final authority membership await",
+      "pass": true,
+      "falseReady": false,
+      "correlatedReadAttempted": true
+    },
+    {
+      "name": "original R7 scene-await crosses real deal without private snapshot",
+      "pass": false,
+      "falseReady": false,
+      "correlatedReadAttempted": false
+    },
+    {
+      "name": "explicit retry after gate 1",
+      "pass": true
+    },
+    {
+      "name": "explicit retry after gate 2",
+      "pass": true
+    }
+  ],
+  "controlAuthority": {
+    "roomVersion": 7,
+    "proof": {
+      "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+      "phase": "BIDDING",
+      "version": 11,
+      "fairnessMode": "client-contributed-server-custodied-v1",
+      "revealed": true
+    },
+    "position": 3,
+    "dealtNotices": 1
+  },
+  "control": {
+    "sameHand": true,
+    "phase": "BIDDING",
+    "version": 1
+  },
+  "before1": {
+    "phase": "FAIRNESS_COMMITTING",
+    "hasSnapshot": false,
+    "reads": 0,
+    "dropped": 1,
+    "dealtDropped": 1,
+    "privatePositions": [
+      2
+    ],
+    "proof": {
+      "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+      "phase": "FAIRNESS_COMMITTING",
+      "version": 1,
+      "fairnessMode": "client-contributed-server-custodied-v1",
+      "revealed": false
+    },
+    "proofTrace": [
+      {
+        "roomVersion": 7,
+        "proof": {
+          "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+          "phase": "FAIRNESS_COMMITTING",
+          "version": 1,
+          "fairnessMode": "client-contributed-server-custodied-v1",
+          "revealed": false
+        }
+      },
+      {
+        "roomVersion": 7,
+        "proof": {
+          "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+          "phase": "FAIRNESS_COMMITTING",
+          "version": 1,
+          "fairnessMode": "client-contributed-server-custodied-v1",
+          "revealed": false
+        }
+      }
+    ]
+  },
+  "after1": {
+    "host": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795569371318
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795569384869
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795569392175
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795569392176
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795569392179
+        },
+        {
+          "type": "SESSION_FAILED",
+          "at": 1795569428056
+        },
+        {
+          "type": "BOOT_FAILED",
+          "at": 1795569428057
+        }
+      ]
+    },
+    "client": {
+      "phase": "FAIRNESS_COMMITTING",
+      "hasSnapshot": false,
+      "reads": 1,
+      "dropped": 2,
+      "dealtDropped": 1,
+      "privatePositions": [
+        2,
+        2
+      ],
+      "proof": {
+        "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+        "phase": "FAIRNESS_COMMITTING",
+        "version": 1,
+        "fairnessMode": "client-contributed-server-custodied-v1",
+        "revealed": false
+      },
+      "proofTrace": [
+        {
+          "roomVersion": 7,
+          "proof": {
+            "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+            "phase": "FAIRNESS_COMMITTING",
+            "version": 1,
+            "fairnessMode": "client-contributed-server-custodied-v1",
+            "revealed": false
+          }
+        },
+        {
+          "roomVersion": 7,
+          "proof": {
+            "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+            "phase": "FAIRNESS_COMMITTING",
+            "version": 1,
+            "fairnessMode": "client-contributed-server-custodied-v1",
+            "revealed": false
+          }
+        },
+        {
+          "roomVersion": 7,
+          "proof": {
+            "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+            "phase": "BIDDING",
+            "version": 11,
+            "fairnessMode": "client-contributed-server-custodied-v1",
+            "revealed": true
+          }
+        }
+      ]
+    }
+  },
+  "before0": {
+    "phase": "FAIRNESS_COMMITTING",
+    "hasSnapshot": false,
+    "reads": 0,
+    "dropped": 1,
+    "dealtDropped": 1,
+    "privatePositions": [
+      1
+    ],
+    "proof": {
+      "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+      "phase": "FAIRNESS_COMMITTING",
+      "version": 1,
+      "fairnessMode": "client-contributed-server-custodied-v1",
+      "revealed": false
+    }
+  },
+  "after0": {
+    "host": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795569351454
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795569362733
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795569369165
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795569369165
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795569369167
+        },
+        {
+          "type": "BOOT_FAILED",
+          "at": 1795569429163
+        }
+      ]
+    },
+    "client": {
+      "phase": "FAIRNESS_COMMITTING",
+      "hasSnapshot": false,
+      "reads": 0,
+      "dropped": 1,
+      "dealtDropped": 1,
+      "privatePositions": [
+        1
+      ],
+      "proof": {
+        "handId": "hand-cmd-60438a7cd76436804fd6bd7cc84399f5",
+        "phase": "BIDDING",
+        "version": 11,
+        "fairnessMode": "client-contributed-server-custodied-v1",
+        "revealed": true
+      }
+    }
+  }
+}

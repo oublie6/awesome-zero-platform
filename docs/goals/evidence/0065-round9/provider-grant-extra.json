@@ -1,0 +1,38 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "scope": "Actual compiled Cocos Bootstrap and Controller/Session; separate controlled receivers and fake provider HTTP. No real WeChat mapping mutated.",
+  "cases": [
+    {
+      "mode": "late-relink",
+      "grantCurrent": false,
+      "transportReady": false,
+      "sessionAuthenticated": true,
+      "identityHTTPRequests": [
+        {
+          "path": "/auth/wechat/prepare",
+          "usesOldToken": false
+        },
+        {
+          "path": "/auth/wechat/relink",
+          "usesOldToken": true
+        }
+      ],
+      "backingNewPreserved": true,
+      "pass": false
+    },
+    {
+      "mode": "valid-unlink",
+      "grantCurrent": true,
+      "transportReady": true,
+      "sessionAuthenticated": true,
+      "identityHTTPRequests": [
+        {
+          "path": "/auth/wechat/unlink",
+          "usesOldToken": true
+        }
+      ],
+      "backingNewPreserved": false,
+      "pass": true
+    }
+  ]
+}

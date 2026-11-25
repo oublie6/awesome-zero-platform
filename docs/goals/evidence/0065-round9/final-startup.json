@@ -1,0 +1,177 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "kind": "real exported Cocos/Go with controlled trusted same-origin parent host and bounded network/layout gates; not Vue UI qualification",
+  "cases": [
+    {
+      "name": "no-to-one",
+      "state": {
+        "hostRestoring": false,
+        "attempt": 1,
+        "room": false,
+        "choices": 0,
+        "authenticated": true,
+        "transport": true,
+        "hasSnapshot": false,
+        "settled": [
+          true
+        ]
+      },
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795569211035
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795569213639
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795569216768
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795569216793
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795569216793
+        },
+        {
+          "type": "SESSION_FAILED",
+          "at": 1795569217298
+        },
+        {
+          "type": "BOOT_FAILED",
+          "at": 1795569217298
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "multiple-to-empty",
+      "state": {
+        "hostRestoring": false,
+        "attempt": 1,
+        "room": false,
+        "choices": 0,
+        "authenticated": true,
+        "transport": true,
+        "hasSnapshot": false,
+        "settled": [
+          true
+        ]
+      },
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795569219120
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795569220496
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795569223410
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795569223445
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795569223445
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795569223964
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "disconnect-final-read",
+      "state": {
+        "hostRestoring": false,
+        "attempt": 1,
+        "room": false,
+        "choices": 0,
+        "authenticated": true,
+        "transport": false,
+        "hasSnapshot": false,
+        "settled": [
+          true
+        ]
+      },
+      "pass": true
+    },
+    {
+      "name": "logout-final-read",
+      "state": {
+        "hostRestoring": false,
+        "attempt": 2,
+        "room": false,
+        "choices": 0,
+        "authenticated": false,
+        "transport": false,
+        "hasSnapshot": false,
+        "settled": [
+          true
+        ]
+      },
+      "revokedHTTP": 401,
+      "pass": true
+    },
+    {
+      "name": "swap-old-finally",
+      "middle": {
+        "hostRestoring": true,
+        "attempt": 3,
+        "room": false,
+        "choices": 0,
+        "authenticated": true,
+        "transport": true,
+        "hasSnapshot": false,
+        "settled": [
+          true,
+          false
+        ]
+      },
+      "state": {
+        "hostRestoring": false,
+        "attempt": 3,
+        "room": false,
+        "choices": 0,
+        "authenticated": true,
+        "transport": true,
+        "hasSnapshot": false,
+        "settled": [
+          true,
+          true
+        ]
+      },
+      "pass": true
+    },
+    {
+      "name": "select-room-final-read",
+      "state": {
+        "hostRestoring": false,
+        "attempt": 1,
+        "room": true,
+        "choices": 0,
+        "authenticated": true,
+        "transport": true,
+        "hasSnapshot": false,
+        "settled": [
+          true
+        ]
+      },
+      "pass": true,
+      "note": "Older startup proof canceled by explicit room choice; not counted as automatic host readiness."
+    }
+  ],
+  "pass": 6,
+  "fail": 0,
+  "observerFailures": 0
+}

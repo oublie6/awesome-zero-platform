@@ -1,0 +1,174 @@
+{
+  "headers": [
+    {
+      "path": "/index.html",
+      "status": 200,
+      "cache": "no-cache, must-revalidate",
+      "etag": "\"6b0634dd-232\"",
+      "modified": "Wed, 25 Nov 2026 01:07:41 GMT"
+    },
+    {
+      "path": "/game/index.html",
+      "status": 200,
+      "cache": "no-cache, must-revalidate",
+      "etag": "\"6b0634de-3879\"",
+      "modified": "Wed, 25 Nov 2026 01:07:42 GMT"
+    },
+    {
+      "path": "/game-config.js",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b0634de-ca\"",
+      "modified": "Wed, 25 Nov 2026 01:07:42 GMT"
+    },
+    {
+      "path": "/game/game-config.js",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b0634de-ca\"",
+      "modified": "Wed, 25 Nov 2026 01:07:42 GMT"
+    },
+    {
+      "path": "/game-web-assets.json",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b0634de-13c4\"",
+      "modified": "Wed, 25 Nov 2026 01:07:42 GMT"
+    },
+    {
+      "path": "/assets/index-D3p9sVvh.js",
+      "status": 200,
+      "cache": "public, max-age=31536000, immutable",
+      "etag": "\"6b0634dd-14358\"",
+      "modified": "Wed, 25 Nov 2026 01:07:41 GMT"
+    },
+    {
+      "path": "/game/cocos-js/cc.js",
+      "status": 200,
+      "cache": "public, max-age=0, must-revalidate",
+      "etag": "\"6b0634de-c09c74\"",
+      "modified": "Wed, 25 Nov 2026 01:07:42 GMT"
+    }
+  ],
+  "authRepeated": [
+    {
+      "path": "/auth/session",
+      "status": 200,
+      "cache": "no-store",
+      "etag": null,
+      "modified": null
+    },
+    {
+      "path": "/auth/session",
+      "status": 200,
+      "cache": "no-store",
+      "etag": null,
+      "modified": null
+    }
+  ],
+  "settingsBefore": {
+    "path": "/game/src/settings.json",
+    "status": 200,
+    "cache": "public, max-age=0, must-revalidate",
+    "etag": "\"6b0634dd-325a3\"",
+    "modified": "Wed, 25 Nov 2026 01:07:41 GMT"
+  },
+  "settingsChanged": {
+    "path": "/game/src/settings.json",
+    "status": 200,
+    "cache": "public, max-age=0, must-revalidate",
+    "etag": "\"6b06357b-325a5\"",
+    "modified": "Wed, 25 Nov 2026 01:10:19 GMT"
+  },
+  "settingsUpdateObserved": true,
+  "storage": {
+    "serviceWorkers": 0,
+    "cacheAPIKeys": []
+  },
+  "memoryBefore": {
+    "heap": 24653392,
+    "dom": {
+      "documents": 3,
+      "nodes": 299,
+      "jsEventListeners": 101
+    }
+  },
+  "memoryAfter": {
+    "heap": 25709536,
+    "dom": {
+      "documents": 3,
+      "nodes": 305,
+      "jsEventListeners": 114
+    }
+  },
+  "afterCycles": {
+    "sameFrame": true,
+    "iframeCount": 1
+  },
+  "room": "room-cmd-ca1cde459b865260f9a3fd98f1b9550d",
+  "roomRepeated": [
+    {
+      "path": "/v1/doudizhu/rooms/room-cmd-ca1cde459b865260f9a3fd98f1b9550d",
+      "status": 200,
+      "cache": "no-store",
+      "etag": null,
+      "modified": null
+    },
+    {
+      "path": "/v1/doudizhu/rooms/room-cmd-ca1cde459b865260f9a3fd98f1b9550d",
+      "status": 200,
+      "cache": "no-store",
+      "etag": null,
+      "modified": null
+    }
+  ],
+  "logout": {
+    "iframeCount": 0,
+    "oldFrameConnected": false,
+    "revokedHTTP": 401
+  },
+  "switched": {
+    "differentFrame": true,
+    "state": {
+      "unknownHand": false,
+      "submitting": false,
+      "recovering": false,
+      "tableActive": false,
+      "screen": "rooms",
+      "status": "和好友开一桌，或输入房间号加入",
+      "roomId": "",
+      "handId": "",
+      "authenticated": true,
+      "transportReady": true,
+      "room": null,
+      "roomView": null,
+      "plan": {
+        "stage": "entry",
+        "title": "游戏大厅",
+        "hint": "和好友开一桌，或输入房间号加入",
+        "input": "join",
+        "primary": [
+          "create",
+          "join"
+        ],
+        "secondary": [
+          "discover",
+          "more"
+        ],
+        "seats": []
+      },
+      "fairness": null,
+      "seats": [],
+      "snapshot": null,
+      "selected": [],
+      "buttons": [
+        "CreateRoom",
+        "JoinRoom",
+        "DiscoverMyRooms",
+        "ToggleRoomMore"
+      ],
+      "nodeCount": 0,
+      "inputLength": 0
+    }
+  }
+}

@@ -1,0 +1,52 @@
+[
+  {
+    "name": "native",
+    "command": [
+      "node",
+      "/root/goal0065-round9-e9762f5/native-build.cjs"
+    ],
+    "exit": 0,
+    "seconds": 171.02321434020996
+  },
+  {
+    "name": "clients",
+    "command": [
+      "python3",
+      "/root/goal0065-round9-e9762f5/checks.py"
+    ],
+    "exit": 0,
+    "seconds": 48.456024169921875
+  },
+  {
+    "name": "go-unit",
+    "command": [
+      "go",
+      "test",
+      "-p",
+      "1",
+      "-parallel",
+      "1",
+      "./business/doudizhu/application",
+      "./business/doudizhu/infrastructure/mysqlstore",
+      "./apps/app-api/internal/bootstrap",
+      "./apps/app-api/internal/doudizhuapi"
+    ],
+    "exit": 0,
+    "seconds": 50.80737805366516
+  },
+  {
+    "name": "go-build",
+    "command": [
+      "go",
+      "build",
+      "-p",
+      "1",
+      "-trimpath",
+      "-o",
+      "/root/goal0065-round9-e9762f5/app-api",
+      "./apps/app-api"
+    ],
+    "exit": 0,
+    "seconds": 144.13659381866455
+  }
+]

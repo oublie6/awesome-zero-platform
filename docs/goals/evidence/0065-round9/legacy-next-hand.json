@@ -1,0 +1,100 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "legacyWebSource": "ea1e1823f35cd17c37c524a378e6fe6e61b3164a",
+  "cases": [
+    {
+      "name": "candidate switches actual room from terminal first hand to second hand",
+      "pass": true,
+      "phase": "FAIRNESS_COMMITTING",
+      "snapshotEmpty": true
+    }
+  ],
+  "commands": [
+    {
+      "requestId": "r9-functional-30ce3b45-49cf-4a12-8064-9a6f893b1c2e",
+      "type": "room.create",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-b2f09119-c8cf-4105-9fc2-fe9567d50cfe",
+      "type": "room.join",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-8f0c2a31-cba1-4423-9e0a-555fd0a89d34",
+      "type": "room.join",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-98257e36-8217-4e31-9626-bc4a985de599",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-7b43cfb1-6157-4e4f-ba5e-f00ccd0c70fc",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-3b8d3b64-5aac-48fd-b70d-1c42c14c2855",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-250fc7f8-c80b-42f3-b321-f1fa2785c121",
+      "type": "room.hand.start",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-23a421be-12a2-4b2f-b065-79cbabf15058",
+      "type": "hand.cancel",
+      "aggregateId": "r9-hand-ea48844a-1da9-45d6-a46b-6624364da14e"
+    },
+    {
+      "requestId": "r9-functional-973e6358-9b3b-4166-84db-f4e621551055",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-810fca11-e7cb-44a8-864a-8c831cf58ed6",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-7d8663a8-d73c-464c-bdea-78ec4370abb5",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-138e0dbc-f507-46a8-9452-46beaddf8360",
+      "type": "room.hand.start",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-01b1c066-4b15-4ef8-816c-8724e7127177",
+      "type": "hand.cancel",
+      "aggregateId": "r9-hand-251e5a43-3711-46bb-a1d6-79e5cb4da258"
+    },
+    {
+      "requestId": "r9-functional-808c25c6-b99a-4bc5-a2f2-d0612f766ea2",
+      "type": "room.leave",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-7728727c-ea11-4d7a-a672-214756c0f44f",
+      "type": "room.leave",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    },
+    {
+      "requestId": "r9-functional-6914e6ec-831f-42cc-9e1c-9277d151b4f4",
+      "type": "room.leave",
+      "aggregateId": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802"
+    }
+  ],
+  "room": "r9-functional-94c8cafb-2e7b-4be1-aca6-5e2a3aeaf802",
+  "firstHand": "r9-hand-ea48844a-1da9-45d6-a46b-6624364da14e",
+  "secondHand": "r9-hand-251e5a43-3711-46bb-a1d6-79e5cb4da258",
+  "failure": "Expected values to be strictly equal:\n\nfalse !== true\n",
+  "result": "FAIL",
+  "ownedRoomClosed": true
+}

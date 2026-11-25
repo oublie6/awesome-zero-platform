@@ -1,0 +1,74 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "legacyWebSource": "ea1e1823f35cd17c37c524a378e6fe6e61b3164a",
+  "cases": [
+    {
+      "name": "accepted Goal0064 Web authenticates, connects and restores active room against candidate Go",
+      "pass": true,
+      "phase": "FAIRNESS_COMMITTING",
+      "proofPresentOnWire": true
+    }
+  ],
+  "commands": [
+    {
+      "requestId": "r9-functional-2ce5b204-cc16-41e7-9406-88c2417cbdd9",
+      "type": "room.create",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-21a7575d-7801-4019-9857-196cf3f367ef",
+      "type": "room.join",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-a062a0b3-b917-44f3-8b64-99fbe2c10dbe",
+      "type": "room.join",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-cd00b06a-052c-4841-84b3-2bf41fa9bf78",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-68f70824-a357-4723-a738-6a47e4cf8ed7",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-04dfd167-5ff8-4a13-8725-1116e7f82d0d",
+      "type": "room.ready",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-1d4b2e4a-c3c1-4e74-ab11-08333162e0bc",
+      "type": "room.hand.start",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-a1baddab-c3f7-4ca4-a44c-21887ad49ce7",
+      "type": "hand.cancel",
+      "aggregateId": "r9-hand-73eaf35c-f8f4-433c-b12a-98150029c7e3"
+    },
+    {
+      "requestId": "r9-functional-5bdcbe56-4c28-4a1e-9e41-a31e0c427cae",
+      "type": "room.leave",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-748c64ed-55fd-4a58-b7eb-2e4f5a7c7f9f",
+      "type": "room.leave",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    },
+    {
+      "requestId": "r9-functional-6c62f32f-193c-4ca7-91f7-9dcd4d990b35",
+      "type": "room.leave",
+      "aggregateId": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056"
+    }
+  ],
+  "room": "r9-functional-653f6612-22c0-47d3-8a2b-d30f6711a056",
+  "firstHand": "r9-hand-73eaf35c-f8f4-433c-b12a-98150029c7e3",
+  "failure": "No UI action RefreshRoom on rooms",
+  "result": "FAIL",
+  "ownedRoomClosed": true
+}

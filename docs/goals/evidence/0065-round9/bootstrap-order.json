@@ -1,0 +1,44 @@
+{
+  "source": "e9762f566a1c03bef99f42630f0d4384f2538443",
+  "kind": "actual compiled Cocos GameBootstrap method prototype; controlled HTTP/projection/render ports on separate receivers, not real Go or UI qualification",
+  "cases": [
+    {
+      "name": "same-room concurrent refresh old-success",
+      "pass": true
+    },
+    {
+      "name": "same-room concurrent refresh old-error",
+      "pass": true
+    },
+    {
+      "name": "same-room concurrent refresh new-error",
+      "pass": true
+    },
+    {
+      "name": "same-room concurrent refresh old-revocation",
+      "pass": true
+    },
+    {
+      "name": "same-hand fairness concurrent old-success",
+      "pass": true
+    },
+    {
+      "name": "same-hand fairness concurrent old-error",
+      "pass": true
+    },
+    {
+      "name": "new fairness supersedes earlier room refresh",
+      "pass": true
+    },
+    {
+      "name": "new room refresh supersedes earlier phase query",
+      "pass": true
+    },
+    {
+      "name": "late phase after account replacement cannot affect new UI",
+      "pass": true
+    }
+  ],
+  "pass": 9,
+  "fail": 0
+}
