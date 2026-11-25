@@ -12,15 +12,26 @@ import (
 // RoomView is an authenticated, server-authoritative lobby projection.
 // Non-members can see only a limited invite-code preview, never player identities.
 type RoomView struct {
-	RoomID             string            `json:"roomId"`
-	Version            uint64            `json:"version"`
-	Status             domain.RoomStatus `json:"status"`
-	Occupied           int               `json:"occupied"`
-	Member             bool              `json:"member"`
-	LastClientSequence uint64            `json:"lastClientSequence"`
-	Seats              []RoomSeatView    `json:"seats,omitempty"`
-	ActiveHandID       string            `json:"activeHandId,omitempty"`
-	LastHandID         string            `json:"lastHandId,omitempty"`
+	RoomID               string             `json:"roomId"`
+	Version              uint64             `json:"version"`
+	Status               domain.RoomStatus  `json:"status"`
+	Occupied             int                `json:"occupied"`
+	Member               bool               `json:"member"`
+	LastClientSequence   uint64             `json:"lastClientSequence"`
+	Seats                []RoomSeatView     `json:"seats,omitempty"`
+	ActiveHandID         string             `json:"activeHandId,omitempty"`
+	LastHandID           string             `json:"lastHandId,omitempty"`
+	ActiveHandAuthority  *RoomHandAuthority `json:"activeHandAuthority,omitempty"`
+}
+
+// RoomHandAuthority describes the durable hand at the same read point as
+// membership. Version is not the live private-view version.
+type RoomHandAuthority struct {
+	HandID       string              `json:"handId"`
+	Phase        domain.HandPhase    `json:"phase"`
+	Version      uint64              `json:"version"`
+	FairnessMode domain.FairnessMode `json:"fairnessMode,omitempty"`
+	Revealed     bool                `json:"revealed"`
 }
 type RoomSeatView struct {
 	Position  uint8  `json:"position"`
@@ -45,7 +56,18 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 	if !ok {
 		return RoomView{}, fmt.Errorf("%w: room query store unavailable", ErrInvalidCommand)
 	}
-	snapshot, err := reader.LoadRoom(ctx, roomID)
+	var snapshot domain.RoomSnapshot
+	var active *domain.HandSnapshot
+	var sequence uint64
+	var err error
+	authority, hasAuthority := s.store.(interface {
+		LoadRoomAuthority(context.Context, domain.RoomID, domain.AccountID) (domain.RoomSnapshot, *domain.HandSnapshot, uint64, error)
+	})
+	if hasAuthority {
+		snapshot, active, sequence, err = authority.LoadRoomAuthority(ctx, roomID, actor)
+	} else {
+		snapshot, err = reader.LoadRoom(ctx, roomID)
+	}
 	if err != nil {
 		return RoomView{}, err
 	}
@@ -62,9 +84,13 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 	if !ok {
 		return RoomView{}, fmt.Errorf("%w: room sequence query unavailable", ErrInvalidCommand)
 	}
-	view.LastClientSequence, err = seqReader.RoomClientSequence(ctx, roomID, actor)
-	if err != nil {
-		return RoomView{}, err
+	if hasAuthority {
+		view.LastClientSequence = sequence
+	} else {
+		view.LastClientSequence, err = seqReader.RoomClientSequence(ctx, roomID, actor)
+		if err != nil {
+			return RoomView{}, err
+		}
 	}
 	for _, seat := range snapshot.Seats {
 		if seat.AccountID != "" {
@@ -79,6 +105,22 @@ func (s *Service) GetRoomView(ctx context.Context, actor domain.AccountID, roomI
 			view.Seats = append(view.Seats, RoomSeatView{Position: uint8(seat.Seat), AccountID: string(seat.AccountID), Ready: seat.Ready})
 		}
 		view.ActiveHandID = string(snapshot.ActiveHandID)
+		if snapshot.ActiveHandID != "" {
+			if !hasAuthority || active == nil || active.ID != snapshot.ActiveHandID || active.RoomID != roomID {
+				return RoomView{}, fmt.Errorf("%w: active room authority unavailable", ErrInvalidCommand)
+			}
+			if _, err := domain.RestoreHand(*active); err != nil {
+				return RoomView{}, fmt.Errorf("restore active room hand: %w", err)
+			}
+			_, own, err := resolveHandContribution(*active, actor)
+			if err != nil {
+				return RoomView{}, err
+			}
+			view.ActiveHandAuthority = &RoomHandAuthority{
+				HandID: string(active.ID), Phase: active.Phase, Version: active.Version,
+				FairnessMode: active.FairnessMode, Revealed: own.Revealed,
+			}
+		}
 		// Room membership does not confer authorization to a previous hand's
 		// archive. A replacement player may join after the old hand finishes:
 		// giving them lastHandId would make reconnect request inaccessible

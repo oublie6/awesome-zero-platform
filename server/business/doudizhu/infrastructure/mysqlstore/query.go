@@ -59,6 +59,43 @@ WHERE room_id = ?`, id); err != nil {
 	return snapshot, nil
 }
 
+// LoadRoomAuthority reads room, active hand and actor sequence at a single
+// InnoDB consistent-read point; bounded indexed joins, no mutation or lock.
+func (s *Store) LoadRoomAuthority(ctx context.Context, id domain.RoomID, actor domain.AccountID) (domain.RoomSnapshot, *domain.HandSnapshot, uint64, error) {
+	if s == nil || s.database == nil || s.database.DB() == nil {
+		return domain.RoomSnapshot{}, nil, 0, fmt.Errorf("mysql doudizhu store is not configured")
+	}
+	var row struct {
+		Room     []byte `db:"room_snapshot"`
+		Hand     []byte `db:"hand_snapshot"`
+		Sequence uint64 `db:"last_sequence"`
+	}
+	if err := s.goZero.QueryRowCtx(ctx, &row, `
+SELECT r.snapshot_json AS room_snapshot,
+       COALESCE(h.snapshot_json, 'null') AS hand_snapshot,
+       COALESCE(c.last_sequence, 0) AS last_sequence
+FROM doudizhu_rooms r
+LEFT JOIN doudizhu_hands h ON h.hand_id = r.active_hand_id AND h.room_id = r.room_id
+LEFT JOIN doudizhu_client_sequences c ON c.aggregate_type = 'room'
+    AND c.aggregate_id = r.room_id AND c.actor_account_id = ?
+WHERE r.room_id = ?`, actor, id); err != nil {
+		return domain.RoomSnapshot{}, nil, 0, translateNotFound(err)
+	}
+	var room domain.RoomSnapshot
+	if err := json.Unmarshal(row.Room, &room); err != nil {
+		return domain.RoomSnapshot{}, nil, 0, fmt.Errorf("decode room authority: %w", err)
+	}
+	var hand *domain.HandSnapshot
+	if err := json.Unmarshal(row.Hand, &hand); err != nil {
+		return domain.RoomSnapshot{}, nil, 0, fmt.Errorf("decode active hand authority: %w", err)
+	}
+	if room.ID != id || (room.ActiveHandID != "" && (hand == nil || hand.ID != room.ActiveHandID || hand.RoomID != id)) ||
+		(room.ActiveHandID == "" && hand != nil) {
+		return domain.RoomSnapshot{}, nil, 0, fmt.Errorf("room authority identity mismatch")
+	}
+	return room, hand, row.Sequence, nil
+}
+
 func (s *Store) RoomClientSequence(ctx context.Context, roomID domain.RoomID, actor domain.AccountID) (uint64, error) {
 	var row struct {
 		Sequence uint64 `db:"last_sequence"`

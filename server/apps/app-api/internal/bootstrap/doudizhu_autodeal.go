@@ -29,13 +29,14 @@ type drandReader interface {
 	Fetch(context.Context, domain.BeaconPlan) (domain.BeaconValue, error)
 }
 type fairAutoDealer struct {
-	store   fairDealStore
-	writer  fairDealWriter
-	tracker fairDealTracker
-	reader  drandReader
-	ids     application.IDGenerator
-	clock   application.Clock
-	ttl     time.Duration
+	store       fairDealStore
+	writer      fairDealWriter
+	tracker     fairDealTracker
+	reader      drandReader
+	ids         application.IDGenerator
+	clock       application.Clock
+	ttl         time.Duration
+	notifyDealt func(context.Context, domain.HandID)
 }
 
 func newFairAutoDealer(store fairDealStore, writer fairDealWriter, tracker fairDealTracker,
@@ -149,6 +150,9 @@ func (a *fairAutoDealer) ProcessOnce(ctx context.Context) (int, error) {
 			}
 			if err := a.tracker.TrackBidding(ctx, snap.Seats[0].AccountID, id); err != nil {
 				return progressed, fmt.Errorf("track dealt hand %s: %w", id, err)
+			}
+			if a.notifyDealt != nil {
+				a.notifyDealt(ctx, id)
 			}
 			progressed++
 		}

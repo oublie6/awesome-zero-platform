@@ -46,3 +46,6 @@ HTTP and WSS use the same dispatcher. Durable command IDs retain database idempo
 ## Persistence and process boundary
 
 Active bids, cards, turns, passes, and versions remain memory-authoritative. Redis is not used for cards or live snapshots. MySQL stores durable room/fairness data and immutable terminal archives only. Process-crash restoration, cross-instance live migration, public spectators, and client UI are outside service v1.
+
+## Goal0065 Round8 recovery authority extension (candidate)
+The existing room HTTP projection adds optional member-only `activeHandAuthority` with handId, durable version, phase, optional fairnessMode and own revealed. The production store reads room, active hand and actor sequence in one consistent MySQL statement. This version is NOT the live private stateVersion. Active recovery on the new client requires this proof; upgrade API before Web, roll back Web before API. No schema or write protocol changes. After automatic durable dealing and lifecycle tracking, `doudizhu.hand.changed` may carry response type `hand.dealt`, followed by the existing actor-scoped private snapshot. The notice proves projection is required, not a numeric live-version floor. Missing/delayed delivery is repaired by explicit bounded recovery; readiness reflects a server read point, not a permanent membership or phase lease.

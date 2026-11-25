@@ -126,8 +126,15 @@ func TestAutoDealerWaitsForPinnedBeaconThenDealsExactlyOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	notified := 0
+	dealer.notifyDealt = func(_ context.Context, id domain.HandID) {
+		if id != "hand-1" || writer.dealt != 1 || tracker.called != 1 {
+			t.Fatalf("notification preceded confirmed deal: %s", id)
+		}
+		notified++
+	}
 	if progressed, err := dealer.ProcessOnce(context.Background()); err != nil || progressed != 0 ||
-		writer.locked != 0 || writer.dealt != 0 {
+		writer.locked != 0 || writer.dealt != 0 || notified != 0 {
 		t.Fatalf("future round caused premature deal: %d %v", progressed, err)
 	}
 	beacon.ready = true
@@ -136,11 +143,11 @@ func TestAutoDealerWaitsForPinnedBeaconThenDealsExactlyOnce(t *testing.T) {
 		t.Fatalf("verified beacon did not lock: %d %v", progressed, err)
 	}
 	if progressed, err := dealer.ProcessOnce(context.Background()); err != nil || progressed != 1 ||
-		writer.dealt != 1 || tracker.called != 1 {
+		writer.dealt != 1 || tracker.called != 1 || notified != 1 {
 		t.Fatalf("durable dealing failed: %d %v", progressed, err)
 	}
 	if progressed, err := dealer.ProcessOnce(context.Background()); err != nil || progressed != 0 ||
-		writer.dealt != 1 {
+		writer.dealt != 1 || notified != 1 {
 		t.Fatalf("hand dealt twice: %d %v", progressed, err)
 	}
 }

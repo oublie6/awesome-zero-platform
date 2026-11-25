@@ -152,6 +152,15 @@ func (b *RealtimeBridge) NotifyCommitted(ctx context.Context, id domain.HandID) 
 	}
 	b.broadcastHand(ctx, id, CommandResponse{Version: CommandResponseV1, Type: "hand.timeout"})
 }
+// NotifyDealt is emitted after the automatic durable deal and lifecycle
+// tracking succeed. It is a hint; the private projection remains authoritative.
+func (b *RealtimeBridge) NotifyDealt(ctx context.Context, id domain.HandID) {
+	if b == nil {
+		return
+	}
+	b.broadcastHand(ctx, id, CommandResponse{Version: CommandResponseV1, Type: "hand.dealt"})
+}
+
 func (b *RealtimeBridge) broadcastHand(ctx context.Context, handID domain.HandID, response CommandResponse) {
 	hand, err := b.audience.LoadHand(ctx, handID)
 	if err != nil {

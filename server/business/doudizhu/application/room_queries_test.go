@@ -114,3 +114,55 @@ func TestRoomViewLastHandIsScopedToHistoricalParticipantsAfterSeatReplacement(t 
 		t.Fatalf("missing retained archive blocks room query: %+v %v", view, err)
 	}
 }
+
+func TestRoomAuthorityIncludesActivePhaseOnlyForMembers(t *testing.T) {
+	ctx := context.Background()
+	room, _, err := domain.NewRoom("authority-room", "actor-A")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, actor := range []domain.AccountID{"actor-B", "actor-C"} {
+		if _, err := room.Join(actor, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, actor := range []domain.AccountID{"actor-A", "actor-B", "actor-C"} {
+		if _, err := room.SetReady(actor, true, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := room.StartHand("actor-A", "authority-hand", room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
+	seats := [3]domain.HandSeat{{Seat: 1, AccountID: "actor-A"}, {Seat: 2, AccountID: "actor-B"}, {Seat: 3, AccountID: "actor-C"}}
+	hand, _, err := domain.NewHand("authority-hand", "authority-room", seats, domain.ServerCommitment{1},
+		"authority-key", domain.BeaconPlan{Provider: "test", Round: "round"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := newTestStore()
+	store.state.rooms["authority-room"] = room.Snapshot()
+	store.state.hands["authority-hand"] = hand.Snapshot()
+	service := &Service{store: store}
+	first, err := service.GetRoomView(ctx, "actor-A", "authority-room")
+	if err != nil || first.ActiveHandAuthority == nil || first.ActiveHandAuthority.Phase != domain.HandFairnessCommitting {
+		t.Fatalf("missing active authority: %+v %v", first, err)
+	}
+	if _, err := hand.SubmitCommit("actor-A", domain.Commitment{1}, hand.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
+	store.state.hands["authority-hand"] = hand.Snapshot()
+	second, err := service.GetRoomView(ctx, "actor-A", "authority-room")
+	if err != nil || second.ActiveHandAuthority == nil || second.Version != first.Version ||
+		second.ActiveHandAuthority.Version <= first.ActiveHandAuthority.Version {
+		t.Fatalf("hand proof must advance independently of room: %+v %v", second, err)
+	}
+	preview, err := service.GetRoomView(ctx, "outsider", "authority-room")
+	if err != nil || preview.ActiveHandAuthority != nil || preview.ActiveHandID != "" {
+		t.Fatalf("outsider received active proof: %+v %v", preview, err)
+	}
+	delete(store.state.hands, "authority-hand")
+	if _, err := service.GetRoomView(ctx, "actor-A", "authority-room"); err == nil {
+		t.Fatal("missing active authority was silently accepted")
+	}
+}

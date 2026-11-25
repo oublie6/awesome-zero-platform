@@ -349,6 +349,20 @@ func (s *testStore) RoomClientSequence(_ context.Context, id domain.RoomID, acto
 	return s.state.sequences[testSequenceKey(domain.AggregateRoom, string(id), actor)], nil
 }
 
+func (s *testStore) LoadRoomAuthority(_ context.Context, id domain.RoomID, actor domain.AccountID) (domain.RoomSnapshot, *domain.HandSnapshot, uint64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	room, ok := s.state.rooms[string(id)]
+	if !ok {
+		return domain.RoomSnapshot{}, nil, 0, ErrNotFound
+	}
+	var active *domain.HandSnapshot
+	if hand, ok := s.state.hands[string(room.ActiveHandID)]; room.ActiveHandID != "" && ok {
+		active = &hand
+	}
+	return room, active, s.state.sequences[testSequenceKey(domain.AggregateRoom, string(id), actor)], nil
+}
+
 func (s *testStore) LoadRoom(_ context.Context, id domain.RoomID) (domain.RoomSnapshot, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

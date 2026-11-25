@@ -57,6 +57,13 @@ func doudizhuModule(
 					return nil, fmt.Errorf("register Doudizhu realtime handlers: %w", err)
 				}
 			}
+			if components.startAutoDealer != nil {
+				var notify func(context.Context, domain.HandID)
+				if bridge != nil {
+					notify = bridge.NotifyDealt
+				}
+				components.startAutoDealer(notify)
+			}
 			if components.startTurnQueue != nil {
 				notify := func(context.Context, domain.HandID) {}
 				if bridge != nil {
@@ -73,10 +80,11 @@ func doudizhuModule(
 }
 
 type doudizhuComponents struct {
-	dispatcher     *doudizhuapi.Dispatcher
-	audience       doudizhuapi.HandAudience
-	cancel         context.CancelFunc
-	startTurnQueue func(func(context.Context, domain.HandID)) error
+	dispatcher      *doudizhuapi.Dispatcher
+	audience        doudizhuapi.HandAudience
+	cancel          context.CancelFunc
+	startTurnQueue  func(func(context.Context, domain.HandID)) error
+	startAutoDealer func(func(context.Context, domain.HandID))
 }
 
 func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealkeys.Registry) (doudizhuComponents, error) {
@@ -252,24 +260,28 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 		}
 	}
 	ctx, cancel := context.WithCancel(context.Background())
+	var startDealer func(func(context.Context, domain.HandID))
 	if autoDealer != nil {
-		go func() {
-			ticker := time.NewTicker(cfg.Doudizhu.SweepInterval)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-ticker.C:
-					scanCtx, done := context.WithTimeout(ctx, 10*time.Second)
-					_, processErr := autoDealer.ProcessOnce(scanCtx)
-					done()
-					if processErr != nil && ctx.Err() == nil {
-						log.Printf("fair drand auto-deal retry after verification/transaction error: %v", processErr)
+		startDealer = func(notify func(context.Context, domain.HandID)) {
+			autoDealer.notifyDealt = notify
+			go func() {
+				ticker := time.NewTicker(cfg.Doudizhu.SweepInterval)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case <-ticker.C:
+						scanCtx, done := context.WithTimeout(ctx, 10*time.Second)
+						_, processErr := autoDealer.ProcessOnce(scanCtx)
+						done()
+						if processErr != nil && ctx.Err() == nil {
+							log.Printf("fair drand auto-deal retry after verification/transaction error: %v", processErr)
+						}
 					}
 				}
-			}
-		}()
+			}()
+		}
 	}
 	var startQueue func(func(context.Context, domain.HandID)) error
 	if cfg.Doudizhu.TurnDQ.Enabled {
@@ -285,5 +297,5 @@ func initializeDoudizhu(cfg config.Config, mysql database.Handle, keys *revealke
 			}
 		}()
 	}
-	return doudizhuComponents{dispatcher: dispatcher, audience: store, cancel: cancel, startTurnQueue: startQueue}, nil
+	return doudizhuComponents{dispatcher: dispatcher, audience: store, cancel: cancel, startTurnQueue: startQueue, startAutoDealer: startDealer}, nil
 }
