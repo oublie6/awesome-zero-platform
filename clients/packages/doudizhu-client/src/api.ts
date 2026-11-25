@@ -167,6 +167,14 @@ export class DoudizhuHTTPClient {
   }
 }
 
+export interface RoomHandAuthority {
+  handId:string
+  phase:string
+  /** Durable aggregate version, never a live private-view version floor. */
+  version:number
+  fairnessMode?:'client-contributed-server-custodied-v1'
+  revealed:boolean
+}
 export interface RoomRead {
   roomId: string
   version: number
@@ -176,6 +184,7 @@ export interface RoomRead {
   lastClientSequence: number
   seats?: ReadonlyArray<{position:number;accountId:string;ready:boolean}>
   activeHandId?: string
+  activeHandAuthority?: RoomHandAuthority
   lastHandId?: string
 }
 function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
@@ -196,11 +205,21 @@ function parseRoomRead(raw: unknown, expectedID: string): RoomRead {
         (raw.lastHandId !== undefined && (typeof raw.lastHandId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(raw.lastHandId)))) {
       throw new Error('invalid member room view')
     }
+    if(raw.activeHandAuthority!==undefined){
+      const proof=raw.activeHandAuthority
+      if(!record(proof) || typeof raw.activeHandId!=='string' || !/^[A-Za-z0-9_-]{1,128}$/.test(raw.activeHandId) ||
+        proof.handId!==raw.activeHandId ||
+        !['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING','BIDDING','PLAYING','SETTLING','COMPLETED','CANCELLED','ABORTED','EXPIRED'].includes(proof.phase as string) ||
+        !Number.isSafeInteger(proof.version) || (proof.version as number)<1 ||
+        typeof proof.revealed!=='boolean' ||
+        (proof.fairnessMode!==undefined && proof.fairnessMode!=='client-contributed-server-custodied-v1'))
+        throw new Error('invalid authoritative active hand proof')
+    }
     const taken=raw.seats.filter(s=>typeof s.accountId==='string' && s.accountId!=='')
     if (taken.length!==raw.occupied || new Set(taken.map(s=>s.accountId)).size!==raw.occupied) {
       throw new Error('invalid room seat ownership')
     }
-  } else if (raw.seats !== undefined || raw.activeHandId !== undefined || raw.lastHandId !== undefined) {
+  } else if (raw.seats !== undefined || raw.activeHandId !== undefined || raw.activeHandAuthority!==undefined || raw.lastHandId !== undefined) {
     throw new Error('room preview leaked private membership fields')
   }
   if (raw.member) {

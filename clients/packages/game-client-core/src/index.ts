@@ -75,6 +75,7 @@ export class ConnectionManager {
   private generation = 0
   private cancellations = new Set<() => void>()
   constructor(private readonly socket: SocketTransport) {}
+  get isOpen():boolean { return this.connection!==null }
   async open(url: string, token: string, onMessage: (message: string) => void, onClose: () => void): Promise<void> {
     websocketURL(url)
     this.close()

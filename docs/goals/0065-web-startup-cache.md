@@ -101,3 +101,9 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
 - 边界：共享 TS 会话、斗地主 shell、Cocos scene/Vue auth 分别拥有各自逻辑；无 Go、协议、数据库、缓存头或集群变更。额外读取只在启动末次门禁，不新增轮询；一次同步请求及单 vault 有序写入，网络交换不占用队列。回滚原客户端产物。新增受控异步测试，实际 Go/Cocos 和真实设备结论待独立验证；按用户要求不调查手机黑屏。
 
 第二遍关联审计：成员重入/reconnect 的 active-hand 读取在最终 membership 后重新检查发牌前阶段并在最后异步同步后核验成员/room version；不改变已经确认的持久化新成员 Join 回执。Cocos 对自动 timeout 通知主动发起有界只读同步，旧选择/重复通知错误反馈受代次约束。Web host 恢复尝试独立代次保护旧 finally/catch；微信解绑/换绑用 session.discardLocal() 仅清除自己的本地令牌，已由 Go 撤销的 token 不重复 revoke，旧完成不覆盖新账号界面。补充实际 Controller 双入口跨阶段、关房和会话本地 detach 测试，以及最后场景门禁结构约束。仍需真实 Cocos/Go 独立复验。
+
+## Round 8 系统性改造（用户授权；待 CI 与独立验收）
+- 范围修订：用户授权为解决两个 P2 重构完成语义并评估服务端接口。新增向后兼容 room v1 的成员限定 activeHandAuthority（handId、durable version、phase、fairnessMode、本人 revealed），不改命令协议、数据库 schema、秘密、存储、缓存策略；旧客户端忽略新增字段，新客户端严格恢复要求新 API，先升级 API 再升级 Web，回滚顺序相反。Go 业务模块拥有权威投影，生产 MySQL go-zero 单语句 PK JOIN 同一一致读点取得 room、active hand、actor seq；不锁定写入、不将 durable version 当 live version。非成员不返回证明，缺失/错配 fail closed。旧归档授权保持。
+- 共享 Controller.confirmRoomAuthority 由 join/reconnect/场景恢复/最后启动门禁消费同一证明；若观察到已发牌或实时 deal 提示，必须有授权私有投影，必要时一次同步和一次重新读取，最多两轮、超出显式失败。成功代表服务端读取点，不是永久租约；自动发牌提交及追踪成功通过已有账号私有 WSS 通道发布 hand.dealt 提示/快照。无新增轮询、无全局锁、无跨模块数据访问、无额外写命令；失联或推送遗漏仍走恢复。
+- Session 登录/恢复返回仅内存的 operation-owned grant 或 null，旧完成不再产生连接许可；Controller 在首个 await 前认领启动代次，三个身份入口共用 grant+连接完成门禁，已建立身份使用新 Controller 换号以隔离业务状态；Shell 显式返回连接是否完成。保持 UNKNOWN 精确身份与已确认 durable receipt。单 realm vault 所有权及双 realm compare-and-clear 原边界保持。
+- 回归覆盖旧成功丢弃与 B 连接/待确认命令保留、同 room version 的阶段推进、Go 成员限定证明和独立手牌版本、协议校验、自动发牌通知、已有成员双入口和 Bootstrap 共用门禁；保持 in_progress。真实 Cocos/Go、MySQL 一致读、完整业务与本产物缓存性能仍需 CI/Codex 证据；不调查手机黑屏。

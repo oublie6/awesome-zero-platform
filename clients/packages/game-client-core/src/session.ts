@@ -23,6 +23,12 @@ function orderFor(vault:SessionVault):VaultOrder {
   if(!order){order={tail:Promise.resolve(),loginEpoch:0};keys.set(key,order)}
   return order
 }
+/** An identity operation owns exactly this credential and epoch.
+ * Superseded operations return null; recheck ownership after caller awaits. */
+export interface SessionGrant {
+  readonly token:string
+  isCurrent():boolean
+}
 export class GameSession {
   private accessToken: string | null = null
   private generation = 0
@@ -49,39 +55,47 @@ export class GameSession {
   }
   /** Does not interpret local storage as a verified identity. Authentication must be confirmed by the server. */
   async restore(validate: (accessToken: string) => Promise<boolean>): Promise<boolean> {
+    const grant=await this.restoreOwned(validate)
+    return grant?.isCurrent()??false
+  }
+  async restoreOwned(validate: (accessToken: string) => Promise<boolean>): Promise<SessionGrant|null> {
     this.assertActive()
     const generation = ++this.generation
     this.accessToken=null
     this.ownedToken=null
     const loginEpoch=this.order.loginEpoch
     await this.order.tail
-    if(this.disposed || generation!==this.generation || loginEpoch!==this.order.loginEpoch)return false
+    if(this.disposed || generation!==this.generation || loginEpoch!==this.order.loginEpoch)return null
     const stored = await this.platform.vault.load()
-    if (!stored || this.disposed || generation!==this.generation || loginEpoch!==this.order.loginEpoch) return false
+    if (!stored || this.disposed || generation!==this.generation || loginEpoch!==this.order.loginEpoch) return null
     // Capture ownership at restore, never by reloading during logout.
     this.ownedToken=stored
     let valid = false
     try { valid = await validate(stored) } catch { valid = false }
-    if (this.disposed || generation !== this.generation || loginEpoch!==this.order.loginEpoch) return false
+    if (this.disposed || generation !== this.generation || loginEpoch!==this.order.loginEpoch) return null
     if (!valid) {
       await this.mutateVault(async()=>{
         if(!this.disposed && generation===this.generation && loginEpoch===this.order.loginEpoch)
           await this.clearOwnedToken(stored)
       })
       if(generation===this.generation)this.ownedToken=null
-      return false
+      return null
     }
     // Another controller or the parent Web page may have replaced the
     // shared token while the HTTP validation was outstanding.
     const current=await this.platform.vault.load()
     if(this.disposed || generation!==this.generation || loginEpoch!==this.order.loginEpoch || current!==stored){
       if(generation===this.generation)this.ownedToken=null
-      return false
+      return null
     }
     this.accessToken = stored
-    return true
+    return this.grant(stored,generation,loginEpoch)
   }
-  async login(): Promise<void> {
+  private grant(token:string,generation:number,loginEpoch:number):SessionGrant {
+    return Object.freeze({token,isCurrent:()=>!this.disposed && generation===this.generation &&
+      loginEpoch===this.order.loginEpoch && this.accessToken===token})
+  }
+  async login(): Promise<SessionGrant|null> {
     const expected = this.generation + 1
     return this.loginWith(async () => {
       const code = await this.platform.auth.acquireCode()
@@ -92,26 +106,29 @@ export class GameSession {
   }
   /** Credential and platform-code login share the same epoch, token and
    * logout semantics. Credential material is never passed to the vault. */
-  async loginWith(exchange: () => Promise<{accessToken: string}>): Promise<void> {
+  async loginWith(exchange: () => Promise<{accessToken: string}>): Promise<SessionGrant|null> {
     this.assertActive()
     const generation = ++this.generation
     const loginEpoch=++this.order.loginEpoch
     const current=()=>!this.disposed && generation===this.generation && loginEpoch===this.order.loginEpoch
-    const result = await exchange()
-    if (!current()) return
+    let result:{accessToken:string}
+    try{result=await exchange()}catch(error){if(!current())return null;throw error}
+    if (!current()) return null
     if (!result || typeof result.accessToken !== 'string' || !result.accessToken.trim()) {
       throw new Error('identity exchange returned no access token')
     }
-    await this.mutateVault(async()=>{
-      if(!current())return
+    const grant=await this.mutateVault(async()=>{
+      if(!current())return null
       await this.platform.vault.save(result.accessToken)
       if(!current()){
         await this.clearOwnedToken(result.accessToken)
-        return
+        return null
       }
       this.ownedToken=result.accessToken
       this.accessToken=result.accessToken
+      return this.grant(result.accessToken,generation,loginEpoch)
     })
+    return grant?.isCurrent()?grant:null
   }
   private releaseToken():string|null {
     this.generation++

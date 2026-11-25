@@ -164,3 +164,14 @@ test('recoverable rooms are authenticated, membership-scoped and strictly parsed
  await assert.rejects(api({rooms:[{...own,status:'CLOSED'}]}).recoverableRooms(),/unauthorized/)
  await assert.rejects(api({rooms:[own]},'').recoverableRooms(),/token required/)
 })
+
+test('G65 R8: room authority is actor-scoped and must match active hand',async()=>{
+ const room={roomId:'r-1',version:3,status:'HAND_ACTIVE',occupied:3,member:true,lastClientSequence:1,
+  activeHandId:'h-1',seats:[1,2,3].map(position=>({position,accountId:'actor'+position,ready:false})),
+  activeHandAuthority:{handId:'h-1',phase:'BIDDING',version:17,revealed:true}}
+ const client=data=>new DoudizhuHTTPClient({request:async()=>({code:'OK',data})},()=> 'token')
+ assert.deepEqual((await client(room).room('r-1')).activeHandAuthority,room.activeHandAuthority)
+ await assert.rejects(client({...room,activeHandAuthority:{...room.activeHandAuthority,handId:'h-2'}}).room('r-1'),/active hand proof/)
+ await assert.rejects(client({...room,activeHandAuthority:{...room.activeHandAuthority,version:0}}).room('r-1'),/active hand proof/)
+ await assert.rejects(client({...room,member:false,seats:undefined,activeHandId:undefined}).room('r-1'),/room preview/)
+})

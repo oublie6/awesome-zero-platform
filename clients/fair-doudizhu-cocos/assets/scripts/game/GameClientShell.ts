@@ -48,6 +48,10 @@ export class GameClientShell {
   private pendingSync:PendingSync|null=null
   private requiredHandVersion=0
   private unknownVersionChange=false
+  private dealtHand:string|null=null
+  requiresLiveProjection(handId:string):boolean {
+    return this.dealtHand===handId || this.hand.snapshot?.handId===handId
+  }
   // Bound only by authenticated room/start-hand evidence, not a realtime
   // event. A stale prior-room snapshot must not populate an empty HandStore.
   private authoritativeHand: string | null = null
@@ -93,6 +97,10 @@ export class GameClientShell {
       if (this.handBound && id !== this.authoritativeHand) return
       if (this.hand.snapshot && id !== this.hand.snapshot.handId) return
       const version=changed.response?.live?.version
+      if(changed.response?.type==='hand.dealt' && id){
+        this.dealtHand=id
+        if(this.hand.snapshot?.handId===id && this.handProjectionReady(id))return
+      }
       if(typeof version==='number' && Number.isSafeInteger(version) && version>0){
         this.requiredHandVersion=Math.max(this.requiredHandVersion,version)
         // A broadcast may race ahead of its corresponding changed event.
@@ -208,7 +216,7 @@ export class GameClientShell {
       this.notify('服务器拒绝操作，请同步后重试')
     })
   }
-  async connect(socket: SocketTransport, endpoint: string, token: string): Promise<void> {
+  async connect(socket: SocketTransport, endpoint: string, token: string): Promise<boolean> {
     if (this.disposed) throw new Error('client disposed')
     const generation = ++this.generation
     this.transportReady = false
@@ -235,12 +243,14 @@ export class GameClientShell {
           }
         },
         () => { if (!this.disposed && generation === this.generation) { this.transportReady = false; this.rejectSync('connection lost during hand sync'); this.rejectPending('connection lost; command outcome unknown'); this.hand.setStatus('disconnected'); this.notify('连接中断，请重连') } })
-      if (this.disposed || generation !== this.generation) return
+      if (this.disposed || generation !== this.generation) return false
+      if(!connection.isOpen)throw new Error('socket closed before connection completion')
       this.transportReady = true
       this.hand.setStatus('synchronizing')
       this.notify('已连接，等待房间或牌局状态同步')
+      return true
     } catch (error) {
-      if (this.disposed || generation !== this.generation) return
+      if (this.disposed || generation !== this.generation) return false
       this.transportReady = false
       this.hand.setStatus('disconnected')
       throw error
@@ -258,6 +268,7 @@ export class GameClientShell {
     this.rejectSync('authoritative hand changed during synchronization')
     this.requiredHandVersion=0
     this.unknownVersionChange=false
+    this.dealtHand=null
     this.authoritativeHand = handId
     this.handBound = true
     this.hand.clearHand()

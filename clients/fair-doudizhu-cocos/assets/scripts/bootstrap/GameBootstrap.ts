@@ -665,10 +665,13 @@ export class GameBootstrap extends Component {
     if(!room || room.roomId!==this.roomID || !room.member || room.status==='CLOSED')return false
     if(room.activeHandId){
       if(room.activeHandId!==this.handID || this.fairnessView?.handId!==room.activeHandId)return false
-      const phase=this.fairnessView.phase
+      const proof=room.activeHandAuthority
+      if(!proof || proof.handId!==room.activeHandId)return false
+      const phase=proof.phase
       const snapshot=online.shell.hand.snapshot
       if(['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(phase) ||
-         snapshot?.handId===room.activeHandId)
+         ['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(this.fairnessView.phase) ||
+         snapshot?.handId===room.activeHandId || online.shell.requiresLiveProjection(room.activeHandId))
         return online.shell.handProjectionReady(room.activeHandId)
       return ['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING'].includes(phase)
     }
@@ -699,24 +702,28 @@ export class GameBootstrap extends Component {
       if(!presentation || presentation.roomId!==roomID)throw new Error('startup room not confirmed')
       const readGeneration=this.roomReadGeneration
       const fairnessGeneration=this.fairnessReadGeneration
-      const verified=await online.roomInfo(roomID)
-      if(!current() || this.roomID!==roomID || readGeneration!==this.roomReadGeneration ||
-         fairnessGeneration!==this.fairnessReadGeneration)
-        throw new Error('startup room changed during final verification')
-      if(!verified.member || verified.status==='CLOSED'){
-        this.revokeInvalidRecoveredRoom(online,roomID)
-        throw new Error('room closed or membership revoked during startup')
-      }
-      if(verified.version!==presentation.version ||
-         verified.activeHandId!==presentation.activeHandId ||
-         verified.lastHandId!==presentation.lastHandId ||
-         online.rooms.state?.version!==verified.version || !this.requiredRecoveryReady(online))
+      const owned=()=>current() && this.roomID===roomID && readGeneration===this.roomReadGeneration &&
+        fairnessGeneration===this.fairnessReadGeneration
+      const verified=await online.confirmRoomAuthority(presentation,owned,this.fairnessView?.phase??null)
+      if(!verified || !owned())throw new Error('startup room changed during final verification')
+      this.adoptRoomAuthorityPresentation(verified)
+      if(!this.requiredRecoveryReady(online))
         throw new Error('room or hand changed during startup; retry authoritative lookup')
     }catch(error){
       if(current() && this.recoveryAuthorityRevoked(error))
         this.revokeInvalidRecoveredRoom(online,roomID)
       throw error
     }
+  }
+  /** The final joint proof owns the readiness presentation. */
+  private adoptRoomAuthorityPresentation(verified:RoomRead):void{
+    this.roomView=verified
+    const proof=verified.activeHandAuthority
+    if(proof){
+      this.fairnessView={handId:proof.handId,phase:proof.phase,revealed:proof.revealed}
+      this.fairnessMode=proof.fairnessMode||''
+    }
+    if(this.screen==='rooms')this.renderScreen('rooms')
   }
   /** Resolve true only after verified identity, live WSS and all required
    * read-only room/hand restoration have completed. Suppressed errors and
@@ -769,10 +776,11 @@ export class GameBootstrap extends Component {
         if(restoreOnly){
           const valid=await online.restoreAndConnect(token=>validateWebAccess(platform,token))
           if(!valid)throw new Error('网页会话已过期，请重新登录')
-        }else await online.loginWithPassword(identifier,password)
+        }else if(!await online.loginWithPassword(identifier,password))return false
       }else{
         const restored=await online.restoreAndConnect(token=>validateWeChatAccess(platform,token))
-        if(!restored)await online.loginAndConnect()
+        if(!this.currentAccount(online,generation))return false
+        if(!restored && !await online.loginAndConnect())return false
       }
       if(!this.currentAccount(online,generation))return false
       // Profile is a verified server read used for lobby presentation only.
@@ -789,7 +797,7 @@ export class GameBootstrap extends Component {
       online.shell.events.on('doudizhu.hand.changed',payload=>{
         const event=payload as {handId?:string;response?:{type?:unknown}}
         const handID=event.handId,roomID=this.roomID
-        if(event.response?.type!=='hand.timeout' || !handID || handID!==this.handID ||
+        if(!['hand.timeout','hand.dealt'].includes(String(event.response?.type)) || !handID || handID!==this.handID ||
            !this.currentAccount(online,generation) || online.shell.handProjectionReady(handID))return
         const read=++timeoutRead,roomGeneration=this.roomGeneration,selection=this.recoveryAttempt
         const current=()=>read===timeoutRead && handID===this.handID &&
@@ -1090,20 +1098,13 @@ export class GameBootstrap extends Component {
       const presentation=this.roomView as RoomRead|null
       if(presentation?.roomId!==roomID)
         throw new Error('权威房间界面尚未同步完成，请重新恢复')
-      const verified=await online.roomInfo(roomID)
+      const readGeneration=this.roomReadGeneration,fairnessGeneration=this.fairnessReadGeneration
+      const owned=()=>current() && this.roomID===roomID && readGeneration===this.roomReadGeneration &&
+        fairnessGeneration===this.fairnessReadGeneration
+      const verified=await online.confirmRoomAuthority(presentation,owned,this.fairnessView?.phase??null)
       if(!current())return
-      if(!verified.member || verified.status==='CLOSED'){
-        this.revokeInvalidRecoveredRoom(online,roomID)
-        throw new Error('room closed or membership revoked during recovery')
-      }
-      if(verified.version<room.version ||
-         verified.activeHandId!==room.activeHandId ||
-         verified.lastHandId!==room.lastHandId)
-        throw new Error('room changed during recovery; refresh authoritative state')
-      if(online.rooms.state?.roomId!==roomID)
-        throw new Error('room changed while applying recovery')
-      if(online.rooms.state.version!==verified.version || presentation.version!==verified.version)
-        throw new Error('room version changed after recovery; retry authoritative lookup')
+      if(!verified || !owned())throw new Error('room changed during final recovery')
+      this.adoptRoomAuthorityPresentation(verified)
       if(!this.requiredRecoveryReady(online))
         throw new Error('当前房间或牌局的权威状态尚未确认，请重新恢复')
       if(current())this.notice('已通过服务器恢复本人房间和牌局')

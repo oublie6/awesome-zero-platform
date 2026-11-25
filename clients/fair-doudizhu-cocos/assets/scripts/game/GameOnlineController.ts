@@ -1,5 +1,5 @@
 import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
-import { GameSession, type IdentityExchange } from '@awesome-zero-platform/game-client-core/session'
+import { GameSession, type IdentityExchange, type SessionGrant } from '@awesome-zero-platform/game-client-core/session'
 import { RoomCoordinator, secureRoomCommandIdentity, type RoomState } from '@awesome-zero-platform/doudizhu-client/room'
 import { DoudizhuHTTPClient, type RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
 import { GameClientShell } from './GameClientShell.ts'
@@ -21,6 +21,8 @@ export class GameOnlineController {
   private confirmedFairnessHand: string | null = null
   private startingHand: string | null = null
   private disposed = false
+  private authAttempt=0
+  private identityEstablished=false
   private membershipGeneration = 0
   // The latest explicit recovery choice owns all post-await room/hand writes.
   // Same-target concurrent recoveries share one operation only while its
@@ -54,12 +56,11 @@ export class GameOnlineController {
   }
   /** Web password login uses the existing Go /auth/login identity service.
    * Only the server-issued accessToken can become a game session token. */
-  async loginWithPassword(identifier: string, password: string): Promise<void> {
+  async loginWithPassword(identifier: string, password: string): Promise<boolean> {
     if (this.disposed || this.platform.target !== 'web') throw new Error('Web login requires an active web controller')
     if (!identifier || identifier.trim() !== identifier || identifier.length > 256 ||
         !password || password.length > 1024) throw new Error('valid web credentials required')
-    await this.shell.initialize()
-    await this.session.loginWith(async () => {
+    return this.authenticateAndConnect(()=>this.session.loginWith(async () => {
       const raw = await this.platform.http.request<unknown>('/auth/login', {
         method:'POST',body:{identifier,password},timeoutMs:12000
       })
@@ -72,25 +73,33 @@ export class GameOnlineController {
           !data.accessToken.trim() || /[\r\n]/.test(data.accessToken))
         throw new Error('invalid web authentication token')
       return {accessToken:data.accessToken}
-    })
-    if (this.disposed) return
-    await this.shell.connect(this.platform.socket,this.socketEndpoint,this.session.token)
+    }))
   }
-  async loginAndConnect(): Promise<void> {
-    if (this.disposed) throw new Error('online controller disposed')
-    await this.shell.initialize()
-    await this.session.login()
-    if (this.disposed) return
-    await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
+  async loginAndConnect(): Promise<boolean> {
+    return this.authenticateAndConnect(()=>this.session.login())
   }
   /** Server validation is mandatory even for a previously saved access token. */
   async restoreAndConnect(validate: (token: string) => Promise<boolean>): Promise<boolean> {
-    if (this.disposed) throw new Error('online controller disposed')
-    await this.shell.initialize()
-    if (!await this.session.restore(validate)) return false
-    if (this.disposed) return false
-    await this.shell.connect(this.platform.socket, this.socketEndpoint, this.session.token)
-    return !this.disposed && this.session.authenticated && this.shell.commandTransportReady
+    return this.authenticateAndConnect(()=>this.session.restoreOwned(validate))
+  }
+  /** One controller owns one established identity. Pending attempts can
+   * supersede each other, but account replacement needs a fresh controller. */
+  private async authenticateAndConnect(auth:()=>Promise<SessionGrant|null>):Promise<boolean>{
+    if(this.disposed)throw new Error('online controller disposed')
+    if(this.identityEstablished)throw new Error('controller already authenticated; replace controller to change identity')
+    const attempt=++this.authAttempt
+    const current=()=>!this.disposed && attempt===this.authAttempt
+    try{
+      await this.shell.initialize()
+      if(!current())return false
+      const grant=await auth()
+      if(!current() || !grant?.isCurrent())return false
+      const connected=await this.shell.connect(this.platform.socket,this.socketEndpoint,grant.token)
+      if(!current() || !grant.isCurrent())return false
+      if(!connected || !this.shell.commandTransportReady)throw new Error('socket not ready after authentication')
+      this.identityEstablished=true
+      return true
+    }catch(error){if(!current())return false;throw error}
   }
   /** Recovery is read-only until its final authoritative membership check.
    * Never adopt an earlier room response over a newer user selection. */
@@ -168,8 +177,7 @@ export class GameOnlineController {
     this.adoptAuthorizedRoom(fresh)
     // No suspension between final membership check and authoritative adoption.
     if(fresh.activeHandId){
-      phase=await this.completeActiveRecovery(fresh,phase,current)
-      if(!current())return null
+      return this.completeActiveRecovery(fresh,phase,current)
     }else if(evidence){
       this.shell.acceptVerifiedFinalEvidence(evidence)
     }
@@ -181,29 +189,58 @@ export class GameOnlineController {
    * after adoption; if the deal has advanced, require its private projection.
    * Any active-hand await is followed by a fresh membership/version check. */
   private async completeActiveRecovery(room:RoomRead,phase:string|null,
-    current:()=>boolean):Promise<string|null>{
+    current:()=>boolean):Promise<RoomRead|null>{
     const handId=room.activeHandId
     if(!handId)throw new Error('active recovery requires a hand')
-    if(['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING'].includes(phase??'')){
-      phase=(await this.api.fairness(handId)).phase
-      if(!current())return null
-    }
     if(['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(phase??'')){
       await this.shell.syncHand(handId)
       if(!current())return null
+      this.assertRecoveryUsable(room,phase)
     }
-    this.assertRecoveryUsable(room,phase)
-    const verified=await this.roomInfo(room.roomId)
-    if(!current())return null
-    if(!verified.member || verified.status==='CLOSED'){
-      this.forgetInvalidRecoveredRoom(room.roomId)
-      throw new Error('room membership revoked or room closed during active recovery')
+    return this.confirmRoomAuthority(room,current,phase)
+  }
+  /** One joint proof for member recovery and UI. At most one additional
+   * private read plus a recheck if dealing advanced at the proof point. */
+  async confirmRoomAuthority(room:RoomRead,owned:()=>boolean,phaseHint:string|null=null):Promise<RoomRead|null>{
+    const commands=this.rooms.commandGeneration
+    const current=()=>owned() && !this.disposed && this.session.authenticated &&
+      this.shell.commandTransportReady && commands===this.rooms.commandGeneration &&
+      this.rooms.state?.roomId===room.roomId && this.rooms.state.version===room.version
+    for(let attempt=0;attempt<2;attempt++){
+      if(!owned())return null
+      if(!current())throw new Error('socket disconnected or room changed before recovery completion')
+      const verified=await this.roomInfo(room.roomId)
+      if(!owned())return null
+      if(!current())throw new Error('socket disconnected or room changed before recovery completion')
+      if(!verified.member || verified.status==='CLOSED'){
+        this.forgetInvalidRecoveredRoom(room.roomId)
+        throw new Error('room membership revoked or room closed during recovery')
+      }
+      if(verified.version!==room.version || verified.activeHandId!==room.activeHandId ||
+         verified.lastHandId!==room.lastHandId)
+        throw new Error('room changed during recovery; retry authoritative lookup')
+      const handId=verified.activeHandId
+      let phase:string|null=null
+      if(handId){
+        const proof=verified.activeHandAuthority
+        if(!proof || proof.handId!==handId)throw new Error('active hand authority proof unavailable')
+        phase=proof.phase
+        const live=['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED']
+        const predeal=['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING']
+        if(!live.includes(phase) && !predeal.includes(phase))
+          throw new Error('hand phase not confirmed before recovery completion')
+        const needsLive=live.includes(phase) || live.includes(phaseHint??'') ||
+          this.shell.requiresLiveProjection(handId)
+        if(needsLive && !this.shell.handProjectionReady(handId)){
+          if(attempt===1)throw new Error('private hand state not confirmed before recovery completion')
+          await this.shell.syncHand(handId)
+          continue
+        }
+      }
+      this.assertRecoveryUsable(verified,phase)
+      return verified
     }
-    if(verified.version!==room.version || verified.activeHandId!==handId ||
-       verified.lastHandId!==room.lastHandId)
-      throw new Error('room changed during active recovery; retry authoritative lookup')
-    this.assertRecoveryUsable(room,phase)
-    return phase
+    throw new Error('room authority changed during recovery; retry')
   }
   /** Both read-only recovery entry points confirm current state after the
    * last await. An accepted durable Join remains a separate receipt contract. */
@@ -215,7 +252,7 @@ export class GameOnlineController {
     if(room.activeHandId){
       const snapshot=this.shell.hand.snapshot
       if(['BIDDING','PLAYING','SETTLING','COMPLETED','ABORTED'].includes(phase??'') ||
-         snapshot?.handId===room.activeHandId){
+         snapshot?.handId===room.activeHandId || this.shell.requiresLiveProjection(room.activeHandId)){
         if(!this.shell.handProjectionReady(room.activeHandId))
           throw new Error('private hand state not confirmed before recovery completion')
       }else if(!['FAIRNESS_COMMITTING','FAIRNESS_REVEALING','WAITING_PUBLIC_BEACON','DEALING'].includes(phase??''))
@@ -338,8 +375,9 @@ export class GameOnlineController {
         const adoptedCurrent=()=>!this.disposed && this.session.authenticated &&
           token===this.recoveryGeneration && generation===this.membershipGeneration &&
           this.rooms.state?.roomId===roomId && commands===this.rooms.commandGeneration
-        phase=await this.completeActiveRecovery(fresh,phase,adoptedCurrent)
-        if(!adoptedCurrent())throw new Error('room selection superseded during join')
+        const verified=await this.completeActiveRecovery(fresh,phase,adoptedCurrent)
+        if(!verified || !adoptedCurrent())throw new Error('room selection superseded during join')
+        return {roomId:verified.roomId,version:verified.version}
       } else if (evidence) {
         this.shell.acceptVerifiedFinalEvidence(evidence)
       }
@@ -528,6 +566,7 @@ export class GameOnlineController {
     // Revoke every pending recovery/join before logout suspends for token
     // revocation. A delayed HTTP reply cannot adopt state after this point.
     this.disposed = true
+    ++this.authAttempt
     ++this.recoveryGeneration
     ++this.membershipGeneration
     this.fairness.dispose()
@@ -537,6 +576,7 @@ export class GameOnlineController {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
+    ++this.authAttempt
     ++this.recoveryGeneration
     this.session.dispose()
     this.fairness.dispose()

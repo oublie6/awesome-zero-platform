@@ -184,3 +184,17 @@ test('G65 R7: provider detach clears only owned local token and never revokes ag
  assert.equal(await p.vault.load(),null)
  assert.equal(revokes,0)
 })
+
+test('G65 R8: explicit session completion is null when superseded and grants expire with ownership',async()=>{
+ const p=platform(),identity={exchange:async()=>({accessToken:'unused'})}
+ const s=new GameSession(p,identity)
+ let release
+ const old=s.loginWith(()=>new Promise(ok=>{release=ok}))
+ const fresh=await s.loginWith(async()=>({accessToken:'new'}))
+ assert.ok(fresh?.isCurrent())
+ release({accessToken:'old'})
+ assert.equal(await old,null)
+ assert.equal(fresh.token,'new')
+ await s.logout()
+ assert.equal(fresh.isCurrent(),false)
+})

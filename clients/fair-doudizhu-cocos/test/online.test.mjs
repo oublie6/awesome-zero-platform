@@ -512,7 +512,8 @@ test('cold controller discovers the authenticated active room without any device
  const paths=[]
  f.platform.http.request=async path=>{
   paths.push(path)
-  return {code:'OK',data:path==='/v1/doudizhu/me/rooms'?{rooms:[room]}:room}
+  const current={...room,activeHandAuthority:{handId:'hand-cold',phase,version:5,revealed:false}}
+  return {code:'OK',data:path==='/v1/doudizhu/me/rooms'?{rooms:[current]}:current}
  }
  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
  await online.loginAndConnect()
@@ -1034,9 +1035,12 @@ test('web login rejects header-injection newlines without rejecting ordinary let
  const online=new GameOnlineController(f.platform,{exchange:async()=>{throw Error('no code exchange')}},'wss://example.org/ws',()=>{})
  await online.loginWithPassword('alice','password')
  assert.equal(online.session.token,'normal-returned-token')
- actual='bad\r\nInjected:yes'
- await assert.rejects(online.loginWithPassword('alice','password'),/invalid web authentication token/)
+ await assert.rejects(online.loginWithPassword('alice','password'),/already authenticated/)
  online.dispose()
+ actual='bad\r\nInjected:yes'
+ const other=new GameOnlineController(f.platform,{exchange:async()=>{throw Error('no code exchange')}},'wss://example.org/ws',()=>{})
+ await assert.rejects(other.loginWithPassword('alice','password'),/invalid web authentication token/)
+ other.dispose()
 })
 
 test('Goal0064 concurrent same-room Join shares original command and accepted receipt',async()=>{
@@ -1151,7 +1155,7 @@ test('Goal0065 R4: failed verified-room read cannot be silently converted to a r
 test('G65 R5: controller live recovery and member rejoin await correlated private adoption',async()=>{
  const f=fixture()
  const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,
-  member:true,lastClientSequence:9,activeHandId:'hand-sync',seats:[
+  member:true,lastClientSequence:9,activeHandId:'hand-sync',activeHandAuthority:{handId:'hand-sync',phase:'BIDDING',version:8,revealed:true},seats:[
    {position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:false},
    {position:3,accountId:'third',ready:false}]}
  f.platform.http.request=async path=>({code:'OK',data:path==='/v1/doudizhu/me/rooms'?{rooms:[room]}:room})
@@ -1201,7 +1205,7 @@ test('G65 R5: controller live recovery and member rejoin await correlated privat
 test('G65 R5: controller rejects private recovery on a correlated server error',async()=>{
  const f=fixture()
  const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,
-  member:true,lastClientSequence:9,activeHandId:'hand-sync',seats:[
+  member:true,lastClientSequence:9,activeHandId:'hand-sync',activeHandAuthority:{handId:'hand-sync',phase:'BIDDING',version:8,revealed:true},seats:[
    {position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:false},
    {position:3,accountId:'third',ready:false}]}
  f.platform.http.request=async()=>({code:'OK',data:room})
@@ -1229,7 +1233,7 @@ test('G65 R6: both read-only member recovery paths reject final close or invalid
  for(const method of ['reconnectAndResync','joinRoom'])for(const mode of ['close','change']){
   const f=fixture()
   const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,
-   member:true,lastClientSequence:9,activeHandId:'hand-sync',seats:[
+   member:true,lastClientSequence:9,activeHandId:'hand-sync',activeHandAuthority:{handId:'hand-sync',phase:'BIDDING',version:8,revealed:true},seats:[
     {position:1,accountId:'actor',ready:false},{position:2,accountId:'friend',ready:false},
     {position:3,accountId:'third',ready:false}]}
   f.platform.http.request=async()=>({code:'OK',data:room})
@@ -1266,13 +1270,13 @@ test('G65 R7: both member read paths refresh predeal phase and require dealt pro
  for(const method of ['reconnectAndResync','joinRoom']){
   const f=fixture()
   const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,member:true,lastClientSequence:9,
-   activeHandId:'hand-sync',seats:[1,2,3].map(position=>({position,accountId:'actor'+position,ready:false}))}
+   activeHandId:'hand-sync',activeHandAuthority:{handId:'hand-sync',phase:'BIDDING',version:8,revealed:true},seats:[1,2,3].map(position=>({position,accountId:'actor'+position,ready:false}))}
   f.platform.http.request=async()=>({code:'OK',data:room})
   const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
   try{
    await online.loginAndConnect()
    let reads=0
-   online.api.fairness=async()=>({handId:'hand-sync',phase:++reads===1?'FAIRNESS_COMMITTING':'BIDDING'})
+   online.api.fairness=async()=>{reads++;return {handId:'hand-sync',phase:'FAIRNESS_COMMITTING'}}
    const pending=online[method]('room-sync')
    let request
    for(let i=0;i<50&&!request;i++){
@@ -1280,7 +1284,7 @@ test('G65 R7: both member read paths refresh predeal phase and require dealt pro
     if(!request)await new Promise(ok=>setImmediate(ok))
    }
    assert.ok(request)
-   assert.equal(reads,2)
+   assert.equal(reads,1)
    for(const cb of [...f.messages])cb(JSON.stringify({id:request.id,type:'doudizhu.hand.snapshot',payload:{
      v:'doudizhu-realtime-event-v1',handId:'hand-sync',view:{version:2,payload:{
       v:'doudizhu-live-private-view-v1',position:1,cards:['S3'],public:{
@@ -1296,7 +1300,7 @@ test('G65 R7: a room closed during final private sync cannot return member recov
  for(const method of ['reconnectAndResync','joinRoom']){
   const f=fixture()
   const room={roomId:'room-sync',version:18,status:'HAND_ACTIVE',occupied:3,member:true,lastClientSequence:9,
-   activeHandId:'hand-sync',seats:[1,2,3].map(position=>({position,accountId:'actor'+position,ready:false}))}
+   activeHandId:'hand-sync',activeHandAuthority:{handId:'hand-sync',phase:'BIDDING',version:8,revealed:true},seats:[1,2,3].map(position=>({position,accountId:'actor'+position,ready:false}))}
   let closed=false
   f.platform.http.request=async()=>({code:'OK',data:closed?
    {roomId:'room-sync',version:19,status:'CLOSED',occupied:0,member:false,lastClientSequence:0}:room})
@@ -1320,6 +1324,78 @@ test('G65 R7: a room closed during final private sync cannot return member recov
    await failed
    assert.equal(online.rooms.state,null)
    assert.equal(online.shell.hand.snapshot,null)
+   assert.equal(f.commands.filter(c=>c.type==='doudizhu.command').length,0)
+  }finally{online.dispose()}
+ }
+})
+
+test('G65 R8: superseded identity completion cannot replace newer socket or pending command',async()=>{
+ for(const method of ['loginAndConnect','loginWithPassword']){
+  const f=fixture()
+  let release,calls=0
+  const exchange=()=>++calls===1?new Promise(ok=>{release=ok}):Promise.resolve({accessToken:'new-token'})
+  if(method==='loginWithPassword'){
+   f.platform.target='web'
+   f.platform.http.request=async()=>({code:'OK',data:{tokenType:'Bearer',...await exchange()}})
+  }
+  const online=new GameOnlineController(f.platform,{exchange},'wss://example.org/ws',()=>{})
+  try{
+   const login=()=>method==='loginWithPassword'?online.loginWithPassword('alice','password'):online.loginAndConnect()
+   const old=login()
+   for(let i=0;i<20&&!release;i++)await new Promise(ok=>setImmediate(ok))
+   assert.ok(release)
+   assert.equal(await login(),true)
+   assert.equal(f.auth.length,1)
+   const pending=online.rooms.create('room-r8')
+   for(let i=0;i<20&&!f.commands.length;i++)await new Promise(ok=>setImmediate(ok))
+   assert.equal(f.commands.length,1)
+   release({accessToken:'old-token'})
+   assert.equal(await old,false)
+   assert.equal(f.auth.length,1)
+   const req=f.commands[0].payload
+   for(const cb of f.messages)cb(JSON.stringify({type:'doudizhu.command.result',payload:{
+    v:'doudizhu-api-command-result-v1',requestId:req.requestId,type:req.type,durable:{
+      v:'fair-doudizhu-command-result-v1',commandId:req.requestId,aggregateId:req.aggregateId,aggregateVersion:1,accepted:true}}}))
+   assert.equal((await pending).roomId,'room-r8')
+  }finally{online.dispose()}
+ }
+})
+test('G65 R8: joint authority detects deal during final member read with unchanged room version',async()=>{
+ for(const method of ['reconnectAndResync','joinRoom']){
+  const f=fixture()
+  const room={roomId:'room-proof',version:18,status:'HAND_ACTIVE',occupied:3,member:true,lastClientSequence:9,
+   activeHandId:'hand-proof',seats:[1,2,3].map(position=>({position,accountId:'actor'+position,ready:false}))}
+  let reads=0,release
+  const proof=phase=>({...room,activeHandAuthority:{handId:'hand-proof',phase,version:phase==='BIDDING'?9:2,revealed:true}})
+  f.platform.http.request=async()=>{
+   reads++
+   if(reads===3)return new Promise(ok=>{release=()=>ok({code:'OK',data:proof('BIDDING')})})
+   return {code:'OK',data:proof(reads<3?'FAIRNESS_COMMITTING':'BIDDING')}
+  }
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  try{
+   await online.loginAndConnect()
+   online.api.fairness=async()=>({handId:'hand-proof',phase:'FAIRNESS_COMMITTING'})
+   let done=false
+   const pending=online[method]('room-proof')
+   void pending.then(()=>{done=true},()=>{})
+   for(let i=0;i<50&&!release;i++)await new Promise(ok=>setImmediate(ok))
+   assert.ok(release);release()
+   let request
+   for(let i=0;i<50&&!request;i++){
+    request=f.commands.find(c=>c.type==='doudizhu.hand.sync')
+    if(!request)await new Promise(ok=>setImmediate(ok))
+   }
+   assert.ok(request)
+   assert.equal(done,false)
+   for(const cb of [...f.messages])cb(JSON.stringify({id:request.id,type:'doudizhu.hand.snapshot',payload:{
+     v:'doudizhu-realtime-event-v1',handId:'hand-proof',view:{version:1,payload:{
+      v:'doudizhu-live-private-view-v1',position:1,cards:['S3'],public:{
+       v:'doudizhu-live-public-view-v1',handId:'hand-proof',phase:'BIDDING',stateVersion:1,bidding:{},
+       seats:[1,2,3].map(position=>({position,accountId:'actor'+position,remainingCards:17}))}}}}}))
+   assert.equal((await pending).roomId,'room-proof')
+   assert.equal(online.shell.handProjectionReady('hand-proof'),true)
+   assert.equal(reads,4)
    assert.equal(f.commands.filter(c=>c.type==='doudizhu.command').length,0)
   }finally{online.dispose()}
  }
