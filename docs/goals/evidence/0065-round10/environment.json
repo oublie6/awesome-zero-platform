@@ -1,0 +1,11 @@
+{
+  "node": "v22.23.4",
+  "chromium": "Google Chrome for Testing 156.0.8078.4",
+  "browser": "Xvfb headful with SwiftShader; own trusted TLS/NSS profile; desktop viewport1280x900",
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "privateWorkspace": "/root/goal0065-round10-4a5650a",
+  "api": "127.0.0.1:18870",
+  "https": "127.0.0.1:30471",
+  "CDP": "127.0.0.1:19181",
+  "noPhoneOrActualWeChatSDK": true
+}

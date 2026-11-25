@@ -1,0 +1,109 @@
+{
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "cases": [
+    {
+      "name": "actual WSS cancellation yields committed result and captured changed notification",
+      "pass": true,
+      "terminationTriggered": true,
+      "notificationType": "hand.cancel"
+    },
+    {
+      "name": "actual previous cancellation notice replay leaves new hand proof, projection and reads unchanged",
+      "pass": true,
+      "before": "r10-hand-33ffcb30-649a-4a2b-89aa-718e90735fa7",
+      "after": "r10-hand-33ffcb30-649a-4a2b-89aa-718e90735fa7",
+      "snapshot": null,
+      "proofHand": "r10-hand-33ffcb30-649a-4a2b-89aa-718e90735fa7",
+      "phase": "FAIRNESS_COMMITTING",
+      "newReadDelta": 0,
+      "minimum": 0
+    }
+  ],
+  "commands": [
+    {
+      "requestId": "r10-next-43d6e3f6-ca5b-44f9-809f-2154f322b8b4",
+      "type": "room.create",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-b18316c2-8042-4689-b694-2e519e3b0409",
+      "type": "room.join",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-1fccf102-2839-4b0e-a15c-436f73226898",
+      "type": "room.join",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-02c8f635-01d3-438b-b688-d87a707edf23",
+      "type": "room.ready",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-75e21bdb-a496-4d08-b626-d7df18f3fb68",
+      "type": "room.ready",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-a46342c4-81ab-4115-919c-fc4f77b49eed",
+      "type": "room.ready",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-28505829-3ab2-44e4-aa3c-c95c33ee2590",
+      "type": "room.hand.start",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-cancel-c82d529f-2c8b-4c6b-91f1-2338a4a265fa",
+      "type": "hand.cancel",
+      "aggregateId": "r10-hand-a9eed594-028e-4e0f-89ba-74c214f34328"
+    },
+    {
+      "requestId": "r10-next-b8bb8280-b93c-4ad9-afeb-7401ebc4d19a",
+      "type": "room.ready",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-0b2e1882-94b4-4d45-a4e8-1b38b78e35c8",
+      "type": "room.ready",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-a46ffe0f-1341-4300-a9ff-828b78a6616b",
+      "type": "room.ready",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-593c3c51-ca5a-41a4-ac0c-86247a590465",
+      "type": "room.hand.start",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-2e804efb-9877-426e-b436-5c3910e7110c",
+      "type": "hand.cancel",
+      "aggregateId": "r10-hand-33ffcb30-649a-4a2b-89aa-718e90735fa7"
+    },
+    {
+      "requestId": "r10-next-0a55a241-9222-4d97-b096-bd41a7c50f33",
+      "type": "room.leave",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-bb2e5d0f-0d42-4ffd-8ff5-62a2364d15a3",
+      "type": "room.leave",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    },
+    {
+      "requestId": "r10-next-25fdb58f-9869-43b2-9051-28a4def24385",
+      "type": "room.leave",
+      "aggregateId": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e"
+    }
+  ],
+  "room": "r10-room-502bcd08-f88d-479d-bcc2-fc3586d6576e",
+  "firstHand": "r10-hand-a9eed594-028e-4e0f-89ba-74c214f34328",
+  "secondHand": "r10-hand-33ffcb30-649a-4a2b-89aa-718e90735fa7",
+  "result": "PASS",
+  "ownedRoomClosed": true
+}

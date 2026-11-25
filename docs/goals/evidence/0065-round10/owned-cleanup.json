@@ -1,0 +1,12 @@
+{
+  "ownedAPIStopped": true,
+  "codex0065-r10-web-4a5650a": "exited",
+  "codex0063r8-restore": "exited",
+  "codex0063r8-redis": "exited",
+  "codex0063r8-queue-a": "exited",
+  "codex0063r8-queue-b": "exited",
+  "user29457Service": "active",
+  "ownedPort18870Closed": true,
+  "ownedPort19181Closed": true,
+  "ownedPort30471Closed": true
+}

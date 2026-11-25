@@ -1,0 +1,240 @@
+{
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "scope": "Production Controller/Session with controlled SDK, identity HTTP and sockets; no real provider mapping mutation",
+  "cases": [
+    {
+      "name": "profile normal positive flow",
+      "http": [
+        {
+          "path": "/auth/session",
+          "usesToken": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "profile active-owner backend rejection propagates",
+      "httpRequests": 1,
+      "pass": true
+    },
+    {
+      "name": "profile response pending then owned",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "profile response pending then grant",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "profile response pending then dispose",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "unlink normal positive flow",
+      "http": [
+        {
+          "path": "/auth/wechat/unlink",
+          "usesToken": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "unlink active-owner backend rejection propagates",
+      "httpRequests": 1,
+      "pass": true
+    },
+    {
+      "name": "unlink response pending then owned",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "unlink response pending then grant",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "unlink response pending then dispose",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "unlink duplicate mutation not dispatched",
+      "httpRequests": 1,
+      "pass": true
+    },
+    {
+      "name": "relink normal positive flow",
+      "http": [
+        {
+          "path": "/auth/wechat/prepare",
+          "usesToken": false
+        },
+        {
+          "path": "/auth/wechat/relink",
+          "usesToken": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "relink active-owner backend rejection propagates",
+      "httpRequests": 1,
+      "pass": true
+    },
+    {
+      "name": "relink response pending then owned",
+      "alreadyDispatchedRequests": 2,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "relink response pending then grant",
+      "alreadyDispatchedRequests": 2,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "relink response pending then dispose",
+      "alreadyDispatchedRequests": 2,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "relink duplicate mutation not dispatched",
+      "httpRequests": 2,
+      "pass": true
+    },
+    {
+      "name": "bind normal positive flow",
+      "http": [
+        {
+          "path": "/auth/wechat/bind",
+          "usesToken": false
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "bind active-owner backend rejection propagates",
+      "httpRequests": 1,
+      "pass": true
+    },
+    {
+      "name": "bind response pending then owned",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "bind response pending then grant",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "bind response pending then dispose",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "bind duplicate mutation not dispatched",
+      "httpRequests": 1,
+      "pass": true
+    },
+    {
+      "name": "register normal positive flow",
+      "http": [
+        {
+          "path": "/auth/wechat/register",
+          "usesToken": false
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "register active-owner backend rejection propagates",
+      "httpRequests": 1,
+      "pass": true
+    },
+    {
+      "name": "register response pending then owned",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "register response pending then grant",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "register response pending then dispose",
+      "alreadyDispatchedRequests": 1,
+      "returnedSuccess": false,
+      "pass": true
+    },
+    {
+      "name": "register duplicate mutation not dispatched",
+      "httpRequests": 1,
+      "pass": true
+    },
+    {
+      "name": "relink sdk pending then owned",
+      "httpRequests": 0,
+      "oldWriteDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "relink sdk pending then grant",
+      "httpRequests": 0,
+      "oldWriteDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "relink sdk pending then dispose",
+      "httpRequests": 0,
+      "oldWriteDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "relink prepare pending then owned",
+      "httpRequests": 1,
+      "oldWriteDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "relink prepare pending then grant",
+      "httpRequests": 1,
+      "oldWriteDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "relink prepare pending then dispose",
+      "httpRequests": 1,
+      "oldWriteDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "identity remains valid for profile/provider operation while game socket is disconnected",
+      "identity": true,
+      "transport": false,
+      "profile": true,
+      "pass": true
+    }
+  ],
+  "pass": 36,
+  "fail": 0
+}

@@ -1,0 +1,25 @@
+{
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "scope": "Production Controller and Shell; controlled HTTP and socket ports; 50ms injected sync deadline",
+  "cases": [
+    {
+      "name": "R8 final membership deal window: joinRoom",
+      "roomReads": 4,
+      "privateReads": 1,
+      "durableVersion": 9,
+      "liveVersion": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "R8 final membership deal window: reconnectAndResync",
+      "roomReads": 4,
+      "privateReads": 1,
+      "durableVersion": 9,
+      "liveVersion": 1,
+      "result": "PASS"
+    }
+  ],
+  "unhandled": [],
+  "pass": 2,
+  "fail": 0
+}

@@ -1,0 +1,51 @@
+{
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "scope": "Real exported Vue/Cocos and matching Go identity; controlled WebSocket close before ready",
+  "failed": {
+    "elapsedMs": 9027,
+    "host": {
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795625873294
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795625877524
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795625881657
+        },
+        {
+          "type": "BOOT_STAGE",
+          "at": 1795625881658
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795625881659
+        },
+        {
+          "type": "SESSION_FAILED",
+          "at": 1795625881881
+        },
+        {
+          "type": "BOOT_FAILED",
+          "at": 1795625881881
+        }
+      ],
+      "status": "游戏资源或引擎启动失败，请重新加载。"
+    },
+    "client": {
+      "verifiedSession": true,
+      "establishedIdentity": false,
+      "transport": false
+    }
+  },
+  "retry": {
+    "status": "游戏就绪",
+    "differentFrame": true
+  },
+  "oldCallbackIgnored": true,
+  "result": "PASS"
+}

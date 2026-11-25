@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Fair Doudizhu Vue3 Web",
+    "id": 45583646879,
+    "sha": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45583646879",
+    "jobs": [
+      {
+        "name": "vue_build",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "name": "Fair Doudizhu",
+    "id": 45583646591,
+    "sha": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45583646591",
+    "jobs": [
+      {
+        "name": "client_foundation",
+        "conclusion": "success"
+      },
+      {
+        "name": "mysql_integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "application",
+        "conclusion": "success"
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "name": "CI",
+    "id": 45583646582,
+    "sha": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45583646582",
+    "jobs": [
+      {
+        "name": "admin_web",
+        "conclusion": "success"
+      },
+      {
+        "name": "secure_envelope",
+        "conclusion": "success"
+      },
+      {
+        "name": "integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "unit",
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "report",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "name": "Cocos Linux Native Client",
+    "id": 45583646498,
+    "sha": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45583646498",
+    "jobs": [
+      {
+        "name": "linux_source",
+        "conclusion": "success"
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped"
+      }
+    ]
+  }
+]

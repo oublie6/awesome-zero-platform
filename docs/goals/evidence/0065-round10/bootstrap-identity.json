@@ -1,0 +1,121 @@
+{
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "scope": "Actual compiled Bootstrap methods including actual menu-action construction, Controller and Session; separate receiver objects, controlled rendering and SDK/HTTP; no real provider mutation",
+  "cases": [
+    {
+      "name": "R9 N01 invalid grant blocks unlink",
+      "pass": true,
+      "httpRequests": 0
+    },
+    {
+      "name": "R9 N01 invalid grant blocks relink",
+      "pass": true,
+      "httpRequests": 0
+    },
+    {
+      "name": "R9 N01 late SDK after new identity emits no provider HTTP",
+      "pass": true,
+      "httpRequests": 0
+    },
+    {
+      "name": "normal compiled Bootstrap unlink",
+      "pass": true,
+      "http": [
+        {
+          "path": "/auth/wechat/unlink",
+          "usesOwnedToken": true
+        }
+      ],
+      "followupLogins": 0,
+      "detached": true,
+      "extraRevokeCount": 0
+    },
+    {
+      "name": "normal compiled Bootstrap relink",
+      "pass": true,
+      "http": [
+        {
+          "path": "/auth/wechat/prepare",
+          "usesOwnedToken": false
+        },
+        {
+          "path": "/auth/wechat/relink",
+          "usesOwnedToken": true
+        }
+      ],
+      "followupLogins": 0,
+      "detached": true,
+      "extraRevokeCount": 0
+    },
+    {
+      "name": "normal compiled Bootstrap bind",
+      "pass": true,
+      "http": [
+        {
+          "path": "/auth/wechat/bind",
+          "usesOwnedToken": false
+        }
+      ],
+      "followupLogins": 1,
+      "detached": false,
+      "extraRevokeCount": 0
+    },
+    {
+      "name": "normal compiled Bootstrap register",
+      "pass": true,
+      "http": [
+        {
+          "path": "/auth/wechat/register",
+          "usesOwnedToken": false
+        }
+      ],
+      "followupLogins": 1,
+      "detached": false,
+      "extraRevokeCount": 0
+    },
+    {
+      "name": "cancel initial bind before HTTP result prevents followup login",
+      "pass": true,
+      "alreadyDispatched": 1,
+      "followupLogins": 0
+    },
+    {
+      "name": "cancel initial register before HTTP result prevents followup login",
+      "pass": true,
+      "alreadyDispatched": 1,
+      "followupLogins": 0
+    },
+    {
+      "name": "actual CancelRelink menu during SDK wait cancels remaining business",
+      "pass": false,
+      "requestsAtCancel": 0,
+      "identityAtCancel": true,
+      "requestsAfterCancel": [
+        {
+          "path": "/auth/wechat/prepare",
+          "usesOwnedToken": false
+        },
+        {
+          "path": "/auth/wechat/relink",
+          "usesOwnedToken": true
+        }
+      ],
+      "identityDetachedAfterCancel": true,
+      "notices": [
+        "微信换绑成功。所有历史游戏数据仍留在原账号。"
+      ]
+    },
+    {
+      "name": "scene replacement during SDK wait suppresses old business",
+      "pass": true,
+      "httpRequests": 0
+    },
+    {
+      "name": "profile callback after scene replacement cannot alter new viewer",
+      "pass": true,
+      "oldResultIgnored": true
+    }
+  ],
+  "pass": 11,
+  "fail": 1
+}

@@ -1,0 +1,9 @@
+{
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "byteIdentical": 1359,
+  "jsonSemanticOnly": [
+    "clients/fair-doudizhu-cocos/package.json"
+  ],
+  "differences": [],
+  "binarySHA256": "dc50adc3bdc3fabe04b64e0a66f417df44a1fb56fc35a2f3f225e9cdb714c000"
+}

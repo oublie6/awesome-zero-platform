@@ -1,0 +1,20 @@
+[
+  {
+    "name": "native",
+    "command": [
+      "node",
+      "/root/goal0065-round10-4a5650a/native-build.cjs"
+    ],
+    "exit": 0,
+    "seconds": 214.18490028381348
+  },
+  {
+    "name": "clients",
+    "command": [
+      "python3",
+      "/root/goal0065-round10-4a5650a/checks.py"
+    ],
+    "exit": 0,
+    "seconds": 35.28479242324829
+  }
+]

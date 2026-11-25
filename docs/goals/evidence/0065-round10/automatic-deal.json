@@ -1,0 +1,10 @@
+{
+  "manualFairnessRefresh": false,
+  "dealtNotices": 1,
+  "unsolicitedDrops": 1,
+  "newCorrelatedReads": 1,
+  "phase": "BIDDING",
+  "position": 3,
+  "version": 1,
+  "minimum": 0
+}

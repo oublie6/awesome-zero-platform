@@ -1,0 +1,35 @@
+{
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "scope": "Actual Vue/Cocos and matching Go API; real same-origin storage events and browser visibility changes",
+  "cases": [
+    {
+      "name": "normal website/game navigation retains same iframe and assets",
+      "pass": true,
+      "newStaticRequests": 0
+    },
+    {
+      "name": "child-storage-event drops obsolete presentation without deleting/revoking replacement",
+      "pass": true,
+      "iframes": 0,
+      "oldDetached": true,
+      "replacementPreserved": true,
+      "storageEvents": 1,
+      "oldSessionHTTP": 200,
+      "newSessionHTTP": 200,
+      "revokeCalls": 0
+    },
+    {
+      "name": "child-storage-event page reload restores only replacement account and fresh game instance",
+      "pass": true,
+      "noOldRoom": true,
+      "noOldPrivateState": true
+    },
+    {
+      "name": "foreground-reconcile",
+      "pass": false,
+      "error": "page.waitForFunction: Timeout 10000ms exceeded."
+    }
+  ],
+  "pass": 3,
+  "fail": 1
+}

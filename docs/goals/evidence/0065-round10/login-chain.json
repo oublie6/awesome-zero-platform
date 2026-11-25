@@ -1,0 +1,24 @@
+{
+  "source": "4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e",
+  "environment": "actual Controller/Session/Shell/ConnectionManager, controlled identity HTTP and socket ports",
+  "cases": [
+    {
+      "name": "password stale successful login continuation must not replace newer socket",
+      "mode": "password",
+      "connectionCount": 1,
+      "newSelectedConnectionClosed": false,
+      "pendingCommandInvalidated": false,
+      "pass": true
+    },
+    {
+      "name": "platform-code stale successful login continuation must not replace newer socket",
+      "mode": "platform-code",
+      "connectionCount": 1,
+      "newSelectedConnectionClosed": false,
+      "pendingCommandInvalidated": false,
+      "pass": true
+    }
+  ],
+  "pass": 2,
+  "fail": 0
+}
