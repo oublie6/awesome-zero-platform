@@ -486,7 +486,7 @@ test('Goal0065 Round4: strict room/hand reads cannot be swallowed by startup',()
  assert.match(recovery,/const presentation=this\.roomView as RoomRead\|null/);
  assert.match(recovery,/if\(presentation\?\.roomId!==roomID\)\s*throw new Error/);
  assert.ok(recovery.indexOf('await this.refreshRoom(true)')<
-   recovery.indexOf('const verified=await online.roomInfo(roomID)'));
+   recovery.indexOf('const verified=await online.confirmRoomAuthority(presentation,owned'));
  assert.match(refresh,/if\(requiredForStartup\)throw new Error/);
  assert.match(refresh,/if\(requiredForStartup\)throw error/);
  assert.match(refresh,/await online\.api\.fairness\(info\.activeHandId\)/);
@@ -505,5 +505,9 @@ test('Goal0065 R5: revalidate current authoritative private or archive state imm
  assert.match(gate,/online\.shell\.handProjectionReady\(room\.activeHandId\)/);
  assert.match(gate,/online\.shell\.handProjectionReady\(room\.lastHandId,true\)/);
  assert.match(gate,/WAITING_PUBLIC_BEACON/);
- assert.match(source,/presentation\.version!==verified\.version/);
+ const controller=fs.readFileSync(path.join(__dirname,
+   '../../clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts'),'utf8');
+ assert.match(controller,/verified\.version!==room\.version/);
+ assert.match(controller,/const proof=verified\.activeHandAuthority/);
+ assert.match(gate,/this\.adoptRoomAuthorityPresentation\(verified\)/);
 });

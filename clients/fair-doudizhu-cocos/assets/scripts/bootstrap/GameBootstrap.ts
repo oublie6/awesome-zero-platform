@@ -704,7 +704,7 @@ export class GameBootstrap extends Component {
       const fairnessGeneration=this.fairnessReadGeneration
       const owned=()=>current() && this.roomID===roomID && readGeneration===this.roomReadGeneration &&
         fairnessGeneration===this.fairnessReadGeneration
-      const verified=await online.confirmRoomAuthority(presentation,owned,this.fairnessView?.phase??null)
+      const verified=await online.confirmRoomAuthority(presentation,owned,(this.fairnessView as {phase:string}|null)?.phase??null)
       if(!verified || !owned())throw new Error('startup room changed during final verification')
       this.adoptRoomAuthorityPresentation(verified)
       if(!this.requiredRecoveryReady(online))
@@ -1101,7 +1101,7 @@ export class GameBootstrap extends Component {
       const readGeneration=this.roomReadGeneration,fairnessGeneration=this.fairnessReadGeneration
       const owned=()=>current() && this.roomID===roomID && readGeneration===this.roomReadGeneration &&
         fairnessGeneration===this.fairnessReadGeneration
-      const verified=await online.confirmRoomAuthority(presentation,owned,this.fairnessView?.phase??null)
+      const verified=await online.confirmRoomAuthority(presentation,owned,(this.fairnessView as {phase:string}|null)?.phase??null)
       if(!current())return
       if(!verified || !owned())throw new Error('room changed during final recovery')
       this.adoptRoomAuthorityPresentation(verified)

@@ -512,7 +512,7 @@ test('cold controller discovers the authenticated active room without any device
  const paths=[]
  f.platform.http.request=async path=>{
   paths.push(path)
-  const current={...room,activeHandAuthority:{handId:'hand-cold',phase,version:5,revealed:false}}
+  const current={...room,activeHandAuthority:{handId:'hand-cold',phase,version:phase==='PLAYING'?9:5,revealed:false}}
   return {code:'OK',data:path==='/v1/doudizhu/me/rooms'?{rooms:[current]}:current}
  }
  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
@@ -1399,4 +1399,25 @@ test('G65 R8: joint authority detects deal during final member read with unchang
    assert.equal(f.commands.filter(c=>c.type==='doudizhu.command').length,0)
   }finally{online.dispose()}
  }
+})
+
+test('G65 R8: pending socket handshake is cancelled when replacement login fails',async()=>{
+ const f=fixture()
+ let release,closed=0,attempt=0
+ f.platform.socket.connect=async()=>new Promise(ok=>{release=()=>ok({
+   send:async()=>{},close:()=>{closed++},onMessage:()=>()=>{},onClose:()=>()=>{}
+ })})
+ const identity={exchange:async()=>{if(++attempt===2)throw Error('replacement rejected');return {accessToken:'first'}}}
+ const online=new GameOnlineController(f.platform,identity,'wss://example.org/ws',()=>{})
+ try{
+  const first=online.loginAndConnect()
+  for(let i=0;i<30&&!release;i++)await new Promise(ok=>setImmediate(ok))
+  assert.ok(release)
+  await assert.rejects(online.loginAndConnect(),/replacement rejected/)
+  release()
+  assert.equal(await first,false)
+  assert.equal(closed,1)
+  assert.equal(online.shell.commandTransportReady,false)
+  await assert.rejects(online.createRoom(),/authenticated session required/)
+ }finally{online.dispose()}
 })

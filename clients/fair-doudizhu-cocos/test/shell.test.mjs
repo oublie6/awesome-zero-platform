@@ -515,3 +515,19 @@ test('G65 R6: repeated read retry cannot accumulate native send promises on a st
  tasks.forEach(t=>t.calls.forEach(c=>{c.success();c.fail(Error('late callback'))}))
  assert.equal(outstanding,0)
 })
+
+test('G65 R8: deal notice requires private projection and never uses durable version as live floor',async()=>{
+ const {s,deliver,c}=await syncFixture()
+ try{
+  deliver('doudizhu.hand.changed',{v:'doudizhu-realtime-event-v1',handId:'hand-1',
+   response:{type:'hand.dealt',durable:{aggregateVersion:17}}})
+  assert.equal(s.requiresLiveProjection('hand-1'),true)
+  assert.equal(s.handProjectionReady('hand-1'),false)
+  const read=s.syncHand('hand-1')
+  deliver('doudizhu.hand.snapshot',viewReply('hand-1',1),c.sent.at(-1).id)
+  await read
+  assert.equal(s.handProjectionReady('hand-1'),true)
+  s.useAuthoritativeHand('hand-2')
+  assert.equal(s.requiresLiveProjection('hand-1'),false)
+ }finally{s.dispose()}
+})

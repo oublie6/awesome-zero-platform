@@ -107,3 +107,5 @@ Cocos index.ejs 在引擎加载前仅显示深色 GameDiv，用户看到黑屏�
 - 共享 Controller.confirmRoomAuthority 由 join/reconnect/场景恢复/最后启动门禁消费同一证明；若观察到已发牌或实时 deal 提示，必须有授权私有投影，必要时一次同步和一次重新读取，最多两轮、超出显式失败。成功代表服务端读取点，不是永久租约；自动发牌提交及追踪成功通过已有账号私有 WSS 通道发布 hand.dealt 提示/快照。无新增轮询、无全局锁、无跨模块数据访问、无额外写命令；失联或推送遗漏仍走恢复。
 - Session 登录/恢复返回仅内存的 operation-owned grant 或 null，旧完成不再产生连接许可；Controller 在首个 await 前认领启动代次，三个身份入口共用 grant+连接完成门禁，已建立身份使用新 Controller 换号以隔离业务状态；Shell 显式返回连接是否完成。保持 UNKNOWN 精确身份与已确认 durable receipt。单 realm vault 所有权及双 realm compare-and-clear 原边界保持。
 - 回归覆盖旧成功丢弃与 B 连接/待确认命令保留、同 room version 的阶段推进、Go 成员限定证明和独立手牌版本、协议校验、自动发牌通知、已有成员双入口和 Bootstrap 共用门禁；保持 in_progress。真实 Cocos/Go、MySQL 一致读、完整业务与本产物缓存性能仍需 CI/Codex 证据；不调查手机黑屏。
+
+第二遍自审与 CI 修正：同步更新旧 room discovery fixture 和构建断言，修复 TS 跨 await 收窄与 gofmt；补真实 MySQL 联合查询集成测试；连接绑定授权 grant 与连接代次，替换尚未建立身份的登录时立即取消旧握手，即使新登录失败也不会遗留可提交连接；Controller 业务入口要求已建立身份。联合证明检查 durable version 单调、相同版本不得冲突，连接/房间/命令代次变化撤销证明；预发牌恢复转为 live 即使收到无关联广播仍须关联私有读取。

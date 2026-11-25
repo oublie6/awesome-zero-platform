@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/application"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/domain"
 	"github.com/oublie6/awesome-zero-platform/server/business/doudizhu/infrastructure/mysqlstore"
 )
@@ -70,5 +71,72 @@ func TestRecoverableRoomDiscoveryWithRealMySQL(t *testing.T) {
 	ids, err := store.FindRecoverableRoomIDs(ctx, joined)
 	if err != nil || len(ids) != 0 {
 		t.Fatalf("closed room discovered: %v %v", ids, err)
+	}
+}
+
+func TestRoomAuthorityJointReadWithRealMySQL(t *testing.T) {
+	if os.Getenv("APP_API_INTEGRATION") != "1" {
+		t.Skip("APP_API_INTEGRATION is not enabled")
+	}
+	db := openIntegrationDB(t)
+	ctx := context.Background()
+	prefix := fmt.Sprintf("authority-%d", time.Now().UnixNano())
+	actor := domain.AccountID(prefix + "-A")
+	roomID, handID := domain.RoomID(prefix+"-room"), domain.HandID(prefix+"-hand")
+	room, _, err := domain.NewRoom(roomID, actor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	actors := []domain.AccountID{actor, domain.AccountID(prefix + "-B"), domain.AccountID(prefix + "-C")}
+	for _, member := range actors[1:] {
+		if _, err := room.Join(member, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, member := range actors {
+		if _, err := room.SetReady(member, true, room.Snapshot().Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := room.StartHand(actor, handID, room.Snapshot().Version); err != nil {
+		t.Fatal(err)
+	}
+	hand, _, err := domain.NewHand(handID, roomID, [3]domain.HandSeat{
+		{Seat: 1, AccountID: actors[0]}, {Seat: 2, AccountID: actors[1]}, {Seat: 3, AccountID: actors[2]},
+	}, domain.ServerCommitment{1}, "authority-key", domain.BeaconPlan{Provider: "test", Round: "round"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupIntegrationRows(t, db, prefix)
+	defer cleanupIntegrationRows(t, db, prefix)
+	store, err := mysqlstore.New(sqlDatabase{db})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	if err := store.WithinCommand(ctx, actor, prefix+"-seed", func(ctx context.Context, tx application.Transaction) error {
+		if err := tx.InsertRoom(ctx, room.Snapshot(), now); err != nil {
+			return err
+		}
+		return tx.InsertHand(ctx, hand.Snapshot(), now)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	firstRoom, firstHand, seq, err := store.LoadRoomAuthority(ctx, roomID, actor)
+	if err != nil || firstHand == nil || firstHand.ID != handID || firstRoom.ID != roomID || seq != 0 {
+		t.Fatalf("joint room/hand read: room=%s seq=%d err=%v", firstRoom.ID, seq, err)
+	}
+	previous := hand.Snapshot().Version
+	if _, err := hand.SubmitCommit(actor, domain.Commitment{1}, previous); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.WithinCommand(ctx, actor, prefix+"-advance", func(ctx context.Context, tx application.Transaction) error {
+		return tx.UpdateHand(ctx, hand.Snapshot(), previous, now)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	nextRoom, nextHand, _, err := store.LoadRoomAuthority(ctx, roomID, actor)
+	if err != nil || nextHand == nil || nextRoom.Version != firstRoom.Version || nextHand.Version <= firstHand.Version {
+		t.Fatalf("hand change at unchanged room version not observed: room=%s err=%v", nextRoom.ID, err)
 	}
 }

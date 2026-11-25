@@ -50,6 +50,13 @@ func TestRecoverableRoomsRequireCurrentMembershipAndExcludeClosed(t *testing.T) 
 		t.Fatal(err)
 	}
 	fake := newTestStore()
+	hand, _, err := domain.NewHand("active-hand", "active-one", [3]domain.HandSeat{
+		{Seat: 1, AccountID: "actor-A"}, {Seat: 2, AccountID: "actor-B"}, {Seat: 3, AccountID: "actor-C"},
+	}, domain.ServerCommitment{1}, "active-key", domain.BeaconPlan{Provider: "test", Round: "round"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake.state.hands["active-hand"] = hand.Snapshot()
 	for id, room := range map[string]*domain.Room{
 		"active-one": active, "waiting-one": waiting, "other-private": outsider, "closed-one": closed,
 	} {
@@ -66,7 +73,7 @@ func TestRecoverableRoomsRequireCurrentMembershipAndExcludeClosed(t *testing.T) 
 	}
 	if len(views) != 1 || views[0].RoomID != "active-one" ||
 		views[0].Status != domain.RoomHandActive || views[0].ActiveHandID != "active-hand" ||
-		views[0].LastClientSequence != 17 || !views[0].Member {
+		views[0].LastClientSequence != 17 || !views[0].Member || views[0].ActiveHandAuthority == nil {
 		t.Fatalf("discovery lost active member or leaked others: %+v", views)
 	}
 	outsiderViews, err := service.GetRecoverableRooms(ctx, "someone-else")

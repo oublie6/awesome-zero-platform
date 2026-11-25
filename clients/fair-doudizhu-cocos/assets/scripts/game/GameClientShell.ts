@@ -29,7 +29,9 @@ export class GameClientShell {
   private disposed = false
   private initialized = false
   private transportReady = false
-  get commandTransportReady(): boolean { return !this.disposed && this.transportReady && this.connection !== null }
+  private connectionOwner:()=>boolean=()=>true
+  get connectionEpoch():number { return this.generation }
+  get commandTransportReady(): boolean { return !this.disposed && this.transportReady && this.connection !== null && this.connectionOwner() }
   /** Query readiness again immediately before a caller publishes success.
    * A newer change or a disconnect can invalidate an earlier resolved read. */
   handProjectionReady(handId:string,archiveOnly=false):boolean {
@@ -216,9 +218,22 @@ export class GameClientShell {
       this.notify('服务器拒绝操作，请同步后重试')
     })
   }
-  async connect(socket: SocketTransport, endpoint: string, token: string): Promise<boolean> {
+  /** Cancel the old connection immediately when a pending identity is
+   * superseded, even if the replacement identity later fails to authenticate. */
+  cancelConnection():void {
+    this.generation++
+    this.transportReady=false
+    this.rejectSync('connection cancelled during hand sync')
+    this.rejectPending('connection cancelled; command outcome unknown')
+    this.connection?.close()
+    this.connection=null
+    if(this.hand.status!=='disconnected')this.hand.setStatus('disconnected')
+  }
+  async connect(socket: SocketTransport, endpoint: string, token: string,owner:()=>boolean=()=>true): Promise<boolean> {
     if (this.disposed) throw new Error('client disposed')
+    if(!owner())return false
     const generation = ++this.generation
+    this.connectionOwner=owner
     this.transportReady = false
     this.rejectSync('connection replaced during hand sync')
     this.rejectPending('connection replaced; command outcome unknown')
@@ -231,6 +246,7 @@ export class GameClientShell {
       await connection.open(endpoint, token,
         raw => {
           if (this.disposed || generation !== this.generation) return
+          if(!owner()){this.cancelConnection();return}
           try { this.events.receive(raw) } catch {
             // Router rejects malformed envelopes before event dispatch. If
             // the malformed reply is correlated, fail that read immediately.
@@ -244,6 +260,7 @@ export class GameClientShell {
         },
         () => { if (!this.disposed && generation === this.generation) { this.transportReady = false; this.rejectSync('connection lost during hand sync'); this.rejectPending('connection lost; command outcome unknown'); this.hand.setStatus('disconnected'); this.notify('连接中断，请重连') } })
       if (this.disposed || generation !== this.generation) return false
+      if(!owner()){this.cancelConnection();return false}
       if(!connection.isOpen)throw new Error('socket closed before connection completion')
       this.transportReady = true
       this.hand.setStatus('synchronizing')
@@ -392,7 +409,7 @@ export class GameClientShell {
   }
   /** Transmit only actual Go dispatcher commands; timeout is an unknown outcome, never a proof of failure. */
   async submitCommand(input: Omit<WireCommand, 'v'>, exactUnknownRetry = false): Promise<WireCommandResult> {
-    if (this.disposed || !this.connection || !this.transportReady) throw new Error('game connection not ready')
+    if (!this.commandTransportReady) throw new Error('game connection not ready')
     const request = createWireCommand(input)
     if (request.type.startsWith('hand.')) {
       if (exactUnknownRetry) {

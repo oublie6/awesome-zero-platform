@@ -12,16 +12,16 @@ import (
 // RoomView is an authenticated, server-authoritative lobby projection.
 // Non-members can see only a limited invite-code preview, never player identities.
 type RoomView struct {
-	RoomID               string             `json:"roomId"`
-	Version              uint64             `json:"version"`
-	Status               domain.RoomStatus  `json:"status"`
-	Occupied             int                `json:"occupied"`
-	Member               bool               `json:"member"`
-	LastClientSequence   uint64             `json:"lastClientSequence"`
-	Seats                []RoomSeatView     `json:"seats,omitempty"`
-	ActiveHandID         string             `json:"activeHandId,omitempty"`
-	LastHandID           string             `json:"lastHandId,omitempty"`
-	ActiveHandAuthority  *RoomHandAuthority `json:"activeHandAuthority,omitempty"`
+	RoomID              string             `json:"roomId"`
+	Version             uint64             `json:"version"`
+	Status              domain.RoomStatus  `json:"status"`
+	Occupied            int                `json:"occupied"`
+	Member              bool               `json:"member"`
+	LastClientSequence  uint64             `json:"lastClientSequence"`
+	Seats               []RoomSeatView     `json:"seats,omitempty"`
+	ActiveHandID        string             `json:"activeHandId,omitempty"`
+	LastHandID          string             `json:"lastHandId,omitempty"`
+	ActiveHandAuthority *RoomHandAuthority `json:"activeHandAuthority,omitempty"`
 }
 
 // RoomHandAuthority describes the durable hand at the same read point as
