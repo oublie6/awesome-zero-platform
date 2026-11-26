@@ -1,0 +1,9 @@
+{
+  "source": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+  "scope": "Actual candidate Vue/Cocos and same-source-tree API, owned QA account; no new hand or gameplay timeout",
+  "room": "room-cmd-a231f71a8887ceb15a1541b826486644",
+  "reuse": true,
+  "additionalStatic": 0,
+  "result": "FAIL",
+  "error": "actual socket close; last={\"screen\":\"rooms\",\"status\":\"等待好友加入，已到场 1/3\"}"
+}

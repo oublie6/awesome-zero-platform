@@ -1,0 +1,21 @@
+{
+  "source": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+  "scope": "Actual Shell+ConnectionManager; cleanup callback reenters Shell.connect",
+  "results": [
+    false,
+    true
+  ],
+  "tokens": [
+    "initial",
+    "latest",
+    "superseded"
+  ],
+  "closed": [
+    1,
+    0,
+    0
+  ],
+  "selected": "superseded",
+  "ready": true,
+  "pass": false
+}

@@ -1,0 +1,13 @@
+{
+  "filesScanned": 55,
+  "knownPrivateValuesChecked": 17,
+  "privateValueMatches": 0,
+  "JWTMatches": 0,
+  "personalPhraseOrPrivatePEMMatches": 0,
+  "logsWhitespaceNormalized": [
+    "cocos-static-types.log",
+    "native-build.log",
+    "core-types.log"
+  ],
+  "rawLogsRetainedPrivately": true
+}

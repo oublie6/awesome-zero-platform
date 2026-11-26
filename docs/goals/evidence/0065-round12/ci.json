@@ -1,0 +1,91 @@
+[
+  {
+    "name": "CI",
+    "id": 45816587030,
+    "sha": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45816587030",
+    "jobs": [
+      {
+        "name": "integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "secure_envelope",
+        "conclusion": "success"
+      },
+      {
+        "name": "admin_web",
+        "conclusion": "success"
+      },
+      {
+        "name": "unit",
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "report",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "name": "Fair Doudizhu",
+    "id": 45816587056,
+    "sha": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45816587056",
+    "jobs": [
+      {
+        "name": "mysql_integration",
+        "conclusion": "success"
+      },
+      {
+        "name": "manifest_client",
+        "conclusion": "success"
+      },
+      {
+        "name": "application",
+        "conclusion": "success"
+      },
+      {
+        "name": "client_foundation",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "name": "Cocos Linux Native Client",
+    "id": 45816587092,
+    "sha": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45816587092",
+    "jobs": [
+      {
+        "name": "linux_source",
+        "conclusion": "success"
+      },
+      {
+        "name": "linux_native_export",
+        "conclusion": "skipped"
+      }
+    ]
+  },
+  {
+    "name": "Fair Doudizhu Vue3 Web",
+    "id": 45815518273,
+    "sha": "96f3913a5650017f6df705aa3db313700b92671c",
+    "conclusion": "success",
+    "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45815518273",
+    "jobs": [
+      {
+        "name": "vue_build",
+        "conclusion": "success"
+      }
+    ],
+    "reuse": "96f3913..candidate changes only countdown test; product and Vue workflow identical"
+  }
+]

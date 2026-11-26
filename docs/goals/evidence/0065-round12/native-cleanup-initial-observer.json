@@ -1,0 +1,124 @@
+{
+  "source": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+  "scope": "Actual single official Creator Web bundle; independent receivers and controlled cleanup failures",
+  "cases": [
+    {
+      "name": "Creator R11 cancel throwing release/listeners/diagnostic settles all waits immediately",
+      "pass": true,
+      "failures": 2,
+      "events": [
+        "release",
+        "first",
+        "last"
+      ],
+      "results": [
+        "operation cancelled",
+        "operation cancelled"
+      ]
+    },
+    {
+      "name": "Creator R11 finish throwing release/listeners/diagnostic settles all waits immediately",
+      "pass": true,
+      "failures": 2,
+      "events": [
+        "release",
+        "first",
+        "last"
+      ],
+      "results": [
+        "operation cancelled",
+        "operation cancelled"
+      ]
+    },
+    {
+      "name": "Creator R11 abandon throwing release/listeners/diagnostic settles all waits immediately",
+      "pass": true,
+      "failures": 2,
+      "events": [
+        "release",
+        "first",
+        "last"
+      ],
+      "results": [
+        "operation cancelled",
+        "operation cancelled"
+      ]
+    },
+    {
+      "name": "Creator reentrant ended-scope cleanup failures are counted completely",
+      "pass": true,
+      "expected": 3,
+      "actual": 2,
+      "diagnostics": 3
+    },
+    {
+      "name": "Creator manager cleanup reentrant open preserves newest ownership",
+      "pass": true,
+      "selected": "superseded",
+      "seen": [
+        "latest:event",
+        "superseded:event"
+      ],
+      "closed": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Creator shell cleanup reentrant open preserves newest ownership",
+      "pass": true,
+      "selected": "superseded",
+      "ready": true,
+      "results": [
+        false,
+        true
+      ],
+      "closed": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Creator MiniHttp partial abort listener registration releases available remover",
+      "pass": true,
+      "registered": 1,
+      "removeAttempts": 0,
+      "requests": 0,
+      "error": "partial registration"
+    },
+    {
+      "name": "Creator Bootstrap destruction faults cannot interrupt remaining teardown or old event fences",
+      "pass": true,
+      "events": [
+        "window",
+        "view",
+        "view",
+        "password",
+        "targetPassword",
+        "online",
+        "view",
+        "view",
+        "shell",
+        "button",
+        "badge",
+        "table",
+        "login-node",
+        "content",
+        "view",
+        "view"
+      ],
+      "detached": true
+    },
+    {
+      "name": "Creator actual countdown survives view replacement and destruction clears original timer before throwing node destroy",
+      "pass": true,
+      "cleared": 1,
+      "first": 29,
+      "second": 29
+    }
+  ],
+  "pass": 9,
+  "fail": 0
+}

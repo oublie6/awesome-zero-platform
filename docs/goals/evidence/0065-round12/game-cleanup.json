@@ -1,0 +1,24 @@
+{
+  "source": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+  "scope": "Actual compiled Shell/Controller; controlled dependent teardown faults",
+  "cases": [
+    {
+      "name": "Shell dispose rejects all waiters, detaches before reentry and resets state despite close/router failure",
+      "commandsSettled": 3,
+      "syncSettled": true,
+      "closeAttempts": 1,
+      "resetAttempts": 1,
+      "pass": true
+    },
+    {
+      "name": "Controller dispose snapshots invalidation before throwing/reentrant dependencies and remains idempotent",
+      "pass": true
+    },
+    {
+      "name": "Controller logout propagates original revoke business error while prior cleanup faults stay isolated",
+      "pass": true
+    }
+  ],
+  "pass": 3,
+  "fail": 0
+}

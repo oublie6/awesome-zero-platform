@@ -1,0 +1,74 @@
+{
+  "source": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+  "scope": "Production transports and adapters with fault-injected native ports",
+  "cases": [
+    {
+      "name": "openSocket pending sends/all close listeners settle even unbind/uncancel/close throw",
+      "pass": true
+    },
+    {
+      "name": "openSocket synchronous close during bind still runs returned teardown once",
+      "pass": true
+    },
+    {
+      "name": "MiniAuth throwing off cannot override original success or error",
+      "pass": true
+    },
+    {
+      "name": "MiniHttp remove listener exception cannot replace success or original rejection",
+      "pass": true
+    },
+    {
+      "name": "WebHttp remove listener exception cannot replace success or original rejection",
+      "pass": true
+    },
+    {
+      "name": "MiniHttp partially registered abort listener is removed on registration error",
+      "pass": false,
+      "error": "{\"registered\":1,\"unregisterAttempts\":0,\"requests\":0}\n\n1 !== 0\n"
+    },
+    {
+      "name": "WebHttp partially registered abort listener is removed on registration error",
+      "registered": 0,
+      "unregisterAttempts": 1,
+      "requests": 0,
+      "pass": true
+    },
+    {
+      "name": "mini socket partial registration/off exceptions close once; late callbacks inert",
+      "unregisterAttempts": [
+        "open",
+        "message",
+        "close",
+        "error"
+      ],
+      "closeAttempts": 1,
+      "physicalUnregisterGuarantee": false,
+      "pass": true
+    },
+    {
+      "name": "web socket partial registration/off exceptions close once; late callbacks inert",
+      "unregisterAttempts": [
+        "open",
+        "message",
+        "close",
+        "error"
+      ],
+      "closeAttempts": 1,
+      "physicalUnregisterGuarantee": false,
+      "pass": true
+    },
+    {
+      "name": "socket throwing message observer does not suppress later observers; close during dispatch fences remainder",
+      "pass": true
+    },
+    {
+      "name": "MiniAuth partial external cancellation-hook registration preserves original failure; retained hook inert",
+      "physicalUnregisterNotPossibleWithoutReturnedHandle": true,
+      "lateSDKCalls": 0,
+      "pass": true
+    }
+  ],
+  "pass": 10,
+  "fail": 1
+}

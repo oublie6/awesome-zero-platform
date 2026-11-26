@@ -1,0 +1,33 @@
+clients/packages/game-client-core/src/socket.ts:2:import { runCleanup } from './operation.js'
+clients/packages/game-client-core/src/socket.ts:37:      runCleanup([
+clients/packages/game-client-core/src/socket.ts:42:      runCleanup(callbacks)
+clients/packages/game-client-core/src/socket.ts:79:        if (state === 'closed') { runCleanup([cb]); return () => {} }
+clients/packages/game-client-core/src/socket.ts:89:            try{cb(data)}catch{runCleanup([()=>{throw Error('socket message observer failed')}])}
+clients/packages/game-client-core/src/socket.ts:96:        const off=unbind;unbind=()=>{};runCleanup([off])
+clients/packages/game-client-core/src/socket.ts:100:      if (isClosed()) {const off=uncancel;uncancel=()=>{};runCleanup([off])}
+clients/packages/game-client-core/src/index.ts:1:import { runCleanup } from './operation.js'
+clients/packages/game-client-core/src/index.ts:2:export { OperationScope, OperationSlot, OperationCancelled, runCleanup } from './operation.js'
+clients/packages/game-client-core/src/index.ts:91:    if (generation !== this.generation) { runCleanup([()=>connection.close()]); throw new Error('connection cancelled') }
+clients/packages/game-client-core/src/index.ts:95:      if(generation!==this.generation){runCleanup([offMessage]);throw new Error('connection closed during registration')}
+clients/packages/game-client-core/src/index.ts:100:      if (generation !== this.generation) { runCleanup([offClose]); throw new Error('connection closed during registration') }
+clients/packages/game-client-core/src/index.ts:122:    runCleanup([...cancellations,...subscriptions,()=>connection?.close()])
+clients/packages/game-client-core/src/minigame.ts:5:import { OperationScope, runCleanup } from './operation.js'
+clients/packages/game-client-core/src/minigame.ts:68:          runCleanup([()=>socket.offOpen?.(events.open),()=>socket.offMessage?.(message),
+clients/packages/game-client-core/src/minigame.ts:104:        runCleanup([()=>clearTimeout(timer),()=>opts.signal?.removeEventListener('abort', abort)])
+clients/packages/game-client-core/src/platform.ts:3:import { OperationScope, runCleanup } from './operation.js'
+clients/packages/game-client-core/src/platform.ts:30:    })),timeoutMs)}finally{runCleanup([()=>off?.(),()=>scope.finish()])}
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:9:import { runCleanup, type GamePlatform } from '@awesome-zero-platform/game-client-core'
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1899:    runCleanup([
+clients/packages/game-client-core/src/web.ts:5:import { runCleanup } from './operation.js'
+clients/packages/game-client-core/src/web.ts:30:      runCleanup([()=>clearTimeout(timer),()=>options.signal?.removeEventListener('abort', abort)])
+clients/packages/game-client-core/src/web.ts:43:        const cleanup=()=>{runCleanup([
+clients/packages/game-client-core/src/operation.ts:5:export function runCleanup(steps:ReadonlyArray<()=>void>,report:()=>void=()=>{
+clients/packages/game-client-core/src/operation.ts:47:    this.failures+=runCleanup([this.release,...callbacks])
+clients/packages/game-client-core/src/operation.ts:51:    if(!this.active){this.failures+=runCleanup([handler]);return ()=>{}}
+clients/fair-doudizhu-cocos/assets/scripts/game/GameClientShell.ts:5:import { ConnectionManager, runCleanup, type SocketTransport } from '@awesome-zero-platform/game-client-core'
+clients/fair-doudizhu-cocos/assets/scripts/game/GameClientShell.ts:230:    runCleanup([()=>connection?.close(),()=>{if(this.hand.status!=='disconnected')this.hand.setStatus('disconnected')}])
+clients/fair-doudizhu-cocos/assets/scripts/game/GameClientShell.ts:242:    runCleanup([()=>previous?.close()])
+clients/fair-doudizhu-cocos/assets/scripts/game/GameClientShell.ts:463:    runCleanup([()=>this.rejectSync('client disposed during hand sync'),
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:1:import { OperationSlot, runCleanup, type OperationScope, type GamePlatform } from '@awesome-zero-platform/game-client-core'
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:690:    runCleanup([()=>this.identityOperations.abandon(),()=>this.fairness.dispose(),()=>this.shell.dispose()])
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:700:    runCleanup([()=>this.session.dispose(),()=>this.identityOperations.abandon(),

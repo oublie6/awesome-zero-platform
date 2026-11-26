@@ -1,0 +1,158 @@
+
+> @awesome-zero-platform/game-web@0.1.0 test
+> node --experimental-strip-types --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: Vue runtime requires exact same-origin HTTPS/WSS; cannot use cross-origin iframe token bridge
+ok 1 - Vue runtime requires exact same-origin HTTPS/WSS; cannot use cross-origin iframe token bridge
+  ---
+  duration_ms: 4.308543
+  type: 'test'
+  ...
+# Subtest: real Go credential exchange and server validation store only server token, never password
+ok 2 - real Go credential exchange and server validation store only server token, never password
+  ---
+  duration_ms: 81.845381
+  type: 'test'
+  ...
+# Subtest: invalid login does not create local web session or socket credentials
+ok 3 - invalid login does not create local web session or socket credentials
+  ---
+  duration_ms: 2.528544
+  type: 'test'
+  ...
+# Subtest: server rejection of saved access token clears only old token
+ok 4 - server rejection of saved access token clears only old token
+  ---
+  duration_ms: 1.406143
+  type: 'test'
+  ...
+# Subtest: late login completion after logout never revives earlier identity
+ok 5 - late login completion after logout never revives earlier identity
+  ---
+  duration_ms: 1.867584
+  type: 'test'
+  ...
+# Subtest: malformed server token or missing principal fails closed
+ok 6 - malformed server token or missing principal fails closed
+  ---
+  duration_ms: 1.903077
+  type: 'test'
+  ...
+# Subtest: registration reuses server identity, requires email and never creates session
+ok 7 - registration reuses server identity, requires email and never creates session
+  ---
+  duration_ms: 3.466178
+  type: 'test'
+  ...
+# Subtest: identity timeout includes reading the response body after headers arrived
+ok 8 - identity timeout includes reading the response body after headers arrived
+  ---
+  duration_ms: 24.217697
+  type: 'test'
+  ...
+# Subtest: late validation cannot adopt a token replaced outside the Web auth controller
+ok 9 - late validation cannot adopt a token replaced outside the Web auth controller
+  ---
+  duration_ms: 2.967919
+  type: 'test'
+  ...
+# Subtest: G65 R7: old restore logout cannot remove or revoke replacement token
+ok 10 - G65 R7: old restore logout cannot remove or revoke replacement token
+  ---
+  duration_ms: 5.955633
+  type: 'test'
+  ...
+# Subtest: G65 R7: later login owns shared storage despite older exchange finishing last
+ok 11 - G65 R7: later login owns shared storage despite older exchange finishing last
+  ---
+  duration_ms: 2.541123
+  type: 'test'
+  ...
+# Subtest: G65 R9: superseded established Web identity and late login continuation are inactive
+ok 12 - G65 R9: superseded established Web identity and late login continuation are inactive
+  ---
+  duration_ms: 5.206231
+  type: 'test'
+  ...
+# Subtest: G65 R10: cancelled Web login releases restore barrier before old HTTP returns
+ok 13 - G65 R10: cancelled Web login releases restore barrier before old HTTP returns
+  ---
+  duration_ms: 2.928907
+  type: 'test'
+  ...
+# Subtest: G65 R10: old Web cancellation/finally cannot clear newer pending login
+ok 14 - G65 R10: old Web cancellation/finally cannot clear newer pending login
+  ---
+  duration_ms: 2.550558
+  type: 'test'
+  ...
+# Subtest: G65 R10: same Web controller restore releases its pending login
+ok 15 - G65 R10: same Web controller restore releases its pending login
+  ---
+  duration_ms: 1.693028
+  type: 'test'
+  ...
+# Subtest: Vue is an account entry, not a second room lobby
+ok 16 - Vue is an account entry, not a second room lobby
+  ---
+  duration_ms: 28.207796
+  type: 'test'
+  ...
+# Subtest: Goal0065 same-session site navigation retains iframe while logout destroys it
+ok 17 - Goal0065 same-session site navigation retains iframe while logout destroys it
+  ---
+  duration_ms: 4.26614
+  type: 'test'
+  ...
+# Subtest: Goal0065 startup reports actual stages and offers bounded failure/retry
+ok 18 - Goal0065 startup reports actual stages and offers bounded failure/retry
+  ---
+  duration_ms: 6.120397
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifecycle
+ok 19 - Goal0065 R1: hidden iframe messages cannot override fail-closed boot lifecycle
+  ---
+  duration_ms: 3.468286
+  type: 'test'
+  ...
+# Subtest: Goal0065 R1: background tabs also suspend Vue watchdog
+ok 20 - Goal0065 R1: background tabs also suspend Vue watchdog
+  ---
+  duration_ms: 2.510248
+  type: 'test'
+  ...
+# Subtest: Goal0065 Round2: native CSS/session failure stays deferred in retained background iframe
+ok 21 - Goal0065 Round2: native CSS/session failure stays deferred in retained background iframe
+  ---
+  duration_ms: 2.966115
+  type: 'test'
+  ...
+# Subtest: Goal0065 R3: parked iframe keeps its geometry but cannot receive interaction
+ok 22 - Goal0065 R3: parked iframe keeps its geometry but cannot receive interaction
+  ---
+  duration_ms: 9.066735
+  type: 'test'
+  ...
+# Subtest: G65 R9: external session replacement drops old host presentation without revoking replacement
+ok 23 - G65 R9: external session replacement drops old host presentation without revoking replacement
+  ---
+  duration_ms: 29.636371
+  type: 'test'
+  ...
+# Subtest: G65 R10: unmount releases pending Web identity work without clearing a replacement
+ok 24 - G65 R10: unmount releases pending Web identity work without clearing a replacement
+  ---
+  duration_ms: 5.176929
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 464.84222

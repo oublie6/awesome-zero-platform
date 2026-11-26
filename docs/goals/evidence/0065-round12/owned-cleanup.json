@@ -1,0 +1,15 @@
+{
+  "ownedAPIStopped": true,
+  "codex0065-r12-web-62acd92": "exited",
+  "codex0063r8-restore": "exited",
+  "codex0063r8-redis": "exited",
+  "codex0063r8-queue-a": "exited",
+  "codex0063r8-queue-b": "exited",
+  "user29457Service": "active",
+  "temporaryTestCANicknameRemoved": true,
+  "NSSCertificateListRestored": true,
+  "ownedPort18870Closed": true,
+  "ownedPort19181Closed": true,
+  "ownedPort30471Closed": true,
+  "user29457HealthHTTP": "200"
+}

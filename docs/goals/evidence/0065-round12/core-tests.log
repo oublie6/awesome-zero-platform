@@ -1,0 +1,390 @@
+
+> @awesome-zero-platform/game-client-core@0.1.0 test
+> npm run build && node --test test/*.test.mjs
+
+
+> @awesome-zero-platform/game-client-core@0.1.0 build
+> tsc
+
+TAP version 13
+# Subtest: Web bearer protocols never enter URL; failed and cancelled attempts close
+ok 1 - Web bearer protocols never enter URL; failed and cancelled attempts close
+  ---
+  duration_ms: 82.899608
+  type: 'test'
+  ...
+# Subtest: URL security guard works without URL globals and rejects every query/fragment
+ok 2 - URL security guard works without URL globals and rejects every query/fragment
+  ---
+  duration_ms: 1.518011
+  type: 'test'
+  ...
+# Subtest: mini tasks without undocumented off methods are supported; callbacks become inert on close
+ok 3 - mini tasks without undocumented off methods are supported; callbacks become inert on close
+  ---
+  duration_ms: 2.026971
+  type: 'test'
+  ...
+# Subtest: unsupported SocketTask and synchronous SDK exceptions fail explicitly
+ok 4 - unsupported SocketTask and synchronous SDK exceptions fail explicitly
+  ---
+  duration_ms: 1.48918
+  type: 'test'
+  ...
+# Subtest: mini HTTP status, cancellation and unsupported capability are explicit
+ok 5 - mini HTTP status, cancellation and unsupported capability are explicit
+  ---
+  duration_ms: 3.255639
+  type: 'test'
+  ...
+# Subtest: Web HTTP preserves method, JSON, abort signal and rejects non-2xx
+ok 6 - Web HTTP preserves method, JSON, abort signal and rejects non-2xx
+  ---
+  duration_ms: 4.762758
+  type: 'test'
+  ...
+# Subtest: secure entropy fails closed for missing/wrong-sized SDK responses and missing browser crypto
+ok 7 - secure entropy fails closed for missing/wrong-sized SDK responses and missing browser crypto
+  ---
+  duration_ms: 4.609607
+  type: 'test'
+  ...
+# Subtest: WeChat uses UserCryptoManager and preserves method receiver
+ok 8 - WeChat uses UserCryptoManager and preserves method receiver
+  ---
+  duration_ms: 2.111416
+  type: 'test'
+  ...
+# Subtest: mini login/storage/lifecycle/share capability failures do not silently succeed
+ok 9 - mini login/storage/lifecycle/share capability failures do not silently succeed
+  ---
+  duration_ms: 1.633509
+  type: 'test'
+  ...
+# Subtest: mini session, lifecycle disposal and ephemeral login code
+ok 10 - mini session, lifecycle disposal and ephemeral login code
+  ---
+  duration_ms: 1.353121
+  type: 'test'
+  ...
+# Subtest: Web lifecycle unregisters; tab storage clears; unsupported share returns false
+ok 11 - Web lifecycle unregisters; tab storage clears; unsupported share returns false
+  ---
+  duration_ms: 2.194308
+  type: 'test'
+  ...
+# Subtest: Douyin anonymous codes are not accepted as authenticated login codes; share rejection is explicit
+ok 12 - Douyin anonymous codes are not accepted as authenticated login codes; share rejection is explicit
+  ---
+  duration_ms: 1.351619
+  type: 'test'
+  ...
+# Subtest: synchronous abort during native request creation aborts its returned task
+ok 13 - synchronous abort during native request creation aborts its returned task
+  ---
+  duration_ms: 1.116732
+  type: 'test'
+  ...
+# Subtest: HTTP deadlines reject never-completing native requests and abort owned work
+ok 14 - HTTP deadlines reject never-completing native requests and abort owned work
+  ---
+  duration_ms: 33.802578
+  type: 'test'
+  ...
+# Subtest: mini handshake deadline rejects and releases SDK callbacks
+ok 15 - mini handshake deadline rejects and releases SDK callbacks
+  ---
+  duration_ms: 3.10216
+  type: 'test'
+  ...
+# Subtest: invalid opening deadlines fail before creating a native task
+ok 16 - invalid opening deadlines fail before creating a native task
+  ---
+  duration_ms: 0.570474
+  type: 'test'
+  ...
+# client resource cleanup failed
+# client resource cleanup failed
+# Subtest: G65 R10: mini login deadline settles and ignores late SDK callback
+ok 17 - G65 R10: mini login deadline settles and ignores late SDK callback
+  ---
+  duration_ms: 2.511303
+  type: 'test'
+  ...
+# Subtest: G65 R10: portable cancellation settles actual MiniAuth before callback or deadline
+ok 18 - G65 R10: portable cancellation settles actual MiniAuth before callback or deadline
+  ---
+  duration_ms: 0.977429
+  type: 'test'
+  ...
+# Subtest: G65 R11: MiniAuth unsubscribe fault does not change a successful login code or original failure
+ok 19 - G65 R11: MiniAuth unsubscribe fault does not change a successful login code or original failure
+  ---
+  duration_ms: 1.518395
+  type: 'test'
+  ...
+# Subtest: pure entrypoints contain no renderer, platform SDK, adapter imports or runtime globals
+ok 20 - pure entrypoints contain no renderer, platform SDK, adapter imports or runtime globals
+  ---
+  duration_ms: 153.498243
+  type: 'test'
+  ...
+# Subtest: published ESM entrypoints resolve without Cocos/mini-game globals
+ok 21 - published ESM entrypoints resolve without Cocos/mini-game globals
+  ---
+  duration_ms: 34.444147
+  type: 'test'
+  ...
+# Subtest: entropy source must fail closed
+ok 22 - entropy source must fail closed
+  ---
+  duration_ms: 5.038172
+  type: 'test'
+  ...
+# Subtest: socket URLs reject token query strings and invalid schemes
+ok 23 - socket URLs reject token query strings and invalid schemes
+  ---
+  duration_ms: 1.585212
+  type: 'test'
+  ...
+# Subtest: cancel releases the slot synchronously and old completion cannot release new owner
+ok 24 - cancel releases the slot synchronously and old completion cannot release new owner
+  ---
+  duration_ms: 5.654043
+  type: 'test'
+  ...
+# Subtest: dispatched writes cannot be called cancelled; disposal is local abandonment
+ok 25 - dispatched writes cannot be called cancelled; disposal is local abandonment
+  ---
+  duration_ms: 0.692393
+  type: 'test'
+  ...
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# Subtest: bounded waits ignore late success and failure, reject synchronous throws and release
+ok 26 - bounded waits ignore late success and failure, reject synchronous throws and release
+  ---
+  duration_ms: 19.131899
+  type: 'test'
+  ...
+# Subtest: G65 R11: throwing release and listeners never delay other waits or cleanup
+ok 27 - G65 R11: throwing release and listeners never delay other waits or cleanup
+  ---
+  duration_ms: 10.625998
+  type: 'test'
+  ...
+# Subtest: cleanup diagnostic failure is isolated and each step is attempted in order
+ok 28 - cleanup diagnostic failure is isolated and each step is attempted in order
+  ---
+  duration_ms: 2.487571
+  type: 'test'
+  ...
+# Subtest: login uses server exchange and never treats temporary code as an access token
+ok 29 - login uses server exchange and never treats temporary code as an access token
+  ---
+  duration_ms: 10.409149
+  type: 'test'
+  ...
+# Subtest: restored sessions require server validation and invalid tokens are cleared
+ok 30 - restored sessions require server validation and invalid tokens are cleared
+  ---
+  duration_ms: 1.619351
+  type: 'test'
+  ...
+# Subtest: disposed session refuses new logins
+ok 31 - disposed session refuses new logins
+  ---
+  duration_ms: 1.776974
+  type: 'test'
+  ...
+# Subtest: logout during pending exchange cannot resurrect an authenticated session
+ok 32 - logout during pending exchange cannot resurrect an authenticated session
+  ---
+  duration_ms: 1.079719
+  type: 'test'
+  ...
+# Subtest: web credential login only persists server access token, not user/password
+ok 33 - web credential login only persists server access token, not user/password
+  ---
+  duration_ms: 1.257616
+  type: 'test'
+  ...
+# Subtest: web login response arriving after logout cannot revive session
+ok 34 - web login response arriving after logout cannot revive session
+  ---
+  duration_ms: 0.976759
+  type: 'test'
+  ...
+# Subtest: slow remote logout cannot clear a newer confirmed token
+ok 35 - slow remote logout cannot clear a newer confirmed token
+  ---
+  duration_ms: 43.922505
+  type: 'test'
+  ...
+# Subtest: late save cleanup is ordered before a newer login persists its token
+ok 36 - late save cleanup is ordered before a newer login persists its token
+  ---
+  duration_ms: 6.291305
+  type: 'test'
+  ...
+# Subtest: a stale validation cannot clear or restore a token replaced by another controller
+ok 37 - a stale validation cannot clear or restore a token replaced by another controller
+  ---
+  duration_ms: 5.237162
+  type: 'test'
+  ...
+# Subtest: G65 R7: logout owns the token observed by restore, not a newer shared token
+ok 38 - G65 R7: logout owns the token observed by restore, not a newer shared token
+  ---
+  duration_ms: 4.795767
+  type: 'test'
+  ...
+# Subtest: G65 R7: shared async vault serializes delayed save and newer login
+ok 39 - G65 R7: shared async vault serializes delayed save and newer login
+  ---
+  duration_ms: 5.654271
+  type: 'test'
+  ...
+# Subtest: G65 R7: late exchange cannot replace a newer login across controllers
+ok 40 - G65 R7: late exchange cannot replace a newer login across controllers
+  ---
+  duration_ms: 1.742122
+  type: 'test'
+  ...
+# Subtest: G65 R7: provider detach clears only owned local token and never revokes again
+ok 41 - G65 R7: provider detach clears only owned local token and never revokes again
+  ---
+  duration_ms: 1.286646
+  type: 'test'
+  ...
+# Subtest: G65 R8: explicit session completion is null when superseded and grants expire with ownership
+ok 42 - G65 R8: explicit session completion is null when superseded and grants expire with ownership
+  ---
+  duration_ms: 1.857372
+  type: 'test'
+  ...
+# Subtest: G65 R9: shared grant is the authenticated state and stale SDK completion stops before exchange
+ok 43 - G65 R9: shared grant is the authenticated state and stale SDK completion stops before exchange
+  ---
+  duration_ms: 2.012155
+  type: 'test'
+  ...
+# Subtest: G65 R9: unbound attempt owner expires on shared replacement even without an authenticated grant
+ok 44 - G65 R9: unbound attempt owner expires on shared replacement even without an authenticated grant
+  ---
+  duration_ms: 0.93248
+  type: 'test'
+  ...
+# Subtest: G65 R10: canceled login releases its restore barrier before old SDK returns
+ok 45 - G65 R10: canceled login releases its restore barrier before old SDK returns
+  ---
+  duration_ms: 8.871066
+  type: 'test'
+  ...
+# Subtest: G65 R10: old cancellation cannot release a newer active login barrier
+ok 46 - G65 R10: old cancellation cannot release a newer active login barrier
+  ---
+  duration_ms: 1.426749
+  type: 'test'
+  ...
+# Subtest: G65 R10: same session restore cancels its pending login before reading saved identity
+ok 47 - G65 R10: same session restore cancels its pending login before reading saved identity
+  ---
+  duration_ms: 0.739742
+  type: 'test'
+  ...
+# Subtest: mini creation success is not handshake; synchronous success cannot use an unassigned task
+ok 48 - mini creation success is not handshake; synchronous success cannot use an unassigned task
+  ---
+  duration_ms: 20.555912
+  type: 'test'
+  ...
+# Subtest: mini synchronous fail rejects safely and closes returned task
+ok 49 - mini synchronous fail rejects safely and closes returned task
+  ---
+  duration_ms: 2.659019
+  type: 'test'
+  ...
+# Subtest: mini error/close before open rejects and removes all listeners
+ok 50 - mini error/close before open rejects and removes all listeners
+  ---
+  duration_ms: 1.894277
+  type: 'test'
+  ...
+# client resource cleanup failed
+# Subtest: closing manager cancels the pending real mini adapter immediately
+ok 51 - closing manager cancels the pending real mini adapter immediately
+  ---
+  duration_ms: 5.995662
+  type: 'test'
+  ...
+# Subtest: old callbacks cannot deliver messages or close a newer manager connection
+ok 52 - old callbacks cannot deliver messages or close a newer manager connection
+  ---
+  duration_ms: 1.912757
+  type: 'test'
+  ...
+# Subtest: close in listener registration cannot leave a manager connected
+ok 53 - close in listener registration cannot leave a manager connected
+  ---
+  duration_ms: 1.506486
+  type: 'test'
+  ...
+# Subtest: Creator 3.8 compatible ES5 output invokes all Set-managed socket cleanup callbacks
+ok 54 - Creator 3.8 compatible ES5 output invokes all Set-managed socket cleanup callbacks
+  ---
+  duration_ms: 460.056795
+  type: 'test'
+  ...
+# Subtest: stalled native sends are bounded, close cancels every pending send and late callbacks are inert
+ok 55 - stalled native sends are bounded, close cancels every pending send and late callbacks are inert
+  ---
+  duration_ms: 4.454099
+  type: 'test'
+  ...
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# client resource cleanup failed
+# Subtest: native send deadline closes task and releases all sends without SDK callbacks
+ok 56 - native send deadline closes task and releases all sends without SDK callbacks
+  ---
+  duration_ms: 12.897976
+  type: 'test'
+  ...
+# Subtest: native send failure and repeated callbacks cannot retain capacity or close a healthy connection
+ok 57 - native send failure and repeated callbacks cannot retain capacity or close a healthy connection
+  ---
+  duration_ms: 4.798827
+  type: 'test'
+  ...
+# Subtest: G65 R11: manager registration failure and throwing native close still release owned listeners
+ok 58 - G65 R11: manager registration failure and throwing native close still release owned listeners
+  ---
+  duration_ms: 1.97147
+  type: 'test'
+  ...
+# Subtest: G65 R11: mini off failure does not skip remaining listeners, sends or close observers
+ok 59 - G65 R11: mini off failure does not skip remaining listeners, sends or close observers
+  ---
+  duration_ms: 1.603241
+  type: 'test'
+  ...
+1..59
+# tests 59
+# suites 0
+# pass 59
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2081.089134

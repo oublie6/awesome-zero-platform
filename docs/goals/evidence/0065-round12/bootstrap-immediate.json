@@ -1,0 +1,24 @@
+{
+  "source": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+  "scope": "Actual compiled Bootstrap methods including actual menu-action construction, Controller and Session; separate receiver objects, controlled rendering and SDK/HTTP; no real provider mutation",
+  "cases": [
+    {
+      "name": "actual cancel menu sdk immediately starts new form operation before awaiting old promise",
+      "pass": true,
+      "startedBeforeAwaitOld": true,
+      "newSlotKept": true,
+      "lateOldWrite": false,
+      "newOperationSucceeded": true
+    },
+    {
+      "name": "actual cancel menu prepare immediately starts new form operation before awaiting old promise",
+      "pass": true,
+      "startedBeforeAwaitOld": true,
+      "newSlotKept": true,
+      "lateOldWrite": false,
+      "newOperationSucceeded": true
+    }
+  ],
+  "pass": 2,
+  "fail": 0
+}

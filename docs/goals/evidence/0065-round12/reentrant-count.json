@@ -1,0 +1,8 @@
+{
+  "source": "62acd921ce767e13d419dd8021e4d065a84e52f0",
+  "scope": "Actual OperationScope; release synchronously registers ended-scope cleanup",
+  "diagnostics": 3,
+  "actualFailures": 2,
+  "expectedFailures": 3,
+  "pass": false
+}

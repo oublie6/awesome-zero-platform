@@ -1,0 +1,34 @@
+{
+  "deployments": [
+    {
+      "name": "app-api",
+      "replicas": 1,
+      "images": [
+        "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f"
+      ]
+    },
+    {
+      "name": "game-web",
+      "replicas": 1,
+      "images": [
+        "docker.io/awesome-zero-platform/goal0064-web@sha256:44995360be6e91a0e7e1c355db4e8e9027633d1fc4d9eb59b15b110990af0a0f"
+      ]
+    },
+    {
+      "name": "mysql",
+      "replicas": 1,
+      "images": [
+        "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+      ]
+    },
+    {
+      "name": "redis",
+      "replicas": 1,
+      "images": [
+        "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+      ]
+    }
+  ],
+  "phases": "ABORTED\t14\nCOMPLETED\t11",
+  "unfinishedHandCount": 0
+}
