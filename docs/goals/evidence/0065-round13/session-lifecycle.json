@@ -1,0 +1,70 @@
+{
+  "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "scope": "Actual GameSession, MiniAuth/MiniVault and WebAuth; controlled SDK/storage/identity callbacks",
+  "cases": [
+    {
+      "name": "stored credential is not identity; validated restore grants identity without a connection",
+      "result": "PASS"
+    },
+    {
+      "name": "active grant invalidates at pending newer login; restore is blocked until that active login settles",
+      "result": "PASS"
+    },
+    {
+      "name": "cancel SDK-pending login via dispose releases shared restore barrier",
+      "pass": true,
+      "beforeCallback": true,
+      "validationsBeforeCallback": 1,
+      "attemptBeforeCallback": true,
+      "afterCanceledCallback": true,
+      "lateExchanges": 0,
+      "storedCredentialPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "cancel SDK-pending login via logout releases shared restore barrier",
+      "pass": true,
+      "beforeCallback": true,
+      "validationsBeforeCallback": 1,
+      "attemptBeforeCallback": true,
+      "afterCanceledCallback": true,
+      "lateExchanges": 0,
+      "storedCredentialPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "cancel SDK-pending login via discardLocal releases shared restore barrier",
+      "pass": true,
+      "beforeCallback": true,
+      "validationsBeforeCallback": 1,
+      "attemptBeforeCallback": true,
+      "afterCanceledCallback": true,
+      "lateExchanges": 0,
+      "storedCredentialPreserved": true,
+      "result": "PASS"
+    },
+    {
+      "name": "failed current restore retains a live attempt and permits a fresh login",
+      "result": "PASS"
+    },
+    {
+      "name": "older login finally cannot clear a newer pending-login barrier",
+      "result": "PASS"
+    },
+    {
+      "name": "Web local token is not an authenticated account; current validation is required",
+      "result": "PASS"
+    },
+    {
+      "name": "Web canceled pending login releases restore barrier before stale HTTP callback",
+      "pass": true,
+      "restoredBeforeCallback": true,
+      "validationCallsBeforeCallback": 1,
+      "restoredAfterCallback": true,
+      "storedCredentialPreserved": true,
+      "result": "PASS"
+    }
+  ],
+  "pass": 9,
+  "fail": 0
+}

@@ -1,0 +1,57 @@
+{
+  "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "scope": "Actual production Node modules; controlled cleanup/transport ports",
+  "cases": [
+    {
+      "name": "runCleanup isolates multiple faults and failing diagnostic, correct failure count",
+      "pass": true
+    },
+    {
+      "name": "R11 original cancel faults release/all waiters promptly and count once",
+      "waiters": 2,
+      "cleanupFailures": 3,
+      "diagnostics": 3,
+      "pass": true
+    },
+    {
+      "name": "R11 original finish faults release/all waiters promptly and count once",
+      "waiters": 2,
+      "cleanupFailures": 3,
+      "diagnostics": 3,
+      "pass": true
+    },
+    {
+      "name": "R11 original abandon faults release/all waiters promptly and count once",
+      "waiters": 2,
+      "cleanupFailures": 3,
+      "diagnostics": 3,
+      "pass": true
+    },
+    {
+      "name": "business success/rejection preserved through cleanup errors, nested cancellation and new slot",
+      "pass": true
+    },
+    {
+      "name": "ConnectionManager partial listener registration preserves original error despite cleanup faults",
+      "pass": true
+    },
+    {
+      "name": "ConnectionManager reentrant open during cleanup leaves only newest connection authoritative",
+      "tokens": [
+        "initial",
+        "latest"
+      ],
+      "delivered": [
+        "latest:event"
+      ],
+      "closed": [
+        1,
+        0
+      ],
+      "selected": "latest",
+      "pass": true
+    }
+  ],
+  "pass": 7,
+  "fail": 0
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "bootstrap-immediate.cjs",
+    "exit": 0,
+    "seconds": 12.121
+  },
+  {
+    "name": "bootstrap-adjacent.cjs",
+    "exit": 0,
+    "seconds": 12.806
+  },
+  {
+    "name": "smoke.cjs",
+    "exit": 0,
+    "seconds": 26.013
+  },
+  {
+    "name": "vue-cleanup.cjs",
+    "exit": 0,
+    "seconds": 12.73
+  },
+  {
+    "name": "startup-failure.cjs",
+    "exit": 0,
+    "seconds": 25.482
+  },
+  {
+    "name": "cache-smoke.cjs",
+    "exit": 0,
+    "seconds": 1.068
+  }
+]

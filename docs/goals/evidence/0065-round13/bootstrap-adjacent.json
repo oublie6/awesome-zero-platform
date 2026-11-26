@@ -1,0 +1,27 @@
+{
+  "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "scope": "Actual compiled Bootstrap methods including actual menu-action construction, Controller and Session; separate receiver objects, controlled rendering and SDK/HTTP; no real provider mutation",
+  "cases": [
+    {
+      "name": "actual standalone Web login: constructed CancelWebLogin settles prior attempt and ignores late HTTP",
+      "pass": true,
+      "cancelled": true,
+      "lateIdentity": false,
+      "oldTokenPreserved": true
+    },
+    {
+      "name": "discovery response after grant replacement cannot start old room recovery",
+      "pass": true,
+      "resumed": 0,
+      "oldRoomPresented": false
+    },
+    {
+      "name": "room reconnect reply after grant replacement cannot adopt old room state",
+      "pass": true,
+      "oldRoomPresented": false,
+      "refreshCalls": 0
+    }
+  ],
+  "pass": 3,
+  "fail": 0
+}

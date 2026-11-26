@@ -1,0 +1,15 @@
+{
+  "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "scope": "Actual candidate Vue/Cocos and same-source-tree API, owned QA account; no new hand or gameplay timeout",
+  "room": "room-cmd-e691ebed33acdfa84f5b9b412d334aca",
+  "reuse": true,
+  "additionalStatic": 0,
+  "recoveredSameRoom": true,
+  "ownedRoomClosed": true,
+  "logout": {
+    "iframes": 0,
+    "oldHTTP": 401
+  },
+  "switchedNoOldState": true,
+  "result": "PASS"
+}

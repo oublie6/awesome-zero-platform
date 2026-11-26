@@ -1,0 +1,19 @@
+{
+  "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "events": [
+    "message",
+    "diagnostic",
+    "storage",
+    "diagnostic",
+    "visibilitychange",
+    "diagnostic"
+  ],
+  "allUnregisterAttempted": true,
+  "rootEmpty": true,
+  "iframes": 0,
+  "lateRequests": 0,
+  "lateWatchdogs": 0,
+  "physicallyRemoved": false,
+  "logicalBusinessEffectsBlocked": true,
+  "result": "PASS"
+}

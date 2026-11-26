@@ -1,0 +1,102 @@
+{
+  "candidate": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "observedAt": "2026-11-26 (resume gate; before acceptance tests)",
+  "workflows": [
+    {
+      "name": "Cocos Linux Native Client",
+      "id": 45850121871,
+      "sha": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45850121871",
+      "jobs": [
+        {
+          "name": "linux_source",
+          "conclusion": "success"
+        },
+        {
+          "name": "linux_native_export",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "name": "Fair Doudizhu Vue3 Web",
+      "id": 45850121819,
+      "sha": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45850121819",
+      "jobs": [
+        {
+          "name": "vue_build",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Fair Doudizhu",
+      "id": 45850121767,
+      "sha": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45850121767",
+      "jobs": [
+        {
+          "name": "mysql_integration",
+          "conclusion": "success"
+        },
+        {
+          "name": "manifest_client",
+          "conclusion": "success"
+        },
+        {
+          "name": "application",
+          "conclusion": "success"
+        },
+        {
+          "name": "client_foundation",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "CI",
+      "id": 45850121928,
+      "sha": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+      "attempt": 2,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45850121928",
+      "jobs": [
+        {
+          "name": "runtime",
+          "conclusion": "success"
+        },
+        {
+          "name": "secure_envelope",
+          "conclusion": "success"
+        },
+        {
+          "name": "unit",
+          "conclusion": "success"
+        },
+        {
+          "name": "admin_web",
+          "conclusion": "success"
+        },
+        {
+          "name": "integration",
+          "conclusion": "success"
+        },
+        {
+          "name": "report",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

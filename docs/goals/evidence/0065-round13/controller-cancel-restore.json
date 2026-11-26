@@ -1,0 +1,20 @@
+{
+  "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "scope": "Actual Controller/Session/MiniAuth/MiniVault; controlled SDK callback and valid restore validator",
+  "beforeCanceledCallback": {
+    "restored": true,
+    "identity": true,
+    "transport": true,
+    "attempt": true,
+    "validations": 1
+  },
+  "afterCanceledCallback": {
+    "restored": true,
+    "identity": true,
+    "transport": true
+  },
+  "sdkLogins": 1,
+  "connections": 1,
+  "lateExchanges": 0,
+  "pass": true
+}

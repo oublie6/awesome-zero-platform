@@ -1,0 +1,156 @@
+{
+  "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "scope": "Actual official Creator bundle constructors; independent receivers",
+  "cases": [
+    {
+      "name": "manager latest owner during offMessage",
+      "created": [
+        "initial",
+        "latest"
+      ],
+      "sentOn": "latest",
+      "closeCounts": [
+        1,
+        1
+      ],
+      "pass": true
+    },
+    {
+      "name": "manager latest owner during offClose",
+      "created": [
+        "initial",
+        "latest"
+      ],
+      "sentOn": "latest",
+      "closeCounts": [
+        1,
+        1
+      ],
+      "pass": true
+    },
+    {
+      "name": "manager latest owner during close",
+      "created": [
+        "initial",
+        "latest"
+      ],
+      "sentOn": "latest",
+      "closeCounts": [
+        1,
+        1
+      ],
+      "pass": true
+    },
+    {
+      "name": "shell latest owner during offMessage",
+      "created": [
+        "initial",
+        "latest"
+      ],
+      "sentOn": "latest",
+      "closeCounts": [
+        1,
+        1
+      ],
+      "pass": true
+    },
+    {
+      "name": "shell latest owner during offClose",
+      "created": [
+        "initial",
+        "latest"
+      ],
+      "sentOn": "latest",
+      "closeCounts": [
+        1,
+        1
+      ],
+      "pass": true
+    },
+    {
+      "name": "shell latest owner during close",
+      "created": [
+        "initial",
+        "latest"
+      ],
+      "sentOn": "latest",
+      "closeCounts": [
+        1,
+        1
+      ],
+      "pass": true
+    },
+    {
+      "name": "Manager registration onMessage reentry cannot claim ready",
+      "pass": true
+    },
+    {
+      "name": "Manager registration onClose reentry cannot claim ready",
+      "pass": true
+    },
+    {
+      "name": "Manager JSON.toJSON invalidation sends zero old messages",
+      "pass": true
+    },
+    {
+      "name": "Shell notification reentry cannot report obsolete success",
+      "pass": true
+    },
+    {
+      "name": "MiniHttp cancellation/registration before-install",
+      "requests": 0,
+      "remainingListeners": 0,
+      "removeAttempts": 1,
+      "pass": true
+    },
+    {
+      "name": "MiniHttp cancellation/registration after-install",
+      "requests": 0,
+      "remainingListeners": 0,
+      "removeAttempts": 1,
+      "pass": true
+    },
+    {
+      "name": "MiniHttp cancellation/registration throw-after-install",
+      "requests": 0,
+      "remainingListeners": 0,
+      "removeAttempts": 1,
+      "pass": true
+    },
+    {
+      "name": "MiniHttp cancellation/registration throw-undefined",
+      "requests": 0,
+      "remainingListeners": 0,
+      "removeAttempts": 1,
+      "pass": true
+    },
+    {
+      "name": "Scope nested release cleanup counted without changing business result",
+      "cleanupFailures": 3,
+      "business": 42,
+      "pass": true
+    },
+    {
+      "name": "Scope nested listener cleanup counted without changing business result",
+      "cleanupFailures": 3,
+      "business": 42,
+      "pass": true
+    },
+    {
+      "name": "Scope nested diagnostic cleanup counted without changing business result",
+      "cleanupFailures": 3,
+      "business": 42,
+      "pass": true
+    },
+    {
+      "name": "Session cleanup new login wins same instance",
+      "pass": true
+    },
+    {
+      "name": "Session cleanup new login wins shared vault",
+      "pass": true
+    }
+  ],
+  "pass": 19,
+  "fail": 0
+}

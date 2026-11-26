@@ -1,0 +1,13 @@
+{
+  "candidate": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "originalRun": 45850121928,
+  "cancelledRuntimeJob": 140016373449,
+  "documentationCommit": "b35c8596e5effb1ff6106a7ecbb35206975d7797",
+  "documentationCIRun": 45850891434,
+  "concurrencyGroup": "ci-${{ github.workflow }}-${{ github.ref }}",
+  "cancelInProgress": true,
+  "correctiveAction": "rerun only cancelled runtime job; no product tests or build started",
+  "attempt": 2,
+  "status": "pending",
+  "conclusion": null
+}

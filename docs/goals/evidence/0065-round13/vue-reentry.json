@@ -1,0 +1,75 @@
+{
+  "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "scope": "Actual Vue WebAuth with controlled synchronous StoragePort reentry; not ordinary native sessionStorage behavior",
+  "cases": [
+    {
+      "name": "dispose-during-save",
+      "returnedIdentity": "old",
+      "currentIdentity": "old",
+      "authenticated": true,
+      "stored": "old",
+      "calls": [
+        "/auth/login",
+        "/auth/session"
+      ],
+      "pass": false
+    },
+    {
+      "name": "logout-during-save",
+      "returnedIdentity": "old",
+      "currentIdentity": "old",
+      "authenticated": true,
+      "stored": "old",
+      "calls": [
+        "/auth/login",
+        "/auth/session"
+      ],
+      "pass": false
+    },
+    {
+      "name": "login-during-restore-load",
+      "returnedIdentity": "old",
+      "currentIdentity": "new",
+      "authenticated": true,
+      "stored": "new",
+      "calls": [
+        "/auth/login",
+        "/auth/session",
+        "/auth/session",
+        "/auth/login",
+        "/auth/session"
+      ],
+      "pass": false
+    },
+    {
+      "name": "dispose-during-final-restore-load",
+      "returnedIdentity": "old",
+      "currentIdentity": "old",
+      "authenticated": true,
+      "stored": "old",
+      "calls": [
+        "/auth/login",
+        "/auth/session",
+        "/auth/session"
+      ],
+      "pass": false
+    },
+    {
+      "name": "shared-login-during-final-restore-load",
+      "returnedIdentity": "old",
+      "currentIdentity": null,
+      "authenticated": false,
+      "stored": "new",
+      "calls": [
+        "/auth/login",
+        "/auth/session",
+        "/auth/session",
+        "/auth/login",
+        "/auth/session"
+      ],
+      "pass": false
+    }
+  ],
+  "pass": 0,
+  "fail": 5
+}
