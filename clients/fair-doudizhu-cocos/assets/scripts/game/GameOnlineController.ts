@@ -1,4 +1,4 @@
-import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
+import { OperationSlot, type OperationScope, type GamePlatform } from '@awesome-zero-platform/game-client-core'
 import { GameSession, type IdentityExchange, type SessionGrant } from '@awesome-zero-platform/game-client-core/session'
 import { RoomCoordinator, secureRoomCommandIdentity, type RoomState } from '@awesome-zero-platform/doudizhu-client/room'
 import { DoudizhuHTTPClient, type RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
@@ -26,7 +26,9 @@ export class GameOnlineController {
   private identityGrant:SessionGrant|null=null
   /** Established controller identity is distinct from transport readiness. */
   get identityCurrent():boolean { return !this.disposed && this.identityEstablished && !!this.identityGrant?.isCurrent() }
-  private identityMutation=false
+  private readonly identityOperations=new OperationSlot()
+  /** A pending provider write cannot be undone by leaving its form. */
+  cancelIdentityOperation():boolean{return this.identityOperations.cancel()}
   private membershipGeneration = 0
   // The latest explicit recovery choice owns all post-await room/hand writes.
   // Same-target concurrent recoveries share one operation only while its
@@ -95,6 +97,8 @@ export class GameOnlineController {
     if(this.disposed)throw new Error('online controller disposed')
     if(this.identityEstablished)throw new Error('controller already authenticated; replace controller to change identity')
     const attempt=++this.authAttempt
+    this.session.cancelAttempt()
+    this.identityOperations.abandon()
     const current=()=>!this.disposed && attempt===this.authAttempt
     this.shell.cancelConnection()
     this.shell.clearHand()
@@ -126,63 +130,67 @@ export class GameOnlineController {
     return typeof id==='string' && id.length>0 && id.length<=128?id:null
   }
   private async providerOperation(
-    owned:()=>boolean,work:(current:()=>boolean,token:string)=>Promise<boolean>
+    owned:()=>boolean,work:(current:()=>boolean,token:string,scope:OperationScope)=>Promise<boolean>
   ):Promise<boolean>{
     const grant=this.identityGrant
-    const current=()=>owned() && this.identityCurrent && !!grant?.isCurrent()
-    if(this.platform.target!=='wechat' || !grant || !current() || this.identityMutation)return false
-    this.identityMutation=true
-    try{return await work(current,grant.token)}
+    const identityOwned=()=>owned() && this.identityCurrent && !!grant?.isCurrent()
+    if(this.platform.target!=='wechat' || !grant || !identityOwned())return false
+    const scope=this.identityOperations.begin()
+    if(!scope)return false
+    const current=()=>scope.active && identityOwned()
+    try{return await work(current,grant.token,scope)}
     catch(error){if(!current())return false;throw error}
-    finally{this.identityMutation=false}
+    finally{scope.finish()}
+  }
+  /** Final mutations are not cancelable once sent. A lost response is not
+   * proof of failure; the user must verify the resulting account state. */
+  private async providerWrite(scope:OperationScope,path:string,body:unknown,accessToken?:string):Promise<void>{
+    scope.markDispatched()
+    let raw:{code?:unknown}|null
+    try{
+      raw=await scope.wait(()=>this.platform.http.request<unknown>(path,{
+        method:'POST',accessToken,body,timeoutMs:12000
+      }),15_000) as {code?:unknown}|null
+    }catch{throw new Error('账号操作结果待确认，请重新验证账号状态，不要直接重复提交')}
+    if(raw?.code!=='OK')throw new Error('账号操作未获成功确认，请重新验证账号状态')
   }
   async unlinkWeChat(password:string,owned:()=>boolean):Promise<boolean>{
-    return this.providerOperation(owned,async(current,token)=>{
-      const raw=await this.platform.http.request<unknown>('/auth/wechat/unlink',{
-        method:'POST',accessToken:token,body:{password},timeoutMs:12000
-      }) as {code?:unknown}|null
-      if(!current())return false
-      if(raw?.code!=='OK')throw new Error('解绑失败')
-      return true
+    return this.providerOperation(owned,async(current,token,scope)=>{
+      await this.providerWrite(scope,'/auth/wechat/unlink',{password},token)
+      return current()
     })
   }
   async relinkWeChat(input:{sourceIdentifier:string;sourcePassword:string;targetIdentifier:string;targetPassword:string},
     owned:()=>boolean):Promise<boolean>{
-    return this.providerOperation(owned,async(current,token)=>{
-      const code=await this.platform.auth.acquireCode()
+    return this.providerOperation(owned,async(current,token,scope)=>{
+      const code=await scope.wait(()=>this.platform.auth.acquireCode())
       if(!current())return false
-      const prep=await this.platform.http.request<unknown>('/auth/wechat/prepare',{
+      const prep=await scope.wait(()=>this.platform.http.request<unknown>('/auth/wechat/prepare',{
         method:'POST',body:{code},timeoutMs:12000
-      }) as {code?:unknown;data?:{pendingToken?:unknown}}|null
+      })) as {code?:unknown;data?:{pendingToken?:unknown}}|null
       if(!current())return false
       const proof=prep?.code==='OK'?prep.data?.pendingToken:null
       if(typeof proof!=='string'||proof.length<32)throw new Error('微信验证未通过')
-      const raw=await this.platform.http.request<unknown>('/auth/wechat/relink',{
-        method:'POST',accessToken:token,timeoutMs:12000,body:{pendingToken:proof,...input}
-      }) as {code?:unknown}|null
-      if(!current())return false
-      if(raw?.code!=='OK')throw new Error('换绑失败')
-      return true
+      await this.providerWrite(scope,'/auth/wechat/relink',{pendingToken:proof,...input},token)
+      return current()
     })
   }
   /** Initial provider binding is a distinct, unauthenticated proof flow.
    * It cannot acquire authority from a newer login or from a stored token. */
   async completeWeChatBinding(create:boolean,proof:string,input:{username:string;password:string;email:string;displayName:string},
     attempt:()=>boolean,owned:()=>boolean):Promise<boolean>{
-    const current=()=>!this.disposed && !this.identityEstablished && attempt() && owned()
-    if(this.platform.target!=='wechat' || !current() || this.identityMutation)return false
-    this.identityMutation=true
+    const identityOwned=()=>!this.disposed && !this.identityEstablished && attempt() && owned()
+    if(this.platform.target!=='wechat' || !identityOwned())return false
+    const scope=this.identityOperations.begin()
+    if(!scope)return false
+    const current=()=>scope.active && identityOwned()
     try{
       const {username,password,email,displayName}=input
-      const raw=await this.platform.http.request<unknown>(create?'/auth/wechat/register':'/auth/wechat/bind',{
-        method:'POST',timeoutMs:12000,
-        body:create?{pendingToken:proof,username,email,displayName,password}:{pendingToken:proof,identifier:username,password}
-      }) as {code?:unknown}|null
-      if(!current())return false
-      if(raw?.code!=='OK')throw new Error('关联账号失败')
-      return true
+      await this.providerWrite(scope,create?'/auth/wechat/register':'/auth/wechat/bind',
+        create?{pendingToken:proof,username,email,displayName,password}:{pendingToken:proof,identifier:username,password})
+      return current()
     }catch(error){if(!current())return false;throw error}
-    finally{this.identityMutation=false}
+    finally{scope.finish()}
   }
   /** Recovery is read-only until its final authoritative membership check.
    * Never adopt an earlier room response over a newer user selection. */
@@ -666,6 +674,7 @@ export class GameOnlineController {
     // Revoke every pending recovery/join before logout suspends for token
     // revocation. A delayed HTTP reply cannot adopt state after this point.
     this.disposed = true
+    this.identityOperations.abandon()
     ++this.authAttempt
     ++this.recoveryGeneration
     ++this.membershipGeneration
@@ -676,6 +685,7 @@ export class GameOnlineController {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
+    this.identityOperations.abandon()
     ++this.authAttempt
     ++this.recoveryGeneration
     this.session.dispose()

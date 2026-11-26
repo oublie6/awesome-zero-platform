@@ -1496,3 +1496,58 @@ test('G65 R9: initial binding uses original attempt, not the current vault value
   assert.deepEqual(calls,['/auth/wechat/bind'])
  }finally{a.dispose();b.dispose()}
 })
+
+test('G65 R10: provider cancel frees pre-dispatch slot and late completion cannot release the next operation',async()=>{
+ for(const phase of ['sdk','prepare']){
+  const f=fixture(),calls=[],sdk=[],prepares=[],writes=[]
+  const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  const input={sourceIdentifier:'a',sourcePassword:'old',targetIdentifier:'b',targetPassword:'new'}
+  try{
+   await online.loginAndConnect()
+   f.platform.auth.acquireCode=()=>new Promise(ok=>sdk.push(ok))
+   f.platform.http.request=async(path)=>{
+    calls.push(path)
+    if(path==='/auth/wechat/prepare')return new Promise(ok=>prepares.push(ok))
+    return new Promise(ok=>writes.push(ok))
+   }
+   const first=online.relinkWeChat(input,()=>true)
+   if(phase==='prepare'){
+    sdk[0]('old-code')
+    for(let i=0;i<20&&!prepares.length;i++)await new Promise(ok=>setImmediate(ok))
+   }
+   assert.equal(online.cancelIdentityOperation(),true)
+   const second=online.relinkWeChat(input,()=>true)
+   assert.equal(await first,false)
+   if(phase==='sdk')sdk[0]('old-code')
+   else prepares[0]({code:'OK',data:{pendingToken:'a'.repeat(43)}})
+   assert.equal(await online.unlinkWeChat('pw',()=>true),false)
+   sdk[1]('new-code')
+   const n=phase==='sdk'?1:2
+   for(let i=0;i<20&&prepares.length<n;i++)await new Promise(ok=>setImmediate(ok))
+   assert.equal(prepares.length,n)
+   prepares.at(-1)({code:'OK',data:{pendingToken:'b'.repeat(43)}})
+   for(let i=0;i<20&&!writes.length;i++)await new Promise(ok=>setImmediate(ok))
+   assert.equal(writes.length,1)
+   assert.equal(online.cancelIdentityOperation(),false)
+   writes[0]({code:'OK'})
+   assert.equal(await second,true)
+   assert.equal(calls.filter(x=>x==='/auth/wechat/relink').length,1)
+  }finally{online.dispose()}
+ }
+})
+test('G65 R10: sent unlink/binding hold their operation until known completion',async()=>{
+ const f=fixture(),calls=[]
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ let release
+ try{
+  await online.loginAndConnect()
+  f.platform.http.request=async(path)=>{calls.push(path);return new Promise(ok=>{release=ok})}
+  const pending=online.unlinkWeChat('pw',()=>true)
+  assert.equal(online.cancelIdentityOperation(),false)
+  assert.equal(await online.unlinkWeChat('pw',()=>true),false)
+  release({code:'OK'})
+  assert.equal(await pending,true)
+  assert.equal(online.cancelIdentityOperation(),true)
+  assert.deepEqual(calls,['/auth/wechat/unlink'])
+ }finally{online.dispose()}
+})

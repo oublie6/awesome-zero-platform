@@ -498,3 +498,14 @@ test('G65 R9: Bootstrap delegates identity requests and separates scene ownershi
  assert.match(src,/if\(!online\.session\.captureAttempt\(\)\(\)\)return false/)
  assert.match(src,/return this\.currentScene\(null,generation\)/)
 })
+
+test('G65 R10: identity form cancel invalidates navigation owner and delegates to operation slot',async()=>{
+ const src=await readFile(new URL('../assets/scripts/bootstrap/GameBootstrap.ts',import.meta.url),'utf8')
+ for(const name of ['WechatCancelBind','WechatCancelRelink','WechatCancelUnlink'])
+  assert.match(src,new RegExp("name:'"+name+"'.*action:.*this\\.cancelIdentityForm\\(\\)"))
+ assert.match(src,/if\(this\.online && !this\.online\.cancelIdentityOperation\(\)\)/)
+ assert.match(src,/\+\+this\.identityFormGeneration/)
+ assert.match(src,/form===this\.identityFormGeneration && this\.screen==='wechat-relink'/)
+ assert.match(src,/form===this\.identityFormGeneration && this\.screen==='wechat-unlink'/)
+ assert.match(src,/action:\(\)=>this\.cancelWebLogin\(\)/)
+})

@@ -78,6 +78,7 @@ export class GameBootstrap extends Component {
   private wechatDisplay: EditBox | null = null
   private wechatPending = ''
   private wechatPendingOwner:(()=>boolean)|null=null
+  private identityFormGeneration=0
   private loginNodes: Node[] = []
   private screen: Screen = 'home'
   private selectedCards = new Set<string>()
@@ -316,7 +317,39 @@ export class GameBootstrap extends Component {
     label.overflow = Label.Overflow.SHRINK
     return label
   }
+  private isIdentityForm(screen:Screen):boolean{
+    return screen==='wechat-bind' || screen==='wechat-relink' || screen==='wechat-unlink'
+  }
+  private endIdentityForm():boolean{
+    if(this.online && !this.online.cancelIdentityOperation()){
+      this.notice('账号请求已提交，正在等待服务端结果，暂不能取消')
+      return false
+    }
+    ++this.identityFormGeneration
+    this.wechatPending=''
+    this.wechatPendingOwner=null
+    return true
+  }
+  private cancelIdentityForm():void{
+    if(this.endIdentityForm())this.renderScreen('rooms')
+  }
+  private cancelWebLogin():void{
+    // Standalone form cancellation also invalidates the pending login/restore.
+    if(this.screen!=='login')return
+    if(this.online && !this.online.identityCurrent){
+      ++this.requestGeneration
+      ++this.recoveryAttempt
+      this.sceneRecovery=null
+      this.online.dispose()
+      this.online=null
+      this.platform=null
+    }
+    this.renderScreen('rooms')
+  }
   private renderScreen(screen: Screen): void {
+    // A transition away from a provider form is an operation cancellation,
+    // not a permission to continue after A -> B -> A navigation.
+    if(screen!==this.screen && this.isIdentityForm(this.screen) && !this.endIdentityForm())return
     // A room menu refresh (UNKNOWN, ready, recover, fairness refresh) can
     // rebuild its native EditBox. Preserve its draft ONLY while the account,
     // room, hand and input purpose are unchanged. A hand switch, logout or
@@ -461,7 +494,7 @@ export class GameBootstrap extends Component {
       this.loginPassword=this.createLoginInput('WebLoginPassword','密码',true)
       this.addMenu([
         {name:'SubmitWebLogin',caption:'登录并进入房间',action:()=>void this.login()},
-        {name:'CancelWebLogin',caption:'返回房间大厅',action:()=>this.renderScreen('rooms')}
+        {name:'CancelWebLogin',caption:'返回房间大厅',action:()=>this.cancelWebLogin()}
       ])
     } else if (screen === 'wechat-bind') {
       this.title!.string='关联平台账号'
@@ -473,7 +506,7 @@ export class GameBootstrap extends Component {
       this.addMenu([
         {name:'WechatBindExisting',caption:'绑定已有平台账号',action:()=>void this.completeWeChatBinding(false)},
         {name:'WechatRegisterNew',caption:'创建新账号并绑定',action:()=>void this.completeWeChatBinding(true)},
-        {name:'WechatCancelBind',caption:'取消并返回',action:()=>{this.wechatPending='';this.wechatPendingOwner=null;this.renderScreen('rooms')}}
+        {name:'WechatCancelBind',caption:'取消并返回',action:()=>this.cancelIdentityForm()}
       ])
     } else if (screen === 'wechat-relink') {
       this.title!.string='换绑微信账号'
@@ -484,7 +517,7 @@ export class GameBootstrap extends Component {
       this.wechatDisplay=this.createLoginInput('WechatTargetPassword','目标账号密码',true)
       this.addMenu([
         {name:'WechatConfirmRelink',caption:'确认微信换绑',action:()=>void this.relinkWeChat()},
-        {name:'WechatCancelRelink',caption:'取消换绑',action:()=>this.renderScreen('rooms')}
+        {name:'WechatCancelRelink',caption:'取消换绑',action:()=>this.cancelIdentityForm()}
       ])
     } else if (screen === 'wechat-unlink') {
       this.title!.string='解绑微信身份'
@@ -492,7 +525,7 @@ export class GameBootstrap extends Component {
       this.loginPassword=this.createLoginInput('WechatUnlinkPassword','平台账号密码',true)
       this.addMenu([
         {name:'WechatConfirmUnlink',caption:'确认解绑微信',action:()=>void this.unlinkWeChat()},
-        {name:'WechatCancelUnlink',caption:'返回房间大厅',action:()=>this.renderScreen('rooms')}
+        {name:'WechatCancelUnlink',caption:'返回房间大厅',action:()=>this.cancelIdentityForm()}
       ])
     } else if (screen === 'table') {
       // The real table uses a dedicated Cocos layer; cards are no longer
@@ -757,6 +790,7 @@ export class GameBootstrap extends Component {
             this.renderScreen('table')
         })
       generation=++this.requestGeneration
+      ++this.identityFormGeneration
       this.platform=platform
       this.wechatPending=''
       this.wechatPendingOwner=null
@@ -881,9 +915,9 @@ export class GameBootstrap extends Component {
     if(!username || !password || (create && (!email || !displayName))){
       this.notice('请填写所需账号资料');return
     }
-    const epoch=this.requestGeneration
-    const current=()=>this.currentScene(online,epoch) && this.wechatPendingOwner===attempt &&
-      this.wechatPending===proof && this.screen==='wechat-bind' && attempt()
+    const epoch=this.requestGeneration,form=this.identityFormGeneration
+    const current=()=>this.currentScene(online,epoch) && form===this.identityFormGeneration &&
+      this.wechatPendingOwner===attempt && this.wechatPending===proof && this.screen==='wechat-bind' && attempt()
     try{
       const completed=await online.completeWeChatBinding(create,proof,{username,password,email,displayName},attempt,current)
       if(!completed || !current())return
@@ -906,15 +940,15 @@ export class GameBootstrap extends Component {
     if(!sourceIdentifier||!sourcePassword||!targetIdentifier||!targetPassword){
       this.notice('请填写原账号和目标账号的账号密码');return
     }
-    const online=this.online,epoch=this.requestGeneration
-    const current=()=>this.currentAccount(online,epoch)
+    const online=this.online,epoch=this.requestGeneration,form=this.identityFormGeneration
+    const current=()=>this.currentAccount(online,epoch) && form===this.identityFormGeneration && this.screen==='wechat-relink'
     try{
       const completed=await online.relinkWeChat({sourceIdentifier,sourcePassword,targetIdentifier,targetPassword},current)
-      if(!completed || !this.currentAccount(online,epoch))return
+      if(!completed || !current())return
       if(await this.detachWeChatSession(online))
         this.notice('微信换绑成功。所有历史游戏数据仍留在原账号。')
     }catch(error){
-      if(this.currentAccount(online,epoch))this.notice('微信换绑失败：'+this.message(error))
+      if(current())this.notice('微信换绑失败：'+this.message(error))
     }
   }
   private async detachWeChatSession(online:GameOnlineController):Promise<boolean>{
@@ -945,14 +979,15 @@ export class GameBootstrap extends Component {
     const password=this.loginPassword?.string||''
     if(this.loginPassword)this.loginPassword.string=''
     if(!password){this.notice('请输入当前账号密码');return}
-    const online=this.online,epoch=this.requestGeneration
+    const online=this.online,epoch=this.requestGeneration,form=this.identityFormGeneration
+    const current=()=>this.currentAccount(online,epoch) && form===this.identityFormGeneration && this.screen==='wechat-unlink'
     try{
-      const completed=await online.unlinkWeChat(password,()=>this.currentAccount(online,epoch))
-      if(!completed || !this.currentAccount(online,epoch))return
+      const completed=await online.unlinkWeChat(password,current)
+      if(!completed || !current())return
       if(await this.detachWeChatSession(online))
         this.notice('微信解绑成功；原账号游戏数据仍保留')
     }catch(error){
-      if(this.currentAccount(online,epoch))this.notice('微信解绑失败：'+this.message(error))
+      if(current())this.notice('微信解绑失败：'+this.message(error))
     }
   }
   /** Browser sign-out revokes the server session and fences all callbacks.
@@ -1019,7 +1054,7 @@ export class GameBootstrap extends Component {
     const token=++this.recoveryAttempt
     onOwnedSelection?.(token)
     const rooms=await online.discoverRecoverableRooms()
-    if(online!==this.online || token!==this.recoveryAttempt || !this.content?.isValid)return
+    if(!online.identityCurrent || online!==this.online || token!==this.recoveryAttempt || !this.content?.isValid)return
     this.recoverableRooms=rooms
     const active=rooms.filter(room=>room.status==='HAND_ACTIVE')
     const candidate=active.length===1?active[0]:
@@ -1055,7 +1090,7 @@ export class GameBootstrap extends Component {
   private async performAuthorizedRoomRecovery(
     online:GameOnlineController,roomID:string,token:number
   ):Promise<void>{
-    const current=()=>online===this.online && token===this.recoveryAttempt && !!this.content?.isValid
+    const current=()=>online.identityCurrent && online===this.online && token===this.recoveryAttempt && !!this.content?.isValid
     try{
       const room=await online.reconnectAndResync(roomID)
       if(!current())return
