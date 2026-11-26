@@ -1,4 +1,4 @@
-import { OperationSlot, type OperationScope, type GamePlatform } from '@awesome-zero-platform/game-client-core'
+import { OperationSlot, runCleanup, type OperationScope, type GamePlatform } from '@awesome-zero-platform/game-client-core'
 import { GameSession, type IdentityExchange, type SessionGrant } from '@awesome-zero-platform/game-client-core/session'
 import { RoomCoordinator, secureRoomCommandIdentity, type RoomState } from '@awesome-zero-platform/doudizhu-client/room'
 import { DoudizhuHTTPClient, type RoomRead } from '@awesome-zero-platform/doudizhu-client/api'
@@ -684,22 +684,20 @@ export class GameOnlineController {
     // Revoke every pending recovery/join before logout suspends for token
     // revocation. A delayed HTTP reply cannot adopt state after this point.
     this.disposed = true
-    this.identityOperations.abandon()
     ++this.authAttempt
     ++this.recoveryGeneration
     ++this.membershipGeneration
-    this.fairness.dispose()
-    this.shell.dispose()
+    runCleanup([()=>this.identityOperations.abandon(),()=>this.fairness.dispose(),()=>this.shell.dispose()])
+    // Logout is a business result, not best-effort native cleanup.
     await this.session.logout()
   }
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.identityOperations.abandon()
     ++this.authAttempt
     ++this.recoveryGeneration
-    this.session.dispose()
-    this.fairness.dispose()
-    this.shell.dispose()
+    ++this.membershipGeneration
+    runCleanup([()=>this.session.dispose(),()=>this.identityOperations.abandon(),
+      ()=>this.fairness.dispose(),()=>this.shell.dispose()])
   }
 }

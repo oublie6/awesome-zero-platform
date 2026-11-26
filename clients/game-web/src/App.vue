@@ -268,11 +268,15 @@ onMounted(()=>{
   void initialize()
 })
 onUnmounted(()=>{
-  client?.dispose()
-  window.removeEventListener('message',onGameMessage)
-  window.removeEventListener('storage',onStorageChange)
-  document.removeEventListener('visibilitychange',onVisibilityChange)
-  clearLoadWatchdog()
+  // Browser composition has no shared client package dependency. Isolate
+  // native cleanup without logging raw errors or hiding business failures.
+  for(const cleanup of [
+    ()=>client?.dispose(),
+    ()=>window.removeEventListener('message',onGameMessage),
+    ()=>window.removeEventListener('storage',onStorageChange),
+    ()=>document.removeEventListener('visibilitychange',onVisibilityChange),
+    ()=>clearLoadWatchdog()
+  ])try{cleanup()}catch{try{console.warn('web host cleanup failed')}catch{/* continue teardown */}}
 })
 </script>
 

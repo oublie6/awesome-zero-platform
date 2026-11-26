@@ -2,7 +2,7 @@ import { createWireCommand, parseWireResult, type WireCommand, type WireCommandR
 import { parsePrivateViewResult } from '@awesome-zero-platform/doudizhu-client/view'
 import { parseFinalEvidenceRead, type FinalEvidenceRead } from '@awesome-zero-platform/doudizhu-client/api'
 import { HandStore, GameMessageRouter, type HandSnapshot } from '@awesome-zero-platform/doudizhu-client'
-import { ConnectionManager, type SocketTransport } from '@awesome-zero-platform/game-client-core'
+import { ConnectionManager, runCleanup, type SocketTransport } from '@awesome-zero-platform/game-client-core'
 
 /** UI orchestration over confirmed server messages. No generated fake game state. */
 /** This is an explicit, correlated pre-commit rejection from the Go
@@ -225,9 +225,9 @@ export class GameClientShell {
     this.transportReady=false
     this.rejectSync('connection cancelled during hand sync')
     this.rejectPending('connection cancelled; command outcome unknown')
-    this.connection?.close()
+    const connection=this.connection
     this.connection=null
-    if(this.hand.status!=='disconnected')this.hand.setStatus('disconnected')
+    runCleanup([()=>connection?.close(),()=>{if(this.hand.status!=='disconnected')this.hand.setStatus('disconnected')}])
   }
   async connect(socket: SocketTransport, endpoint: string, token: string,owner:()=>boolean=()=>true): Promise<boolean> {
     if (this.disposed) throw new Error('client disposed')
@@ -237,7 +237,9 @@ export class GameClientShell {
     this.transportReady = false
     this.rejectSync('connection replaced during hand sync')
     this.rejectPending('connection replaced; command outcome unknown')
-    this.connection?.close()
+    const previous=this.connection
+    this.connection=null
+    runCleanup([()=>previous?.close()])
     if (this.hand.status !== 'disconnected') this.hand.setStatus('disconnected')
     const connection = new ConnectionManager(socket)
     this.connection = connection
@@ -456,10 +458,10 @@ export class GameClientShell {
     this.disposed = true
     this.generation++
     this.transportReady = false
-    this.rejectSync('client disposed during hand sync')
-    this.rejectPending('client disposed; command outcome unknown')
-    this.connection?.close()
-    this.events.clear()
-    this.hand.reset()
+    const connection=this.connection
+    this.connection=null
+    runCleanup([()=>this.rejectSync('client disposed during hand sync'),
+      ()=>this.rejectPending('client disposed; command outcome unknown'),
+      ()=>connection?.close(),()=>this.events.clear(),()=>this.hand.reset()])
   }
 }

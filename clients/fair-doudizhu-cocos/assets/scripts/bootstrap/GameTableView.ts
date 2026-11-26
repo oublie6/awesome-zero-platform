@@ -94,9 +94,12 @@ export class GameTableView {
     parent.addChild(this.root)
   }
   destroy():void {
-    if(this.tickHandle!==null){clearInterval(this.tickHandle);this.tickHandle=null}
-    if(this.root.isValid)this.root.destroy()
+    const timer=this.tickHandle
+    this.tickHandle=null
     this.data=null
+    this.countdownLabel=null
+    if(timer!==null)clearInterval(timer)
+    if(this.root.isValid)this.root.destroy()
   }
   render(data:TableDisplay,width:number,height:number):void {
     if(this.data?.handID!==data.handID)this.noticeText=''

@@ -146,3 +146,14 @@ test('G65 R10: portable cancellation settles actual MiniAuth before callback or 
  callback.success({code:'late'})
  callback.fail(Error('late'))
 })
+
+test('G65 R11: MiniAuth unsubscribe fault does not change a successful login code or original failure',async()=>{
+ for(const ok of [true,false]){
+  const platform=createMiniPlatform('wechat',{login(args){if(ok)args.success({code:'valid-code'});else args.fail(Error('sdk failure'))}},'https://example.org')
+  let off=0
+  const result=platform.auth.acquireCode(100,()=>()=>{off++;throw Error('off fault')})
+  if(ok)assert.equal(await result,'valid-code')
+  else await assert.rejects(result,/platform login failed/)
+  assert.equal(off,1)
+ }
+})

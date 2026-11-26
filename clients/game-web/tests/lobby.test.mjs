@@ -105,5 +105,5 @@ test('G65 R9: external session replacement drops old host presentation without r
 
 test('G65 R10: unmount releases pending Web identity work without clearing a replacement',async()=>{
  const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
- assert.match(source,/onUnmounted\(\(\)=>\{\s*client\?\.dispose\(\)/)
+ assert.match(source,/onUnmounted\(\(\)=>\{[\s\S]*?\(\)=>client\?\.dispose\(\)/)
 })

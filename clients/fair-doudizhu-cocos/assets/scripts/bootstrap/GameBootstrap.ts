@@ -6,7 +6,7 @@ import { WeChatBindingRequiredError, createWeChatIdentityExchange, validateWeCha
 import { createWebIdentityExchange, validateWebAccess } from '../game/GameWebAuth.ts'
 import { detectRuntimeTarget } from '../platform/platform-target.ts'
 import { createPlatform } from '../platform/createPlatform.ts'
-import type { GamePlatform } from '@awesome-zero-platform/game-client-core'
+import { runCleanup, type GamePlatform } from '@awesome-zero-platform/game-client-core'
 import type { MiniPlatformSDK } from '@awesome-zero-platform/game-client-core/platform'
 import { secureRoomCommandIdentity } from '@awesome-zero-platform/doudizhu-client/room'
 import { menuWindow, sameRoomInputContext, type RoomInputContext } from './MenuPagination.ts'
@@ -1879,35 +1879,35 @@ export class GameBootstrap extends Component {
   }
   override onDestroy(): void {
     this.requestGeneration++
+    ++this.recoveryAttempt
+    ++this.hostRestoreAttempt
+    ++this.identityFormGeneration
+    this.hostRestoring=false
+    this.sceneRecovery=null
     this.wechatPending=''
     this.wechatPendingOwner=null
-    if(this.webHostListener && typeof window!=='undefined')
-      window.removeEventListener('message',this.webHostListener)
+    // Detach all presentation/identity ownership before external teardown.
+    const listener=this.webHostListener,online=this.online,shell=this.shell,content=this.content
+    const buttons=this.buttons,badges=this.roomSeatNodes,code=this.roomCodeLabel,table=this.tableView
+    const password=this.loginPassword,otherPassword=this.screen==='wechat-relink'?this.wechatDisplay:null
+    const loginNodes=this.loginNodes
     this.webHostListener=null
-    view.off('canvas-resize',this.layout,this)
-    view.off('design-resolution-changed',this.layout,this)
-    for(const button of this.buttons)if(button.isValid)button.off(Node.EventType.TOUCH_END)
-    this.buttons=[]
-    this.menuActions=[]
-    for(const badge of this.roomSeatNodes)if(badge.isValid)badge.destroy()
-    this.roomSeatNodes=[]
-    if(this.roomCodeLabel?.isValid)this.roomCodeLabel.node.destroy()
-    this.roomCodeLabel=null
-    this.tableView?.destroy()
-    this.tableView=null
-    if(this.loginPassword)this.loginPassword.string=''
-    for(const node of this.loginNodes)if(node.isValid)node.destroy()
-    this.loginNodes=[]
-    this.loginIdentifier=null
-    this.loginPassword=null
-    this.online?.dispose()
-    this.online=null
-    this.platform=null
-    this.shell?.dispose()
-    this.shell=null
-    if(this.content?.isValid)this.content.destroy()
-    this.content=null
-    this.title=null
-    this.status=null
+    this.buttons=[];this.menuActions=[];this.roomSeatNodes=[];this.roomCodeLabel=null
+    this.tableView=null;this.loginNodes=[];this.loginIdentifier=null;this.loginPassword=null
+    this.wechatEmail=null;this.wechatDisplay=null;this.roomInput=null;this.inputNode=null
+    this.online=null;this.platform=null;this.shell=null;this.content=null;this.title=null;this.status=null
+    runCleanup([
+      ()=>{if(listener && typeof window!=='undefined')window.removeEventListener('message',listener)},
+      ()=>view.off('canvas-resize',this.layout,this),
+      ()=>view.off('design-resolution-changed',this.layout,this),
+      ()=>{if(password)password.string=''},
+      ()=>{if(otherPassword)otherPassword.string=''},
+      ()=>online?.dispose(),()=>shell?.dispose(),
+      ...buttons.map(button=>()=>{if(button.isValid)button.off(Node.EventType.TOUCH_END)}),
+      ...badges.map(badge=>()=>{if(badge.isValid)badge.destroy()}),
+      ()=>{if(code?.isValid)code.node.destroy()},()=>table?.destroy(),
+      ...loginNodes.map(node=>()=>{if(node.isValid)node.destroy()}),
+      ()=>{if(content?.isValid)content.destroy()}
+    ])
   }
 }

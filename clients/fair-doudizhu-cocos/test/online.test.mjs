@@ -1564,3 +1564,23 @@ test('G65 R10: ambiguous dispatched provider result is not a cancellation or per
   assert.equal(online.cancelIdentityOperation(),true)
  }finally{online.dispose()}
 })
+
+test('G65 R11: controller teardown attempts every owned resource and preserves logout result',async()=>{
+ for(const mode of ['dispose','logout']){
+  const f=fixture(),online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+  await online.loginAndConnect()
+  const calls=[]
+  const dispose=online.session.dispose.bind(online.session),logout=online.session.logout.bind(online.session)
+  online.fairness.dispose=()=>{calls.push('fairness');throw Error('cleanup fault')}
+  const shellDispose=online.shell.dispose.bind(online.shell)
+  online.shell.dispose=()=>{calls.push('shell');shellDispose()}
+  online.session.dispose=()=>{calls.push('session');dispose()}
+  online.session.logout=async()=>{calls.push('logout');await logout();throw Error('remote logout failed')}
+  if(mode==='logout')await assert.rejects(online.logout(),/remote logout failed/)
+  else online.dispose()
+  assert.deepEqual(calls,mode==='logout'?['fairness','shell','logout']:['session','fairness','shell'])
+  assert.equal(online.identityCurrent,false)
+  assert.equal(online.session.authenticated,false)
+  assert.equal(online.shell.commandTransportReady,false)
+ }
+})

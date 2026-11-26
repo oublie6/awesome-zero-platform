@@ -531,3 +531,18 @@ test('G65 R8: deal notice requires private projection and never uses durable ver
   assert.equal(s.requiresLiveProjection('hand-1'),false)
  }finally{s.dispose()}
 })
+
+test('G65 R11: shell disposal settles pending sync and clears state despite native close fault',async()=>{
+ const notices=[],s=new GameClientShell(v=>notices.push(v));await s.initialize()
+ const t=transport(),p=s.connect(t,'wss://example.org/ws','token')
+ t.tasks[0].resolve();await p
+ s.acceptVerifiedSnapshot(snapshot)
+ const c=t.tasks[0].c
+ c.close=()=>{throw Error('close fault')}
+ const pending=assert.rejects(s.syncHand('hand-1',7),/disposed/)
+ s.dispose();await pending
+ assert.equal(s.commandTransportReady,false)
+ assert.equal(s.hand.snapshot,null);assert.equal(s.hand.status,'disconnected')
+ assert.equal(c.messages.size,0);assert.equal(c.closes.size,0)
+ s.dispose()
+})
