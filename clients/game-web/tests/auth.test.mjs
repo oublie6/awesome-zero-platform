@@ -188,3 +188,51 @@ test('G65 R9: superseded established Web identity and late login continuation ar
  s.setItem(SESSION_KEY,'external')
  assert.equal(fresh.authenticated,false);assert.equal(fresh.account,null)
 })
+
+test('G65 R10: cancelled Web login releases restore barrier before old HTTP returns',async()=>{
+ for(const method of ['logout','dispose']){
+  const s=storage();s.setItem(SESSION_KEY,'stored')
+  let release,signal
+  const a=createWebAuth(config,async(_url,options)=>{
+   signal=options.signal
+   return new Promise(ok=>{release=ok})
+  },s)
+  const pending=a.login('alice','password')
+  await a[method]()
+  assert.equal(signal.aborted,true)
+  const b=createWebAuth(config,async()=>okay({account:{id:'stored-id',displayName:'Stored'}}),s)
+  assert.equal((await b.restore()).id,'stored-id')
+  release(okay({tokenType:'Bearer',accessToken:'late'}))
+  assert.equal(await pending,null)
+  assert.equal(b.authenticated,true)
+  assert.equal(s.getItem(SESSION_KEY),'stored')
+ }
+})
+test('G65 R10: old Web cancellation/finally cannot clear newer pending login',async()=>{
+ const s=storage();s.setItem(SESSION_KEY,'stored')
+ let first,second
+ const a=createWebAuth(config,()=>new Promise(ok=>{first=ok}),s)
+ const b=createWebAuth(config,async url=>new URL(url).pathname==='/auth/login'
+  ?new Promise(ok=>{second=ok}):okay({account:{id:'new-id',displayName:'New'}}),s)
+ const c=createWebAuth(config,async()=>okay({account:{id:'new-id',displayName:'New'}}),s)
+ const old=a.login('old','password'),fresh=b.login('new','password')
+ a.dispose()
+ assert.equal(await c.restore(),null)
+ first(okay({tokenType:'Bearer',accessToken:'old'}))
+ assert.equal(await old,null)
+ assert.equal(await c.restore(),null)
+ second(okay({tokenType:'Bearer',accessToken:'new'}))
+ assert.equal((await fresh).id,'new-id')
+ assert.equal((await c.restore()).id,'new-id')
+})
+test('G65 R10: same Web controller restore releases its pending login',async()=>{
+ const s=storage();s.setItem(SESSION_KEY,'stored')
+ let release
+ const a=createWebAuth(config,async url=>new URL(url).pathname==='/auth/login'
+  ?new Promise(ok=>{release=ok}):okay({account:{id:'stored-id',displayName:'Stored'}}),s)
+ const pending=a.login('old','password')
+ assert.equal((await a.restore()).id,'stored-id')
+ release(okay({tokenType:'Bearer',accessToken:'late'}))
+ assert.equal(await pending,null)
+ assert.equal(a.authenticated,true)
+})

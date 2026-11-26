@@ -268,6 +268,7 @@ onMounted(()=>{
   void initialize()
 })
 onUnmounted(()=>{
+  client?.dispose()
   window.removeEventListener('message',onGameMessage)
   window.removeEventListener('storage',onStorageChange)
   document.removeEventListener('visibilitychange',onVisibilityChange)

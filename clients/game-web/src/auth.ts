@@ -11,7 +11,8 @@ interface Envelope {code?:unknown;data?:unknown}
 type Fetcher=typeof fetch
 type StoragePort=Pick<Storage,'getItem'|'setItem'|'removeItem'>
 const loginEpochs=new WeakMap<StoragePort,number>()
-const pendingLogins=new WeakMap<StoragePort,number>()
+type PendingLogin={epoch:number;cancel:()=>void}
+const pendingLogins=new WeakMap<StoragePort,PendingLogin>()
 
 function record(value:unknown):value is Record<string,unknown>{
   return !!value && typeof value==='object' && !Array.isArray(value)
@@ -58,11 +59,22 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
   let token:string|null=null
   let ownedToken:string|null=null
   let activeEpoch=-1
+  let pendingLogin:PendingLogin|null=null
+  let pendingRequest:AbortController|null=null
+  function cancelAttempt(){
+    ++generation
+    pendingLogin?.cancel()
+    pendingRequest?.abort()
+    pendingRequest=null
+  }
   const currentIdentity=()=>!!token && !!active && activeEpoch===(loginEpochs.get(storage)??0) &&
     storage.getItem(SESSION_KEY)===token
-  async function request(path:string,method:string,body?:unknown,accessToken?:string):Promise<unknown>{
+  async function request(path:string,method:string,body?:unknown,accessToken?:string,owner?:AbortSignal):Promise<unknown>{
     const controller=new AbortController()
-    const timeout=setTimeout(()=>controller.abort(),timeoutMs)
+    const cancel=()=>controller.abort()
+    if(owner?.aborted)throw Error('登录操作已取消')
+    owner?.addEventListener('abort',cancel,{once:true})
+    const timeout=setTimeout(cancel,timeoutMs)
     try{
       const response=await fetcher(config.apiBase+path,{
         method,signal:controller.signal,credentials:'omit',cache:'no-store',redirect:'error',
@@ -76,22 +88,25 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
       }
       // Keep the same deadline through body consumption, not only headers.
       return await response.json()
-    }finally{clearTimeout(timeout)}
+    }finally{clearTimeout(timeout);owner?.removeEventListener('abort',cancel)}
   }
-  async function validate(accessToken:string):Promise<UserAccount>{
-    const data=validatedData(await request('/auth/session','GET',undefined,accessToken))
+  async function validate(accessToken:string,owner?:AbortSignal):Promise<UserAccount>{
+    const data=validatedData(await request('/auth/session','GET',undefined,accessToken,owner))
     return account(data)
   }
   async function restore():Promise<UserAccount|null>{
-    const mine=++generation
+    cancelAttempt()
+    const mine=generation
     const stored=storage.getItem(SESSION_KEY)
     const loginEpoch=loginEpochs.get(storage)??0
     ownedToken=null
     active=null;token=null
     if(!stored || pendingLogins.has(storage))return null
     ownedToken=stored
+    const requestOwner=new AbortController()
+    pendingRequest=requestOwner
     try{
-      const identity=await validate(stored)
+      const identity=await validate(stored,requestOwner.signal)
       if(generation!==mine)return null
       if((loginEpochs.get(storage)??0)!==loginEpoch || storage.getItem(SESSION_KEY)!==stored){
         ownedToken=null;return null
@@ -105,7 +120,7 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
         token=null;active=null;ownedToken=null
       }
       return null
-    }
+    }finally{if(pendingRequest===requestOwner)pendingRequest=null}
   }
   async function register(username:string,email:string,displayName:string,password:string):Promise<UserAccount>{
     if(!/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/.test(username) ||
@@ -120,29 +135,44 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     const username=identifier.trim()
     if(!username||username.length>256||!password||password.length>128)
       throw Error('请输入有效账号和密码')
-    const mine=++generation
+    cancelAttempt()
+    pendingLogins.get(storage)?.cancel()
+    const mine=generation
     const loginEpoch=(loginEpochs.get(storage)??0)+1
     loginEpochs.set(storage,loginEpoch)
-    pendingLogins.set(storage,loginEpoch)
-    const current=()=>generation===mine && loginEpochs.get(storage)===loginEpoch
+    const requestOwner=new AbortController()
+    const release=()=>{
+      if(pendingLogin===operation)pendingLogin=null
+      if(pendingLogins.get(storage)===operation)pendingLogins.delete(storage)
+      if(pendingRequest===requestOwner)pendingRequest=null
+    }
+    const operation:PendingLogin={epoch:loginEpoch,cancel:()=>{release();requestOwner.abort()}}
+    pendingLogin=operation
+    pendingLogins.set(storage,operation)
+    pendingRequest=requestOwner
+    const current=()=>generation===mine && loginEpochs.get(storage)===loginEpoch && !requestOwner.signal.aborted
     try{
-      const reply=await request('/auth/login','POST',{identifier:username,password})
+      const reply=await request('/auth/login','POST',{identifier:username,password},undefined,requestOwner.signal)
       if(!current())return null
       const received=bearer(validatedData(reply))
-      const identity=await validate(received)
+      const identity=await validate(received,requestOwner.signal)
       if(!current())return null
       storage.setItem(SESSION_KEY,received)
       ownedToken=received;token=received;active=identity;activeEpoch=loginEpoch
       return identity
     }catch(error){if(!current())return null;throw error}
-    finally{if(pendingLogins.get(storage)===loginEpoch)pendingLogins.delete(storage)}
+    finally{release()}
   }
   async function logout():Promise<void>{
-    ++generation
+    cancelAttempt()
     const old=token || ownedToken
     token=null;active=null;ownedToken=null
     if(old && storage.getItem(SESSION_KEY)===old)storage.removeItem(SESSION_KEY)
     if(old)await request('/auth/logout','POST',{},old)
   }
-  return {register,login,restore,logout,get account(){return currentIdentity()?active:null},get authenticated(){return currentIdentity()}}
+  function dispose(){
+    cancelAttempt()
+    token=null;active=null;ownedToken=null
+  }
+  return {register,login,restore,logout,dispose,get account(){return currentIdentity()?active:null},get authenticated(){return currentIdentity()}}
 }
