@@ -236,3 +236,32 @@ test('G65 R10: same Web controller restore releases its pending login',async()=>
  assert.equal(await pending,null)
  assert.equal(a.authenticated,true)
 })
+
+test('G65 R12: synchronous abort observer starts latest login without stale dispatch or release',async()=>{
+ for(const same of [true,false]){
+  const s=storage(),calls=[]
+  let a,b,latest,oldReply
+  const fetcher=async(url,opts)=>{
+   const path=new URL(url).pathname
+   if(path==='/auth/login'){
+    const name=JSON.parse(opts.body).identifier
+    calls.push(name)
+    if(name==='old')return new Promise(ok=>{
+     oldReply=ok
+     opts.signal.addEventListener('abort',()=>{latest=b.login('latest','password')},{once:true})
+    })
+    return okay({tokenType:'Bearer',accessToken:name})
+   }
+   return okay({account:{id:'latest-id',displayName:'Latest'}})
+  }
+  a=createWebAuth(config,fetcher,s);b=same?a:createWebAuth(config,fetcher,s)
+  const old=a.login('old','password')
+  const stale=a.login('stale','password')
+  assert.equal(await stale,null)
+  assert.equal((await latest).id,'latest-id')
+  oldReply(okay({tokenType:'Bearer',accessToken:'old'}))
+  assert.equal(await old,null)
+  assert.deepEqual(calls,['old','latest'])
+  assert.equal(s.getItem(SESSION_KEY),'latest');assert.equal(b.authenticated,true)
+ }
+})

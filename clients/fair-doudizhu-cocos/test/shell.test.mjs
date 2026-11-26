@@ -546,3 +546,49 @@ test('G65 R11: shell disposal settles pending sync and clears state despite nati
  assert.equal(c.messages.size,0);assert.equal(c.closes.size,0)
  s.dispose()
 })
+
+test('G65 R12: shell cleanup reentry preserves latest connection and transport readiness',async()=>{
+ for(const action of ['connect','cancelConnection']){
+  const s=new GameClientShell(()=>{}),t=transport();await s.initialize()
+  let latest
+  const first=s.connect(t,'wss://x/ws','initial');t.tasks[0].resolve();await first
+  const c=t.tasks[0].c,off=c.onMessage
+  // Replace the registered off function, not the later registration method.
+  const manager=s.connection
+  manager.unsubscribe.unshift(()=>{latest=s.connect(t,'wss://x/ws','latest')})
+  const stale=action==='connect'?s.connect(t,'wss://x/ws','superseded'):s.cancelConnection()
+  assert.equal(t.tasks.length,2)
+  assert.equal(s.hand.status,'reconnecting')
+  t.tasks[1].resolve()
+  assert.equal(await latest,true)
+  if(action==='connect')assert.equal(await stale,false)
+  assert.equal(s.commandTransportReady,true)
+  assert.equal(s.connection.isOpen,true)
+  assert.equal(c.closed,1)
+  assert.equal(c.messages.size,0)
+  assert.equal(t.tasks[1].c.messages.size,1)
+  await s.connection.send({probe:true})
+  assert.deepEqual(t.tasks[1].c.sent,[{probe:true}])
+  s.dispose();assert.equal(t.tasks[1].c.closed,1)
+ }
+})
+test('G65 R12: success notice may cancel or replace connection before returning readiness',async()=>{
+ for(const replace of [false,true]){
+  const t=transport()
+  let latest,trigger=true
+  const s=new GameClientShell(message=>{
+   if(trigger && message.startsWith('已连接')){
+    trigger=false
+    if(replace)latest=s.connect(t,'wss://x/ws','latest')
+    else s.cancelConnection()
+   }
+  })
+  await s.initialize()
+  const old=s.connect(t,'wss://x/ws','old');t.tasks[0].resolve()
+  assert.equal(await old,false)
+  assert.equal(t.tasks[0].c.closed,1)
+  if(replace){t.tasks[1].resolve();assert.equal(await latest,true);assert.equal(s.commandTransportReady,true)}
+  else assert.equal(s.commandTransportReady,false)
+  s.dispose()
+ }
+})

@@ -98,12 +98,16 @@ export class GameOnlineController {
     if(this.disposed)throw new Error('online controller disposed')
     if(this.identityEstablished)throw new Error('controller already authenticated; replace controller to change identity')
     const attempt=++this.authAttempt
-    this.session.cancelAttempt()
-    this.identityOperations.abandon()
     const current=()=>!this.disposed && attempt===this.authAttempt
-    this.shell.cancelConnection()
-    this.shell.clearHand()
     try{
+      this.session.cancelAttempt()
+      if(!current())return false
+      this.identityOperations.abandon()
+      if(!current())return false
+      this.shell.cancelConnection()
+      if(!current())return false
+      this.shell.clearHand()
+      if(!current())return false
       await this.shell.initialize()
       if(!current())return false
       const grant=await auth()
@@ -112,6 +116,7 @@ export class GameOnlineController {
       const connected=await this.shell.connect(this.platform.socket,this.socketEndpoint,grant.token,owner)
       if(!owner())return false
       if(!connected || !this.shell.commandTransportReady)throw new Error('socket not ready after authentication')
+      if(!owner())return false
       this.identityGrant=grant
       this.identityEstablished=true
       return true
@@ -222,7 +227,8 @@ export class GameOnlineController {
       return pending.promise
     const token = ++this.recoveryGeneration
     const promise = this.performRecovery(target,token,membership,commands)
-    this.pendingRecovery = {key,token,membership,commands,promise}
+    if(token===this.recoveryGeneration && !this.disposed)
+      this.pendingRecovery = {key,token,membership,commands,promise}
     void promise.finally(()=>{
       if(this.pendingRecovery?.promise===promise)this.pendingRecovery=null
     }).catch(()=>{})

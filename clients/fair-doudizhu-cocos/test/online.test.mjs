@@ -1584,3 +1584,18 @@ test('G65 R11: controller teardown attempts every owned resource and preserves l
   assert.equal(online.shell.commandTransportReady,false)
  }
 })
+
+test('G65 R12: controller synchronous cancellation reentry cannot cancel newer authentication',async()=>{
+ const f=fixture(),online=new GameOnlineController(f.platform,f.identity,'wss://x/ws',()=>{})
+ let latest,trigger=true
+ const original=online.shell.cancelConnection.bind(online.shell)
+ online.shell.cancelConnection=()=>{
+  original()
+  if(trigger){trigger=false;latest=online.loginAndConnect()}
+ }
+ assert.equal(await online.loginAndConnect(),false)
+ assert.equal(await latest,true)
+ assert.equal(f.auth.length,1)
+ assert.equal(online.identityCurrent,true)
+ online.dispose()
+})

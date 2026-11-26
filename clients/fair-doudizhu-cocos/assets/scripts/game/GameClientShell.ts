@@ -31,7 +31,12 @@ export class GameClientShell {
   private transportReady = false
   private connectionOwner:()=>boolean=()=>true
   get connectionEpoch():number { return this.generation }
-  get commandTransportReady(): boolean { return !this.disposed && this.transportReady && this.connection !== null && this.connectionOwner() }
+  get commandTransportReady(): boolean {
+    const generation=this.generation,connection=this.connection,owner=this.connectionOwner
+    return !this.disposed && this.transportReady && !!connection?.isOpen && owner() &&
+      !this.disposed && generation===this.generation && connection===this.connection &&
+      this.transportReady && connection.isOpen
+  }
   /** Query readiness again immediately before a caller publishes success.
    * A newer change or a disconnect can invalidate an earlier resolved read. */
   handProjectionReady(handId:string,archiveOnly=false):boolean {
@@ -68,7 +73,6 @@ export class GameClientShell {
   async initialize(): Promise<void> {
     if (this.disposed || this.initialized) return
     this.initialized = true
-    this.notify('连接模块就绪，请登录并同步服务端房间状态')
     this.events.on('doudizhu.command.result', (payload,responseId) => {
       if (this.disposed) return
       const id = (payload as {requestId?: unknown})?.requestId
@@ -217,22 +221,33 @@ export class GameClientShell {
       }
       this.notify('服务器拒绝操作，请同步后重试')
     })
+    this.notify('连接模块就绪，请登录并同步服务端房间状态')
   }
   /** Cancel the old connection immediately when a pending identity is
    * superseded, even if the replacement identity later fails to authenticate. */
   cancelConnection():void {
-    this.generation++
+    const generation=++this.generation
     this.transportReady=false
     this.rejectSync('connection cancelled during hand sync')
     this.rejectPending('connection cancelled; command outcome unknown')
     const connection=this.connection
     this.connection=null
-    runCleanup([()=>connection?.close(),()=>{if(this.hand.status!=='disconnected')this.hand.setStatus('disconnected')}])
+    runCleanup([()=>connection?.close(),()=>{
+      if(generation===this.generation && this.hand.status!=='disconnected')this.hand.setStatus('disconnected')
+    }])
   }
   async connect(socket: SocketTransport, endpoint: string, token: string,owner:()=>boolean=()=>true): Promise<boolean> {
     if (this.disposed) throw new Error('client disposed')
-    if(!owner())return false
+    const before=this.generation
+    if(!owner() || this.disposed || before!==this.generation)return false
     const generation = ++this.generation
+    const current=()=>!this.disposed && generation===this.generation
+    const authorized=()=>current() && owner() && current()
+    const check=()=>{
+      if(authorized())return true
+      if(current())this.cancelConnection()
+      return false
+    }
     this.connectionOwner=owner
     this.transportReady = false
     this.rejectSync('connection replaced during hand sync')
@@ -240,6 +255,7 @@ export class GameClientShell {
     const previous=this.connection
     this.connection=null
     runCleanup([()=>previous?.close()])
+    if(!check())return false
     if (this.hand.status !== 'disconnected') this.hand.setStatus('disconnected')
     const connection = new ConnectionManager(socket)
     this.connection = connection
@@ -247,9 +263,9 @@ export class GameClientShell {
     try {
       await connection.open(endpoint, token,
         raw => {
-          if (this.disposed || generation !== this.generation) return
-          if(!owner()){this.cancelConnection();return}
+          if(!check() || this.connection!==connection)return
           try { this.events.receive(raw) } catch {
+            if(!current() || this.connection!==connection)return
             // Router rejects malformed envelopes before event dispatch. If
             // the malformed reply is correlated, fail that read immediately.
             try {
@@ -261,17 +277,19 @@ export class GameClientShell {
           }
         },
         () => { if (!this.disposed && generation === this.generation) { this.transportReady = false; this.rejectSync('connection lost during hand sync'); this.rejectPending('connection lost; command outcome unknown'); this.hand.setStatus('disconnected'); this.notify('连接中断，请重连') } })
-      if (this.disposed || generation !== this.generation) return false
-      if(!owner()){this.cancelConnection();return false}
+      if(!check() || this.connection!==connection)return false
       if(!connection.isOpen)throw new Error('socket closed before connection completion')
       this.transportReady = true
       this.hand.setStatus('synchronizing')
       this.notify('已连接，等待房间或牌局状态同步')
-      return true
+      return check() && this.connection===connection && this.transportReady && connection.isOpen
     } catch (error) {
-      if (this.disposed || generation !== this.generation) return false
+      if (!current() || this.connection!==connection) return false
       this.transportReady = false
+      this.connection=null
       this.hand.setStatus('disconnected')
+      runCleanup([()=>connection.close()])
+      if(!current())return false
       throw error
     }
   }

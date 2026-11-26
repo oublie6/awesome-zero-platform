@@ -61,11 +61,10 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
   let activeEpoch=-1
   let pendingLogin:PendingLogin|null=null
   let pendingRequest:AbortController|null=null
-  function cancelAttempt(){
-    ++generation
-    pendingLogin?.cancel()
-    pendingRequest?.abort()
-    pendingRequest=null
+  function detachAttempt(){
+    const login=pendingLogin,request=pendingRequest
+    pendingLogin=null;pendingRequest=null
+    return ()=>{login?.cancel();request?.abort()}
   }
   const currentIdentity=()=>!!token && !!active && activeEpoch===(loginEpochs.get(storage)??0) &&
     storage.getItem(SESSION_KEY)===token
@@ -95,13 +94,15 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     return account(data)
   }
   async function restore():Promise<UserAccount|null>{
-    cancelAttempt()
-    const mine=generation
-    const stored=storage.getItem(SESSION_KEY)
+    const mine=++generation
+    const cancelPrevious=detachAttempt()
     const loginEpoch=loginEpochs.get(storage)??0
     ownedToken=null
     active=null;token=null
-    if(!stored || pendingLogins.has(storage))return null
+    cancelPrevious()
+    if(mine!==generation || (loginEpochs.get(storage)??0)!==loginEpoch)return null
+    const stored=storage.getItem(SESSION_KEY)
+    if(mine!==generation || !stored || pendingLogins.has(storage))return null
     ownedToken=stored
     const requestOwner=new AbortController()
     pendingRequest=requestOwner
@@ -135,9 +136,9 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     const username=identifier.trim()
     if(!username||username.length>256||!password||password.length>128)
       throw Error('请输入有效账号和密码')
-    cancelAttempt()
-    pendingLogins.get(storage)?.cancel()
-    const mine=generation
+    const mine=++generation
+    const cancelPrevious=detachAttempt()
+    const sharedPrevious=pendingLogins.get(storage)
     const loginEpoch=(loginEpochs.get(storage)??0)+1
     loginEpochs.set(storage,loginEpoch)
     const requestOwner=new AbortController()
@@ -152,6 +153,9 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     pendingRequest=requestOwner
     const current=()=>generation===mine && loginEpochs.get(storage)===loginEpoch && !requestOwner.signal.aborted
     try{
+      cancelPrevious()
+      sharedPrevious?.cancel()
+      if(!current())return null
       const reply=await request('/auth/login','POST',{identifier:username,password},undefined,requestOwner.signal)
       if(!current())return null
       const received=bearer(validatedData(reply))
@@ -164,15 +168,19 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     finally{release()}
   }
   async function logout():Promise<void>{
-    cancelAttempt()
+    ++generation
+    const cancelPrevious=detachAttempt()
     const old=token || ownedToken
     token=null;active=null;ownedToken=null
-    if(old && storage.getItem(SESSION_KEY)===old)storage.removeItem(SESSION_KEY)
+    try{if(old && storage.getItem(SESSION_KEY)===old)storage.removeItem(SESSION_KEY)}
+    finally{cancelPrevious()}
     if(old)await request('/auth/logout','POST',{},old)
   }
   function dispose(){
-    cancelAttempt()
+    ++generation
+    const cancelPrevious=detachAttempt()
     token=null;active=null;ownedToken=null
+    cancelPrevious()
   }
   return {register,login,restore,logout,dispose,get account(){return currentIdentity()?active:null},get authenticated(){return currentIdentity()}}
 }
