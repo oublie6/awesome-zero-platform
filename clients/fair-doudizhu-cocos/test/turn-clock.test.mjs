@@ -24,5 +24,9 @@ test('table preserves countdown origin when selecting cards without a new snapsh
  const source=await readFile(new URL('../assets/scripts/bootstrap/GameTableView.ts',import.meta.url),'utf8')
  assert.match(source,/this\.turnClock\.observe\(data\.handID,data\.version/)
  assert.match(source,/this\.turnClock\.remainingSeconds\(\)/)
- assert.match(source,/clearInterval\(this\.tickHandle\)/)
+ const destroy=source.split('destroy():void {')[1].split('render(data:TableDisplay')[0]
+ assert.match(destroy,/const timer=this\.tickHandle\s*this\.tickHandle=null/)
+ assert.match(destroy,/if\(timer!==null\)clearInterval\(timer\)/)
+ assert.ok(destroy.indexOf('this.tickHandle=null')<destroy.indexOf('clearInterval(timer)'))
+ assert.ok(destroy.indexOf('clearInterval(timer)')<destroy.indexOf('this.root.destroy()'))
 })
