@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-26 ChatGPT **Goal0065 Round10 生命周期集中修复 — 待 CI / 独立验收**：统一可取消操作范围、同步释放所属 pending 屏障、平台等待期限与身份操作派发边界；保留持久化操作及 UNKNOWN 语义，不改服务端、协议或部署。
+
 - 2026-11-25 Codex **Goal0065 Round10 independent functional acceptance — FAIL**, fixed product `4a5650ac0d2e3f228c6d5ea1eb938dc7aab23e0e`: 2 new P2 findings: canceled pending-login marker blocks fresh restore; actual CancelRelink menu leaves delayed SDK continuation able to submit relink and detach identity. Original Round9 N01 and Round8 login/authority chains PASS; 287 affected client tests, single official Linux Cocos4 export, controlled provider matrix and real Vue lifecycle checks PASS. Round9 final-scene/canceled-hand observer gaps filled. Matching candidate API/Web completes actual three-account v61 game with UNKNOWN, timeout, archive/phrase checks and original-context logout (exit0). No product repair or candidate deployment. [Round10 report](0065-round10-independent-acceptance.md). Goal0065 remains in_progress; Goal0045/0046 unchanged.
 
 - 2026-11-25 ChatGPT **Goal0065 Round9 身份契约集中修复 — 待 CI / 独立验收**：统一共享 SessionGrant 认证、身份操作生命周期、Web 状态及前置绑定所有权，保留独立清理语义；不改 Go、协议、缓存、数据库或部署，Goal0065 保持 in_progress。

@@ -2,6 +2,7 @@ import type { HttpTransport, SecureRandomSource, SocketConnection, SocketTranspo
 import { websocketURL } from './index.js'
 import { networkTimeout } from './network-timeout.js'
 import { openSocket } from './socket.js'
+import { OperationScope } from './operation.js'
 
 /** Minimal SDK shapes injected by the composition root. No references to global wx or tt. */
 export interface MiniSocket {
@@ -130,14 +131,15 @@ export class MiniRandom implements SecureRandomSource {
   bytes(length: number): Promise<Uint8Array> {
     if (!Number.isSafeInteger(length) || length < 1 || length > 65536 || !this.sdk.getRandomValues)
       return Promise.reject(new Error('secure random unavailable on this platform'))
-    return new Promise((resolve, reject) => this.sdk.getRandomValues!({
+    const scope=new OperationScope()
+    return scope.wait(()=>new Promise<Uint8Array>((resolve,reject)=>this.sdk.getRandomValues!({
       length,
       success: value => {
-        if (!(value.randomValues instanceof ArrayBuffer) || value.randomValues.byteLength !== length) {
+        if (!(value?.randomValues instanceof ArrayBuffer) || value.randomValues.byteLength !== length) {
           reject(new Error('invalid platform random result'))
         } else resolve(new Uint8Array(value.randomValues))
       },
-      fail: reject
-    }))
+      fail: ()=>reject(new Error('platform random failed'))
+    }))).finally(()=>scope.finish())
   }
 }

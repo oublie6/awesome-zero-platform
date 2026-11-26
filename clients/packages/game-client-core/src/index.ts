@@ -1,8 +1,10 @@
+export { OperationScope, OperationSlot, OperationCancelled } from './operation.js'
+
 /** Platform-neutral runtime ports. No platform globals are accessed by this module. */
 export type Target = 'web' | 'wechat' | 'douyin'
 export type Unsubscribe = () => void
 export interface PlatformAuth {
-  acquireCode(): Promise<string>
+  acquireCode(timeoutMs?:number): Promise<string>
 }
 export interface HttpTransport {
   request<T>(path: string, options?: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number; accessToken?: string }): Promise<T>

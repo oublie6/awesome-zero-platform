@@ -1,4 +1,5 @@
 import type { GamePlatform, SessionVault } from './index.js'
+import { OperationScope } from './operation.js'
 
 /**
  * Platform-code exchange is an explicit backend adapter: never trust wx.login code
@@ -12,7 +13,7 @@ export interface IdentityExchange {
 // One mutation queue per logical vault, not per controller. The weak key
 // releases the coordinator with its backing store. Async adapters sharing a
 // store must expose the same scope or reuse the same SessionVault instance.
-type VaultOrder={tail:Promise<void>;loginEpoch:number;pendingLogin:number|null}
+type VaultOrder={tail:Promise<void>;loginEpoch:number;pendingLogin:OperationScope|null}
 const orders=new WeakMap<object,Map<string,VaultOrder>>()
 function orderFor(vault:SessionVault):VaultOrder {
   const scope=vault.coordinationScope
@@ -36,7 +37,16 @@ export class GameSession {
   private ownedToken:string|null=null
   private activeGrant:SessionGrant|null=null
   private attemptOwner:()=>boolean=()=>false
+  private pendingLogin:OperationScope|null=null
   private readonly order:VaultOrder
+  private cancelLogin():void{this.pendingLogin?.abandon()}
+  /** Stop unfinished authentication without claiming or revoking a vault token. */
+  cancelAttempt():void{
+    ++this.generation
+    this.cancelLogin()
+    this.activeGrant=null
+    this.attemptOwner=()=>false
+  }
   private mutateVault<T>(operation:()=>Promise<T>):Promise<T>{
     const work=this.order.tail.then(operation)
     this.order.tail=work.then(()=>{},()=>{})
@@ -68,6 +78,7 @@ export class GameSession {
   }
   async restoreOwned(validate: (accessToken: string) => Promise<boolean>): Promise<SessionGrant|null> {
     this.assertActive()
+    this.cancelLogin()
     const generation = ++this.generation
     this.accessToken=null
     this.activeGrant=null
@@ -125,15 +136,24 @@ export class GameSession {
    * logout semantics. Credential material is never passed to the vault. */
   async loginWith(exchange: (current:()=>boolean) => Promise<{accessToken: string}>): Promise<SessionGrant|null> {
     this.assertActive()
+    this.cancelLogin()
+    this.order.pendingLogin?.abandon()
     const generation = ++this.generation
     const loginEpoch=++this.order.loginEpoch
-    this.order.pendingLogin=loginEpoch
+    const scope=new OperationScope(()=>{
+      if(this.pendingLogin===scope)this.pendingLogin=null
+      if(this.order.pendingLogin===scope)this.order.pendingLogin=null
+    })
+    this.pendingLogin=scope
+    this.order.pendingLogin=scope
     this.activeGrant=null
     const current=()=>!this.disposed && generation===this.generation && loginEpoch===this.order.loginEpoch
+    // Keep attempt ownership after a normal binding-required response, but
+    // never after explicit cancellation or replacement.
     this.attemptOwner=current
     try{
       let result:{accessToken:string}
-      try{result=await exchange(current)}catch(error){if(!current())return null;throw error}
+      try{result=await scope.wait(()=>exchange(()=>scope.active && current()),30_000)}catch(error){if(!scope.active || !current())return null;throw error}
       if (!current()) return null
       if (!result || typeof result.accessToken !== 'string' || !result.accessToken.trim()) {
         throw new Error('identity exchange returned no access token')
@@ -151,11 +171,11 @@ export class GameSession {
       })
       return grant?.isCurrent()?grant:null
     }finally{
-      if(this.order.pendingLogin===loginEpoch)this.order.pendingLogin=null
+      scope.finish()
     }
   }
   private releaseToken():string|null {
-    this.generation++
+    this.cancelAttempt()
     const token=this.accessToken || this.ownedToken
     this.accessToken=null
     this.activeGrant=null
@@ -179,7 +199,7 @@ export class GameSession {
     }finally{await this.identity.revoke?.(token)}
   }
   dispose(): void {
-    this.generation++
+    this.cancelAttempt()
     this.disposed = true
     this.accessToken = null
     this.activeGrant=null

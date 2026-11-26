@@ -1,5 +1,6 @@
 import type { AppLifecycle, GamePlatform, PlatformAuth, SessionVault, SharePort, Target, Unsubscribe } from './index.js'
 import { MiniHttp, MiniRandom, MiniSocketTransport, type MiniSDK } from './minigame.js'
+import { OperationScope } from './operation.js'
 
 export interface MiniPlatformSDK extends MiniSDK {
   /** WeChat entropy is on UserCryptoManager, not wx.getRandomValues. */
@@ -16,12 +17,14 @@ export interface MiniPlatformSDK extends MiniSDK {
 }
 class MiniAuth implements PlatformAuth {
   constructor(private readonly sdk: MiniPlatformSDK) {}
-  acquireCode(): Promise<string> {
-    if (typeof this.sdk.login !== 'function') return Promise.reject(new Error('platform login unsupported'))
-    return new Promise((resolve, reject) => this.sdk.login({
-      success: result => result.code ? resolve(result.code) : reject(new Error('platform login yielded no code')),
-      fail: reject
-    }))
+  async acquireCode(timeoutMs=15_000): Promise<string> {
+    if (typeof this.sdk.login !== 'function') throw new Error('platform login unsupported')
+    const scope=new OperationScope()
+    try{return await scope.wait(()=>new Promise<string>((resolve,reject)=>this.sdk.login({
+      success: result => typeof result?.code==='string' && result.code.trim()
+        ? resolve(result.code) : reject(new Error('platform login yielded no code')),
+      fail: ()=>reject(new Error('platform login failed'))
+    })),timeoutMs)}finally{scope.finish()}
   }
 }
 class MiniVault implements SessionVault {
@@ -69,9 +72,10 @@ class MiniShare implements SharePort {
       this.sdk.shareAppMessage(args)
       return true
     }
-    return new Promise(resolve => this.sdk.shareAppMessage!({
+    const scope=new OperationScope()
+    try{return await scope.wait(()=>new Promise<boolean>(resolve=>this.sdk.shareAppMessage!({
       ...args, success: () => resolve(true), fail: () => resolve(false), cancel: () => resolve(false)
-    }))
+    })))}catch{return false}finally{scope.finish()}
   }
 }
 /** Composition root: platform globals are supplied by the caller, never touched by shared modules. */

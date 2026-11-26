@@ -125,3 +125,12 @@ test('invalid opening deadlines fail before creating a native task',async()=>{
  await assert.rejects(new WebSocketTransport().connect('wss://example.org/ws','token',{timeoutMs:0}),/invalid network timeout/)
  assert.equal(created,0)
 })
+
+test('G65 R10: mini login deadline settles and ignores late SDK callback',async()=>{
+ let callback
+ const p=createMiniPlatform('wechat',{login(a){callback=a}},'https://example.org')
+ await assert.rejects(p.auth.acquireCode(2),/timed out/)
+ callback.success({code:'late'})
+ callback.fail(Error('late'))
+ await assert.rejects(p.auth.acquireCode(0),/invalid operation timeout/)
+})

@@ -235,3 +235,47 @@ test('G65 R9: unbound attempt owner expires on shared replacement even without a
  await b.login()
  assert.equal(owner(),false)
 })
+
+test('G65 R10: canceled login releases its restore barrier before old SDK returns',async()=>{
+ for(const method of ['dispose','logout','discardLocal','cancelAttempt']){
+  const p=platform()
+  await p.vault.save('stored')
+  let release,exchanges=0
+  p.auth.acquireCode=()=>new Promise(ok=>{release=ok})
+  const identity={exchange:async()=>{exchanges++;return {accessToken:'late'}}}
+  const a=new GameSession(p,identity),b=new GameSession(p,identity)
+  const pending=a.login()
+  await a[method]()
+  assert.equal(await b.restore(async t=>t==='stored'),true)
+  assert.equal(await pending,null)
+  release('late')
+  await Promise.resolve()
+  assert.equal(exchanges,0)
+  assert.equal(b.token,'stored')
+ }
+})
+test('G65 R10: old cancellation cannot release a newer active login barrier',async()=>{
+ const p=platform();await p.vault.save('stored')
+ const identity={exchange:async()=>({accessToken:'unused'})}
+ const a=new GameSession(p,identity),b=new GameSession(p,identity),c=new GameSession(p,identity)
+ let old,newer
+ const first=a.loginWith(()=>new Promise(ok=>{old=ok}))
+ const second=b.loginWith(()=>new Promise(ok=>{newer=ok}))
+ a.dispose()
+ assert.equal(await c.restore(async()=>true),false)
+ old({accessToken:'old'});assert.equal(await first,null)
+ assert.equal(await c.restore(async()=>true),false)
+ newer({accessToken:'new'});assert.ok(await second)
+ assert.equal(await c.restore(async()=>true),true)
+ assert.equal(c.token,'new')
+})
+test('G65 R10: same session restore cancels its pending login before reading saved identity',async()=>{
+ const p=platform();await p.vault.save('stored')
+ const a=new GameSession(p,{exchange:async()=>({accessToken:'unused'})})
+ let release
+ const pending=a.loginWith(()=>new Promise(ok=>{release=ok}))
+ assert.equal(await a.restore(async()=>true),true)
+ assert.equal(await pending,null)
+ release({accessToken:'late'})
+ assert.equal(a.token,'stored')
+})
