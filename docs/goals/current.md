@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-26 Codex **Goal0065 Round13 CI prerequisite — BLOCKED**, fixed candidate `eda1a70b1ec504d6588d79203c50d9a08416bd8c`: Cocos/Vue/Fair SUCCESS; CI run45850121928 remained in_progress (unit running, no final conclusion) at gate inspection. Per explicit instruction to stop unless all four succeed, no defect reproducers, local tests/build, runtime smoke or deployment executed. No test infrastructure/29457 changes. [CI gate report](0065-round13-independent-acceptance.md). Goal0065 remains in_progress; Goal0045/0046 unchanged.
+
 - 2026-11-26 ChatGPT **Goal0065 Round12 同步重入防护修复 — 待 CI / 独立验收**：先建立代次所有权、外部调用返回后二次核验；修复连接重入、MiniHttp 注册失败和同步取消、清理计数及相邻身份链路；不改服务端、协议或部署。
 
 - 2026-11-26 Codex **Goal0065 Round12 independent closing acceptance — FAIL**, fixed product `62acd921ce767e13d419dd8021e4d065a84e52f0`: original Round11 N01 PASS in Node and official Creator output. New 1P2/2P3: reentrant connection cleanup lets an older start replace the newest connection (manager and Shell, false ready); MiniHttp misses available abort-listener cleanup after partial registration failure; reentrant OperationScope cleanup undercounts failures. 310 affected tests/types, single official native Web export with corrected tsc PATH, R10 reproducers and same-room real candidate/API smoke pass. Historical full-game/backend evidence reused explicitly; no new hand or 300s wait. No product fixes/rollout; unchanged six Ready Pods, unfinished0, user29457 healthy; owned resources stopped and temporary CA removed. [Round12 report](0065-round12-independent-acceptance.md). Goal0065 remains in_progress; Goal0045/0046 unchanged.

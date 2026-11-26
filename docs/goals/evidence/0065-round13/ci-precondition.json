@@ -1,0 +1,103 @@
+{
+  "candidate": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+  "gateCheckedAtUTC": "2026-11-26 15:35:25 UTC",
+  "gateResult": "BLOCKED",
+  "reason": "CI workflow still in_progress; explicit user instruction requires four SUCCESS before acceptance",
+  "workflows": [
+    {
+      "name": "Cocos Linux Native Client",
+      "id": 45850121871,
+      "sha": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45850121871",
+      "jobs": [
+        {
+          "name": "linux_source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "linux_native_export",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "name": "Fair Doudizhu Vue3 Web",
+      "id": 45850121819,
+      "sha": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45850121819",
+      "jobs": [
+        {
+          "name": "vue_build",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "CI",
+      "id": 45850121928,
+      "sha": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45850121928",
+      "jobs": [
+        {
+          "name": "admin_web",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "secure_envelope",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "unit",
+          "status": "in_progress",
+          "conclusion": null
+        }
+      ]
+    },
+    {
+      "name": "Fair Doudizhu",
+      "id": 45850121767,
+      "sha": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45850121767",
+      "jobs": [
+        {
+          "name": "mysql_integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "manifest_client",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "application",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "client_foundation",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}
