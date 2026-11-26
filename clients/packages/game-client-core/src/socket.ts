@@ -1,4 +1,5 @@
 import { networkTimeout } from './network-timeout.js'
+import { runCleanup } from './operation.js'
 import type { SocketConnection, SocketOptions, Unsubscribe } from './index.js'
 
 /** Shared adapter lifecycle. Drivers supply platform events; core never reads SDK globals. */
@@ -26,18 +27,19 @@ export function openSocket(driver: SocketDriver, options: SocketOptions = {}): P
       clearTimeout(timer)
       const pendingSends:Array<(error:Error)=>void>=[]
       sends.forEach(cancel=>pendingSends.push(cancel))
-      pendingSends.forEach(cancel=>cancel(error??new Error('socket closed during send')))
       sends.clear()
-      try { unbind() } catch { /* callback guards still prevent delivery */ }
-      try { uncancel() } catch { /* owned socket must still close */ }
-      // Close even a failed opening attempt; late native callbacks are inert.
-      try { driver.close(code, reason) } catch { /* the native socket may already be closed */ }
-      if (pending) reject(error ?? new Error('socket closed before open'))
-      // Creator 3.8 downlevel compilation does not preserve Set spread semantics.
+      // Snapshot all ownership before invoking any external cleanup.
       const callbacks: Array<() => void> = []
       closes.forEach(cb => callbacks.push(cb))
       messages.clear(); closes.clear()
-      callbacks.forEach(cb => {try{cb()}catch{/* one listener cannot prevent others from closing */}})
+      const offDriver=unbind,offCancel=uncancel
+      unbind=()=>{};uncancel=()=>{}
+      runCleanup([
+        ...pendingSends.map(cancel=>()=>cancel(error??new Error('socket closed during send'))),
+        offDriver,offCancel,()=>driver.close(code,reason)
+      ])
+      if (pending) reject(error ?? new Error('socket closed before open'))
+      runCleanup(callbacks)
     }
     const isClosed = () => state === 'closed'
     const connection: SocketConnection = {
@@ -74,20 +76,28 @@ export function openSocket(driver: SocketDriver, options: SocketOptions = {}): P
         messages.add(cb); return () => { messages.delete(cb) }
       },
       onClose(cb) {
-        if (state === 'closed') { cb(); return () => {} }
+        if (state === 'closed') { runCleanup([cb]); return () => {} }
         closes.add(cb); return () => { closes.delete(cb) }
       }
     }
     try {
       unbind = driver.bind({
         open() { if (state === 'connecting') { state = 'open'; clearTimeout(timer); resolve(connection) } },
-        message(data) { if (state === 'open') messages.forEach(cb => cb(data)) },
+        message(data) {
+          if (state === 'open') messages.forEach(cb => {
+            if(isClosed())return
+            try{cb(data)}catch{runCleanup([()=>{throw Error('socket message observer failed')}])}
+          })
+        },
         close() { finish() },
         error() { finish(new Error('socket connection failed')) }
       })
-      if (isClosed()) unbind()
+      if (isClosed()) {
+        const off=unbind;unbind=()=>{};runCleanup([off])
+        return
+      }
       uncancel = options.onCancel?.(() => finish(new Error('socket connection cancelled'))) ?? (() => {})
-      if (isClosed()) uncancel()
+      if (isClosed()) {const off=uncancel;uncancel=()=>{};runCleanup([off])}
     } catch {
       finish(new Error('socket event registration failed'))
     }

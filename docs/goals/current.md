@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-26 ChatGPT **Goal0065 Round11 清理异常隔离修复 — 待 CI / 独立验收**：通用清理逐项隔离、静态诊断及资源所有权先失效，覆盖操作范围、SDK、Socket 和上层销毁；不改变业务完成、取消或 UNKNOWN 语义，不部署。
+
 - 2026-11-26 Codex **Goal0065 Round11 independent functional acceptance — FAIL**, fixed product `33c05a74a98315b2d90a51e817b3cf1fcde122a6`: Round10 N01/N02 PASS, including immediate restore and actual cancel-menu/reentry. New 1P3: a throwing OperationScope cleanup callback skips later cleanup handlers and leaves waits pending until their own deadline; reproduced in production Node modules and the official Creator bundle, no throwing normal business consumer observed. 303 affected tests/types, single official Linux Cocos4 Web export, provider/SDK/identity lifecycle and Vue unmount/storage/foreground checks PASS. Matching candidate API/Web completes real three-account v61 game, UNKNOWN/timeout/reconnect/archive/phrase/original-context logout (exit0). No product fix/deployment; unchanged six Ready Pods, unfinished0, user29457 healthy; own resources stopped and temporary test CA removed. [Round11 report](0065-round11-independent-acceptance.md). Goal0065 remains in_progress; Goal0045/0046 unchanged.
 
 - 2026-11-26 ChatGPT **Goal0065 Round10 生命周期集中修复 — 待 CI / 独立验收**：统一可取消操作范围、同步释放所属 pending 屏障、平台等待期限与身份操作派发边界；保留持久化操作及 UNKNOWN 语义，不改服务端、协议或部署。

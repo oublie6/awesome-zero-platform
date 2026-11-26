@@ -2,7 +2,7 @@ import type { HttpTransport, SecureRandomSource, SocketConnection, SocketTranspo
 import { websocketURL } from './index.js'
 import { networkTimeout } from './network-timeout.js'
 import { openSocket } from './socket.js'
-import { OperationScope } from './operation.js'
+import { OperationScope, runCleanup } from './operation.js'
 
 /** Minimal SDK shapes injected by the composition root. No references to global wx or tt. */
 export interface MiniSocket {
@@ -65,8 +65,8 @@ export class MiniSocketTransport implements SocketTransport {
         // Error/close listeners precede open. Optional off methods are not assumed
         // on Douyin; internal callbacks are made inert and the owned task is closed.
         const cleanup = () => {
-          socket.offOpen?.(events.open); socket.offMessage?.(message)
-          socket.offClose?.(events.close); socket.offError?.(events.error)
+          runCleanup([()=>socket.offOpen?.(events.open),()=>socket.offMessage?.(message),
+            ()=>socket.offClose?.(events.close),()=>socket.offError?.(events.error)])
         }
         try {
           socket.onError(events.error); socket.onClose(events.close)
@@ -101,8 +101,7 @@ export class MiniHttp implements HttpTransport {
       const complete = (error?: Error, data?: unknown) => {
         if (finished) return
         finished = true
-        clearTimeout(timer)
-        opts.signal?.removeEventListener('abort', abort)
+        runCleanup([()=>clearTimeout(timer),()=>opts.signal?.removeEventListener('abort', abort)])
         if (error) reject(error); else resolve(data as T)
       }
       if (opts.signal?.aborted) { abort(); return }

@@ -2,6 +2,7 @@ import type { AppLifecycle, HttpTransport, SecureRandomSource, SessionVault, Sha
 import { websocketURL } from './index.js'
 import { networkTimeout } from './network-timeout.js'
 import { openSocket } from './socket.js'
+import { runCleanup } from './operation.js'
 
 export class WebHttp implements HttpTransport {
   constructor(private readonly base = '/api') {}
@@ -12,9 +13,9 @@ export class WebHttp implements HttpTransport {
     let timedOut = false
     const abort = () => controller.abort()
     const timer = setTimeout(() => { timedOut = true; controller.abort() }, timeout)
-    options.signal?.addEventListener('abort', abort, {once: true})
-    if (options.signal?.aborted) abort()
     try {
+      options.signal?.addEventListener('abort', abort, {once: true})
+      if (options.signal?.aborted) abort()
       const response = await fetch(this.base + path, {
         method: options.method ?? 'GET', signal: controller.signal,
         headers: { ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(options.accessToken ? { Authorization: 'Bearer ' + options.accessToken } : {}) },
@@ -26,8 +27,7 @@ export class WebHttp implements HttpTransport {
       if (timedOut) throw new Error('HTTP request timed out')
       throw error
     } finally {
-      clearTimeout(timer)
-      options.signal?.removeEventListener('abort', abort)
+      runCleanup([()=>clearTimeout(timer),()=>options.signal?.removeEventListener('abort', abort)])
     }
   }
 }
@@ -40,16 +40,19 @@ export class WebSocketTransport implements SocketTransport {
     return openSocket({
       bind(events) {
         const message = (event: MessageEvent) => { if (typeof event.data === 'string') events.message(event.data) }
-        ws.addEventListener('open', events.open)
-        ws.addEventListener('message', message)
-        ws.addEventListener('close', events.close)
-        ws.addEventListener('error', events.error)
-        return () => {
-          ws.removeEventListener('open', events.open)
-          ws.removeEventListener('message', message)
-          ws.removeEventListener('close', events.close)
-          ws.removeEventListener('error', events.error)
-        }
+        const cleanup=()=>{runCleanup([
+          ()=>ws.removeEventListener('open',events.open),
+          ()=>ws.removeEventListener('message',message),
+          ()=>ws.removeEventListener('close',events.close),
+          ()=>ws.removeEventListener('error',events.error)
+        ])}
+        try{
+          ws.addEventListener('open', events.open)
+          ws.addEventListener('message', message)
+          ws.addEventListener('close', events.close)
+          ws.addEventListener('error', events.error)
+        }catch(error){cleanup();throw error}
+        return cleanup
       },
       send(data,complete) {
         if (ws.readyState !== WebSocket.OPEN) {complete(new Error('socket not open'));return}

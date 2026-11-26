@@ -82,7 +82,10 @@ test('Creator 3.8 compatible ES5 output invokes all Set-managed socket cleanup c
   const slot=new operations.OperationSlot(),first=slot.begin()
   const p1=first.wait(()=>new Promise(()=>{})),p2=first.wait(()=>new Promise(()=>{}))
   const rejected=Promise.all([assert.rejects(p1,/cancelled/),assert.rejects(p2,/cancelled/)])
+  first.onCancel(()=>{throw Error('cleanup fault')})
+  let last=0;first.onCancel(()=>last++)
   assert.equal(slot.cancel(),true)
+  assert.equal(first.cleanupFailures,1);assert.equal(last,1)
   const replacement=slot.begin()
   await rejected
   first.finish()
@@ -98,6 +101,7 @@ test('Creator 3.8 compatible ES5 output invokes all Set-managed socket cleanup c
   assert.equal(manager.cancellations.size, 0)
 
   const { openSocket } = compile('../src/socket.ts', name => {
+    if(name==='./operation.js')return operations
     assert.equal(name, './network-timeout.js')
     return { networkTimeout: value => value ?? 15000 }
   })
@@ -165,4 +169,33 @@ test('native send failure and repeated callbacks cannot retain capacity or close
  const pending=connection.send('ok',1000)
  calls.at(-1).success();await pending
  connection.close()
+})
+
+test('G65 R11: manager registration failure and throwing native close still release owned listeners',async()=>{
+ for(const phase of ['register','close']){
+  let removed=0,closed=0
+  const manager=new ConnectionManager({async connect(){return {
+   send:async()=>{},onMessage:()=>()=>{removed++;throw Error('off fault')},
+   onClose:()=>{if(phase==='register')throw Error('registration fault');return()=>removed++},
+   close:()=>{closed++;throw Error('close fault')}
+  }}})
+  if(phase==='register')await assert.rejects(manager.open('wss://x/ws','token',()=>{},()=>{}),/registration fault/)
+  else {await manager.open('wss://x/ws','token',()=>{},()=>{});manager.close()}
+  assert.equal(manager.isOpen,false)
+  assert.equal(removed,phase==='register'?1:2);assert.equal(closed,1)
+  manager.close();assert.equal(closed,1)
+ }
+})
+test('G65 R11: mini off failure does not skip remaining listeners, sends or close observers',async()=>{
+ const task=new Task(),calls=[]
+ task.offOpen=()=>{calls.push('offOpen');throw Error('off fault')}
+ task.send=()=>{}
+ const opening=new MiniSocketTransport({connectSocket:()=>task}).connect('wss://example.org/ws','token')
+ task.emit('open');const connection=await opening
+ const pending=assert.rejects(connection.send('pending',5000),/closed during send/)
+ connection.onClose(()=>{throw Error('observer fault')})
+ connection.onClose(()=>calls.push('closed'))
+ connection.close();await pending
+ assert.equal(task.closes,1);assert.equal(task.listeners,1)
+ assert.deepEqual(calls,['offOpen','closed'])
 })

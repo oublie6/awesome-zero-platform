@@ -1,11 +1,27 @@
 /** Portable, local operation lifetime. No SDK/renderer or AbortController
  * dependency. Cancellation is not a rollback of an already dispatched write. */
+/** Cleanup errors are diagnostic, never business results. Do not log raw SDK
+ * errors (which may contain credentials). A failing reporter is isolated too. */
+export function runCleanup(steps:ReadonlyArray<()=>void>,report:()=>void=()=>{
+  console.warn('client resource cleanup failed')
+}):number{
+  let failures=0
+  steps.forEach(step=>{
+    try{step()}catch{
+      failures++
+      try{report()}catch{/* diagnostics cannot interrupt cleanup */}
+    }
+  })
+  return failures
+}
 export class OperationCancelled extends Error {
   constructor(){super('operation cancelled');this.name='OperationCancelled'}
 }
 export class OperationScope {
   private state:'active'|'cancelled'|'finished'='active'
   private dispatched=false
+  private failures=0
+  get cleanupFailures():number{return this.failures}
   private readonly listeners=new Set<()=>void>()
   constructor(private readonly release:()=>void=()=>{}){}
   get active():boolean{return this.state==='active'}
@@ -28,12 +44,11 @@ export class OperationScope {
     const callbacks:Array<()=>void>=[]
     this.listeners.forEach(fn=>callbacks.push(fn))
     this.listeners.clear()
-    this.release()
-    callbacks.forEach(fn=>fn())
+    this.failures+=runCleanup([this.release,...callbacks])
   }
   /** Portable cancellation registration for nested SDK/transport adapters. */
   onCancel(handler:()=>void):()=>void{
-    if(!this.active){handler();return ()=>{}}
+    if(!this.active){this.failures+=runCleanup([handler]);return ()=>{}}
     this.listeners.add(handler)
     return ()=>{this.listeners.delete(handler)}
   }

@@ -1,4 +1,5 @@
-export { OperationScope, OperationSlot, OperationCancelled } from './operation.js'
+import { runCleanup } from './operation.js'
+export { OperationScope, OperationSlot, OperationCancelled, runCleanup } from './operation.js'
 
 /** Platform-neutral runtime ports. No platform globals are accessed by this module. */
 export type Target = 'web' | 'wechat' | 'douyin'
@@ -87,15 +88,21 @@ export class ConnectionManager {
       this.cancellations.add(handler)
       return () => { this.cancellations.delete(handler) }
     } })
-    if (generation !== this.generation) { connection.close(); throw new Error('connection cancelled') }
+    if (generation !== this.generation) { runCleanup([()=>connection.close()]); throw new Error('connection cancelled') }
     this.connection = connection
-    const offMessage = connection.onMessage(message => { if (this.generation === generation) onMessage(message) })
-    this.unsubscribe.push(offMessage)
-    const offClose = connection.onClose(() => {
-      if (this.generation === generation) { this.close(); onClose() }
-    })
-    if (generation !== this.generation) { offClose(); throw new Error('connection closed during registration') }
-    this.unsubscribe.push(offClose)
+    try{
+      const offMessage = connection.onMessage(message => { if (this.generation === generation) onMessage(message) })
+      if(generation!==this.generation){runCleanup([offMessage]);throw new Error('connection closed during registration')}
+      this.unsubscribe.push(offMessage)
+      const offClose = connection.onClose(() => {
+        if (this.generation === generation) { this.close(); onClose() }
+      })
+      if (generation !== this.generation) { runCleanup([offClose]); throw new Error('connection closed during registration') }
+      this.unsubscribe.push(offClose)
+    }catch(error){
+      if(generation===this.generation)this.close()
+      throw error
+    }
   }
   async send(value: unknown, timeoutMs?:number): Promise<void> {
     const connection=this.connection
@@ -108,10 +115,10 @@ export class ConnectionManager {
     const cancellations: Unsubscribe[] = []
     this.cancellations.forEach(cancel => cancellations.push(cancel))
     this.cancellations.clear()
-    cancellations.forEach(cancel => { try { cancel() } catch { /* continue owned-resource cleanup */ } })
-    this.unsubscribe.splice(0).forEach(fn => { try { fn() } catch { /* continue owned-resource cleanup */ } })
+    const subscriptions=this.unsubscribe.splice(0)
     const connection = this.connection
     this.connection = null
-    connection?.close()
+    // Snapshot and detach before external callbacks can re-enter open/close.
+    runCleanup([...cancellations,...subscriptions,()=>connection?.close()])
   }
 }

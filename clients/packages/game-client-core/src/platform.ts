@@ -1,6 +1,6 @@
 import type { AppLifecycle, GamePlatform, PlatformAuth, SessionVault, SharePort, Target, Unsubscribe } from './index.js'
 import { MiniHttp, MiniRandom, MiniSocketTransport, type MiniSDK } from './minigame.js'
-import { OperationScope } from './operation.js'
+import { OperationScope, runCleanup } from './operation.js'
 
 export interface MiniPlatformSDK extends MiniSDK {
   /** WeChat entropy is on UserCryptoManager, not wx.getRandomValues. */
@@ -20,12 +20,14 @@ class MiniAuth implements PlatformAuth {
   async acquireCode(timeoutMs=15_000,onCancel?:(handler:()=>void)=>Unsubscribe): Promise<string> {
     if (typeof this.sdk.login !== 'function') throw new Error('platform login unsupported')
     const scope=new OperationScope()
-    const off=onCancel?.(()=>scope.abandon())
-    try{return await scope.wait(()=>new Promise<string>((resolve,reject)=>this.sdk.login({
+    let off:Unsubscribe|undefined
+    try{
+      off=onCancel?.(()=>scope.abandon())
+      return await scope.wait(()=>new Promise<string>((resolve,reject)=>this.sdk.login({
       success: result => typeof result?.code==='string' && result.code.trim()
         ? resolve(result.code) : reject(new Error('platform login yielded no code')),
       fail: ()=>reject(new Error('platform login failed'))
-    })),timeoutMs)}finally{off?.();scope.finish()}
+    })),timeoutMs)}finally{runCleanup([()=>off?.(),()=>scope.finish()])}
   }
 }
 class MiniVault implements SessionVault {
