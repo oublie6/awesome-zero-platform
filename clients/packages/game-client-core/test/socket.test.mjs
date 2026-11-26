@@ -72,7 +72,23 @@ test('Creator 3.8 compatible ES5 output invokes all Set-managed socket cleanup c
     new Function('module', 'exports', 'require', emitted)(module, module.exports, load)
     return module.exports
   }
-  const { ConnectionManager: LegacyManager } = compile('../src/index.ts', () => { throw Error('unexpected dependency') })
+  const operations=compile('../src/operation.ts',()=>{throw Error('unexpected operation dependency')})
+  const { ConnectionManager: LegacyManager } = compile('../src/index.ts', path => {
+    if(path==='./operation.js')return operations
+    throw Error('unexpected dependency '+path)
+  })
+  // Exercise the new shared operation listener cleanup in the same downlevel
+  // runtime as the socket cleanup, not a stubbed dependency.
+  const slot=new operations.OperationSlot(),first=slot.begin()
+  const p1=first.wait(()=>new Promise(()=>{})),p2=first.wait(()=>new Promise(()=>{}))
+  const rejected=Promise.all([assert.rejects(p1,/cancelled/),assert.rejects(p2,/cancelled/)])
+  assert.equal(slot.cancel(),true)
+  const replacement=slot.begin()
+  await rejected
+  first.finish()
+  assert.equal(slot.begin(),null)
+  replacement.finish()
+  assert.ok(slot.begin())
   const manager = new LegacyManager({connect: async () => { throw Error('no connection required') }})
   let cancelled = 0
   manager.cancellations.add(() => { cancelled++ })
