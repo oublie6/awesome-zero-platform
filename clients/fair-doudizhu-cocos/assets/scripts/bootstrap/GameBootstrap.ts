@@ -926,7 +926,7 @@ export class GameBootstrap extends Component {
       this.renderScreen('rooms')
       await this.login()
     }catch(error){
-      if(current())this.notice('账号关联失败：'+this.message(error))
+      if(current())this.notice('账号关联：'+this.message(error))
     }
   }
   private async relinkWeChat():Promise<void>{
@@ -948,7 +948,7 @@ export class GameBootstrap extends Component {
       if(await this.detachWeChatSession(online))
         this.notice('微信换绑成功。所有历史游戏数据仍留在原账号。')
     }catch(error){
-      if(current())this.notice('微信换绑失败：'+this.message(error))
+      if(current())this.notice('微信换绑：'+this.message(error))
     }
   }
   private async detachWeChatSession(online:GameOnlineController):Promise<boolean>{
@@ -987,7 +987,7 @@ export class GameBootstrap extends Component {
       if(await this.detachWeChatSession(online))
         this.notice('微信解绑成功；原账号游戏数据仍保留')
     }catch(error){
-      if(current())this.notice('微信解绑失败：'+this.message(error))
+      if(current())this.notice('微信解绑：'+this.message(error))
     }
   }
   /** Browser sign-out revokes the server session and fences all callbacks.

@@ -17,14 +17,15 @@ export interface MiniPlatformSDK extends MiniSDK {
 }
 class MiniAuth implements PlatformAuth {
   constructor(private readonly sdk: MiniPlatformSDK) {}
-  async acquireCode(timeoutMs=15_000): Promise<string> {
+  async acquireCode(timeoutMs=15_000,onCancel?:(handler:()=>void)=>Unsubscribe): Promise<string> {
     if (typeof this.sdk.login !== 'function') throw new Error('platform login unsupported')
     const scope=new OperationScope()
+    const off=onCancel?.(()=>scope.abandon())
     try{return await scope.wait(()=>new Promise<string>((resolve,reject)=>this.sdk.login({
       success: result => typeof result?.code==='string' && result.code.trim()
         ? resolve(result.code) : reject(new Error('platform login yielded no code')),
       fail: ()=>reject(new Error('platform login failed'))
-    })),timeoutMs)}finally{scope.finish()}
+    })),timeoutMs)}finally{off?.();scope.finish()}
   }
 }
 class MiniVault implements SessionVault {

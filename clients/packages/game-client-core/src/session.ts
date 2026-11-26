@@ -125,8 +125,8 @@ export class GameSession {
       loginEpoch===this.order.loginEpoch && this.accessToken===token})
   }
   async login(): Promise<SessionGrant|null> {
-    return this.loginWith(async current => {
-      const code = await this.platform.auth.acquireCode()
+    return this.loginWith(async (current,scope) => {
+      const code = await this.platform.auth.acquireCode(undefined,handler=>scope.onCancel(handler))
       // Do not exchange a platform code after logout or account replacement.
       if (!current()) return {accessToken: ''}
       return this.identity.exchange(this.platform.target, code)
@@ -134,7 +134,7 @@ export class GameSession {
   }
   /** Credential and platform-code login share the same epoch, token and
    * logout semantics. Credential material is never passed to the vault. */
-  async loginWith(exchange: (current:()=>boolean) => Promise<{accessToken: string}>): Promise<SessionGrant|null> {
+  async loginWith(exchange: (current:()=>boolean,scope:OperationScope) => Promise<{accessToken: string}>): Promise<SessionGrant|null> {
     this.assertActive()
     this.cancelLogin()
     this.order.pendingLogin?.abandon()
@@ -153,7 +153,7 @@ export class GameSession {
     this.attemptOwner=current
     try{
       let result:{accessToken:string}
-      try{result=await scope.wait(()=>exchange(()=>scope.active && current()),30_000)}catch(error){if(!scope.active || !current())return null;throw error}
+      try{result=await scope.wait(()=>exchange(()=>scope.active && current(),scope),30_000)}catch(error){if(!scope.active || !current())return null;throw error}
       if (!current()) return null
       if (!result || typeof result.accessToken !== 'string' || !result.accessToken.trim()) {
         throw new Error('identity exchange returned no access token')

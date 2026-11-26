@@ -31,6 +31,12 @@ export class OperationScope {
     this.release()
     callbacks.forEach(fn=>fn())
   }
+  /** Portable cancellation registration for nested SDK/transport adapters. */
+  onCancel(handler:()=>void):()=>void{
+    if(!this.active){handler();return ()=>{}}
+    this.listeners.add(handler)
+    return ()=>{this.listeners.delete(handler)}
+  }
   /** Start synchronously; detach timers/observers on all completion paths.
    * The underlying SDK may still return; its result is consumed but ignored. */
   wait<T>(start:()=>Promise<T>,timeoutMs=15_000):Promise<T>{

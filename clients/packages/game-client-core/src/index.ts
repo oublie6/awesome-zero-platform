@@ -4,7 +4,7 @@ export { OperationScope, OperationSlot, OperationCancelled } from './operation.j
 export type Target = 'web' | 'wechat' | 'douyin'
 export type Unsubscribe = () => void
 export interface PlatformAuth {
-  acquireCode(timeoutMs?:number): Promise<string>
+  acquireCode(timeoutMs?:number,onCancel?:(handler:()=>void)=>Unsubscribe): Promise<string>
 }
 export interface HttpTransport {
   request<T>(path: string, options?: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number; accessToken?: string }): Promise<T>

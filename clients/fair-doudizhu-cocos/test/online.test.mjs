@@ -1551,3 +1551,16 @@ test('G65 R10: sent unlink/binding hold their operation until known completion',
   assert.deepEqual(calls,['/auth/wechat/unlink'])
  }finally{online.dispose()}
 })
+
+test('G65 R10: ambiguous dispatched provider result is not a cancellation or permission to repeat',async()=>{
+ const f=fixture(),calls=[]
+ const online=new GameOnlineController(f.platform,f.identity,'wss://example.org/ws',()=>{})
+ try{
+  await online.loginAndConnect()
+  f.platform.http.request=async(path)=>{calls.push(path);throw Error('response lost')}
+  await assert.rejects(online.unlinkWeChat('pw',()=>true),/结果待确认/)
+  await assert.rejects(online.unlinkWeChat('pw',()=>true),/上一账号操作结果待确认/)
+  assert.deepEqual(calls,['/auth/wechat/unlink'])
+  assert.equal(online.cancelIdentityOperation(),true)
+ }finally{online.dispose()}
+})

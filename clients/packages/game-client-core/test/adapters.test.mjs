@@ -134,3 +134,15 @@ test('G65 R10: mini login deadline settles and ignores late SDK callback',async(
  callback.fail(Error('late'))
  await assert.rejects(p.auth.acquireCode(0),/invalid operation timeout/)
 })
+
+test('G65 R10: portable cancellation settles actual MiniAuth before callback or deadline',async()=>{
+ let callback,cancel,removed=0
+ const p=createMiniPlatform('wechat',{login(a){callback=a}},'https://example.org')
+ const pending=p.auth.acquireCode(15_000,fn=>{cancel=fn;return()=>{removed++}})
+ const rejected=assert.rejects(pending,/cancelled/)
+ cancel()
+ await rejected
+ assert.equal(removed,1)
+ callback.success({code:'late'})
+ callback.fail(Error('late'))
+})

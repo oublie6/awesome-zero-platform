@@ -27,6 +27,7 @@ export class GameOnlineController {
   /** Established controller identity is distinct from transport readiness. */
   get identityCurrent():boolean { return !this.disposed && this.identityEstablished && !!this.identityGrant?.isCurrent() }
   private readonly identityOperations=new OperationSlot()
+  private identityOutcomeUnconfirmed=false
   /** A pending provider write cannot be undone by leaving its form. */
   cancelIdentityOperation():boolean{return this.identityOperations.cancel()}
   private membershipGeneration = 0
@@ -135,6 +136,7 @@ export class GameOnlineController {
     const grant=this.identityGrant
     const identityOwned=()=>owned() && this.identityCurrent && !!grant?.isCurrent()
     if(this.platform.target!=='wechat' || !grant || !identityOwned())return false
+    if(this.identityOutcomeUnconfirmed)throw new Error('上一账号操作结果待确认，请重新进入游戏验证账号状态')
     const scope=this.identityOperations.begin()
     if(!scope)return false
     const current=()=>scope.active && identityOwned()
@@ -151,8 +153,15 @@ export class GameOnlineController {
       raw=await scope.wait(()=>this.platform.http.request<unknown>(path,{
         method:'POST',accessToken,body,timeoutMs:12000
       }),15_000) as {code?:unknown}|null
-    }catch{throw new Error('账号操作结果待确认，请重新验证账号状态，不要直接重复提交')}
-    if(raw?.code!=='OK')throw new Error('账号操作未获成功确认，请重新验证账号状态')
+    }catch{
+      this.identityOutcomeUnconfirmed=true
+      throw new Error('账号操作结果待确认，请重新进入游戏验证账号状态，不要直接重复提交')
+    }
+    if(typeof raw?.code!=='string'){
+      this.identityOutcomeUnconfirmed=true
+      throw new Error('账号操作结果待确认，请重新进入游戏验证账号状态')
+    }
+    if(raw.code!=='OK')throw new Error('账号操作未获成功确认，请重新验证账号状态')
   }
   async unlinkWeChat(password:string,owned:()=>boolean):Promise<boolean>{
     return this.providerOperation(owned,async(current,token,scope)=>{
@@ -163,7 +172,7 @@ export class GameOnlineController {
   async relinkWeChat(input:{sourceIdentifier:string;sourcePassword:string;targetIdentifier:string;targetPassword:string},
     owned:()=>boolean):Promise<boolean>{
     return this.providerOperation(owned,async(current,token,scope)=>{
-      const code=await scope.wait(()=>this.platform.auth.acquireCode())
+      const code=await scope.wait(()=>this.platform.auth.acquireCode(undefined,handler=>scope.onCancel(handler)))
       if(!current())return false
       const prep=await scope.wait(()=>this.platform.http.request<unknown>('/auth/wechat/prepare',{
         method:'POST',body:{code},timeoutMs:12000
@@ -181,6 +190,7 @@ export class GameOnlineController {
     attempt:()=>boolean,owned:()=>boolean):Promise<boolean>{
     const identityOwned=()=>!this.disposed && !this.identityEstablished && attempt() && owned()
     if(this.platform.target!=='wechat' || !identityOwned())return false
+    if(this.identityOutcomeUnconfirmed)throw new Error('上一账号操作结果待确认，请重新进入游戏验证账号状态')
     const scope=this.identityOperations.begin()
     if(!scope)return false
     const current=()=>scope.active && identityOwned()
