@@ -1,0 +1,30 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Actual Vue/Cocos and matching Go API; real same-origin storage events and browser visibility changes",
+  "cases": [
+    {
+      "name": "normal website/game navigation retains same iframe and assets",
+      "pass": true,
+      "newStaticRequests": 0
+    },
+    {
+      "name": "child-storage-event drops obsolete presentation without deleting/revoking replacement",
+      "pass": true,
+      "iframes": 0,
+      "oldDetached": true,
+      "replacementPreserved": true,
+      "storageEvents": 1,
+      "oldSessionHTTP": 200,
+      "newSessionHTTP": 200,
+      "revokeCalls": 0
+    },
+    {
+      "name": "child-storage-event page reload restores only replacement account and fresh game instance",
+      "pass": true,
+      "noOldRoom": true,
+      "noOldPrivateState": true
+    }
+  ],
+  "pass": 3,
+  "fail": 0
+}

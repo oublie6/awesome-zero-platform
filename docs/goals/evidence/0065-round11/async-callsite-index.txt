@@ -1,0 +1,93 @@
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:69:  async loginWithPassword(identifier: string, password: string): Promise<boolean> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:73:    return this.authenticateAndConnect(()=>this.session.loginWith(async () => {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:88:  async loginAndConnect(): Promise<boolean> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:92:  async restoreAndConnect(validate: (token: string) => Promise<boolean>): Promise<boolean> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:97:  private async authenticateAndConnect(auth:()=>Promise<SessionGrant|null>):Promise<boolean>{
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:122:  async viewerAccount(owned:()=>boolean):Promise<string|null>{
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:133:  private async providerOperation(
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:145:    finally{scope.finish()}
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:149:  private async providerWrite(scope:OperationScope,path:string,body:unknown,accessToken?:string):Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:166:  async unlinkWeChat(password:string,owned:()=>boolean):Promise<boolean>{
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:172:  async relinkWeChat(input:{sourceIdentifier:string;sourcePassword:string;targetIdentifier:string;targetPassword:string},
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:189:  async completeWeChatBinding(create:boolean,proof:string,input:{username:string;password:string;email:string;displayName:string},
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:203:    finally{scope.finish()}
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:226:    void promise.finally(()=>{
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:231:  private async performRecovery(target:string|undefined,token:number,membership:number,commands:number):Promise<RoomRead|null>{
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:296:  private async completeActiveRecovery(room:RoomRead,phase:string|null,
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:310:  async confirmRoomAuthority(room:RoomRead,owned:()=>boolean,phaseHint:string|null=null,
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:404:      } finally { releaseFairness() }
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:405:    } finally { releaseHand() }
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:421:  async discoverRecoverableRooms():Promise<RoomRead[]> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:426:  async roomInfo(roomId: string): Promise<RoomRead> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:447:    void promise.finally(()=>{
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:452:  private async performJoin(roomId:string,token:number,membership:number,
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:516:  async retryUnknownRoom(): Promise<Readonly<RoomState>> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:530:  async reconcileRoom(roomId: string): Promise<RoomRead> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:545:  async leaveRoom(): Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:565:  private async lookupOrRetryPendingCreate(roomId:string):Promise<RoomRead>{
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:579:   * reserveHandTransition bars new fairness work during the async room send;
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:582:  async startHand(handId: string): Promise<Readonly<RoomState>> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:629:        } finally { this.startingHand = null }
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:630:      } finally { releaseFairness() }
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:631:    } finally { releaseLive() }
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:634:  async createRoom(): Promise<Readonly<{roomId:string;version:number}>> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:680:    previous.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:683:  async logout(): Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:691:    this.fairness.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:692:    this.shell.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:695:  dispose(): void {
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:701:    this.session.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:702:    this.fairness.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/game/GameOnlineController.ts:703:    this.shell.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:61:  // Capturing the last rendered value detects async transitions without
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:137:        .then(async ([cssOK,geometryOK])=>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:175:  private async waitForWebScene():Promise<boolean> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:210:        void pending.then(async restored=>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:235:        }).finally(()=>{if(attempt===this.hostRestoreAttempt)this.hostRestoring=false})
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:242:        this.online?.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:283:      .then(async ([configOK,styleOK,geometryOK])=>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:343:      this.online.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:679:  /** Every async UI callback belongs to one authenticated controller and one
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:719:  private async confirmStartupAuthority(online:GameOnlineController,epoch:number,selection:number):Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:768:  private async login(restoreOnly=false):Promise<boolean> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:799:      this.online?.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:894:  private async resolveViewerAccount(online:GameOnlineController,generation:number):Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:905:  private async completeWeChatBinding(create:boolean):Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:932:  private async relinkWeChat():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:954:  private async detachWeChatSession(online:GameOnlineController):Promise<boolean>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:972:    online.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:977:  private async unlinkWeChat():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:995:  private async logoutWeb():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1029:  private async discoverMyRoomsSafely():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1038:  private async resumeSelectedRoom(roomID:string):Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1052:  private async recoverMyRooms(onOwnedSelection?:(token:number)=>void):Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1085:    void promise.finally(()=>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1090:  private async performAuthorizedRoomRecovery(
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1158:  private async reconnect():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1199:  private async retryUnknownFairness():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1216:  private async createRoom():Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1240:    }finally{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1244:  private async joinRoom():Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1269:    }finally{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1273:  private async leaveRoom():Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1300:    }finally{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1304:  private async readyRoom():Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1317:    }finally{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1321:  private async startHand():Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1355:    }finally{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1359:  private async refreshRoom(requiredForStartup=false):Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1440:  private async refreshFairness():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1468:  private async submitOwnContribution():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1497:  private async verifyMyPhrase():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1526:  private async prepareFairness():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1576:  private async importFairness():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1607:  private async commitFairness():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1627:  private async revealFairness():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1644:  private async showEvidence():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1672:  private async refreshHand():Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1689:  private async retryUnknownHand():Promise<void>{
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1711:  private async bid(score:number):Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1724:  private async play():Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1740:  private async pass():Promise<void> {
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1903:    this.online?.dispose()
+clients/fair-doudizhu-cocos/assets/scripts/bootstrap/GameBootstrap.ts:1906:    this.shell?.dispose()

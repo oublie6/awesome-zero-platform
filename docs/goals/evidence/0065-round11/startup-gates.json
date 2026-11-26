@@ -1,0 +1,260 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "hand": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+  "cases": [
+    {
+      "name": "final scene await crosses actual deal; operation settlement observed",
+      "pass": true,
+      "falseReady": false,
+      "correlatedReadAttempted": true
+    },
+    {
+      "name": "R8 N02 final joint authority read crosses actual deal",
+      "pass": true,
+      "falseReady": false,
+      "correlatedReadAttempted": true
+    },
+    {
+      "name": "explicit retry same hand",
+      "pass": true
+    },
+    {
+      "name": "explicit retry same hand",
+      "pass": true
+    }
+  ],
+  "control": {
+    "sameHand": true,
+    "phase": "BIDDING",
+    "version": 1
+  },
+  "controlAuthority": {
+    "roomVersion": 7,
+    "proof": {
+      "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+      "phase": "BIDDING",
+      "version": 11,
+      "fairnessMode": "client-contributed-server-custodied-v1",
+      "revealed": true
+    }
+  },
+  "before0": {
+    "phase": "FAIRNESS_COMMITTING",
+    "hasSnapshot": false,
+    "reads": 0,
+    "dropped": 1,
+    "dealtDropped": 1,
+    "privatePositions": [
+      1
+    ],
+    "proof": {
+      "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+      "phase": "FAIRNESS_COMMITTING",
+      "version": 1,
+      "fairnessMode": "client-contributed-server-custodied-v1",
+      "revealed": false
+    },
+    "confirmStarted": false,
+    "confirmFinished": false,
+    "identity": true
+  },
+  "before1": {
+    "phase": "FAIRNESS_COMMITTING",
+    "hasSnapshot": false,
+    "reads": 0,
+    "dropped": 1,
+    "dealtDropped": 1,
+    "privatePositions": [
+      2
+    ],
+    "proof": {
+      "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+      "phase": "FAIRNESS_COMMITTING",
+      "version": 1,
+      "fairnessMode": "client-contributed-server-custodied-v1",
+      "revealed": false
+    },
+    "proofTrace": [
+      {
+        "roomVersion": 7,
+        "proof": {
+          "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+          "phase": "FAIRNESS_COMMITTING",
+          "version": 1,
+          "fairnessMode": "client-contributed-server-custodied-v1",
+          "revealed": false
+        }
+      },
+      {
+        "roomVersion": 7,
+        "proof": {
+          "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+          "phase": "FAIRNESS_COMMITTING",
+          "version": 1,
+          "fairnessMode": "client-contributed-server-custodied-v1",
+          "revealed": false
+        }
+      }
+    ],
+    "confirmStarted": true,
+    "confirmFinished": false,
+    "identity": true
+  },
+  "releasedAt": 1795677410337,
+  "after0": {
+    "host": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795677349286
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795677360861
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795677367121
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795677367121
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795677367122
+        },
+        {
+          "type": "SESSION_FAILED",
+          "at": 1795677425443
+        },
+        {
+          "type": "BOOT_FAILED",
+          "at": 1795677425444
+        }
+      ]
+    },
+    "client": {
+      "phase": "BIDDING",
+      "hasSnapshot": false,
+      "reads": 1,
+      "dropped": 2,
+      "dealtDropped": 1,
+      "privatePositions": [
+        1,
+        1
+      ],
+      "proof": {
+        "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+        "phase": "BIDDING",
+        "version": 11,
+        "fairnessMode": "client-contributed-server-custodied-v1",
+        "revealed": true
+      },
+      "confirmStarted": true,
+      "confirmFinished": true,
+      "confirmError": "hand sync response timed out",
+      "identity": true
+    }
+  },
+  "after1": {
+    "host": {
+      "status": "游戏资源或引擎启动失败，请重新加载。",
+      "cover": true,
+      "events": [
+        {
+          "type": "BOOT_STAGE",
+          "stage": "document",
+          "at": 1795677371048
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "engine",
+          "at": 1795677383568
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "scene",
+          "at": 1795677390028
+        },
+        {
+          "type": "BOOT_STAGE",
+          "stage": "session",
+          "at": 1795677390029
+        },
+        {
+          "type": "GAME_READY",
+          "at": 1795677390030
+        },
+        {
+          "type": "SESSION_FAILED",
+          "at": 1795677425373
+        },
+        {
+          "type": "BOOT_FAILED",
+          "at": 1795677425374
+        }
+      ]
+    },
+    "client": {
+      "phase": "FAIRNESS_COMMITTING",
+      "hasSnapshot": false,
+      "reads": 1,
+      "dropped": 2,
+      "dealtDropped": 1,
+      "privatePositions": [
+        2,
+        2
+      ],
+      "proof": {
+        "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+        "phase": "FAIRNESS_COMMITTING",
+        "version": 1,
+        "fairnessMode": "client-contributed-server-custodied-v1",
+        "revealed": false
+      },
+      "proofTrace": [
+        {
+          "roomVersion": 7,
+          "proof": {
+            "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+            "phase": "FAIRNESS_COMMITTING",
+            "version": 1,
+            "fairnessMode": "client-contributed-server-custodied-v1",
+            "revealed": false
+          }
+        },
+        {
+          "roomVersion": 7,
+          "proof": {
+            "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+            "phase": "FAIRNESS_COMMITTING",
+            "version": 1,
+            "fairnessMode": "client-contributed-server-custodied-v1",
+            "revealed": false
+          }
+        },
+        {
+          "roomVersion": 7,
+          "proof": {
+            "handId": "hand-cmd-4315a179c8b46ea95eace19febe77e51",
+            "phase": "BIDDING",
+            "version": 11,
+            "fairnessMode": "client-contributed-server-custodied-v1",
+            "revealed": true
+          }
+        }
+      ],
+      "confirmStarted": true,
+      "confirmFinished": true,
+      "confirmError": "hand sync response timed out",
+      "identity": true
+    }
+  }
+}

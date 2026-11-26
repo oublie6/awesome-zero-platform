@@ -1,0 +1,8 @@
+{
+  "database": "goal0065r9",
+  "reusedRound9And10": true,
+  "schemaChanged": false,
+  "phasesBefore": "ABORTED\t21\nCOMPLETED\t13\n0\n",
+  "authPrefix": "g65r11:authn:session:",
+  "queuePrefix": "g65r11-turn"
+}

@@ -1,0 +1,38 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "cases": [
+    {
+      "name": "same GameSession logout promptly settles old SDK login and restores valid storage",
+      "pass": true
+    },
+    {
+      "name": "same GameSession discardLocal promptly settles old SDK login and restores valid storage",
+      "pass": true
+    },
+    {
+      "name": "same GameSession cancelAttempt promptly settles old SDK login and restores valid storage",
+      "pass": true
+    },
+    {
+      "name": "same GameSession restore promptly settles old SDK login and restores valid storage",
+      "pass": true
+    },
+    {
+      "name": "canceled started asynchronous vault save remains ordered ahead of new login and own cleanup",
+      "ordering": [
+        "save:old",
+        "saved:old",
+        "clear",
+        "save:new",
+        "saved:new"
+      ],
+      "pass": true
+    },
+    {
+      "name": "normal binding-required leaves initial attempt valid, later login succeeds",
+      "pass": true
+    }
+  ],
+  "pass": 6,
+  "fail": 0
+}

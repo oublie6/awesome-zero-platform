@@ -1,0 +1,84 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "inventoryCommand": "rg -n 'OperationScope|OperationSlot|onCancel|markDispatched' clients --glob '!package-lock.json'",
+  "allProductionConsumers": [
+    {
+      "owner": "game-client-core/session.ts",
+      "uses": "loginWith owns shared pending scope; MiniAuth cancellation registration",
+      "evidence": [
+        "session-lifecycle.json",
+        "controller-cancel-restore.json",
+        "session-extra.json"
+      ],
+      "notes": "Explicit cancellation releases matching pending immediately. Started vault writes and cleanup stay serialized; no cancellation-as-rollback claim."
+    },
+    {
+      "owner": "game-client-core/platform.ts MiniAuth",
+      "uses": "local bounded scope, portable onCancel hook",
+      "evidence": [
+        "platform-independent.json",
+        "native-adapters.json"
+      ],
+      "notes": "15s default; short real deadline and active cancel/observer removal/late callback controls."
+    },
+    {
+      "owner": "game-client-core/platform.ts MiniShare",
+      "uses": "Douyin callback wait scope",
+      "evidence": [
+        "platform-independent.json",
+        "native-adapters.json"
+      ],
+      "notes": "15s default returns false on absent callback; WeChat true means synchronous UI invocation only, not delivery."
+    },
+    {
+      "owner": "game-client-core/minigame.ts MiniRandom",
+      "uses": "bounded random callback scope",
+      "evidence": [
+        "platform-independent.json",
+        "native-adapters.json"
+      ],
+      "notes": "15s default, secure SDK and exact output length validation; no Math.random fallback."
+    },
+    {
+      "owner": "GameOnlineController.ts",
+      "uses": "single OperationSlot for providerOperation and completeWeChatBinding; providerWrite dispatch boundary",
+      "evidence": [
+        "provider-matrix.json",
+        "bootstrap-lifecycle.json"
+      ],
+      "notes": "Pre-write cancellation releases slot; committed cancel returns false. Lost final response locks direct resubmission. Owned/grant/page replacement and dispose do not update old presentation."
+    }
+  ],
+  "publicPrimitiveFinding": "G65-R11-N01: throwing release/cancellation callback prevents later cleanup notifications; controlled boundary, no current production consumer observed throwing.",
+  "adjacentReview": [
+    {
+      "owner": "WebAuth/App.vue",
+      "evidence": [
+        "web-auth-extra.json",
+        "vue-unmount.json",
+        "vue-lifecycle.json",
+        "vue-foreground-raw.json"
+      ],
+      "notes": "Separate abort ownership; no storage replacement revocation, old finally does not clear new pending. Actual root unmount cancels pending login and leaves an empty root. Source hook/watchdog cleanup reviewed; listener counts were not instrumented."
+    },
+    {
+      "owner": "GameBootstrap login/forms/room recovery",
+      "evidence": [
+        "bootstrap-lifecycle.json",
+        "bootstrap-adjacent.json",
+        "startup-failure.json"
+      ],
+      "notes": "Actual menu actions and actual renderScreen navigation. Initial binding followup login count alone is not an SDK qualification. Late room discovery/reconnect cannot adopt after identity invalidation."
+    },
+    {
+      "owner": "Shell/ConnectionManager/RoomCoordinator/HandActions/FairnessActions",
+      "evidence": [
+        "login-chain.json",
+        "authority-matrix.json",
+        "cocos-tests.log",
+        "core-tests.log"
+      ],
+      "notes": "Reviewed timers, listener/send cleanup, owned finally/reservations, generation/version fences and exact-ID UNKNOWN contracts. Existing tests rerun; real game live probes recorded separately. No backend crash/performance rerun."
+    }
+  ]
+}

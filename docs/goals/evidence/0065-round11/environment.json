@@ -1,0 +1,18 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "node": "v22.23.4",
+  "chromium": "Google Chrome for Testing 156.0.8078.4",
+  "browserMode": "headful Xvfb / SwiftShader, own user data dir,1280x900",
+  "tls": "trusted project test CA; no certificate-error bypass",
+  "temporaryNSSNickname": "Goal0065-R11-Owned-Test-CA",
+  "nginxFixtureImage": "nginx:1.27-alpine",
+  "nginxFixtureImageID": "sha256:6769dc3a703c719c1d2756bda113659be28ae16cf0da58dd5fd823d6b9a050ea",
+  "ports": {
+    "API": 18870,
+    "HTTPS": 30471,
+    "CDP": 19181
+  },
+  "noGoRebuild": true,
+  "noPhoneOrActualPlatformSDKQualification": true,
+  "tlsCertificateFileSHA256": "7d541f16d9baff39bace05ad0f35f96700d43cdbba83fbb1ae964c2707ba7e08"
+}

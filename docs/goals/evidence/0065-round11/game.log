@@ -1,0 +1,27 @@
+authorized 0
+authorized 1
+authorized 2
+Real startup gate armed 0 final-scene
+Real startup gate armed 1 final-authority-membership
+Completed actual final gate 0 {"reads":1,"finished":true,"error":"hand sync response timed out","falseReady":false}
+Completed actual final gate 1 {"reads":1,"finished":true,"error":"hand sync response timed out","falseReady":false}
+Waiting unchanged Go automatic deadline; late-notification proof armed
+Actual timeout wait 0
+Actual timeout wait 30
+Actual timeout wait 60
+Actual timeout wait 90
+Actual timeout wait 120
+Actual timeout wait 150
+Actual timeout wait 180
+Actual timeout wait 210
+Actual same-version automatic recovery {"version":2,"minimum":0,"causalBarrier":false,"status":"connected","canSubmit":true,"lastReply":{"id":"sync-5","version":2,"phase":"BIDDING"},"wireCommands":0,"readCount":5}
+illegal combination rejected with visible feedback
+turns 0
+turns 10
+turns 20
+turns 30
+turns 40
+turns 50
+COMPLETED 61
+PHASE3 PASS
+THREE PLAYER FULL GAME PASS {"room":"room-cmd-9572d4968073a91c93da50e229ddb51c","hand":"hand-cmd-4315a179c8b46ea95eace19febe77e51","pageErrors":0,"console":3,"steps":90}

@@ -1,0 +1,16 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Actual Vue/Cocos and Go, raw CDP avoids Playwright focus override",
+  "sameWindow": true,
+  "hidden": true,
+  "storageEventsBeforeResume": 0,
+  "reconciled": {
+    "hidden": false,
+    "iframes": 0,
+    "oldDetached": true,
+    "replacementPreserved": true
+  },
+  "automaticRevokeCalls": 0,
+  "reloadedReplacement": true,
+  "result": "PASS"
+}

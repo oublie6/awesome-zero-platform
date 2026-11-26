@@ -1,0 +1,16 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Actual compiled Vue root unmount while controlled login response is pending; positive own real Go login after fresh mount",
+  "app": {
+    "empty": true
+  },
+  "after": {
+    "storedToken": false,
+    "iframes": 0,
+    "rootEmpty": true
+  },
+  "canceledHTTP": 1,
+  "followupSessionReads": 0,
+  "freshLogin": true,
+  "result": "PASS"
+}

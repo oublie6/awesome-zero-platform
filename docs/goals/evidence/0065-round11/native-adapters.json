@@ -1,0 +1,30 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Actual official Creator Web bundle platform factory, controlled SDK; no device SDK claim",
+  "cases": [
+    {
+      "name": "wechat Creator native login/random/share positive",
+      "target": "wechat",
+      "pass": true
+    },
+    {
+      "name": "wechat Creator native login timeout/cancel and late callback",
+      "timeout": "operation timed out",
+      "cancelObserversRemoved": 1,
+      "pass": true
+    },
+    {
+      "name": "douyin Creator native login/random/share positive",
+      "target": "douyin",
+      "pass": true
+    },
+    {
+      "name": "douyin Creator native login timeout/cancel and late callback",
+      "timeout": "operation timed out",
+      "cancelObserversRemoved": 1,
+      "pass": true
+    }
+  ],
+  "pass": 4,
+  "fail": 0
+}

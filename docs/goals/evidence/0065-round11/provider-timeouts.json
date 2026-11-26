@@ -1,0 +1,61 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Production Controller/Session with controlled SDK, identity HTTP and sockets; no real provider mapping mutation",
+  "cases": [
+    {
+      "name": "actual Controller sdk deadline and subsequent operation boundary",
+      "requestedDeadline": [
+        15000
+      ],
+      "cancelSettled": true,
+      "lateWriteDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "actual Controller prepare deadline and subsequent operation boundary",
+      "requestedDeadline": [
+        15000,
+        15000
+      ],
+      "cancelSettled": true,
+      "lateWriteDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "actual Controller reply deadline and subsequent operation boundary",
+      "requestedDeadline": [
+        15000,
+        15000,
+        15000
+      ],
+      "finalWriteUnknown": true,
+      "directRepeatDispatched": false,
+      "pass": true
+    },
+    {
+      "name": "actual Controller sdk timeout releases slot; late response cannot poison fresh operation",
+      "requestedDeadline": [
+        15000,
+        15000,
+        15000,
+        15000
+      ],
+      "newNormalOperation": true,
+      "pass": true
+    },
+    {
+      "name": "actual Controller prepare timeout releases slot; late response cannot poison fresh operation",
+      "requestedDeadline": [
+        15000,
+        15000,
+        15000,
+        15000,
+        15000
+      ],
+      "newNormalOperation": true,
+      "pass": true
+    }
+  ],
+  "pass": 5,
+  "fail": 0
+}

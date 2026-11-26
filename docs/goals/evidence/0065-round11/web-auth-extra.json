@@ -1,0 +1,28 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Actual WebAuth; controlled signal-aware fetch and storage",
+  "cases": [
+    {
+      "name": "same WebAuth logout cancels previous login before HTTP response; identity restored",
+      "pass": true
+    },
+    {
+      "name": "same WebAuth dispose cancels previous login before HTTP response; identity restored",
+      "pass": true
+    },
+    {
+      "name": "same WebAuth restore cancels previous login before HTTP response; identity restored",
+      "pass": true
+    },
+    {
+      "name": "old pending HTTP finally cannot clear newer pending login; old disposal preserves new owner",
+      "pass": true
+    },
+    {
+      "name": "failed restore retains legitimate fresh login path",
+      "pass": true
+    }
+  ],
+  "pass": 5,
+  "fail": 0
+}

@@ -1,0 +1,30 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Actual compiled Bootstrap methods including actual menu-action construction, Controller and Session; separate receiver objects, controlled rendering and SDK/HTTP; no real provider mutation",
+  "cases": [
+    {
+      "name": "native full first bind error/form/write/fresh-login fallback chain",
+      "pass": true,
+      "platformLogins": 2,
+      "sockets": 1,
+      "bindingWrites": 1,
+      "identityCurrent": true,
+      "transport": true,
+      "viewer": "native-account",
+      "screen": "rooms"
+    },
+    {
+      "name": "native full first register-bind error/form/write/fresh-login fallback chain",
+      "pass": true,
+      "platformLogins": 2,
+      "sockets": 1,
+      "bindingWrites": 1,
+      "identityCurrent": true,
+      "transport": true,
+      "viewer": "native-account",
+      "screen": "rooms"
+    }
+  ],
+  "pass": 2,
+  "fail": 0
+}

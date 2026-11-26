@@ -1,0 +1,70 @@
+[
+  {
+    "name": "core-types",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit": 0,
+    "seconds": 3.387
+  },
+  {
+    "name": "core-tests",
+    "command": [
+      "npm",
+      "test"
+    ],
+    "exit": 0,
+    "seconds": 6.906
+  },
+  {
+    "name": "cocos-static-types",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit": 0,
+    "seconds": 6.715
+  },
+  {
+    "name": "vue-build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit": 0,
+    "seconds": 13.023
+  },
+  {
+    "name": "vue-tests",
+    "command": [
+      "npm",
+      "test"
+    ],
+    "exit": 0,
+    "seconds": 2.028
+  },
+  {
+    "name": "script-tests",
+    "command": [
+      "node",
+      "--test",
+      "scripts/cocos-linux-web/test.cjs",
+      "scripts/game-web/stage.test.cjs"
+    ],
+    "exit": 0,
+    "seconds": 1.654
+  },
+  {
+    "name": "cocos-tests",
+    "command": [
+      "npm",
+      "test"
+    ],
+    "exit": 0,
+    "seconds": 10.567
+  }
+]

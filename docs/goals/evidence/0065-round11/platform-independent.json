@@ -1,0 +1,60 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Actual mini adapters, controlled SDK callbacks/timer firing; no real SDK/device qualification",
+  "cases": [
+    {
+      "name": "wechat login normal/missing/failed/throw; errors redacted",
+      "pass": true
+    },
+    {
+      "name": "wechat login cancellation before callback removes observer; late callback inert",
+      "pass": true
+    },
+    {
+      "name": "wechat login real short deadline ignores late result",
+      "pass": true
+    },
+    {
+      "name": "wechat secure entropy normal/length/missing SDK/invalid output",
+      "pass": true
+    },
+    {
+      "name": "wechat random default15s deadline releases wait timer and ignores callback",
+      "pass": true
+    },
+    {
+      "name": "wechat share positive/invalid/failure and room query",
+      "pass": true
+    },
+    {
+      "name": "douyin login normal/missing/failed/throw; errors redacted",
+      "pass": true
+    },
+    {
+      "name": "douyin login cancellation before callback removes observer; late callback inert",
+      "pass": true
+    },
+    {
+      "name": "douyin login real short deadline ignores late result",
+      "pass": true
+    },
+    {
+      "name": "douyin secure entropy normal/length/missing SDK/invalid output",
+      "pass": true
+    },
+    {
+      "name": "douyin random default15s deadline releases wait timer and ignores callback",
+      "pass": true
+    },
+    {
+      "name": "douyin share positive/invalid/failure and room query",
+      "pass": true
+    },
+    {
+      "name": "Douyin callback share real contract default15s timeout returns false and ignores late success",
+      "pass": true
+    }
+  ],
+  "pass": 13,
+  "fail": 0
+}

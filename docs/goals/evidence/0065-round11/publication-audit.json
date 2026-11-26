@@ -1,0 +1,14 @@
+{
+  "filesScanned": 74,
+  "knownPrivateValuesChecked": 17,
+  "privateValueMatches": 0,
+  "JWTMatches": 0,
+  "personalPhraseOrPEMMatches": 0,
+  "rawGameCardsTokensExcluded": true,
+  "publishedLogWhitespaceNormalized": [
+    "cocos-static-types.log",
+    "native-build.log",
+    "core-types.log"
+  ],
+  "rawLogsRetainedPrivately": true
+}

@@ -1,0 +1,58 @@
+{
+  "source": "33c05a74a98315b2d90a51e817b3cf1fcde122a6",
+  "scope": "Actual production OperationScope/Slot, independent observers",
+  "cases": [
+    {
+      "name": "normal value, sync start, async rejection and sync exception release wait observers",
+      "pass": true
+    },
+    {
+      "name": "duplicate cancel/finish/abandon release exactly once; ended waits do not start",
+      "pass": true
+    },
+    {
+      "name": "normal finish notifies registered cleanup once and late registration is immediate",
+      "pass": true
+    },
+    {
+      "name": "multiple waiters all settle synchronously cancelled; late successes and errors ignored",
+      "pass": true
+    },
+    {
+      "name": "slot immediately reusable; repeated old completion never releases new owner",
+      "pass": true
+    },
+    {
+      "name": "dispatched cancel returns false, keeps slot and result; abandon releases only observation",
+      "pass": true
+    },
+    {
+      "name": "deadline detaches waiter without ending reusable scope; late callback inert",
+      "pass": true
+    },
+    {
+      "name": "deadline validation rejects without dispatch",
+      "pass": true
+    },
+    {
+      "name": "nested scope cancellation and unregistration settle all owners",
+      "pass": true
+    },
+    {
+      "name": "synchronous cancellation inside SDK start wins over returned result",
+      "pass": true
+    },
+    {
+      "name": "one throwing cancellation listener must not strand subsequent waiters",
+      "pass": false,
+      "error": "{\"thrown\":\"cleanup failed\",\"events\":[\"throwing\"],\"result\":\"operation timed out\"}\n+ actual - expected\n\n+ 'operation timed out'\n- 'operation cancelled'\n             ^\n"
+    },
+    {
+      "name": "release callback exception must not strand cancellation listeners",
+      "pass": false,
+      "error": "{\"thrown\":\"release failed\",\"result\":\"operation timed out\"}\n+ actual - expected\n\n+ 'operation timed out'\n- 'operation cancelled'\n             ^\n"
+    }
+  ],
+  "pass": 10,
+  "fail": 2
+}
