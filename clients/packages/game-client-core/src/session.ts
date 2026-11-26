@@ -39,13 +39,14 @@ export class GameSession {
   private attemptOwner:()=>boolean=()=>false
   private pendingLogin:OperationScope|null=null
   private readonly order:VaultOrder
-  private cancelLogin():void{this.pendingLogin?.abandon()}
-  /** Stop unfinished authentication without claiming or revoking a vault token. */
+  /** Stop unfinished authentication without claiming or revoking a vault token.
+   * Invalidate local state before invoking cancellation callbacks. */
   cancelAttempt():void{
+    const previous=this.pendingLogin
     ++this.generation
-    this.cancelLogin()
     this.activeGrant=null
     this.attemptOwner=()=>false
+    previous?.abandon()
   }
   private mutateVault<T>(operation:()=>Promise<T>):Promise<T>{
     const work=this.order.tail.then(operation)
@@ -78,7 +79,7 @@ export class GameSession {
   }
   async restoreOwned(validate: (accessToken: string) => Promise<boolean>): Promise<SessionGrant|null> {
     this.assertActive()
-    this.cancelLogin()
+    const previous=this.pendingLogin
     const generation = ++this.generation
     this.accessToken=null
     this.activeGrant=null
@@ -87,9 +88,13 @@ export class GameSession {
     const current=()=>!this.disposed && generation===this.generation && loginEpoch===this.order.loginEpoch &&
       this.order.pendingLogin===null
     this.attemptOwner=current
+    previous?.abandon()
     // A restore skipped because a newer login is in flight cannot become a
     // fresh provider login when that newer login finishes.
-    if(!current()){this.attemptOwner=()=>false;return null}
+    if(!current()){
+      if(generation===this.generation)this.attemptOwner=()=>false
+      return null
+    }
     await this.order.tail
     if(!current())return null
     const stored = await this.platform.vault.load()
@@ -136,8 +141,7 @@ export class GameSession {
    * logout semantics. Credential material is never passed to the vault. */
   async loginWith(exchange: (current:()=>boolean,scope:OperationScope) => Promise<{accessToken: string}>): Promise<SessionGrant|null> {
     this.assertActive()
-    this.cancelLogin()
-    this.order.pendingLogin?.abandon()
+    const previous=this.pendingLogin,sharedPrevious=this.order.pendingLogin
     const generation = ++this.generation
     const loginEpoch=++this.order.loginEpoch
     const scope=new OperationScope(()=>{
@@ -151,7 +155,12 @@ export class GameSession {
     // Keep attempt ownership after a normal binding-required response, but
     // never after explicit cancellation or replacement.
     this.attemptOwner=current
+    // Publish the new owner before cancelling the old one: callbacks may
+    // start another login on this or a different session sharing the vault.
+    previous?.abandon()
+    if(sharedPrevious!==previous)sharedPrevious?.abandon()
     try{
+      if(!current() || !scope.active)return null
       let result:{accessToken:string}
       try{result=await scope.wait(()=>exchange(()=>scope.active && current(),scope),30_000)}catch(error){if(!scope.active || !current())return null;throw error}
       if (!current()) return null
@@ -169,18 +178,17 @@ export class GameSession {
         this.accessToken=result.accessToken
         return this.activeGrant=this.grant(result.accessToken,generation,loginEpoch)
       })
+      scope.finish()
       return grant?.isCurrent()?grant:null
     }finally{
       scope.finish()
     }
   }
   private releaseToken():string|null {
-    this.cancelAttempt()
     const token=this.accessToken || this.ownedToken
     this.accessToken=null
-    this.activeGrant=null
-    this.attemptOwner=()=>false
     this.ownedToken=null
+    this.cancelAttempt()
     return token
   }
   /** Provider relink/unlink already revoked the session on Go. Erase only
@@ -199,12 +207,10 @@ export class GameSession {
     }finally{await this.identity.revoke?.(token)}
   }
   dispose(): void {
-    this.cancelAttempt()
     this.disposed = true
     this.accessToken = null
-    this.activeGrant=null
-    this.attemptOwner=()=>false
     this.ownedToken = null
+    this.cancelAttempt()
   }
   private assertActive(): void { if (this.disposed) throw new Error('session disposed') }
 }

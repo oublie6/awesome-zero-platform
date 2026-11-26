@@ -279,3 +279,32 @@ test('G65 R10: same session restore cancels its pending login before reading sav
  release({accessToken:'late'})
  assert.equal(a.token,'stored')
 })
+
+test('G65 R12: synchronous login cancellation reentry keeps newest local/shared identity',async()=>{
+ for(const same of [true,false]){
+  const p=platform(),identity={exchange:async()=>({accessToken:'unused'})}
+  const a=new GameSession(p,identity),b=same?a:new GameSession(p,identity)
+  let latest,staleCalls=0
+  const old=a.loginWith((_current,scope)=>{
+   scope.onCancel(()=>{latest=b.loginWith(async()=>({accessToken:'latest'}))})
+   return new Promise(()=>{})
+  })
+  const superseded=a.loginWith(async()=>{staleCalls++;return {accessToken:'stale'}})
+  assert.equal(await old,null);assert.equal(await superseded,null)
+  assert.ok((await latest)?.isCurrent());assert.equal(staleCalls,0)
+  assert.equal(b.token,'latest');assert.equal(await p.vault.load(),'latest')
+ }
+})
+test('G65 R12: cancel and restore do not overwrite a login started by cancellation callback',async()=>{
+ for(const method of ['cancelAttempt','restore','logout']){
+  const p=platform(),a=new GameSession(p,{exchange:async()=>({accessToken:'unused'})})
+  let latest
+  const old=a.loginWith((_current,scope)=>{
+   scope.onCancel(()=>{latest=a.loginWith(async()=>({accessToken:'latest'}))})
+   return new Promise(()=>{})
+  })
+  await a[method](async()=>true)
+  assert.equal(await old,null);assert.ok((await latest)?.isCurrent())
+  assert.equal(a.token,'latest')
+ }
+})

@@ -91,21 +91,38 @@ export class MiniHttp implements HttpTransport {
       let timer: ReturnType<typeof setTimeout> | undefined
       let finished = false
       let cancelled = false
+      let registering=false,registered=false
       let task: {abort?(): void} | void
+      const removeAbort=()=>{
+        if(!registered || registering)return
+        registered=false
+        runCleanup([()=>opts.signal?.removeEventListener('abort',abort)])
+      }
       const abort = () => {
         if (finished) return
         cancelled = true
         complete(new Error('HTTP request cancelled'))
         try { task?.abort?.() } catch { /* request already rejected; continue cleanup */ }
       }
-      const complete = (error?: Error, data?: unknown) => {
+      const complete = (error?: unknown, data?: unknown,failed=error!==undefined) => {
         if (finished) return
         finished = true
-        runCleanup([()=>clearTimeout(timer),()=>opts.signal?.removeEventListener('abort', abort)])
-        if (error) reject(error); else resolve(data as T)
+        runCleanup([()=>clearTimeout(timer),removeAbort])
+        if (failed) reject(error); else resolve(data as T)
       }
-      if (opts.signal?.aborted) { abort(); return }
-      opts.signal?.addEventListener('abort', abort, {once:true})
+      try{
+        if(opts.signal?.aborted){abort();return}
+        if(opts.signal){
+          // Even a partially successful registration must be removed. If it
+          // calls abort synchronously, wait until registration returns before
+          // removing the handler (it may not yet have been installed).
+          registered=true;registering=true
+          opts.signal.addEventListener('abort',abort,{once:true})
+        }
+      }catch(error){complete(error,undefined,true)}
+      finally{registering=false;if(finished)removeAbort()}
+      if(finished)return
+      if(opts.signal?.aborted){abort();return}
       timer = setTimeout(() => {
         cancelled = true
         complete(new Error('HTTP request timed out'))

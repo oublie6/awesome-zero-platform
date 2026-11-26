@@ -76,17 +76,22 @@ export class ConnectionManager {
   private connection: SocketConnection | null = null
   private unsubscribe: Unsubscribe[] = []
   private generation = 0
+  private ready=false
   private cancellations = new Set<() => void>()
   constructor(private readonly socket: SocketTransport) {}
-  get isOpen():boolean { return this.connection!==null }
+  get isOpen():boolean { return this.ready && this.connection!==null }
   async open(url: string, token: string, onMessage: (message: string) => void, onClose: () => void): Promise<void> {
     websocketURL(url)
-    this.close()
-    const generation = this.generation
+    // Reserve before old cleanup: unsubscribe/close can synchronously start
+    // a newer open. Never adopt the generation that the callback created.
+    const generation=++this.generation
+    this.detach()
+    if(generation!==this.generation)throw new Error('connection cancelled')
+    const cancellations=this.cancellations
     const connection = await this.socket.connect(url, token, { onCancel: handler => {
-      if(generation!==this.generation){handler();return ()=>{}}
-      this.cancellations.add(handler)
-      return () => { this.cancellations.delete(handler) }
+      if(generation!==this.generation){runCleanup([handler]);return ()=>{}}
+      cancellations.add(handler)
+      return () => { cancellations.delete(handler) }
     } })
     if (generation !== this.generation) { runCleanup([()=>connection.close()]); throw new Error('connection cancelled') }
     this.connection = connection
@@ -95,26 +100,38 @@ export class ConnectionManager {
       if(generation!==this.generation){runCleanup([offMessage]);throw new Error('connection closed during registration')}
       this.unsubscribe.push(offMessage)
       const offClose = connection.onClose(() => {
-        if (this.generation === generation) { this.close(); onClose() }
+        if(this.generation!==generation)return
+        const closing=++this.generation
+        this.detach()
+        if(this.generation===closing)onClose()
       })
       if (generation !== this.generation) { runCleanup([offClose]); throw new Error('connection closed during registration') }
       this.unsubscribe.push(offClose)
+      this.ready=true
     }catch(error){
       if(generation===this.generation)this.close()
       throw error
     }
   }
   async send(value: unknown, timeoutMs?:number): Promise<void> {
-    const connection=this.connection
-    if (!connection) throw new Error('socket disconnected')
-    await connection.send(JSON.stringify(value),timeoutMs)
+    const connection=this.connection,generation=this.generation
+    if (!connection || !this.ready) throw new Error('socket disconnected')
+    const encoded=JSON.stringify(value)
+    if(generation!==this.generation || connection!==this.connection || !this.ready)
+      throw new Error('connection cancelled')
+    await connection.send(encoded,timeoutMs)
   }
   close(): void {
     this.generation++
+    this.detach()
+  }
+  private detach():void{
+    this.ready=false
     // Snapshot via forEach: Creator 3.8 may lower Set spread to concat(Set).
     const cancellations: Unsubscribe[] = []
     this.cancellations.forEach(cancel => cancellations.push(cancel))
     this.cancellations.clear()
+    this.cancellations=new Set()
     const subscriptions=this.unsubscribe.splice(0)
     const connection = this.connection
     this.connection = null

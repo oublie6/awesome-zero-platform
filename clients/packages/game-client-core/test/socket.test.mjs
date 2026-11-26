@@ -199,3 +199,47 @@ test('G65 R11: mini off failure does not skip remaining listeners, sends or clos
  assert.equal(task.closes,1);assert.equal(task.listeners,1)
  assert.deepEqual(calls,['offOpen','closed'])
 })
+
+test('G65 R12: synchronous unsubscribe/close reentry cannot install a superseded manager connection',async()=>{
+ for(const phase of ['unsubscribe','close','native-close']){
+  const seen=[],connections=[],messages=[],closed=[]
+  let latest,manager
+  const startLatest=()=>{if(!latest)latest=manager.open('wss://x/ws','latest',x=>messages.push(x),()=>closed.push('latest'))}
+  manager=new ConnectionManager({async connect(_url,token){
+   seen.push(token)
+   const c={token,closes:0,sent:[],send:async raw=>c.sent.push(raw),
+    onMessage(cb){c.message=cb;return()=>{if(token==='initial'&&(phase==='unsubscribe'||phase==='native-close'))startLatest()}},
+    onClose(cb){c.closed=cb;return()=>{}},
+    close(){c.closes++;if(token==='initial'&&phase==='close')startLatest()}}
+   connections.push(c);return c
+  }})
+  await manager.open('wss://x/ws','initial',x=>messages.push(x),()=>closed.push('initial'))
+  if(phase==='native-close')connections[0].closed()
+  else await assert.rejects(manager.open('wss://x/ws','superseded',()=>messages.push('stale'),()=>closed.push('stale')),/cancelled/)
+  await latest
+  assert.deepEqual(seen,['initial','latest'])
+  connections[0].message('old');connections[1].message('new')
+  await manager.send({hello:true})
+  assert.deepEqual(messages,['new']);assert.deepEqual(closed,[])
+  assert.equal(manager.isOpen,true);assert.equal(connections[0].closes,1)
+  assert.equal(connections[1].sent.length,1)
+  manager.close();assert.equal(connections[1].closes,1)
+ }
+})
+test('G65 R12: late cancel registration does not affect replacement callback or throw',async()=>{
+ let oldOptions,latestOptions,resolveOld,calls=0
+ const c=()=>({send:async()=>{},close(){},onMessage(){return()=>{}},onClose(){return()=>{}}})
+ const manager=new ConnectionManager({connect(_url,token,options){
+  if(token==='old'){oldOptions=options;return new Promise(ok=>{resolveOld=ok})}
+  latestOptions=options;return Promise.resolve(c())
+ }})
+ const old=manager.open('wss://x/ws','old',()=>{},()=>{})
+ const rejected=assert.rejects(old,/cancelled/)
+ await manager.open('wss://x/ws','new',()=>{},()=>{})
+ const handler=()=>{calls++;throw Error('cancel fault')}
+ oldOptions.onCancel(handler)()
+ latestOptions.onCancel(handler)
+ resolveOld(c());await rejected
+ assert.equal(calls,1)
+ manager.close();assert.equal(calls,2)
+})

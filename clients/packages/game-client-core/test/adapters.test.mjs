@@ -157,3 +157,25 @@ test('G65 R11: MiniAuth unsubscribe fault does not change a successful login cod
   assert.equal(off,1)
  }
 })
+
+test('G65 R12: partial abort registration rejects original error and removes available handler',async()=>{
+ const handlers=new Set(),fault=Error('register fault')
+ let requests=0,removed=0
+ const signal={aborted:false,addEventListener(_name,cb){handlers.add(cb);throw fault},
+  removeEventListener(_name,cb){removed++;handlers.delete(cb)}}
+ const http=new MiniHttp({request(){requests++}},'https://example.org')
+ await assert.rejects(http.request('/read',{signal}),e=>e===fault)
+ assert.equal(requests,0);assert.equal(handlers.size,0);assert.equal(removed,1)
+})
+test('G65 R12: abort during registration (before or after installing callback) never dispatches SDK',async()=>{
+ for(const before of [true,false]){
+  const handlers=new Set()
+  let requests=0,removed=0
+  const signal={aborted:false,addEventListener(_name,cb){
+    if(before)cb();handlers.add(cb);if(!before)cb()
+   },removeEventListener(_name,cb){removed++;handlers.delete(cb)}}
+  const http=new MiniHttp({request(){requests++}},'https://example.org')
+  await assert.rejects(http.request('/read',{signal,timeoutMs:5000}),/cancelled/)
+  assert.equal(requests,0);assert.equal(handlers.size,0);assert.equal(removed,1)
+ }
+})

@@ -57,3 +57,16 @@ test('cleanup diagnostic failure is isolated and each step is attempted in order
  const count=runCleanup([()=>{order.push(1);throw Error('fault')},()=>order.push(2)],()=>{throw Error('reporter fault')})
  assert.deepEqual(order,[1,2]);assert.equal(count,1)
 })
+
+test('G65 R12: nested immediate cleanup and diagnostic reentry accumulate every failed step',()=>{
+ const scope=new OperationScope(()=>{
+  scope.onCancel(()=>{throw Error('nested')})
+  throw Error('release')
+ })
+ scope.onCancel(()=>{throw Error('handler')})
+ scope.cancel()
+ assert.equal(scope.cleanupFailures,3)
+ scope.onCancel(()=>{scope.onCancel(()=>{throw Error('nested late')});throw Error('late')})
+ assert.equal(scope.cleanupFailures,5)
+ scope.finish();assert.equal(scope.cleanupFailures,5)
+})

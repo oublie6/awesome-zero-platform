@@ -44,11 +44,12 @@ export class OperationScope {
     const callbacks:Array<()=>void>=[]
     this.listeners.forEach(fn=>callbacks.push(fn))
     this.listeners.clear()
-    this.failures+=runCleanup([this.release,...callbacks])
+    const failures=runCleanup([this.release,...callbacks])
+    this.failures+=failures
   }
   /** Portable cancellation registration for nested SDK/transport adapters. */
   onCancel(handler:()=>void):()=>void{
-    if(!this.active){this.failures+=runCleanup([handler]);return ()=>{}}
+    if(!this.active){const failures=runCleanup([handler]);this.failures+=failures;return ()=>{}}
     this.listeners.add(handler)
     return ()=>{this.listeners.delete(handler)}
   }

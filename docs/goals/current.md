@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-26 ChatGPT **Goal0065 Round12 同步重入防护修复 — 待 CI / 独立验收**：先建立代次所有权、外部调用返回后二次核验；修复连接重入、MiniHttp 注册失败和同步取消、清理计数及相邻身份链路；不改服务端、协议或部署。
+
 - 2026-11-26 Codex **Goal0065 Round12 independent closing acceptance — FAIL**, fixed product `62acd921ce767e13d419dd8021e4d065a84e52f0`: original Round11 N01 PASS in Node and official Creator output. New 1P2/2P3: reentrant connection cleanup lets an older start replace the newest connection (manager and Shell, false ready); MiniHttp misses available abort-listener cleanup after partial registration failure; reentrant OperationScope cleanup undercounts failures. 310 affected tests/types, single official native Web export with corrected tsc PATH, R10 reproducers and same-room real candidate/API smoke pass. Historical full-game/backend evidence reused explicitly; no new hand or 300s wait. No product fixes/rollout; unchanged six Ready Pods, unfinished0, user29457 healthy; owned resources stopped and temporary CA removed. [Round12 report](0065-round12-independent-acceptance.md). Goal0065 remains in_progress; Goal0045/0046 unchanged.
 
 - 2026-11-26 ChatGPT **Goal0065 Round11 清理异常隔离修复 — 待 CI / 独立验收**：通用清理逐项隔离、静态诊断及资源所有权先失效，覆盖操作范围、SDK、Socket 和上层销毁；不改变业务完成、取消或 UNKNOWN 语义，不部署。
