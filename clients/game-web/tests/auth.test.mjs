@@ -265,3 +265,141 @@ test('G65 R12: synchronous abort observer starts latest login without stale disp
   assert.equal(s.getItem(SESSION_KEY),'latest');assert.equal(b.authenticated,true)
  }
 })
+
+function reentrantStorage(){
+ const s=storage(),hooks={get:null,set:null,remove:null}
+ const port={
+  getItem(key){const value=s.getItem(key);hooks.get?.(key,value);return value},
+  setItem(key,value){s.setItem(key,value);hooks.set?.(key,value)},
+  removeItem(key){s.removeItem(key);hooks.remove?.(key)}
+ }
+ return {s,port,hooks}
+}
+function identityFetcher(calls){
+ return async(url,opts)=>{
+  const path=new URL(url).pathname,credential=opts.headers.Authorization?.slice(7)
+  calls.push({path,credential})
+  if(path==='/auth/login')return okay({tokenType:'Bearer',accessToken:JSON.parse(opts.body).identifier})
+  if(path==='/auth/session')return okay({account:{id:credential,displayName:credential}})
+  if(path==='/auth/logout')return okay({loggedOut:true})
+  throw Error('unexpected endpoint')
+ }
+}
+test('G65 R13: canceled provisional storage write cannot publish identity; logout revokes exact token',async()=>{
+ for(const mode of ['dispose','logout']){
+  const {s,port,hooks}=reentrantStorage(),calls=[]
+  const a=createWebAuth(config,identityFetcher(calls),port)
+  let action
+  hooks.set=()=>{hooks.set=null;action=a[mode]()}
+  assert.equal(await a.login('old','password'),null)
+  await action
+  assert.equal(a.authenticated,false);assert.equal(a.account,null)
+  assert.equal(s.getItem(SESSION_KEY),null)
+  assert.deepEqual(calls.filter(x=>x.path==='/auth/logout').map(x=>x.credential),mode==='logout'?['old']:[])
+ }
+})
+test('G65 R13: restore first/final storage read reentry rejects obsolete identity',async()=>{
+ for(const read of [1,2])for(const mode of ['dispose','logout','same-login','peer-login']){
+  const {s,port,hooks}=reentrantStorage(),calls=[]
+  const fetcher=identityFetcher(calls)
+  const a=createWebAuth(config,fetcher,port),b=createWebAuth(config,fetcher,port)
+  s.setItem(SESSION_KEY,'old')
+  let reads=0,next
+  hooks.get=()=>{
+   if(++reads!==read)return
+   hooks.get=null
+   next=mode==='same-login'?a.login('new','password'):mode==='peer-login'?b.login('new','password'):a[mode]()
+  }
+  assert.equal(await a.restore(),null)
+  await next
+  if(mode.endsWith('-login')){
+   assert.equal(s.getItem(SESSION_KEY),'new')
+   assert.equal((mode==='same-login'?a:b).account.id,'new')
+  }else assert.equal(a.authenticated,false)
+  if(read===1)assert.equal(calls.filter(x=>x.path==='/auth/session'&&x.credential==='old').length,0)
+ }
+})
+test('G65 R13: identity getters recheck local and shared ownership after storage reads',async()=>{
+ for(const property of ['account','authenticated'])for(const mode of ['dispose','logout','same-login','peer-login']){
+  const {s,port,hooks}=reentrantStorage(),calls=[],fetcher=identityFetcher(calls)
+  const a=createWebAuth(config,fetcher,port),b=createWebAuth(config,fetcher,port)
+  await a.login('old','password')
+  let next
+  hooks.get=()=>{
+   hooks.get=null
+   next=mode==='same-login'?a.login('new','password'):mode==='peer-login'?b.login('new','password'):a[mode]()
+  }
+  assert.equal(a[property],property==='account'?null:false)
+  await next
+  if(mode.endsWith('-login')){
+   assert.equal(s.getItem(SESSION_KEY),'new')
+   assert.equal((mode==='same-login'?a:b).account.id,'new')
+  }else assert.equal(a.authenticated,false)
+ }
+})
+test('G65 R13: failed restore cleanup cannot delete newer credential or reset newer attempt',async()=>{
+ for(const phase of ['get','remove']){
+  const {s,port,hooks}=reentrantStorage(),calls=[]
+  const fetcher=identityFetcher(calls)
+  const a=createWebAuth(config,async(url,opts)=>new URL(url).pathname==='/auth/session'&&opts.headers.Authorization==='Bearer expired'?invalid():fetcher(url,opts),port)
+  s.setItem(SESSION_KEY,'expired')
+  let reads=0,next
+  const start=()=>{hooks.get=null;hooks.remove=null;next=a.login('new','password')}
+  if(phase==='get')hooks.get=()=>{if(++reads===2)start()}
+  else hooks.remove=start
+  assert.equal(await a.restore(),null)
+  assert.equal((await next).id,'new')
+  assert.equal(s.getItem(SESSION_KEY),'new');assert.equal(a.account.id,'new')
+ }
+})
+test('G65 R13: logout compare read cannot erase replacement credentials; revoke captured old only',async()=>{
+ const {s,port,hooks}=reentrantStorage(),calls=[],fetcher=identityFetcher(calls)
+ const a=createWebAuth(config,fetcher,port),b=createWebAuth(config,fetcher,port)
+ await a.login('old','password')
+ let next,removes=0
+ hooks.remove=()=>removes++
+ hooks.get=()=>{hooks.get=null;next=b.login('new','password')}
+ await a.logout();await next
+ assert.equal(removes,0);assert.equal(s.getItem(SESSION_KEY),'new')
+ assert.equal(b.account.id,'new');assert.equal(a.authenticated,false)
+ assert.deepEqual(calls.filter(x=>x.path==='/auth/logout').map(x=>x.credential),['old'])
+})
+test('G65 R13: provisional write cannot be restored reentrantly; late write after logout is compensated',async()=>{
+ for(const before of [true,false]){
+  const s=storage(),calls=[]
+  let a,b,restore,logout,armed=true
+  const port={getItem:s.getItem,removeItem:s.removeItem,setItem(key,value){
+   if(!armed){s.setItem(key,value);return}
+   armed=false
+   if(!before)s.setItem(key,value)
+   logout=a.logout();restore=b.restore()
+   if(before)s.setItem(key,value)
+  }}
+  const fetcher=identityFetcher(calls)
+  a=createWebAuth(config,fetcher,port);b=createWebAuth(config,fetcher,port)
+  assert.equal(await a.login('old','password'),null)
+  await logout;assert.equal(await restore,null)
+  assert.equal(s.getItem(SESSION_KEY),null)
+  assert.equal(a.authenticated,false);assert.equal(b.authenticated,false)
+  assert.deepEqual(calls.filter(x=>x.path==='/auth/logout').map(x=>x.credential),['old'])
+ }
+})
+test('G65 R13: newer shared login during provisional write keeps new storage and ownership',async()=>{
+ const {s,port,hooks}=reentrantStorage(),calls=[],fetcher=identityFetcher(calls)
+ const a=createWebAuth(config,fetcher,port),b=createWebAuth(config,fetcher,port)
+ let next
+ hooks.set=()=>{hooks.set=null;next=b.login('new','password')}
+ assert.equal(await a.login('old','password'),null)
+ assert.equal((await next).id,'new')
+ assert.equal(s.getItem(SESSION_KEY),'new');assert.equal(b.account.id,'new')
+ assert.equal(a.authenticated,false)
+})
+test('G65 R13: storage write failure preserves original error and clears partial write',async()=>{
+ const {s,port,hooks}=reentrantStorage(),calls=[]
+ const fault=Error('storage write failed')
+ hooks.set=()=>{hooks.set=null;throw fault}
+ const a=createWebAuth(config,identityFetcher(calls),port)
+ await assert.rejects(a.login('old','password'),error=>error===fault)
+ assert.equal(s.getItem(SESSION_KEY),null);assert.equal(a.authenticated,false)
+ assert.equal((await a.login('new','password')).id,'new')
+})

@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-26 ChatGPT **Goal0065 Round13 Vue 存储重入修复 — 待 CI / 独立验收**：存储读写边界复核本地代次及共享 epoch，未提交凭据所有权及注销补偿，getter/restore/logout 定向回归；不改 Cocos、Go、协议或部署。
+
 - 2026-11-26 Codex **Goal0065 Round13 independent closing acceptance — FAIL**, fixed product `eda1a70b1ec504d6588d79203c50d9a08416bd8c`: four fixed-SHA workflows SUCCESS (CI attempt2); original Round12 N01/N02/N03 PASS in Node and the single official Creator export. New 1P3: Vue WebAuth storage read/write synchronous reentry can publish obsolete identity success after dispose/logout/new login (controlled StoragePort; native sessionStorage normal-path regression passes). 321 affected tests/types, Node/Creator 19-case reentry matrices, provider36 and real matching API/Web login/create/reconnect/leave/logout/switch/cache PASS. Historical full-game/backend evidence reused; no full-game/300s/Go rebuild. No product fix or conditional rollout, Goal0065 remains in_progress; cluster six Ready Pods/unfinished0 and user29457 preserved, owned resources stopped and temporary CA removed. [Updated original Round13 report](0065-round13-independent-acceptance.md). Goal0045/0046 unchanged.
 
 - 2026-11-26 Codex **Goal0065 Round13 CI prerequisite — BLOCKED**, fixed candidate `eda1a70b1ec504d6588d79203c50d9a08416bd8c`: Cocos/Vue/Fair SUCCESS; CI run45850121928 remained in_progress (unit running, no final conclusion) at gate inspection. Per explicit instruction to stop unless all four succeed, no defect reproducers, local tests/build, runtime smoke or deployment executed. No test infrastructure/29457 changes. [CI gate report](0065-round13-independent-acceptance.md). Goal0065 remains in_progress; Goal0045/0046 unchanged.

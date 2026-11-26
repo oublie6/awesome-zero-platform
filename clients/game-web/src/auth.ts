@@ -13,6 +13,10 @@ type StoragePort=Pick<Storage,'getItem'|'setItem'|'removeItem'>
 const loginEpochs=new WeakMap<StoragePort,number>()
 type PendingLogin={epoch:number;cancel:()=>void}
 const pendingLogins=new WeakMap<StoragePort,PendingLogin>()
+// The synchronous write is provisional until its caller rechecks ownership.
+// Separate from pendingLogin: cancellation may release that marker in setItem.
+type StorageWrite={token:string;generation:number;epoch:number}
+const storageWrites=new WeakMap<StoragePort,StorageWrite>()
 
 function record(value:unknown):value is Record<string,unknown>{
   return !!value && typeof value==='object' && !Array.isArray(value)
@@ -61,13 +65,29 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
   let activeEpoch=-1
   let pendingLogin:PendingLogin|null=null
   let pendingRequest:AbortController|null=null
+  let writing:StorageWrite|null=null
+  const epoch=()=>loginEpochs.get(storage)??0
+  const owns=(mine:number,expectedEpoch:number)=>generation===mine && epoch()===expectedEpoch
+  // A read may synchronously start another identity operation. Only act on
+  // its result if the same caller still owns the decision after it returns.
+  function clearStored(expected:string,current:()=>boolean):void{
+    if(!current())return
+    const saved=storage.getItem(SESSION_KEY)
+    if(current() && saved===expected)storage.removeItem(SESSION_KEY)
+  }
   function detachAttempt(){
     const login=pendingLogin,request=pendingRequest
     pendingLogin=null;pendingRequest=null
     return ()=>{login?.cancel();request?.abort()}
   }
-  const currentIdentity=()=>!!token && !!active && activeEpoch===(loginEpochs.get(storage)??0) &&
-    storage.getItem(SESSION_KEY)===token
+  function currentIdentity():UserAccount|null{
+    const mine=generation,expectedEpoch=activeEpoch,expected=token,identity=active
+    if(!expected || !identity || !owns(mine,expectedEpoch))return null
+    let saved:string|null
+    try{saved=storage.getItem(SESSION_KEY)}catch{return null}
+    return owns(mine,expectedEpoch) && token===expected && active===identity &&
+      activeEpoch===expectedEpoch && saved===expected?identity:null
+  }
   async function request(path:string,method:string,body?:unknown,accessToken?:string,owner?:AbortSignal):Promise<unknown>{
     const controller=new AbortController()
     const cancel=()=>controller.abort()
@@ -96,29 +116,30 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
   async function restore():Promise<UserAccount|null>{
     const mine=++generation
     const cancelPrevious=detachAttempt()
-    const loginEpoch=loginEpochs.get(storage)??0
+    const loginEpoch=epoch()
+    const current=()=>owns(mine,loginEpoch) && !pendingLogins.has(storage) && !storageWrites.has(storage)
     ownedToken=null
     active=null;token=null
     cancelPrevious()
-    if(mine!==generation || (loginEpochs.get(storage)??0)!==loginEpoch)return null
+    if(!current())return null
     const stored=storage.getItem(SESSION_KEY)
-    if(mine!==generation || !stored || pendingLogins.has(storage))return null
+    if(!current() || !stored)return null
     ownedToken=stored
     const requestOwner=new AbortController()
     pendingRequest=requestOwner
     try{
       const identity=await validate(stored,requestOwner.signal)
-      if(generation!==mine)return null
-      if((loginEpochs.get(storage)??0)!==loginEpoch || storage.getItem(SESSION_KEY)!==stored){
-        ownedToken=null;return null
-      }
+      if(!current())return null
+      const saved=storage.getItem(SESSION_KEY)
+      if(!current())return null
+      if(saved!==stored){ownedToken=null;return null}
       token=stored;active=identity;activeEpoch=loginEpoch
       return identity
     }catch{
-      if(generation===mine){
-        if((loginEpochs.get(storage)??0)===loginEpoch && storage.getItem(SESSION_KEY)===stored)
-          storage.removeItem(SESSION_KEY)
+      if(owns(mine,loginEpoch)){
+        // Clear local ownership before external cleanup, never afterwards.
         token=null;active=null;ownedToken=null
+        clearStored(stored,current)
       }
       return null
     }finally{if(pendingRequest===requestOwner)pendingRequest=null}
@@ -161,18 +182,39 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
       const received=bearer(validatedData(reply))
       const identity=await validate(received,requestOwner.signal)
       if(!current())return null
-      storage.setItem(SESSION_KEY,received)
-      ownedToken=received;token=received;active=identity;activeEpoch=loginEpoch
-      return identity
+      const write:StorageWrite={token:received,generation:mine,epoch:loginEpoch}
+      writing=write
+      storageWrites.set(storage,write)
+      let committed=false
+      try{
+        storage.setItem(SESSION_KEY,received)
+        if(!current())return null
+        const saved=storage.getItem(SESSION_KEY)
+        if(!current() || saved!==received)return null
+        ownedToken=received;token=received;active=identity;activeEpoch=loginEpoch
+        committed=true
+        return identity
+      }finally{
+        // A canceled/failed write must never delete a replacement credential.
+        // Keep the lease until this synchronous cleanup has fully returned.
+        if(!committed){
+          try{clearStored(received,()=>storageWrites.get(storage)===write && epoch()===write.epoch)}
+          catch{try{console.warn('web session storage cleanup failed')}catch{/* preserve original result */}}
+        }
+        if(storageWrites.get(storage)===write)storageWrites.delete(storage)
+        if(writing===write)writing=null
+      }
     }catch(error){if(!current())return null;throw error}
     finally{release()}
   }
   async function logout():Promise<void>{
-    ++generation
+    // A login can be inside setItem: capture its verified, provisional token
+    // before invalidating the attempt, even if the write has not returned.
+    const old=writing?.generation===generation?writing.token:token||ownedToken
+    const mine=++generation,loginEpoch=epoch()
     const cancelPrevious=detachAttempt()
-    const old=token || ownedToken
     token=null;active=null;ownedToken=null
-    try{if(old && storage.getItem(SESSION_KEY)===old)storage.removeItem(SESSION_KEY)}
+    try{if(old)clearStored(old,()=>owns(mine,loginEpoch))}
     finally{cancelPrevious()}
     if(old)await request('/auth/logout','POST',{},old)
   }
@@ -182,5 +224,5 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     token=null;active=null;ownedToken=null
     cancelPrevious()
   }
-  return {register,login,restore,logout,dispose,get account(){return currentIdentity()?active:null},get authenticated(){return currentIdentity()}}
+  return {register,login,restore,logout,dispose,get account(){return currentIdentity()},get authenticated(){return currentIdentity()!==null}}
 }
