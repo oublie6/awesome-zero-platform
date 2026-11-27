@@ -1,0 +1,10 @@
+{
+  "cases": [],
+  "auth": {
+    "status": 200,
+    "compressed": false,
+    "noStore": true,
+    "identityMatches": true
+  },
+  "result": "PASS"
+}

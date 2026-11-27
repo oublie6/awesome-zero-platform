@@ -1,0 +1,356 @@
+{
+  "before": {
+    "rows": [
+      {
+        "iteration": 1,
+        "cache": "cold",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:19:14.595Z",
+            "path": "/auth/login",
+            "durationMs": 546,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:19:14.621Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:19:29.084Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:19:29.222Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 1,
+        "cache": "hot",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:19:30.821Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:19:39.520Z",
+            "path": "/auth/session",
+            "durationMs": 5,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:19:39.634Z",
+            "path": "/auth/session",
+            "durationMs": 5,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 2,
+        "cache": "cold",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:19:44.086Z",
+            "path": "/auth/login",
+            "durationMs": 517,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:19:44.118Z",
+            "path": "/auth/session",
+            "durationMs": 7,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:19:58.679Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:19:58.755Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 2,
+        "cache": "hot",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:19:59.799Z",
+            "path": "/auth/session",
+            "durationMs": 5,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:20:10.265Z",
+            "path": "/auth/session",
+            "durationMs": 16,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:20:10.359Z",
+            "path": "/auth/session",
+            "durationMs": 6,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 3,
+        "cache": "cold",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:20:14.960Z",
+            "path": "/auth/login",
+            "durationMs": 590,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:20:14.982Z",
+            "path": "/auth/session",
+            "durationMs": 5,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:20:29.929Z",
+            "path": "/auth/session",
+            "durationMs": 7,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:20:30.073Z",
+            "path": "/auth/session",
+            "durationMs": 10,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 3,
+        "cache": "hot",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:20:31.264Z",
+            "path": "/auth/session",
+            "durationMs": 6,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:20:38.618Z",
+            "path": "/auth/session",
+            "durationMs": 6,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:20:38.682Z",
+            "path": "/auth/session",
+            "durationMs": 7,
+            "statusCode": 200
+          }
+        ]
+      }
+    ],
+    "method": "Go access-log durationMs within browser timing windows; no request-ID correlation, other shared-origin traffic cannot be excluded",
+    "medians": {
+      "/auth/login": {
+        "count": 3,
+        "durationMs": 546
+      },
+      "/auth/session": {
+        "count": 18,
+        "durationMs": 5.0
+      }
+    }
+  },
+  "after": {
+    "rows": [
+      {
+        "iteration": 1,
+        "cache": "cold",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:30:09.412Z",
+            "path": "/auth/login",
+            "durationMs": 551,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:30:09.435Z",
+            "path": "/auth/session",
+            "durationMs": 7,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:30:25.280Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:30:25.390Z",
+            "path": "/auth/session",
+            "durationMs": 3,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 1,
+        "cache": "hot",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:30:26.031Z",
+            "path": "/auth/session",
+            "durationMs": 20,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:30:34.609Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:30:34.721Z",
+            "path": "/auth/session",
+            "durationMs": 9,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 2,
+        "cache": "cold",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:30:39.164Z",
+            "path": "/auth/login",
+            "durationMs": 508,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:30:39.185Z",
+            "path": "/auth/session",
+            "durationMs": 6,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:30:53.894Z",
+            "path": "/auth/session",
+            "durationMs": 7,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:30:53.980Z",
+            "path": "/auth/session",
+            "durationMs": 5,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 2,
+        "cache": "hot",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:30:54.863Z",
+            "path": "/auth/session",
+            "durationMs": 11,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:31:02.121Z",
+            "path": "/auth/session",
+            "durationMs": 8,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:31:02.198Z",
+            "path": "/auth/session",
+            "durationMs": 5,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 3,
+        "cache": "cold",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:31:06.209Z",
+            "path": "/auth/login",
+            "durationMs": 500,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:31:06.240Z",
+            "path": "/auth/session",
+            "durationMs": 5,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:31:20.305Z",
+            "path": "/auth/session",
+            "durationMs": 8,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:31:20.409Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          }
+        ]
+      },
+      {
+        "iteration": 3,
+        "cache": "hot",
+        "requests": [
+          {
+            "@timestamp": "2026-11-27T05:31:21.354Z",
+            "path": "/auth/session",
+            "durationMs": 4,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:31:29.157Z",
+            "path": "/auth/session",
+            "durationMs": 5,
+            "statusCode": 200
+          },
+          {
+            "@timestamp": "2026-11-27T05:31:29.247Z",
+            "path": "/auth/session",
+            "durationMs": 3,
+            "statusCode": 200
+          }
+        ]
+      }
+    ],
+    "method": "Go access-log durationMs within browser timing windows; no request-ID correlation, other shared-origin traffic cannot be excluded",
+    "medians": {
+      "/auth/login": {
+        "count": 3,
+        "durationMs": 508
+      },
+      "/auth/session": {
+        "count": 18,
+        "durationMs": 5.0
+      }
+    }
+  }
+}

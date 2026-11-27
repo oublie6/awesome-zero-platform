@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: packaging preserves originals, manifest/CSP/config and supports repeat/update
+ok 1 - packaging preserves originals, manifest/CSP/config and supports repeat/update
+  ---
+  duration_ms: 233.169964
+  type: 'test'
+  ...
+# Subtest: packaging refuses unowned output and overlapping or symlink-alias input/output
+ok 2 - packaging refuses unowned output and overlapping or symlink-alias input/output
+  ---
+  duration_ms: 7.181181
+  type: 'test'
+  ...
+# Subtest: level9 deterministic sidecars decode exactly, preserve originals and timestamps
+ok 3 - level9 deterministic sidecars decode exactly, preserve originals and timestamps
+  ---
+  duration_ms: 518.192615
+  type: 'test'
+  ...
+# Subtest: updated, removed, and no-longer-beneficial resources cannot retain stale gzip
+ok 4 - updated, removed, and no-longer-beneficial resources cannot retain stale gzip
+  ---
+  duration_ms: 162.354509
+  type: 'test'
+  ...
+# Subtest: tiny, already-compressed formats and incompressible content produce no sidecars
+ok 5 - tiny, already-compressed formats and incompressible content produce no sidecars
+  ---
+  duration_ms: 35.227627
+  type: 'test'
+  ...
+# Subtest: unowned gzip conflicts and malicious manifests fail without overwriting files
+ok 6 - unowned gzip conflicts and malicious manifests fail without overwriting files
+  ---
+  duration_ms: 7.335694
+  type: 'test'
+  ...
+# Subtest: symlink assets and symlinked public manifest destinations are rejected
+ok 7 - symlink assets and symlinked public manifest destinations are rejected
+  ---
+  duration_ms: 6.382117
+  type: 'test'
+  ...
+# Subtest: Cocos+Vue staging is same-origin and public config is identical
+ok 8 - Cocos+Vue staging is same-origin and public config is identical
+  ---
+  duration_ms: 28.431226
+  type: 'test'
+  ...
+# Subtest: staging rejects missing game exporter, symlinks and fake HTML
+ok 9 - staging rejects missing game exporter, symlinks and fake HTML
+  ---
+  duration_ms: 12.997054
+  type: 'test'
+  ...
+# Subtest: Goal0065 cache policy revalidates mutable game and excludes runtime/session data
+ok 10 - Goal0065 cache policy revalidates mutable game and excludes runtime/session data
+  ---
+  duration_ms: 1.661479
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 944.571339

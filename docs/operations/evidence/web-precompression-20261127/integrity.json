@@ -1,0 +1,37 @@
+{
+  "deploymentsPreservedExceptWebImage": true,
+  "servicesPreservedExceptWebImage": true,
+  "pvcPreservedExceptWebImage": true,
+  "configmapsPreservedExceptWebImage": true,
+  "statefulsetsPreservedExceptWebImage": true,
+  "pods": [
+    {
+      "name": "app-api-65f88d46cb-4d2gg",
+      "ready": true
+    },
+    {
+      "name": "beanstalkd-a-0",
+      "ready": true
+    },
+    {
+      "name": "beanstalkd-b-0",
+      "ready": true
+    },
+    {
+      "name": "game-web-7f869b45fd-qzz4x",
+      "ready": true
+    },
+    {
+      "name": "mysql-5cc48fd9b4-5hz6j",
+      "ready": true
+    },
+    {
+      "name": "redis-67bdd89687-krvb4",
+      "ready": true
+    }
+  ],
+  "apiAndDependencyPodsUnchanged": true,
+  "secretsUnchanged": true,
+  "unfinishedHands": 0,
+  "user29457Service": "active"
+}

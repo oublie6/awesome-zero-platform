@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "oldImage": "docker.io/awesome-zero-platform/goal0065-web@sha256:75ca57f31aecf11539876ee6166841c3ed883fe26bb524c1c0818750b43aa461",
+  "newImage": "docker.io/awesome-zero-platform/game-web-precompressed@sha256:5d600a065401d985679d1cbc6e42cfdda07a174422b3704e66211c14b2150c47",
+  "apiChanged": false,
+  "rollbackExecuted": false
+}

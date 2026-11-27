@@ -1,0 +1,11 @@
+{
+  "owner": "Reusable static Web packaging/deployment infrastructure",
+  "contract": "Deterministic level9 gzip sidecars for useful public resources, originals/manifest/CSP untouched, identity/q=0 fallback, static preferred and dynamic6 fallback",
+  "authority": "Go data and client business code unchanged; reuse accepted Vue/Cocos assets",
+  "dependencies": "Node built-in fs/zlib/crypto and pinned current Nginx with gzip_static",
+  "failure": "Reject symlinks/unsafe roots/conflicting sidecars; track generated ownership outside public root; regenerate every package; isolated nginx/HTTP tests before Web-only rollout; retain old image rollback",
+  "performance": "Streaming compression sequentially at package time; Nginx runtime static sends; before/after3 cold/hot browser pairs plus3 cc CPU samples, same origin and fixed network settings",
+  "security": "Only public static locations, no API/auth/WSS gzip, no credentials/keys in site or reports",
+  "migration": "Web image only; preserve API UID/config/schema/Secret/PVC and user29457",
+  "tests": "Determinism, stale cleanup/update, ownership, benefit threshold, symlinks, manifests, runtime negotiation/MIME/hash/CSP/cache304, browser stages and WebSocket"
+}

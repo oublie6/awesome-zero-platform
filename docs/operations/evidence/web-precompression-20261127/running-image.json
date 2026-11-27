@@ -1,0 +1,16 @@
+{
+  "image": "docker.io/awesome-zero-platform/game-web-precompressed@sha256:5d600a065401d985679d1cbc6e42cfdda07a174422b3704e66211c14b2150c47",
+  "imageID": "docker.io/awesome-zero-platform/game-web-precompressed@sha256:5d600a065401d985679d1cbc6e42cfdda07a174422b3704e66211c14b2150c47",
+  "pod": "game-web-7f869b45fd-qzz4x",
+  "ready": true,
+  "restarts": 0,
+  "originalsVerified": 30,
+  "sidecarsVerified": 15,
+  "packagingRevision": "91b180ecf1590dcf0c7f227984f1584f8d438e16",
+  "appRevision": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "beforeDockerExpandedBytes": 70663304,
+  "afterDockerExpandedBytes": 75112681,
+  "beforeLocalManifestLayerBytes": 72120320,
+  "afterLocalManifestLayerBytes": 76580352,
+  "layerSizeMeaning": "Locally imported Docker archives; not a measured remote registry transfer size"
+}

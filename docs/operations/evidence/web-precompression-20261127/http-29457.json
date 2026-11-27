@@ -1,0 +1,190 @@
+{
+  "port": 29457,
+  "entries": [
+    {
+      "path": "assets/index-D3BBqkGY.js",
+      "gzipBytes": 32664,
+      "originalBytes": 85157,
+      "mime": "application/javascript; charset=utf-8",
+      "cache": "public, max-age=31536000, immutable",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-7f98\""
+    },
+    {
+      "path": "assets/index-M5cYNUMW.css",
+      "gzipBytes": 3506,
+      "originalBytes": 11419,
+      "mime": "text/css",
+      "cache": "public, max-age=31536000, immutable",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-db2\""
+    },
+    {
+      "path": "game-web-assets.json",
+      "gzipBytes": 1764,
+      "originalBytes": 5060,
+      "mime": "application/json",
+      "cache": "no-store",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-6e4\""
+    },
+    {
+      "path": "game/application.js",
+      "gzipBytes": 506,
+      "originalBytes": 1269,
+      "mime": "application/javascript; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-1fa\""
+    },
+    {
+      "path": "game/assets/internal/config.json",
+      "gzipBytes": 1061,
+      "originalBytes": 2439,
+      "mime": "application/json",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-425\""
+    },
+    {
+      "path": "game/assets/internal/import/07/078d1fd7a.json",
+      "gzipBytes": 18785,
+      "originalBytes": 197930,
+      "mime": "application/json",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-4961\""
+    },
+    {
+      "path": "game/assets/internal/index.js",
+      "gzipBytes": 64782,
+      "originalBytes": 259686,
+      "mime": "application/javascript; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-fd0e\""
+    },
+    {
+      "path": "game/assets/main/import/e9/e9a5f2e4-6d64-4363-814e-dab771327440.json",
+      "gzipBytes": 625,
+      "originalBytes": 1350,
+      "mime": "application/json",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-271\""
+    },
+    {
+      "path": "game/assets/main/index.js",
+      "gzipBytes": 204224,
+      "originalBytes": 676467,
+      "mime": "application/javascript; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-31dc0\""
+    },
+    {
+      "path": "game/cocos-js/cc.js",
+      "gzipBytes": 3358403,
+      "originalBytes": 12622964,
+      "mime": "application/javascript; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-333ec3\""
+    },
+    {
+      "path": "game/index.html",
+      "gzipBytes": 4817,
+      "originalBytes": 14457,
+      "mime": "text/html; charset=utf-8",
+      "cache": "no-cache, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-12d1\""
+    },
+    {
+      "path": "game/src/chunks/bundle.js",
+      "gzipBytes": 564457,
+      "originalBytes": 1843720,
+      "mime": "application/javascript; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-89ce9\""
+    },
+    {
+      "path": "game/src/settings.json",
+      "gzipBytes": 151351,
+      "originalBytes": 206243,
+      "mime": "application/json",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-24f37\""
+    },
+    {
+      "path": "game/src/system.bundle.js",
+      "gzipBytes": 33169,
+      "originalBytes": 97282,
+      "mime": "application/javascript; charset=utf-8",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-8191\""
+    },
+    {
+      "path": "game/style.css",
+      "gzipBytes": 537,
+      "originalBytes": 1091,
+      "mime": "text/css",
+      "cache": "public, max-age=0, must-revalidate",
+      "staticFileExactMatch": true,
+      "etag": "\"6b08e262-219\""
+    }
+  ],
+  "negotiation": [
+    {
+      "acceptEncoding": "identity",
+      "status": 200,
+      "bytes": 12622964,
+      "compressed": false
+    },
+    {
+      "acceptEncoding": "gzip;q=0",
+      "status": 200,
+      "bytes": 12622964,
+      "compressed": false
+    },
+    {
+      "acceptEncoding": "gzip;q=0, br;q=1",
+      "status": 200,
+      "bytes": 12622964,
+      "compressed": false
+    },
+    {
+      "acceptEncoding": "*;q=0",
+      "status": 200,
+      "bytes": 12622964,
+      "compressed": false
+    }
+  ],
+  "cacheVariants": {
+    "gzip304": true,
+    "identity304": true,
+    "crossVariantETagsNotReused": true
+  },
+  "manifestAndHTML": [
+    {
+      "path": "game-web-assets.json",
+      "hashMatches": true,
+      "cache": "no-store"
+    },
+    {
+      "path": "game/index.html",
+      "hashMatches": true,
+      "cache": "no-cache, must-revalidate"
+    },
+    {
+      "path": "index.html",
+      "hashMatches": true,
+      "cache": "no-cache, must-revalidate"
+    }
+  ],
+  "proxyReadiness": 200,
+  "result": "PASS"
+}

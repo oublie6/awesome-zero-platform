@@ -1,0 +1,206 @@
+{
+  "phase": "after",
+  "environment": {
+    "viewport": "1280x900",
+    "latencyMs": 20,
+    "downloadBytesPerSecond": 1048576,
+    "uploadBytesPerSecond": 1048576,
+    "transport": "server-local HTTPS29457, CDP throttled, no SSH throughput claim"
+  },
+  "runs": [
+    {
+      "iteration": 1,
+      "cache": "cold",
+      "hostIdentityMs": 2498,
+      "enterToSceneMs": 15481.199951171875,
+      "enterToSessionMs": 15747,
+      "totalIdentityAndGameMs": 18245,
+      "ccDownloadMs": 4250.299999952316,
+      "ccDurationMs": 4254.199999928474,
+      "ccEncodedBytes": 3358403,
+      "ccDecodedBytes": 12622964,
+      "ccTransferBytes": 3358703,
+      "staticTransferBytes": 5322868,
+      "staticEncodedBodyBytes": 5315068,
+      "afterEngineDownloadToSceneMs": 10888.199951171875,
+      "websocketCount": 1,
+      "events": [
+        {
+          "type": "GAME_READY",
+          "at": 1795757425242.2
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795757425508
+        }
+      ]
+    },
+    {
+      "iteration": 1,
+      "cache": "hot",
+      "hostIdentityMs": 561,
+      "enterToSceneMs": 8231.199951171875,
+      "enterToSessionMs": 8452.89990234375,
+      "totalIdentityAndGameMs": 9013.89990234375,
+      "ccDownloadMs": 453.59999990463257,
+      "ccDurationMs": 455.2999999523163,
+      "ccEncodedBytes": 3358403,
+      "ccDecodedBytes": 12622964,
+      "ccTransferBytes": 300,
+      "staticTransferBytes": 7604,
+      "staticEncodedBodyBytes": 3578555,
+      "afterEngineDownloadToSceneMs": 7463.89990234375,
+      "websocketCount": 2,
+      "events": [
+        {
+          "type": "GAME_READY",
+          "at": 1795757434572.2
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795757434793.9
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "cache": "cold",
+      "hostIdentityMs": 2541,
+      "enterToSceneMs": 14360.099853515625,
+      "enterToSessionMs": 14716,
+      "totalIdentityAndGameMs": 17257,
+      "ccDownloadMs": 3939.8000000715256,
+      "ccDurationMs": 3948.8000000715256,
+      "ccEncodedBytes": 3358403,
+      "ccDecodedBytes": 12622964,
+      "ccTransferBytes": 3358703,
+      "staticTransferBytes": 5322868,
+      "staticEncodedBodyBytes": 5315068,
+      "afterEngineDownloadToSceneMs": 10064.39990234375,
+      "websocketCount": 1,
+      "events": [
+        {
+          "type": "GAME_READY",
+          "at": 1795757453864.0999
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795757454220
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "cache": "hot",
+      "hostIdentityMs": 801,
+      "enterToSceneMs": 6854.7001953125,
+      "enterToSessionMs": 7086,
+      "totalIdentityAndGameMs": 7887,
+      "ccDownloadMs": 506.5,
+      "ccDurationMs": 508.3000000715256,
+      "ccEncodedBytes": 3358403,
+      "ccDecodedBytes": 12622964,
+      "ccTransferBytes": 300,
+      "staticTransferBytes": 7604,
+      "staticEncodedBodyBytes": 3578555,
+      "afterEngineDownloadToSceneMs": 5816.400146484375,
+      "websocketCount": 2,
+      "events": [
+        {
+          "type": "GAME_READY",
+          "at": 1795757462088.7002
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795757462320
+        }
+      ]
+    },
+    {
+      "iteration": 3,
+      "cache": "cold",
+      "hostIdentityMs": 2730,
+      "enterToSceneMs": 13484.199951171875,
+      "enterToSessionMs": 13850.400146484375,
+      "totalIdentityAndGameMs": 16580.400146484375,
+      "ccDownloadMs": 3983.100000023842,
+      "ccDurationMs": 3985.2999999523163,
+      "ccEncodedBytes": 3358403,
+      "ccDecodedBytes": 12622964,
+      "ccTransferBytes": 3358703,
+      "staticTransferBytes": 5322868,
+      "staticEncodedBodyBytes": 5315068,
+      "afterEngineDownloadToSceneMs": 9250.699951171875,
+      "websocketCount": 1,
+      "events": [
+        {
+          "type": "GAME_READY",
+          "at": 1795757480124.2
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795757480490.4001
+        }
+      ]
+    },
+    {
+      "iteration": 3,
+      "cache": "hot",
+      "hostIdentityMs": 775,
+      "enterToSceneMs": 7482,
+      "enterToSessionMs": 7669.5,
+      "totalIdentityAndGameMs": 8444.5,
+      "ccDownloadMs": 353.39999997615814,
+      "ccDurationMs": 354.60000002384186,
+      "ccEncodedBytes": 3358403,
+      "ccDecodedBytes": 12622964,
+      "ccTransferBytes": 300,
+      "staticTransferBytes": 7604,
+      "staticEncodedBodyBytes": 3578555,
+      "afterEngineDownloadToSceneMs": 6693,
+      "websocketCount": 2,
+      "events": [
+        {
+          "type": "GAME_READY",
+          "at": 1795757489135
+        },
+        {
+          "type": "SESSION_ACTIVE",
+          "at": 1795757489322.5
+        }
+      ]
+    }
+  ],
+  "coldMedian": {
+    "iteration": 2,
+    "hostIdentityMs": 2541,
+    "enterToSceneMs": 14360.099853515625,
+    "enterToSessionMs": 14716,
+    "totalIdentityAndGameMs": 17257,
+    "ccDownloadMs": 3983.100000023842,
+    "ccDurationMs": 3985.2999999523163,
+    "ccEncodedBytes": 3358403,
+    "ccDecodedBytes": 12622964,
+    "ccTransferBytes": 3358703,
+    "staticTransferBytes": 5322868,
+    "staticEncodedBodyBytes": 5315068,
+    "afterEngineDownloadToSceneMs": 10064.39990234375,
+    "websocketCount": 1
+  },
+  "hotMedian": {
+    "iteration": 2,
+    "hostIdentityMs": 775,
+    "enterToSceneMs": 7482,
+    "enterToSessionMs": 7669.5,
+    "totalIdentityAndGameMs": 8444.5,
+    "ccDownloadMs": 453.59999990463257,
+    "ccDurationMs": 455.2999999523163,
+    "ccEncodedBytes": 3358403,
+    "ccDecodedBytes": 12622964,
+    "ccTransferBytes": 300,
+    "staticTransferBytes": 7604,
+    "staticEncodedBodyBytes": 3578555,
+    "afterEngineDownloadToSceneMs": 6693,
+    "websocketCount": 2
+  }
+}

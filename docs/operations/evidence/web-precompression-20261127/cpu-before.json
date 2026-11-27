@@ -1,0 +1,40 @@
+{
+  "phase": "before",
+  "pod": "game-web-787bcdbb65-rcq44",
+  "image": "docker.io/awesome-zero-platform/goal0065-web@sha256:75ca57f31aecf11539876ee6166841c3ed883fe26bb524c1c0818750b43aa461",
+  "samples": [
+    {
+      "bytes": 3375311,
+      "seconds": 2.538130791974254,
+      "encoding": "gzip",
+      "length": null,
+      "etag": "W/\"6b08e262-c09c74\"",
+      "mime": "application/javascript; charset=utf-8",
+      "vary": "Accept-Encoding",
+      "cache": "public, max-age=0, must-revalidate"
+    },
+    {
+      "bytes": 3375311,
+      "seconds": 2.10075267101638,
+      "encoding": "gzip",
+      "length": null,
+      "etag": "W/\"6b08e262-c09c74\"",
+      "mime": "application/javascript; charset=utf-8",
+      "vary": "Accept-Encoding",
+      "cache": "public, max-age=0, must-revalidate"
+    },
+    {
+      "bytes": 3375311,
+      "seconds": 2.254802859039046,
+      "encoding": "gzip",
+      "length": null,
+      "etag": "W/\"6b08e262-c09c74\"",
+      "mime": "application/javascript; charset=utf-8",
+      "vary": "Accept-Encoding",
+      "cache": "public, max-age=0, must-revalidate"
+    }
+  ],
+  "nginxCPUSeconds": 3.455468,
+  "throttledPeriods": 68,
+  "scope": "Container cgroup includes all Nginx workers during three sequential cc gzip HTTP requests; shared test host background traffic may affect counts"
+}
