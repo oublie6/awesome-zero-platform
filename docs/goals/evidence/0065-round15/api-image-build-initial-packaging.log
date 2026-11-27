@@ -1,0 +1,18 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 297B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/sha256:4748dd85707ac7deeae073a27ed38953a830c81406fd05c0c95b4233cfa29a8e
+#2 ERROR: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+------
+ > [internal] load metadata for docker.io/library/sha256:4748dd85707ac7deeae073a27ed38953a830c81406fd05c0c95b4233cfa29a8e:
+------
+Dockerfile:1
+--------------------
+   1 | >>> FROM sha256:4748dd85707ac7deeae073a27ed38953a830c81406fd05c0c95b4233cfa29a8e
+   2 |     COPY app-api /app/app-api
+   3 |     LABEL org.opencontainers.image.revision="efc0699b0d62ae1284db86121619a746ce4f37ba" org.awesome-zero.server-tree="a8f14fec9d7703c0fe68ac286bbd4aa9081fefbe"
+--------------------
+ERROR: failed to build: failed to solve: sha256:4748dd85707ac7deeae073a27ed38953a830c81406fd05c0c95b4233cfa29a8e: failed to resolve source metadata for docker.io/library/sha256:4748dd85707ac7deeae073a27ed38953a830c81406fd05c0c95b4233cfa29a8e: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed

@@ -1,0 +1,7 @@
+{
+  "result": "FAIL",
+  "source": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "failureType": "HTTPError",
+  "failure": "HTTP Error 502: Bad Gateway",
+  "rollbackAttempted": true
+}

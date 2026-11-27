@@ -1,0 +1,12 @@
+[
+  {
+    "name": "smoke.cjs",
+    "exit": 0,
+    "seconds": 30.002
+  },
+  {
+    "name": "cache-smoke.cjs",
+    "exit": 0,
+    "seconds": 0.894
+  }
+]

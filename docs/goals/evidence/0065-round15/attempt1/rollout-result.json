@@ -1,0 +1,7 @@
+{
+  "result": "FAIL",
+  "source": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "failureType": "CalledProcessError",
+  "failure": "Command '['kubectl', '--context', 'kubernetes-admin@network-learning', '-n', 'awesome-zero-game-test', 'rollout', 'status', 'deployment/app-api', '--timeout=120s']' returned non-zero exit status 1.",
+  "rollbackAttempted": true
+}

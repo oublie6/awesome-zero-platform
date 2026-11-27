@@ -1,0 +1,77 @@
+{
+  "deploymentsPreservedExceptAuthorizedImages": true,
+  "servicesPreservedExceptAuthorizedImages": true,
+  "pvcPreservedExceptAuthorizedImages": true,
+  "configmapsPreservedExceptAuthorizedImages": true,
+  "statefulsetsPreservedExceptAuthorizedImages": true,
+  "secretValuesUnchanged": true,
+  "pods": [
+    {
+      "name": "app-api-65f88d46cb-4d2gg",
+      "ready": true,
+      "restarts": [
+        0
+      ],
+      "images": [
+        "docker.io/awesome-zero-platform/goal0065-api@sha256:78083cc8ede1b176b179de55e7bdde7680714cd76fc131c83430a6c5a2d82dd6"
+      ]
+    },
+    {
+      "name": "beanstalkd-a-0",
+      "ready": true,
+      "restarts": [
+        0
+      ],
+      "images": [
+        "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+      ]
+    },
+    {
+      "name": "beanstalkd-b-0",
+      "ready": true,
+      "restarts": [
+        0
+      ],
+      "images": [
+        "docker.io/awesome-zero-platform/goal0063-beanstalk@sha256:77b1bfeb33adf4f591f50e090be8ab56441ac3f7f6ed25aa6986d6a0dc3092fe"
+      ]
+    },
+    {
+      "name": "game-web-58d7c857b6-xz8ks",
+      "ready": true,
+      "restarts": [
+        0
+      ],
+      "images": [
+        "docker.io/awesome-zero-platform/goal0065-web@sha256:af8fdd096931c95f72ddc126521242607e4e5b90a6ee9b63cbf233d78105e5d9"
+      ]
+    },
+    {
+      "name": "mysql-5cc48fd9b4-5hz6j",
+      "ready": true,
+      "restarts": [
+        2
+      ],
+      "images": [
+        "docker.io/library/mysql@sha256:0b14b8e5c533fb43d07327fa8fe6c7393358002310d9f0d01976d387822a1bd3"
+      ]
+    },
+    {
+      "name": "redis-67bdd89687-krvb4",
+      "ready": true,
+      "restarts": [
+        2
+      ],
+      "images": [
+        "docker.io/library/redis@sha256:961f172bb2427dc11746904b17d853e59ee654b991343ea3955342b65157c907"
+      ]
+    }
+  ],
+  "dependencyPodUIDsAndRestartsUnchanged": true,
+  "schemaUnchanged": true,
+  "handPhases": "ABORTED\t14\nCOMPLETED\t11\n",
+  "unfinishedHands": 0,
+  "deadlines": 0,
+  "nodesReady": true,
+  "user29457Service": "active"
+}

@@ -1,0 +1,18 @@
+{
+  "api": {
+    "tag": "docker.io/awesome-zero-platform/goal0065-api:efc0699-runtime",
+    "image": "docker.io/awesome-zero-platform/goal0065-api@sha256:78083cc8ede1b176b179de55e7bdde7680714cd76fc131c83430a6c5a2d82dd6",
+    "digest": "sha256:78083cc8ede1b176b179de55e7bdde7680714cd76fc131c83430a6c5a2d82dd6",
+    "configID": "sha256:f09bdd9796255f2c2516940dbb26422c7b85fca4e41d3a5ea7eeed798fb15e99",
+    "revision": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+    "localImportOnly": true
+  },
+  "web": {
+    "tag": "docker.io/awesome-zero-platform/goal0065-web:efc0699",
+    "image": "docker.io/awesome-zero-platform/goal0065-web@sha256:af8fdd096931c95f72ddc126521242607e4e5b90a6ee9b63cbf233d78105e5d9",
+    "digest": "sha256:af8fdd096931c95f72ddc126521242607e4e5b90a6ee9b63cbf233d78105e5d9",
+    "configID": "sha256:35c68a798d9e59200d8c9f5672a852057e015a14053948da3075331b830c8727",
+    "revision": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+    "localImportOnly": true
+  }
+}

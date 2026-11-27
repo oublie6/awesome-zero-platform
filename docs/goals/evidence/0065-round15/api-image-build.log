@@ -1,0 +1,21 @@
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            BuildKit is currently disabled; enable it by removing the DOCKER_BUILDKIT=0
+            environment-variable.
+
+Sending build context to Docker daemon  43.42MB
+
+Step 1/5 : FROM awesome-zero-platform/goal0063-api:9581630
+ ---> 4748dd85707a
+Step 2/5 : COPY app-api /app/app-api
+ ---> Using cache
+ ---> dacb9e22fcda
+Step 3/5 : COPY runtime/lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
+ ---> 36ced6e616a0
+Step 4/5 : COPY runtime/lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+ ---> 753450370eea
+Step 5/5 : LABEL org.opencontainers.image.revision="efc0699b0d62ae1284db86121619a746ce4f37ba" org.awesome-zero.server-tree="a8f14fec9d7703c0fe68ac286bbd4aa9081fefbe"
+ ---> Running in cb33bb9def31
+ ---> Removed intermediate container cb33bb9def31
+ ---> f09bdd979625
+Successfully built f09bdd979625
+Successfully tagged awesome-zero-platform/goal0065-api:efc0699-runtime

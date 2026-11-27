@@ -1,0 +1,7 @@
+{
+  "secondAttempt": "API Pod ready, old Web upstream GET/auth/session502; inverse rollback PASS",
+  "observedUpstream": "connection refused to same unchanged API ClusterIP immediately after readiness",
+  "correction": "Wait for actual proxied Go /health/ready ready JSON with bounded retry, instead of static Web /health200",
+  "productCodeChanged": false,
+  "imageRebuiltForThisCorrection": false
+}

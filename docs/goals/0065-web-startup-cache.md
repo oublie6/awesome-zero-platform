@@ -1,6 +1,6 @@
 # Goal0065 — Cocos Web 启动反馈与静态资源缓存
 
-Status: **in_progress** — ChatGPT 开发提交；待固定源码 CI 与 Codex 独立实测。
+Status: **completed** — 2026-11-27，固定候选 `efc0699b0d62ae1284db86121619a746ce4f37ba` 经 Codex Round15 独立验收与测试集群 API→Web 部署通过；[验收及部署证据](0065-round15-independent-acceptance.md)。Goal0045/0046 状态不变，历史 FAIL 和未属本 Goal 的平台资格边界保留。
 
 ## 现状与问题
 
@@ -133,3 +133,7 @@ Owner: Vue WebAuth and its synchronous StoragePort; Go remains the identity auth
 ### Round 14 follow-up: independent storage cleanup and logout result (development)
 
 Owner: Vue WebAuth and App presentation. Keep current storage key, lease/epoch and Go identity authority. Use one nonthrowing, static-diagnostic cleanup boundary for all compare/remove calls and isolated cancellation/request-finally steps. Failed restore continues to return null after verification failure; initial storage read and actual login/storage write failures retain their existing error contract. Captured-token logout must attempt server revocation independently of local cleanup, and only a successful Go `loggedOut: true` response confirms revocation. Return a local cleanup failure flag on successful logout; App distinguishes confirmed revocation with uncertain local removal from unconfirmed revocation, without claiming physical deletion or retrying another identity. No extra normal-path HTTP, new storage keys, backend/Cocos changes or migration. If deletion is rejected, a retained revoked credential must fail subsequent server validation, including refresh; if revocation fails, explicitly report uncertainty. Tests cover cleanup get/remove-before/remove-after, diagnostic/cancellation failures, original server result, retained credential restore and replacement isolation. CI/independent acceptance remain mandatory, with ordinary Web rollback.
+
+## Round 15 acceptance and test deployment — completed
+
+固定产品 efc0699 的适用 CI、Vue40测试/类型/正式构建、原26清理故障及12关联异常、实际注销401与持续删除失败下刷新恢复全部通过。按授权复用源/哈希一致的官方Cocos与API以及既有完整局/恢复/性能证据；未重建Go/Cocos或重复300秒牌局。最终测试集群API镜像78083cc8…、Web镜像af8fdd09…按API→Web上线，运行身份/文件和实际业务/缓存通过。此前两次部署失败均逆序回滚，运行库打包与真实代理健康门禁修正见[Round15完整报告](0065-round15-independent-acceptance.md)。本轮验收未修改仓库产品代码、schema、Secret、PVC或其他基础设施；用户29457保留，自有资源和临时CA清理。Goal0065完成，不扩展为Goal0045/0046或移动平台资格完成。

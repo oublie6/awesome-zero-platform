@@ -1,0 +1,107 @@
+{
+  "source": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "scope": "Actual production WebAuth; controlled storage, HTTP/native cancellation/cleanup ports; no spontaneous native fault claim",
+  "cases": [
+    {
+      "name": "get cleanup plus diagnostic throw preserves confirmed",
+      "warnings": [
+        [
+          "web session storage cleanup failed"
+        ]
+      ],
+      "revokedCredential": "old",
+      "confirmed": true,
+      "pass": true
+    },
+    {
+      "name": "get cleanup plus diagnostic throw preserves throw",
+      "warnings": [
+        [
+          "web session storage cleanup failed"
+        ]
+      ],
+      "revokedCredential": "old",
+      "confirmed": false,
+      "pass": true
+    },
+    {
+      "name": "get cleanup plus diagnostic throw preserves unconfirmed",
+      "warnings": [
+        [
+          "web session storage cleanup failed"
+        ]
+      ],
+      "revokedCredential": "old",
+      "confirmed": false,
+      "pass": true
+    },
+    {
+      "name": "remove cleanup plus diagnostic throw preserves confirmed",
+      "warnings": [
+        [
+          "web session storage cleanup failed"
+        ]
+      ],
+      "revokedCredential": "old",
+      "confirmed": true,
+      "pass": true
+    },
+    {
+      "name": "remove cleanup plus diagnostic throw preserves throw",
+      "warnings": [
+        [
+          "web session storage cleanup failed"
+        ]
+      ],
+      "revokedCredential": "old",
+      "confirmed": false,
+      "pass": true
+    },
+    {
+      "name": "remove cleanup plus diagnostic throw preserves unconfirmed",
+      "warnings": [
+        [
+          "web session storage cleanup failed"
+        ]
+      ],
+      "revokedCredential": "old",
+      "confirmed": false,
+      "pass": true
+    },
+    {
+      "name": "HTTP timer/off/diagnostic exceptions preserve success",
+      "clears": 2,
+      "offs": 2,
+      "preserved": true,
+      "pass": true
+    },
+    {
+      "name": "HTTP timer/off/diagnostic exceptions preserve business-error",
+      "clears": 1,
+      "offs": 1,
+      "preserved": true,
+      "pass": true
+    },
+    {
+      "name": "failed cancellation steps remain independent and stale exchange cannot commit",
+      "abortAttempts": 3,
+      "stored": "new",
+      "staleResult": null,
+      "pass": true
+    },
+    {
+      "name": "listener removal reentry starts latest login, old result cannot dispatch validation",
+      "pass": true
+    },
+    {
+      "name": "cleanup diagnostic reentry keeps replacement identity and revokes only old",
+      "pass": true
+    },
+    {
+      "name": "partial write plus compensation/diagnostic failure preserves original write error and releases lease",
+      "pass": true
+    }
+  ],
+  "pass": 12,
+  "fail": 0
+}

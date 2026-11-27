@@ -1,0 +1,7 @@
+{
+  "image": "docker.io/awesome-zero-platform/goal0065-api@sha256:78083cc8ede1b176b179de55e7bdde7680714cd76fc131c83430a6c5a2d82dd6",
+  "readyHTTP": 200,
+  "nonroot": true,
+  "binarySHA256": "dc50adc3bdc3fabe04b64e0a66f417df44a1fb56fc35a2f3f225e9cdb714c000",
+  "sameIsolatedDatabaseConfigAndDependencies": true
+}

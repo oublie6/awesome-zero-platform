@@ -1,0 +1,17 @@
+{
+  "source": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "sourceRuntime": "PASS",
+  "unfinishedHands": 0,
+  "deadlines": 0,
+  "rollbackImages": {
+    "app-api": "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f",
+    "game-web": "docker.io/awesome-zero-platform/goal0064-web@sha256:44995360be6e91a0e7e1c355db4e8e9027633d1fc4d9eb59b15b110990af0a0f"
+  },
+  "rollbackImagesPresent": true,
+  "backupBytes": 2950222,
+  "backupSHA256": "d5a20c6f6ebce0c8663176602331ffd9bada5946ef6aeab2de6c8e9ec3a36513",
+  "schemaSHA256": "52b73d6d06a88b2a8741ccfe22fd20a30330739746c462089a2d1586811f1710",
+  "restoreEvidenceReused": "Round9-14 unchanged schema and API binary; no DDL/data migration",
+  "permittedMutation": "Only app-api then game-web container image; inverse rollback",
+  "candidateSourceClean": true
+}

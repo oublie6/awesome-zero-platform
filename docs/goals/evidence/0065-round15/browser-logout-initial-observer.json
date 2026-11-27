@@ -1,0 +1,29 @@
+{
+  "source": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "scope": "Actual candidate Vue and matching real API; deliberate persistent native storage deletion fault, controlled failed/uncertain logout responses",
+  "cases": [
+    {
+      "name": "confirmed",
+      "pass": false,
+      "error": "page.reload: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for navigation until \"networkidle\"\u001b[22m\n\u001b[2m    - navigated to \"https://127.0.0.1:30471/\"\u001b[22m\n"
+    },
+    {
+      "name": "server-failure",
+      "logoutRequests": 1,
+      "notice": "当前页面已退出，服务端注销状态未确认，浏览器可能仍保留凭据。",
+      "oldCredentialHTTP": 200,
+      "retained": true,
+      "pass": true
+    },
+    {
+      "name": "unconfirmed",
+      "logoutRequests": 1,
+      "notice": "当前页面已退出，服务端注销状态未确认，浏览器可能仍保留凭据。",
+      "oldCredentialHTTP": 200,
+      "retained": true,
+      "pass": true
+    }
+  ],
+  "pass": 2,
+  "fail": 1
+}

@@ -1,0 +1,21 @@
+{
+  "source": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "scope": "Actual candidate Vue and matching real API; deliberate persistent native storage deletion fault, controlled failed/uncertain logout responses",
+  "cases": [
+    {
+      "name": "confirmed",
+      "logoutRequests": 1,
+      "notice": "服务端已注销，但浏览器本地凭据清理未能确认。",
+      "oldCredentialHTTP": 401,
+      "retained": true,
+      "refreshSessionHTTP": 401,
+      "refreshSettledLoggedOut": true,
+      "refreshDeniedWithPersistentDeletionFault": true,
+      "invalidCredentialRemovedAfterStorageRestored": true,
+      "normalStorageAndFreshLogin": true,
+      "pass": true
+    }
+  ],
+  "pass": 1,
+  "fail": 0
+}

@@ -1,0 +1,6 @@
+{
+  "accountsCreatedThroughPublicRegistration": 2,
+  "historicalQARecoverableRoomsPreserved": true,
+  "historicalAccountsChanged": false,
+  "purpose": "Post-deployment owned room and account-switch smoke"
+}

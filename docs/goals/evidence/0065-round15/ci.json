@@ -1,0 +1,91 @@
+{
+  "source": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "workflows": [
+    {
+      "name": "Fair Doudizhu Vue3 Web",
+      "id": 45923418552,
+      "sha": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45923418552",
+      "jobs": [
+        {
+          "name": "vue_build",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Fair Doudizhu",
+      "id": 45923418549,
+      "sha": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45923418549",
+      "jobs": [
+        {
+          "name": "manifest_client",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "application",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "client_foundation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "mysql_integration",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "CI",
+      "id": 45923418533,
+      "sha": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45923418533",
+      "jobs": [
+        {
+          "name": "secure_envelope",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "unit",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "admin_web",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "runtime",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "report",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "cocosReusedFromRound13": true
+}

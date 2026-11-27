@@ -1,0 +1,11 @@
+{
+  "user29457HTTPSHealth": 200,
+  "deployedAPIReadiness": 200,
+  "ownedPortsClosed": {
+    "18870": true,
+    "19181": true,
+    "30471": true
+  },
+  "temporaryCAListRestored": true,
+  "userForwardService": "active"
+}

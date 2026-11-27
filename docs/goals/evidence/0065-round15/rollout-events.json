@@ -1,0 +1,22 @@
+[
+  {
+    "event": "no unfinished hands/deadlines; API cutover begins",
+    "utc": "2026-11-27T02:04:06Z"
+  },
+  {
+    "event": "API rollout ready before Web update",
+    "utc": "2026-11-27T02:04:21Z"
+  },
+  {
+    "event": "Web rollout ready; user forwarding healthy",
+    "utc": "2026-11-27T02:04:31Z"
+  },
+  {
+    "event": "Deployed login/load/create/reconnect/leave/logout/switch/cache PASS",
+    "utc": "2026-11-27T02:05:03Z"
+  },
+  {
+    "event": "Running image/binary/site identity PASS",
+    "utc": "2026-11-27T02:05:07Z"
+  }
+]

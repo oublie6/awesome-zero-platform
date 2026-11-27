@@ -1,0 +1,28 @@
+{
+  "source": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "vueTests": {
+    "pass": 40,
+    "fail": 0,
+    "skipped": 0,
+    "newGroups": 7
+  },
+  "vueCommand": "npm test; npm run build (vue-tsc --noEmit + Vite)",
+  "original26": {
+    "pass": 26,
+    "fail": 0
+  },
+  "priorFiveOwnershipCases": {
+    "pass": 5,
+    "fail": 0
+  },
+  "adjacentExceptions": {
+    "pass": 12,
+    "fail": 0
+  },
+  "browserControl": "Confirmed real revocation/refresh1PASS; controlled503 and unconfirmed-response2PASS; initial networkidle observer failure retained",
+  "deployedCriticalRefresh": "Real /auth/session401 observed on reload, hero visible only after initialize finishes; persistent deletion fault remains unauthenticated; normal cleanup/login restored",
+  "officialCocosExports": 0,
+  "goBuilds": 0,
+  "vueBuilds": 1,
+  "finalDeployment": "PASS after two inverse rollbacks and packaging/health-gate corrections"
+}

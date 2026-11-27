@@ -1,0 +1,14 @@
+[
+  {
+    "event": "no unfinished hands/deadlines; API cutover begins",
+    "utc": "2026-11-27T02:01:51Z"
+  },
+  {
+    "event": "API rollout ready before Web update",
+    "utc": "2026-11-27T02:02:04Z"
+  },
+  {
+    "event": "Deployment verification failed; inverse rollback begins",
+    "utc": "2026-11-27T02:02:05Z"
+  }
+]

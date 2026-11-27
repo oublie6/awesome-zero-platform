@@ -1,0 +1,11 @@
+{
+  "firstRollout": "FAIL, original images restored Web then API",
+  "cause": "Accepted host binary is dynamically linked; static base lacks ELF interpreter",
+  "binarySHA256": "dc50adc3bdc3fabe04b64e0a66f417df44a1fb56fc35a2f3f225e9cdb714c000",
+  "solution": "Package exact host-validated loader and libc, retain verified original base/config; no Go rebuild or product source changes",
+  "nativeLibrariesSHA256": {
+    "lib/x86_64-linux-gnu/libc.so.6": "4ebb1967c395ca547dcfeaeeab7a2819724604a331aede44e8a749a7e1a4628e",
+    "lib64/ld-linux-x86-64.so.2": "a87fec14aeedb537d0b2a80c6a3308b82e774d86541dff4654a75ab1fd22df0a"
+  },
+  "libcPackageVersion": "2.35-0ubuntu3.18"
+}

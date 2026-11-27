@@ -1,0 +1,24 @@
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            BuildKit is currently disabled; enable it by removing the DOCKER_BUILDKIT=0
+            environment-variable.
+
+Sending build context to Docker daemon  16.95MB
+
+Step 1/6 : FROM nginxinc/nginx-unprivileged@sha256:a6c4f61f456b85b8fdf7ec7ab28cc3e299440e6fb4a9dea520e5fd8fd440025e
+ ---> 83e068167cea
+Step 2/6 : COPY nginx.conf /etc/nginx/conf.d/default.conf
+ ---> ef2371d471da
+Step 3/6 : COPY cache.conf /etc/nginx/conf.d/00-cache.conf
+ ---> 086eb622a2e4
+Step 4/6 : COPY site /usr/share/nginx/html
+ ---> 8673cbb5ed2a
+Step 5/6 : LABEL org.opencontainers.image.revision="efc0699b0d62ae1284db86121619a746ce4f37ba" org.awesome-zero.cocos-source="eda1a70b1ec504d6588d79203c50d9a08416bd8c"
+ ---> Running in d3a83416c45b
+ ---> Removed intermediate container d3a83416c45b
+ ---> 8176ee8c3fc1
+Step 6/6 : EXPOSE 8443
+ ---> Running in f345a78e4d1c
+ ---> Removed intermediate container f345a78e4d1c
+ ---> 35c68a798d9e
+Successfully built 35c68a798d9e
+Successfully tagged awesome-zero-platform/goal0065-web:efc0699

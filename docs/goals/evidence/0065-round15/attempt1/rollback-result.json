@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "restored": {
+    "app-api": "docker.io/awesome-zero-platform/goal0063-api@sha256:04614d0bc04c1fe37d2cb4467be23fec728cb0b1cfb63c26b1cd3746943ec82f",
+    "game-web": "docker.io/awesome-zero-platform/goal0064-web@sha256:44995360be6e91a0e7e1c355db4e8e9027633d1fc4d9eb59b15b110990af0a0f"
+  },
+  "order": [
+    "game-web",
+    "app-api"
+  ]
+}
