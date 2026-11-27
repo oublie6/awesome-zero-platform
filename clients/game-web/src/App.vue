@@ -206,8 +206,11 @@ async function logout(){
   page.value='home'
   account.value=null
   password.value=''
-  try{await client?.logout()}
-  catch{error.value='已清理浏览器会话，但服务端注销状态需要确认'}
+  try{
+    const result=await client?.logout()
+    if(result?.storageCleanupFailed)
+      error.value='服务端已注销，但浏览器本地凭据清理未能确认。'
+  }catch{error.value='当前页面已退出，服务端注销状态未确认，浏览器可能仍保留凭据。'}
   finally{busy.value=false}
 }
 function openGame(){

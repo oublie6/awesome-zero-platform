@@ -107,3 +107,13 @@ test('G65 R10: unmount releases pending Web identity work without clearing a rep
  const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
  assert.match(source,/onUnmounted\(\(\)=>\{[\s\S]*?\(\)=>client\?\.dispose\(\)/)
 })
+
+test('G65 R14: Vue logout distinguishes confirmed server revocation from uncertain browser cleanup',async()=>{
+ const source=await readFile(new URL('../src/App.vue',import.meta.url),'utf8')
+ const logout=source.split('async function logout(){')[1].split('function openGame(){')[0]
+ assert.match(logout,/result\?\.storageCleanupFailed/)
+ assert.match(logout,/服务端已注销，但浏览器本地凭据清理未能确认/)
+ assert.match(logout,/服务端注销状态未确认，浏览器可能仍保留凭据/)
+ assert.doesNotMatch(logout,/已清理浏览器会话/)
+ assert.ok(logout.indexOf('account.value=null')<logout.indexOf('await client?.logout()'))
+})

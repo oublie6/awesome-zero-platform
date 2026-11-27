@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-27 ChatGPT **Goal0065 Round14 清理异常隔离修复 — 待 CI / 独立验收**：统一 Vue 存储清理异常边界，服务端注销独立执行，恢复失败保留 null，界面区分注销确认与本地清理不确定；不改 Cocos、Go、协议或部署。
+
 - 2026-11-27 Codex **Goal0065 Round14 independent storage ownership acceptance — FAIL**, fixed product `747597181a8497547e4c3b591e73efcd84d1c5e1`: three applicable CI workflows SUCCESS, Cocos source/contract unchanged and Round13 official export/API reused by hash. Original five R13 counterexamples PASS; Vue33 tests including eight new groups/25 branches and build/types PASS. Independent storage matrix20PASS/6FAIL exposes one P3: cleanup get/remove errors skip captured-token server logout and replace restore null with cleanup error; actual built Vue plus real API confirms logout0/old credential200 under injected remove fault. Normal business smoke, shared-session replacement/remount, invalid credential, cache and iframe reuse PASS. No product fix or conditional deployment; Goal0065 remains in_progress, Goal0045/0046 unchanged. Six Ready Pods/unfinished0 and user29457 preserved, owned resources/temporary CA cleaned. [Round14 report](0065-round14-independent-acceptance.md).
 
 - 2026-11-26 ChatGPT **Goal0065 Round13 Vue 存储重入修复 — 待 CI / 独立验收**：存储读写边界复核本地代次及共享 epoch，未提交凭据所有权及注销补偿，getter/restore/logout 定向回归；不改 Cocos、Go、协议或部署。

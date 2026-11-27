@@ -68,17 +68,32 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
   let writing:StorageWrite|null=null
   const epoch=()=>loginEpochs.get(storage)??0
   const owns=(mine:number,expectedEpoch:number)=>generation===mine && epoch()===expectedEpoch
+  // Cleanup is diagnostic, not a business outcome. Never log raw adapter
+  // errors (they may contain credentials), and isolate diagnostics too.
+  function cleanup(step:()=>void,message:string):boolean{
+    try{step();return true}
+    catch{
+      try{console.warn(message)}catch{/* diagnostic cannot replace business result */}
+      return false
+    }
+  }
   // A read may synchronously start another identity operation. Only act on
   // its result if the same caller still owns the decision after it returns.
-  function clearStored(expected:string,current:()=>boolean):void{
-    if(!current())return
-    const saved=storage.getItem(SESSION_KEY)
-    if(current() && saved===expected)storage.removeItem(SESSION_KEY)
+  // True means no cleanup error, not proof that an unrelated token was removed.
+  function clearStored(expected:string,current:()=>boolean):boolean{
+    return cleanup(()=>{
+      if(!current())return
+      const saved=storage.getItem(SESSION_KEY)
+      if(current() && saved===expected)storage.removeItem(SESSION_KEY)
+    },'web session storage cleanup failed')
   }
   function detachAttempt(){
     const login=pendingLogin,request=pendingRequest
     pendingLogin=null;pendingRequest=null
-    return ()=>{login?.cancel();request?.abort()}
+    return ()=>{
+      cleanup(()=>login?.cancel(),'web session cancellation failed')
+      cleanup(()=>request?.abort(),'web request cancellation failed')
+    }
   }
   function currentIdentity():UserAccount|null{
     const mine=generation,expectedEpoch=activeEpoch,expected=token,identity=active
@@ -107,7 +122,10 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
       }
       // Keep the same deadline through body consumption, not only headers.
       return await response.json()
-    }finally{clearTimeout(timeout);owner?.removeEventListener('abort',cancel)}
+    }finally{
+      cleanup(()=>clearTimeout(timeout),'web request timer cleanup failed')
+      cleanup(()=>owner?.removeEventListener('abort',cancel),'web request listener cleanup failed')
+    }
   }
   async function validate(accessToken:string,owner?:AbortSignal):Promise<UserAccount>{
     const data=validatedData(await request('/auth/session','GET',undefined,accessToken,owner))
@@ -175,7 +193,7 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
     const current=()=>generation===mine && loginEpochs.get(storage)===loginEpoch && !requestOwner.signal.aborted
     try{
       cancelPrevious()
-      sharedPrevious?.cancel()
+      cleanup(()=>sharedPrevious?.cancel(),'web session cancellation failed')
       if(!current())return null
       const reply=await request('/auth/login','POST',{identifier:username,password},undefined,requestOwner.signal)
       if(!current())return null
@@ -197,26 +215,29 @@ export function createWebAuth(config:PublicConfig,fetcher:Fetcher,storage:Storag
       }finally{
         // A canceled/failed write must never delete a replacement credential.
         // Keep the lease until this synchronous cleanup has fully returned.
-        if(!committed){
-          try{clearStored(received,()=>storageWrites.get(storage)===write && epoch()===write.epoch)}
-          catch{try{console.warn('web session storage cleanup failed')}catch{/* preserve original result */}}
-        }
+        if(!committed)clearStored(received,()=>storageWrites.get(storage)===write && epoch()===write.epoch)
         if(storageWrites.get(storage)===write)storageWrites.delete(storage)
         if(writing===write)writing=null
       }
     }catch(error){if(!current())return null;throw error}
     finally{release()}
   }
-  async function logout():Promise<void>{
+  async function logout():Promise<{storageCleanupFailed:boolean}>{
     // A login can be inside setItem: capture its verified, provisional token
     // before invalidating the attempt, even if the write has not returned.
     const old=writing?.generation===generation?writing.token:token||ownedToken
     const mine=++generation,loginEpoch=epoch()
     const cancelPrevious=detachAttempt()
     token=null;active=null;ownedToken=null
-    try{if(old)clearStored(old,()=>owns(mine,loginEpoch))}
-    finally{cancelPrevious()}
-    if(old)await request('/auth/logout','POST',{},old)
+    const storageCleanupFailed=old!==null && !clearStored(old,()=>owns(mine,loginEpoch))
+    cancelPrevious()
+    // Storage or cancellation failure cannot skip revocation of the captured
+    // credential. Preserve real server errors, never revoke a replacement.
+    if(old){
+      const result=validatedData(await request('/auth/logout','POST',{},old))
+      if(!record(result) || result.loggedOut!==true)throw Error('服务端注销状态未确认')
+    }
+    return {storageCleanupFailed}
   }
   function dispose(){
     ++generation

@@ -403,3 +403,128 @@ test('G65 R13: storage write failure preserves original error and clears partial
  assert.equal(s.getItem(SESSION_KEY),null);assert.equal(a.authenticated,false)
  assert.equal((await a.login('new','password')).id,'new')
 })
+
+function cleanupFaultFixture(where){
+ const s=storage(),calls=[],diagnostics=[]
+ const state={fault:null,revoked:new Set(),logoutError:null,logoutReply:null}
+ const port={
+  getItem(key){if(state.fault?.where==='get')throw state.fault.error;return s.getItem(key)},
+  setItem:s.setItem,
+  removeItem(key){
+   if(state.fault?.where==='remove-before')throw state.fault.error
+   s.removeItem(key)
+   if(state.fault?.where==='remove-after')throw state.fault.error
+  }
+ }
+ const fetcher=async(url,opts)=>{
+  const path=new URL(url).pathname,credential=opts.headers.Authorization?.slice(7)
+  calls.push({path,credential})
+  if(path==='/auth/logout'){
+   if(state.logoutError)throw state.logoutError
+   if(state.logoutReply)return state.logoutReply()
+   state.revoked.add(credential)
+   return okay({loggedOut:true})
+  }
+  if(path==='/auth/session'&&state.revoked.has(credential))return invalid()
+  return identityFetcher([])(url,opts)
+ }
+ const arm=()=>{state.fault={where,error:Error('fixture raw storage failure')}}
+ const create=()=>createWebAuth(config,fetcher,port)
+ return {s,port,calls,state,diagnostics,arm,create}
+}
+test('G65 R14: cleanup get/remove faults cannot skip captured-token revocation; retained revoked token fails refresh',async()=>{
+ for(const where of ['get','remove-before','remove-after']){
+  const f=cleanupFaultFixture(where),a=f.create()
+  await a.login('old','password')
+  f.arm()
+  assert.deepEqual(await a.logout(),{storageCleanupFailed:true})
+  assert.equal(a.authenticated,false)
+  assert.equal(a.account,null)
+  assert.deepEqual(f.calls.filter(x=>x.path==='/auth/logout').map(x=>x.credential),['old'])
+  assert.equal(f.state.revoked.has('old'),true)
+  assert.equal(f.s.getItem(SESSION_KEY),where==='remove-after'?null:'old')
+  f.state.fault=null
+  const refreshed=f.create()
+  assert.equal(await refreshed.restore(),null)
+  assert.equal(refreshed.authenticated,false)
+  assert.equal(f.s.getItem(SESSION_KEY),null)
+  assert.equal((await refreshed.login('new','password')).id,'new')
+ }
+})
+test('G65 R14: failed validation returns null despite compare-read/remove cleanup exceptions',async()=>{
+ for(const where of ['get','remove-before','remove-after']){
+  const f=cleanupFaultFixture(where)
+  f.s.setItem(SESSION_KEY,'expired');f.state.revoked.add('expired')
+  let reads=0
+  const originalGet=f.port.getItem
+  f.port.getItem=key=>{
+   if(++reads===2)f.arm()
+   return originalGet(key)
+  }
+  const a=f.create()
+  assert.equal(await a.restore(),null)
+  assert.equal(a.authenticated,false)
+  assert.equal(a.account,null)
+  f.state.fault=null
+  assert.equal((await a.login('new','password')).id,'new')
+ }
+})
+test('G65 R14: cleanup and diagnostic failure preserve original server logout error or confirmed result',async(t)=>{
+ const warn=console.warn
+ t.after(()=>{console.warn=warn})
+ const warnings=[]
+ console.warn=(...args)=>{warnings.push(args);throw Error('diagnostic fault')}
+ for(const where of ['get','remove-before','remove-after'])for(const failure of [false,true]){
+  const f=cleanupFaultFixture(where),a=f.create(),cause=Error('server logout failure')
+  await a.login('old','password')
+  f.arm()
+  if(failure){
+   f.state.logoutError=cause
+   await assert.rejects(a.logout(),e=>e===cause)
+  }else assert.deepEqual(await a.logout(),{storageCleanupFailed:true})
+  assert.equal(a.authenticated,false)
+  assert.deepEqual(f.calls.filter(x=>x.path==='/auth/logout').map(x=>x.credential),['old'])
+ }
+ assert.equal(warnings.length,6)
+ assert.ok(warnings.every(args=>args.length===1&&args[0]==='web session storage cleanup failed'))
+})
+test('G65 R14: retained revoked credential cannot restore even if deletion still fails',async()=>{
+ const f=cleanupFaultFixture('remove-before'),a=f.create()
+ await a.login('old','password');f.arm()
+ await a.logout()
+ assert.equal(f.s.getItem(SESSION_KEY),'old')
+ const refreshed=f.create()
+ assert.equal(await refreshed.restore(),null)
+ assert.equal(refreshed.authenticated,false)
+ assert.equal(f.s.getItem(SESSION_KEY),'old')
+ f.state.fault=null
+ assert.equal(await refreshed.restore(),null)
+ assert.equal(f.s.getItem(SESSION_KEY),null)
+})
+test('G65 R14: actual logout confirmation requires Go success envelope and loggedOut true',async()=>{
+ for(const reply of [()=>okay({loggedOut:false}),()=>okay({}),()=>new Response(JSON.stringify({code:'ERROR',data:{loggedOut:true}}),{status:200}),invalid]){
+  const f=cleanupFaultFixture('remove-before'),a=f.create()
+  await a.login('old','password')
+  f.arm();f.state.logoutReply=reply
+  await assert.rejects(a.logout())
+  assert.equal(a.authenticated,false)
+  assert.equal(f.state.revoked.has('old'),false)
+ }
+ const f=cleanupFaultFixture('get'),a=f.create()
+ assert.deepEqual(await a.logout(),{storageCleanupFailed:false})
+ assert.equal(f.calls.length,0)
+ await a.login('old','password')
+ assert.deepEqual(await a.logout(),{storageCleanupFailed:false})
+ assert.equal(f.state.revoked.has('old'),true)
+})
+test('G65 R14: cleanup exception after starting a replacement login never revokes or clears new identity',async()=>{
+ const {s,port,hooks}=reentrantStorage(),calls=[],fetcher=identityFetcher(calls)
+ const a=createWebAuth(config,fetcher,port),b=createWebAuth(config,fetcher,port)
+ await a.login('old','password')
+ let next
+ hooks.get=()=>{hooks.get=null;next=b.login('new','password');throw Error('cleanup fault')}
+ assert.deepEqual(await a.logout(),{storageCleanupFailed:true})
+ assert.equal((await next).id,'new')
+ assert.equal(b.account.id,'new');assert.equal(s.getItem(SESSION_KEY),'new')
+ assert.deepEqual(calls.filter(x=>x.path==='/auth/logout').map(x=>x.credential),['old'])
+})
