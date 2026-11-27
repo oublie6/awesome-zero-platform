@@ -1,0 +1,133 @@
+{
+  "source": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+  "scope": "Actual production WebAuth; controlled synchronous StoragePort and identity HTTP, no native storage fault claimed",
+  "cases": [
+    {
+      "name": "setItem before dispose",
+      "pass": true
+    },
+    {
+      "name": "setItem before logout",
+      "pass": true
+    },
+    {
+      "name": "setItem before restore",
+      "pass": true
+    },
+    {
+      "name": "setItem before same-login",
+      "pass": true
+    },
+    {
+      "name": "setItem before peer-login",
+      "pass": true
+    },
+    {
+      "name": "setItem after dispose",
+      "pass": true
+    },
+    {
+      "name": "setItem after logout",
+      "pass": true
+    },
+    {
+      "name": "setItem after restore",
+      "pass": true
+    },
+    {
+      "name": "setItem after same-login",
+      "pass": true
+    },
+    {
+      "name": "setItem after peer-login",
+      "pass": true
+    },
+    {
+      "name": "account read exception fails closed without destroying committed identity",
+      "pass": true
+    },
+    {
+      "name": "authenticated read exception fails closed without destroying committed identity",
+      "pass": true
+    },
+    {
+      "name": "login storage failure set-before preserves original error and releases lease",
+      "pass": true
+    },
+    {
+      "name": "login storage failure set-after preserves original error and releases lease",
+      "pass": true
+    },
+    {
+      "name": "login storage failure verify-get preserves original error and releases lease",
+      "pass": true
+    },
+    {
+      "name": "partial set failure plus cleanup/diagnostic failure preserves original error; no leaked write lease",
+      "pass": true
+    },
+    {
+      "name": "logout cleanup fault get still revokes captured token",
+      "observedError": "cleanup",
+      "revocations": [],
+      "stored": "old",
+      "authenticated": false,
+      "pass": false
+    },
+    {
+      "name": "logout cleanup fault remove-before still revokes captured token",
+      "observedError": "cleanup",
+      "revocations": [],
+      "stored": "old",
+      "authenticated": false,
+      "pass": false
+    },
+    {
+      "name": "logout cleanup fault remove-after still revokes captured token",
+      "observedError": "cleanup",
+      "revocations": [],
+      "stored": null,
+      "authenticated": false,
+      "pass": false
+    },
+    {
+      "name": "failed restore cleanup fault get preserves null result",
+      "observedError": "cleanup",
+      "returnedNull": false,
+      "authenticated": false,
+      "pass": false
+    },
+    {
+      "name": "failed restore cleanup fault remove-before preserves null result",
+      "observedError": "cleanup",
+      "returnedNull": false,
+      "authenticated": false,
+      "pass": false
+    },
+    {
+      "name": "failed restore cleanup fault remove-after preserves null result",
+      "observedError": "cleanup",
+      "returnedNull": false,
+      "authenticated": false,
+      "pass": false
+    },
+    {
+      "name": "logout removeItem before starts newer shared login and revokes only old",
+      "pass": true
+    },
+    {
+      "name": "logout removeItem after starts newer shared login and revokes only old",
+      "pass": true
+    },
+    {
+      "name": "restore initial read exception preserves original error and permits fresh login",
+      "pass": true
+    },
+    {
+      "name": "restore final read one-time exception fails closed and clears expired local ownership",
+      "pass": true
+    }
+  ],
+  "pass": 20,
+  "fail": 6
+}

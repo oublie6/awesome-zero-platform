@@ -1,0 +1,27 @@
+[
+  {
+    "name": "smoke.cjs",
+    "exit": 0,
+    "seconds": 30.316
+  },
+  {
+    "name": "vue-lifecycle.cjs",
+    "exit": 0,
+    "seconds": 25.787
+  },
+  {
+    "name": "vue-cleanup.cjs",
+    "exit": 0,
+    "seconds": 15.381
+  },
+  {
+    "name": "cache-smoke.cjs",
+    "exit": 0,
+    "seconds": 0.838
+  },
+  {
+    "name": "browser-storage-fault.cjs",
+    "exit": 0,
+    "seconds": 36.474
+  }
+]

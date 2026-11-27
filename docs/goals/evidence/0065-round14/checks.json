@@ -1,0 +1,29 @@
+{
+  "source": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+  "commands": [
+    {
+      "cwd": "clients/game-web",
+      "command": "npm test",
+      "observed": "TAP33 PASS / 0 FAIL / 0 SKIP, includes eight new groups containing25 scenarios"
+    },
+    {
+      "cwd": "clients/game-web",
+      "command": "npm run build",
+      "observed": "vue-tsc --noEmit and Vite build PASS; enclosing command exit0"
+    },
+    {
+      "command": "node --experimental-strip-types vue-reentry.mjs",
+      "observed": "5 PASS /0 FAIL"
+    },
+    {
+      "command": "node --experimental-strip-types storage-audit.mjs",
+      "observed": "20 PASS /6 FAIL; failures are logout/restore cleanup exceptions"
+    },
+    {
+      "command": "browser-checks.py plus corrected focused observers",
+      "observed": "Normal smoke/lifecycle/unmount/cache and negative-login controls PASS; controlled storage fault reproduced, test condition FAIL"
+    }
+  ],
+  "cocosBuildsThisRound": 0,
+  "goBuildsThisRound": 0
+}

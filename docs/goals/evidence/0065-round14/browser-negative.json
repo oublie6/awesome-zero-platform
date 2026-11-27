@@ -1,0 +1,21 @@
+{
+  "source": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+  "scope": "Actual candidate Vue and matching Go API; real invalid/expired credential handling",
+  "cases": [
+    {
+      "name": "rejected saved credential clears storage, stays logged out",
+      "pass": true
+    },
+    {
+      "name": "real invalid password stays logged out and stores no credential",
+      "pass": true
+    },
+    {
+      "name": "fresh valid login after failures succeeds",
+      "pass": true
+    }
+  ],
+  "invalidLoginHTTP": 401,
+  "pass": 3,
+  "fail": 0
+}

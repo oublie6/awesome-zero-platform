@@ -1,0 +1,54 @@
+{
+  "source": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+  "headers": [
+    {
+      "path": "/index.html",
+      "status": 200,
+      "cache": "no-cache, must-revalidate",
+      "etag": "\"6b08d796-232\""
+    },
+    {
+      "path": "/game/index.html",
+      "status": 200,
+      "cache": "no-cache, must-revalidate",
+      "etag": "\"6b08d796-3879\""
+    },
+    {
+      "path": "/game-config.js",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b08d796-ca\""
+    },
+    {
+      "path": "/game/game-config.js",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b08d796-ca\""
+    },
+    {
+      "path": "/game-web-assets.json",
+      "status": 200,
+      "cache": "no-store",
+      "etag": "\"6b08d796-13c4\""
+    },
+    {
+      "path": "/assets/index-C6uuEz94.js",
+      "status": 200,
+      "cache": "public, max-age=31536000, immutable",
+      "etag": "\"6b08d796-14aa2\""
+    },
+    {
+      "path": "/game/cocos-js/cc.js",
+      "status": 200,
+      "cache": "public, max-age=0, must-revalidate",
+      "etag": "\"6b08d796-c09c74\""
+    }
+  ],
+  "conditional": {
+    "path": "/game/cocos-js/cc.js",
+    "status": 304,
+    "bodyBytes": 0
+  },
+  "identityNoStore": true,
+  "result": "PASS"
+}

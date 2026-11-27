@@ -1,0 +1,6 @@
+{
+  "scope": "Only this round isolated Redis g65r14* prefix",
+  "keysRemoved": 1,
+  "remaining": 0,
+  "otherPrefixesTouched": false
+}

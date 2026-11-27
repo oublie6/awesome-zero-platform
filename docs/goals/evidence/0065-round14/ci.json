@@ -1,0 +1,99 @@
+{
+  "candidate": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+  "workflows": [
+    {
+      "name": "Fair Doudizhu Vue3 Web",
+      "id": 45856578888,
+      "sha": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45856578888",
+      "jobs": [
+        {
+          "name": "vue_build",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Fair Doudizhu",
+      "id": 45856578702,
+      "sha": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45856578702",
+      "jobs": [
+        {
+          "name": "mysql_integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "application",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "client_foundation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "manifest_client",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "CI",
+      "id": 45856578738,
+      "sha": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/oublie6/awesome-zero-platform/actions/runs/45856578738",
+      "jobs": [
+        {
+          "name": "admin_web",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "unit",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "secure_envelope",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "runtime",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "report",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "cocosReuse": {
+    "source": "eda1a70b1ec504d6588d79203c50d9a08416bd8c",
+    "run": 45850121871,
+    "conclusion": "success",
+    "actualExport": "Round13 local official export; source/scripts/config unchanged"
+  }
+}

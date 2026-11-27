@@ -1,0 +1,12 @@
+{
+  "source": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+  "scope": "Actual built Vue and matching real API; deliberately injected native Storage.removeItem exception, not spontaneous native behavior",
+  "observed": {
+    "oldTokenHTTP": 200,
+    "storedOld": true,
+    "iframes": 0
+  },
+  "logoutRequests": 0,
+  "pass": false,
+  "observationReproduced": true
+}

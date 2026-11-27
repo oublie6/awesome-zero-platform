@@ -1,0 +1,16 @@
+{
+  "source": "747597181a8497547e4c3b591e73efcd84d1c5e1",
+  "scope": "Actual candidate Vue and matching Go API; real invalid/expired credential handling",
+  "cases": [
+    {
+      "name": "rejected saved credential clears storage, stays logged out",
+      "pass": true
+    },
+    {
+      "pass": false,
+      "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('alert').filter({ hasText: '账号或密码错误' }) to be visible\u001b[22m\n"
+    }
+  ],
+  "pass": 1,
+  "fail": 1
+}
