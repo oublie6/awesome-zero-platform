@@ -4,6 +4,8 @@
 
 ## Status
 
+- 2026-11-27 user-authorized **static Web gzip operational update — deployed**: public /game/ and /assets/ locations only, Web image75ca57f3…; no Vue/Cocos/Go rebuild; API/ConfigMap/Secret/PVC unchanged. Actual cc.js gzip3,375,311 bytes versus12,622,964, decoded hash identical, identity/304/cache/auth and server-side browser game-ready PASS. API/dependency Pods and user29457 preserved; six Ready/unfinished0, owned test container/browser/CA cleaned. [Operational evidence](../operations/evidence/web-gzip-20261127/rollout-result.json). This does not change Goal0045/0046/0065 states or assert user SSH speed is fixed.
+
 - 2026-11-27 Codex **Goal0065 Round15 independent closing acceptance — PASS / Goal0065 completed**, fixed product `efc0699b0d62ae1284db86121619a746ce4f37ba`: applicable CI SUCCESS, Vue40/build/types, original26 and adjacent12 exception cases, real logout401/persistent-delete refresh/normal recovery PASS. Cocos/API reused by exact source/hash; only Vue rebuilt. Final API→Web deployment and actual image/binary/runtime-library/30-file identity, room/reconnect/logout/switch/cache PASS. Two earlier deployment attempts failed and were inversely rolled back; dynamic-runtime packaging and proxied API readiness gate corrected without product edits. Six Ready Pods/unfinished0, schema/Secret/PVC/infrastructure and user29457 preserved; owned fixtures/temporary CA cleaned. [Round15 closing report](0065-round15-independent-acceptance.md). Goal0045/0046 remain in_progress; no mobile/platform or broader product qualification claimed.
 
 - 2026-11-27 ChatGPT **Goal0065 Round14 清理异常隔离修复 — 待 CI / 独立验收**：统一 Vue 存储清理异常边界，服务端注销独立执行，恢复失败保留 null，界面区分注销确认与本地清理不确定；不改 Cocos、Go、协议或部署。

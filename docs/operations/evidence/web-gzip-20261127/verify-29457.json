@@ -1,0 +1,51 @@
+{
+  "port": 29457,
+  "cases": [
+    {
+      "path": "/game/cocos-js/cc.js",
+      "status": 200,
+      "encoding": "gzip",
+      "gzipBytes": 3375311,
+      "originalBytes": 12622964,
+      "cache": "public, max-age=0, must-revalidate",
+      "vary": "Accept-Encoding",
+      "decompressedSHA256": "d0b4d7872199c93f0b86eddf5d19d80152fae2cd9d84a793261d39d0c5d58b9f"
+    },
+    {
+      "path": "/assets/index-M5cYNUMW.css",
+      "status": 200,
+      "encoding": "gzip",
+      "gzipBytes": 3521,
+      "originalBytes": 11419,
+      "cache": "public, max-age=31536000, immutable",
+      "vary": "Accept-Encoding",
+      "decompressedSHA256": "e09b4b2a9842280b3ef350b9671a1ba1abf23d230b2167caff8db7923b266f89"
+    },
+    {
+      "path": "/game/index.html",
+      "status": 200,
+      "encoding": "gzip",
+      "gzipBytes": 4837,
+      "originalBytes": 14457,
+      "cache": "no-cache, must-revalidate",
+      "vary": "Accept-Encoding",
+      "decompressedSHA256": "e7a6b6aeeac28d9fa048b0778c0d7a139d6851f26d601eb69bef0ac761539865"
+    }
+  ],
+  "conditional": {
+    "status": 304,
+    "bytes": 0,
+    "etag": "W/\"6b08e262-c09c74\""
+  },
+  "identityFallback": {
+    "status": 200,
+    "bytes": 12622964
+  },
+  "auth": {
+    "status": 200,
+    "compressed": false,
+    "noStore": true,
+    "identityMatches": true
+  },
+  "result": "PASS"
+}

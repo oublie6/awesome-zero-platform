@@ -1,0 +1,7 @@
+{
+  "pod": "game-web-787bcdbb65-rcq44",
+  "image": "docker.io/awesome-zero-platform/goal0065-web@sha256:75ca57f31aecf11539876ee6166841c3ed883fe26bb524c1c0818750b43aa461",
+  "imageID": "docker.io/awesome-zero-platform/goal0065-web@sha256:75ca57f31aecf11539876ee6166841c3ed883fe26bb524c1c0818750b43aa461",
+  "gzipConfigSHA256": "aa6bf84f13e614d1bc4e36b7289e2bc0e90fe56c19f642bb9e19fd0f0fec21e2",
+  "nginxConfigMatches": true
+}

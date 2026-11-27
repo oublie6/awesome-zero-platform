@@ -38,3 +38,22 @@ make deps-down
 ```
 
 Use `make deps-reset` when you deliberately want to recreate the local dependency containers and drop their transient data.
+
+## Static Web gzip
+
+Include `game-web/gzip-static.nginx.conf` inside the public `/game/` and
+`/assets/` locations of the static Web server. Package it as
+`/etc/nginx/static-gzip.conf` and use `include /etc/nginx/static-gzip.conf;`
+in those locations. Preserve the existing TLS, CSP and cache configuration.
+Do not include the fragment at server/http scope or in API/auth/WebSocket proxies.
+
+This enables negotiated gzip at level 6 for JS, CSS, JSON and the default HTML
+type, with a 1024-byte minimum and `Vary: Accept-Encoding`. Only the Web image
+needs repackaging; application assets and API binaries remain unchanged.
+Verify gzip and identity responses, decompressed hashes, cache revalidation and
+authenticated API behavior before rollout. Keep the previous immutable image
+for rollback. With curl, use `--compressed` to request and decode compression.
+
+The 2026-11-27 test deployment reduced `cc.js` from 12,622,964 to 3,375,311
+transmitted bytes. This reduces transfer size; it does not measure or guarantee
+the user's SSH bandwidth. [Runtime evidence](../docs/operations/evidence/web-gzip-20261127/rollout-result.json).

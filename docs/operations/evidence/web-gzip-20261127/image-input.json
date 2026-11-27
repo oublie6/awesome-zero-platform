@@ -1,0 +1,8 @@
+{
+  "baseManifest": "docker.io/awesome-zero-platform/goal0065-web@sha256:af8fdd096931c95f72ddc126521242607e4e5b90a6ee9b63cbf233d78105e5d9",
+  "baseConfigID": "sha256:35c68a798d9e59200d8c9f5672a852057e015a14053948da3075331b830c8727",
+  "appRevision": "efc0699b0d62ae1284db86121619a746ce4f37ba",
+  "gzipConfigSHA256": "aa6bf84f13e614d1bc4e36b7289e2bc0e90fe56c19f642bb9e19fd0f0fec21e2",
+  "nginxSHA256": "a5fede43e129a2899ab62995b8dd494232dd4c43b501e86a4c65b9c87160480b",
+  "tag": "docker.io/awesome-zero-platform/goal0065-web:gzip-aa6bf84f13e6"
+}

@@ -1,0 +1,12 @@
+{
+  "owner": "Static Web deployment infrastructure; Nginx location configuration",
+  "contract": "Negotiate gzip for public /game/ and /assets/ resources, preserve identity encoding fallback, cache/CSP/ETag semantics; do not enable compression for API/auth/WSS",
+  "authority": "Existing Go API remains authoritative; payload bytes unchanged after decompression",
+  "dependencies": "Current pinned Nginx Web image only; no Vue/Cocos/Go rebuild",
+  "failure": "nginx -t and isolated HTTP checks before Web-only rollout; restore original image on failed rollout/verification",
+  "cost": "gzip level6 on demand, bounded Nginx buffers, no additional normal-path requests",
+  "security": "Public static locations only; auth and business proxy locations untouched; no Secret/PVC/API changes",
+  "migration": "Single Web image update, original immutable image retained for rollback; preserve29457 forward",
+  "evidence": "gzip vs identity byte hashes, transfer size, CSS/config/cache/304, API health/auth no-store, actual browser game loading, final infrastructure comparison",
+  "state": "Authorized operational configuration change; not a new executable product Goal or reopening0045/0046/0065"
+}

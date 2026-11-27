@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "oldImage": "docker.io/awesome-zero-platform/goal0065-web@sha256:af8fdd096931c95f72ddc126521242607e4e5b90a6ee9b63cbf233d78105e5d9",
+  "newImage": "docker.io/awesome-zero-platform/goal0065-web@sha256:75ca57f31aecf11539876ee6166841c3ed883fe26bb524c1c0818750b43aa461",
+  "apiChanged": false,
+  "unfinishedHandsBefore": 0,
+  "rollbackExecuted": false
+}

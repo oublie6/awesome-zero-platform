@@ -1,0 +1,10 @@
+{
+  "gameReady": true,
+  "engine": {
+    "encodedBodySize": 3375311,
+    "decodedBodySize": 12622964,
+    "transferSize": 3375611,
+    "durationMs": 1925.1000000238419
+  },
+  "result": "PASS"
+}
