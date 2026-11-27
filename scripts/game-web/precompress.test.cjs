@@ -1,0 +1,45 @@
+'use strict'
+const {test}=require('node:test')
+const assert=require('node:assert/strict')
+const fs=require('node:fs')
+const os=require('node:os')
+const path=require('node:path')
+const crypto=require('node:crypto')
+const {gunzipSync}=require('node:zlib')
+const {precompress}=require('./precompress.cjs')
+function fixture(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'azp-gzip-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));const site=path.join(root,'site');fs.mkdirSync(site);return{root,site,manifest:path.join(root,'compression.json')}}
+test('level9 deterministic sidecars decode exactly, preserve originals and timestamps',async t=>{
+ const f=fixture(t),original=Buffer.from('public resource content '.repeat(1000))
+ for(const ext of ['js','css','html','json','svg','wasm','txt'])fs.writeFileSync(path.join(f.site,'asset.'+ext),original)
+ const first=await precompress(f.site,f.manifest),bytes=fs.readFileSync(path.join(f.site,'asset.js.gz'))
+ assert.equal(first.entries.length,7);assert.equal(bytes[8],2)
+ for(const entry of first.entries){const raw=fs.readFileSync(path.join(f.site,entry.path)),gz=fs.readFileSync(path.join(f.site,entry.sidecar));assert.deepEqual(raw,original);assert.deepEqual(gunzipSync(gz),raw);assert.equal(Math.floor(fs.statSync(path.join(f.site,entry.path)).mtimeMs/1000),Math.floor(fs.statSync(path.join(f.site,entry.sidecar)).mtimeMs/1000))}
+ assert.deepEqual(await precompress(f.site,f.manifest),first)
+ assert.deepEqual(fs.readFileSync(path.join(f.site,'asset.js.gz')),bytes)
+ assert.equal(fs.readdirSync(f.site).filter(x=>x.endsWith('.gz.gz')).length,0)
+})
+test('updated, removed, and no-longer-beneficial resources cannot retain stale gzip',async t=>{
+ const f=fixture(t),a=path.join(f.site,'a.js'),b=path.join(f.site,'b.css')
+ fs.writeFileSync(a,'old '.repeat(2000));fs.writeFileSync(b,'remove '.repeat(2000));await precompress(f.site,f.manifest)
+ fs.writeFileSync(a,'new '.repeat(2500));fs.unlinkSync(b);await precompress(f.site,f.manifest)
+ assert.equal(fs.existsSync(b+'.gz'),false);assert.deepEqual(gunzipSync(fs.readFileSync(a+'.gz')),fs.readFileSync(a))
+ fs.writeFileSync(a,crypto.randomBytes(8192));const result=await precompress(f.site,f.manifest)
+ assert.equal(result.entries.length,0);assert.equal(fs.existsSync(a+'.gz'),false)
+})
+test('tiny, already-compressed formats and incompressible content produce no sidecars',async t=>{
+ const f=fixture(t)
+ for(const ext of ['png','jpg','webp','mp4','woff2','gz'])fs.writeFileSync(path.join(f.site,'skip.'+ext),'even if compressible '.repeat(1000))
+ fs.writeFileSync(path.join(f.site,'tiny.js'),'small');fs.writeFileSync(path.join(f.site,'random.wasm'),crypto.randomBytes(8192))
+ const result=await precompress(f.site,f.manifest);assert.equal(result.entries.length,0);assert.equal(fs.readdirSync(f.site).length,8)
+})
+test('unowned gzip conflicts and malicious manifests fail without overwriting files',async t=>{
+ const f=fixture(t),file=path.join(f.site,'app.js');fs.writeFileSync(file,'script '.repeat(1000));fs.writeFileSync(file+'.gz','owned by caller')
+ await assert.rejects(precompress(f.site,f.manifest),/Unowned gzip/);assert.equal(fs.readFileSync(file+'.gz','utf8'),'owned by caller')
+ fs.writeFileSync(f.manifest,JSON.stringify({format:'azp-web-precompression-v1',entries:[{path:'../outside',sidecar:'../outside.gz'}]}))
+ await assert.rejects(precompress(f.site,f.manifest),/ownership path/)
+})
+test('symlink assets and symlinked public manifest destinations are rejected',async t=>{
+ const f=fixture(t);fs.writeFileSync(path.join(f.root,'outside.js'),'outside');fs.symlinkSync(path.join(f.root,'outside.js'),path.join(f.site,'escape.js'))
+ await assert.rejects(precompress(f.site,f.manifest),/Symlink/);fs.unlinkSync(path.join(f.site,'escape.js'))
+ fs.symlinkSync(f.site,path.join(f.root,'alias'));await assert.rejects(precompress(f.site,path.join(f.root,'alias','compression.json')),/outside public/)
+})

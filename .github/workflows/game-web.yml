@@ -33,7 +33,7 @@ jobs:
       - name: Run browser-auth and deployment-contract regressions
         run: |
           npm run test --prefix clients/game-web
-          node --test scripts/game-web/stage.test.cjs
+          node --test scripts/game-web/*.test.cjs
           node --test scripts/cocos-linux-web/test.cjs
       - name: Typecheck and build Vue3 website
         run: npm run build --prefix clients/game-web
